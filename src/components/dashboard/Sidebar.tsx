@@ -46,7 +46,8 @@ const DashboardSidebar = () => {
   
   return (
     <Sidebar
-      defaultCollapsed={isMobile}
+      // Use data-state to control collapsed state instead of defaultCollapsed
+      data-state={isMobile ? "collapsed" : "expanded"}
       className="border-r"
     >
       <SidebarHeader className="flex justify-center items-center py-6">

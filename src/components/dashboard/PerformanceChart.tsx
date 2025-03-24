@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Area, 
@@ -101,6 +102,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   }
 
   return null;
+};
+
+// Function to determine bar color based on pnl value
+const getBarFill = (entry: any) => {
+  return entry.pnl >= 0 ? '#10b981' : '#ef4444';
 };
 
 const PerformanceChart = () => {
@@ -219,7 +225,12 @@ const PerformanceChart = () => {
                     dataKey="pnl" 
                     name="Daily P&L"
                     animationDuration={800}
-                    fill={(data: any) => (data.pnl >= 0 ? '#10b981' : '#ef4444')}
+                    fill="#10b981"
+                    fillOpacity={0.8}
+                    // Use styles to conditionally color bars
+                    style={{
+                      fill: (entry) => entry.pnl >= 0 ? '#10b981' : '#ef4444'
+                    }}
                   />
                 </BarChart>
               </ResponsiveContainer>

@@ -5,15 +5,17 @@ import { useAuth } from '@/contexts/auth-context';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/auth/login');
+    if (!isLoading) {
+      if (isAuthenticated) {
+        navigate('/dashboard');
+      } else {
+        navigate('/auth/login');
+      }
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, isLoading]);
   
   return null;
 };

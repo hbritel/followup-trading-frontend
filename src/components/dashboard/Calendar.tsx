@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Card, 
@@ -9,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
+import { DayContentProps } from "react-day-picker";
 
 // Calendar data with trade dates and results
 const tradeData = {
@@ -31,21 +33,14 @@ const tradeData = {
   '2022-03-23': { result: 'win', amount: 27 },
 };
 
-interface CalendarDayInfo {
-  date: Date;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  isSelected: boolean;
-}
-
 const TradingCalendar = () => {
   const [date, setDate] = React.useState<Date>(new Date('2022-03-23'));
 
-  const renderDay = (day: CalendarDayInfo) => {
-    const dateStr = day.date.toISOString().split('T')[0];
+  const renderDay = (props: DayContentProps) => {
+    const dateStr = props.date.toISOString().split('T')[0];
     const tradeInfo = tradeData[dateStr as keyof typeof tradeData];
     
-    if (!tradeInfo || !day.isCurrentMonth) return null;
+    if (!tradeInfo || !props.inMonth) return null;
     
     return (
       <div className="w-full h-full flex items-center justify-center">
