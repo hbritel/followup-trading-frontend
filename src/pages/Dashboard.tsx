@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import 'react-grid-layout/css/styles.css';
@@ -28,9 +28,19 @@ const Dashboard = () => {
     updateLayout 
   } = useDashboardWidgets();
   
+  // Use state to track the previous mobile state to prevent layout issues during transitions
+  const [wasMobile, setWasMobile] = useState(isMobile);
+  
   useEffect(() => {
     document.title = "Dashboard | DashNest Trader";
   }, []);
+  
+  // Track mobile state changes
+  useEffect(() => {
+    if (wasMobile !== isMobile) {
+      setWasMobile(isMobile);
+    }
+  }, [isMobile, wasMobile]);
   
   const renderWidget = (widget: { id: string; type: WidgetType; title: string }) => {
     switch (widget.type) {
@@ -50,7 +60,10 @@ const Dashboard = () => {
   };
 
   const handleLayoutChange = (layout: any) => {
-    updateLayout(layout);
+    // Only update layout when not transitioning between views
+    if (isMobile === wasMobile) {
+      updateLayout(layout);
+    }
   };
 
   // For mobile, we'll use a simplified layout with full-width widgets
@@ -116,6 +129,8 @@ const Dashboard = () => {
                   margin={[16, 16]}
                   containerPadding={[0, 0]}
                   useCSSTransforms={true}
+                  compactType="vertical"
+                  preventCollision={false}
                 >
                   {widgets.map((widget) => (
                     <div key={widget.id} data-grid={widget}>

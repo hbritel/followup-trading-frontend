@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -5,20 +6,44 @@ const TABLET_BREAKPOINT = 1024
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [windowWidth, setWindowWidth] = React.useState<number | undefined>(
+    typeof window !== 'undefined' ? window.innerWidth : undefined
+  )
 
   React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    // Initial check after a small delay to ensure accurate measurement
+    const initialCheck = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        setWindowWidth(window.innerWidth)
+        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      }
+    }, 50)
+    
+    // Debounced resize handler to prevent rapid changes during resizing
+    let debounceTimer: NodeJS.Timeout | null = null
+    
+    const handleResize = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
+      
+      debounceTimer = setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          setWindowWidth(window.innerWidth)
+          setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+        }
+      }, 150)
     }
     
-    // Check on initial render
-    checkMobile()
-    
-    // Add resize listener
-    window.addEventListener('resize', checkMobile)
+    // Add resize listener with debounce
+    window.addEventListener('resize', handleResize)
     
     // Cleanup
-    return () => window.removeEventListener('resize', checkMobile)
+    return () => {
+      if (initialCheck) clearTimeout(initialCheck)
+      if (debounceTimer) clearTimeout(debounceTimer)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   return !!isMobile
@@ -36,11 +61,25 @@ export function useIsTablet() {
     // Check on initial render
     checkTablet()
     
-    // Add resize listener
-    window.addEventListener('resize', checkTablet)
+    // Add debounced resize listener
+    let debounceTimer: NodeJS.Timeout | null = null
+    const handleResize = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
+      
+      debounceTimer = setTimeout(() => {
+        checkTablet()
+      }, 150)
+    }
+    
+    window.addEventListener('resize', handleResize)
     
     // Cleanup
-    return () => window.removeEventListener('resize', checkTablet)
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   return !!isTablet
@@ -57,11 +96,25 @@ export function useIsDesktop() {
     // Check on initial render
     checkDesktop()
     
-    // Add resize listener
-    window.addEventListener('resize', checkDesktop)
+    // Add debounced resize listener
+    let debounceTimer: NodeJS.Timeout | null = null
+    const handleResize = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
+      
+      debounceTimer = setTimeout(() => {
+        checkDesktop()
+      }, 150)
+    }
+    
+    window.addEventListener('resize', handleResize)
     
     // Cleanup
-    return () => window.removeEventListener('resize', checkDesktop)
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   return !!isDesktop
@@ -78,11 +131,25 @@ export function useBreakpoint(breakpoint: number) {
     // Check on initial render
     checkBreakpoint()
     
-    // Add resize listener
-    window.addEventListener('resize', checkBreakpoint)
+    // Add debounced resize listener
+    let debounceTimer: NodeJS.Timeout | null = null
+    const handleResize = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
+      
+      debounceTimer = setTimeout(() => {
+        checkBreakpoint()
+      }, 150)
+    }
+    
+    window.addEventListener('resize', handleResize)
     
     // Cleanup
-    return () => window.removeEventListener('resize', checkBreakpoint)
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [breakpoint])
 
   return !!isLargerThan

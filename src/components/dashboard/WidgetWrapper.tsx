@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDashboardWidgets } from '@/hooks/use-dashboard-widgets';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface WidgetWrapperProps {
   id: string;
@@ -20,6 +21,7 @@ const WidgetWrapper = ({
   className 
 }: WidgetWrapperProps) => {
   const { isEditMode, removeWidget } = useDashboardWidgets();
+  const isMobile = useIsMobile();
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -29,11 +31,10 @@ const WidgetWrapper = ({
 
   return (
     <Card 
-      className={`h-full w-full ${isEditMode ? 'border-dashed border-2' : ''} ${className || ''}`}
+      className={`h-full w-full transition-all ${isEditMode && !isMobile ? 'border-dashed border-2' : ''} ${className || ''}`}
     >
       <CardHeader 
-        className="px-6 py-3 flex flex-row items-center justify-between card-header"
-        style={{ cursor: isEditMode ? 'move' : 'default' }}
+        className={`px-6 py-3 flex flex-row items-center justify-between card-header ${isMobile ? '' : 'cursor-grab active:cursor-grabbing'}`}
       >
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
         {isEditMode && (
