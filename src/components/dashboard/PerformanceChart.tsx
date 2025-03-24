@@ -104,6 +104,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+// Helper to get the color based on PNL value
+const getPnlColor = (pnl: number) => {
+  return pnl >= 0 ? '#10b981' : '#ef4444';
+};
+
 const PerformanceChart = () => {
   const [timeRange, setTimeRange] = useState('1m');
 
@@ -220,8 +225,13 @@ const PerformanceChart = () => {
                     dataKey="pnl" 
                     name="Daily P&L"
                     animationDuration={800}
-                    fill={(data: any) => (data.pnl >= 0 ? '#10b981' : '#ef4444')}
-                  />
+                    fill="#10b981"
+                    isAnimationActive={true}
+                  >
+                    {performanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getPnlColor(entry.pnl)} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </TabsContent>
