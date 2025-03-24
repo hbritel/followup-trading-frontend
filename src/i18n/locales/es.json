@@ -1,0 +1,77 @@
+
+{
+  "common": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "login": "Iniciar sesión",
+    "signup": "Registrarse",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "resetPassword": "Restablecer contraseña",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "continue": "Continuar",
+    "verificationCode": "Código de verificación"
+  },
+  "auth": {
+    "loginTitle": "Inicie sesión en su cuenta",
+    "loginSubtitle": "Ingrese sus credenciales para acceder a su cuenta",
+    "signupTitle": "Crear una nueva cuenta",
+    "signupSubtitle": "Complete sus datos para crear una cuenta",
+    "resetTitle": "Restablezca su contraseña",
+    "resetSubtitle": "Ingrese su correo electrónico para recibir un enlace de restablecimiento",
+    "mfaTitle": "Autenticación de dos factores",
+    "mfaSubtitle": "Ingrese el código de verificación de su aplicación de autenticación",
+    "trustedDevicesTitle": "Dispositivos de confianza",
+    "trustedDevicesSubtitle": "Administre los dispositivos que pueden acceder a su cuenta",
+    "orContinueWith": "O continuar con",
+    "dontHaveAccount": "¿No tiene una cuenta?",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "createAccount": "Crear una cuenta",
+    "resetInstructions": "Le enviaremos un correo electrónico con instrucciones para restablecer su contraseña.",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "invalidEmail": "Por favor, ingrese una dirección de correo electrónico válida",
+    "passwordRequirements": "La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas, números y caracteres especiales",
+    "verificationEmailSent": "Correo de verificación enviado",
+    "checkEmail": "Por favor, revise su correo electrónico para continuar",
+    "setupMFA": "Configurar autenticación de dos factores",
+    "enableMFA": "Activar autenticación de dos factores",
+    "disableMFA": "Desactivar autenticación de dos factores",
+    "scanQRCode": "Escanee este código QR con su aplicación de autenticación",
+    "enterCode": "Ingrese el código de 6 dígitos de su aplicación de autenticación"
+  },
+  "navbar": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "trades": "Operaciones",
+    "calendar": "Calendario",
+    "performance": "Rendimiento",
+    "statistics": "Estadísticas",
+    "reports": "Informes",
+    "accounts": "Cuentas",
+    "watchlists": "Listas de seguimiento",
+    "activity": "Actividad",
+    "settings": "Configuración",
+    "account": "Cuenta",
+    "logout": "Cerrar sesión",
+    "search": "Buscar operaciones, símbolos..."
+  },
+  "sidebar": {
+    "main": "Principal",
+    "analysis": "Análisis",
+    "management": "Gestión"
+  },
+  "trustedDevices": {
+    "currentDevice": "Dispositivo actual",
+    "lastAccess": "Último acceso",
+    "browser": "Navegador",
+    "operatingSystem": "Sistema operativo",
+    "location": "Ubicación",
+    "device": "Dispositivo",
+    "revokeAccess": "Revocar acceso"
+  }
+}

@@ -1,0 +1,77 @@
+
+{
+  "common": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "login": "Login",
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "delete": "Delete",
+    "continue": "Continue",
+    "verificationCode": "Verification Code"
+  },
+  "auth": {
+    "loginTitle": "Log in to your account",
+    "loginSubtitle": "Enter your credentials to access your account",
+    "signupTitle": "Create a new account",
+    "signupSubtitle": "Fill in your details to create an account",
+    "resetTitle": "Reset your password",
+    "resetSubtitle": "Enter your email to receive a reset link",
+    "mfaTitle": "Two-factor authentication",
+    "mfaSubtitle": "Enter the verification code from your authenticator app",
+    "trustedDevicesTitle": "Trusted Devices",
+    "trustedDevicesSubtitle": "Manage devices that can access your account",
+    "orContinueWith": "Or continue with",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "createAccount": "Create an account",
+    "resetInstructions": "We'll send you an email with instructions to reset your password.",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordRequirements": "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters",
+    "verificationEmailSent": "Verification email sent",
+    "checkEmail": "Please check your email to continue",
+    "setupMFA": "Set up two-factor authentication",
+    "enableMFA": "Enable two-factor authentication",
+    "disableMFA": "Disable two-factor authentication",
+    "scanQRCode": "Scan this QR code with your authenticator app",
+    "enterCode": "Enter the 6-digit code from your authenticator app"
+  },
+  "navbar": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "trades": "Trades",
+    "calendar": "Calendar",
+    "performance": "Performance",
+    "statistics": "Statistics",
+    "reports": "Reports",
+    "accounts": "Accounts",
+    "watchlists": "Watchlists",
+    "activity": "Activity",
+    "settings": "Settings",
+    "account": "Account",
+    "logout": "Logout",
+    "search": "Search trades, symbols..."
+  },
+  "sidebar": {
+    "main": "Main",
+    "analysis": "Analysis",
+    "management": "Management"
+  },
+  "trustedDevices": {
+    "currentDevice": "Current Device",
+    "lastAccess": "Last Access",
+    "browser": "Browser",
+    "operatingSystem": "Operating System",
+    "location": "Location",
+    "device": "Device",
+    "revokeAccess": "Revoke Access"
+  }
+}

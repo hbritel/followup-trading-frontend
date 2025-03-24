@@ -1,12 +1,17 @@
+
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { 
   Calendar as CalendarIcon, 
   Filter, 
+  LogOut,
   Menu, 
   PlusCircle, 
   Search, 
   Settings, 
+  Shield,
   User 
 } from 'lucide-react';
 import {
@@ -25,9 +30,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from '@/contexts/auth-context';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
 
 const Navbar = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const { t } = useTranslation();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur-sm animate-slide-down">
@@ -49,7 +59,7 @@ const Navbar = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search trades, symbols..."
+              placeholder={t('navbar.search')}
               className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
             />
           </div>
@@ -83,7 +93,13 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
+          <LanguageSwitcher />
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate('/settings')}
+          >
             <Settings className="h-5 w-5" />
             <span className="sr-only">Settings</span>
           </Button>
@@ -96,13 +112,30 @@ const Navbar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {user?.name || 'User'}
+                <p className="text-xs font-normal text-muted-foreground mt-0.5">
+                  {user?.email || 'user@example.com'}
+                </p>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/account')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/auth/trusted-devices')}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Trusted Devices</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -114,7 +147,7 @@ const Navbar = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search trades, symbols..."
+            placeholder={t('navbar.search')}
             className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
           />
         </div>

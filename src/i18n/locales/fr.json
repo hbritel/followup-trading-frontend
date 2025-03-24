@@ -1,0 +1,77 @@
+
+{
+  "common": {
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "submit": "Soumettre",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "next": "Suivant",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "continue": "Continuer",
+    "verificationCode": "Code de vérification"
+  },
+  "auth": {
+    "loginTitle": "Connectez-vous à votre compte",
+    "loginSubtitle": "Entrez vos identifiants pour accéder à votre compte",
+    "signupTitle": "Créer un nouveau compte",
+    "signupSubtitle": "Remplissez vos informations pour créer un compte",
+    "resetTitle": "Réinitialisez votre mot de passe",
+    "resetSubtitle": "Entrez votre e-mail pour recevoir un lien de réinitialisation",
+    "mfaTitle": "Authentification à deux facteurs",
+    "mfaSubtitle": "Entrez le code de vérification de votre application d'authentification",
+    "trustedDevicesTitle": "Appareils de confiance",
+    "trustedDevicesSubtitle": "Gérez les appareils qui peuvent accéder à votre compte",
+    "orContinueWith": "Ou continuer avec",
+    "dontHaveAccount": "Vous n'avez pas de compte ?",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "createAccount": "Créer un compte",
+    "resetInstructions": "Nous vous enverrons un e-mail avec des instructions pour réinitialiser votre mot de passe.",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "invalidEmail": "Veuillez entrer une adresse e-mail valide",
+    "passwordRequirements": "Le mot de passe doit comporter au moins 8 caractères et inclure des majuscules, des minuscules, des chiffres et des caractères spéciaux",
+    "verificationEmailSent": "E-mail de vérification envoyé",
+    "checkEmail": "Veuillez vérifier votre e-mail pour continuer",
+    "setupMFA": "Configurer l'authentification à deux facteurs",
+    "enableMFA": "Activer l'authentification à deux facteurs",
+    "disableMFA": "Désactiver l'authentification à deux facteurs",
+    "scanQRCode": "Scannez ce code QR avec votre application d'authentification",
+    "enterCode": "Entrez le code à 6 chiffres de votre application d'authentification"
+  },
+  "navbar": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "trades": "Trades",
+    "calendar": "Calendrier",
+    "performance": "Performance",
+    "statistics": "Statistiques",
+    "reports": "Rapports",
+    "accounts": "Comptes",
+    "watchlists": "Listes de suivi",
+    "activity": "Activité",
+    "settings": "Paramètres",
+    "account": "Compte",
+    "logout": "Déconnexion",
+    "search": "Rechercher trades, symboles..."
+  },
+  "sidebar": {
+    "main": "Principal",
+    "analysis": "Analyse",
+    "management": "Gestion"
+  },
+  "trustedDevices": {
+    "currentDevice": "Appareil actuel",
+    "lastAccess": "Dernier accès",
+    "browser": "Navigateur",
+    "operatingSystem": "Système d'exploitation",
+    "location": "Localisation",
+    "device": "Appareil",
+    "revokeAccess": "Révoquer l'accès"
+  }
+}

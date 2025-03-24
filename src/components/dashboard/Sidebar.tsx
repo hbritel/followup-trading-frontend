@@ -1,4 +1,7 @@
+
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Activity,
   BarChart4,
@@ -29,9 +32,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/auth-context';
 
 const DashboardSidebar = () => {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
   
   return (
     <Sidebar
@@ -47,42 +58,42 @@ const DashboardSidebar = () => {
       
       <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.main')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/')}>
+                  <Link to="/">
                     <Home className="h-4 w-4" />
-                    <span>Home</span>
-                  </a>
+                    <span>{t('navbar.home')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2 text-primary font-medium">
-                  <a href="/dashboard">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/dashboard')}>
+                  <Link to="/dashboard">
                     <LayoutDashboard className="h-4 w-4" />
-                    <span>Dashboard</span>
-                  </a>
+                    <span>{t('navbar.dashboard')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/trades">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/trades')}>
+                  <Link to="/trades">
                     <Shuffle className="h-4 w-4" />
-                    <span>Trades</span>
-                  </a>
+                    <span>{t('navbar.trades')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/calendar">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/calendar')}>
+                  <Link to="/calendar">
                     <Calendar className="h-4 w-4" />
-                    <span>Calendar</span>
-                  </a>
+                    <span>{t('navbar.calendar')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -90,34 +101,34 @@ const DashboardSidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.analysis')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/performance">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/performance')}>
+                  <Link to="/performance">
                     <TrendingUp className="h-4 w-4" />
-                    <span>Performance</span>
-                  </a>
+                    <span>{t('navbar.performance')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/statistics">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/statistics')}>
+                  <Link to="/statistics">
                     <BarChart4 className="h-4 w-4" />
-                    <span>Statistics</span>
-                  </a>
+                    <span>{t('navbar.statistics')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/reports">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/reports')}>
+                  <Link to="/reports">
                     <PieChart className="h-4 w-4" />
-                    <span>Reports</span>
+                    <span>{t('navbar.reports')}</span>
                     <Badge className="ml-auto text-xs" variant="secondary">New</Badge>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -125,33 +136,33 @@ const DashboardSidebar = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.management')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/accounts">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/accounts')}>
+                  <Link to="/accounts">
                     <CreditCard className="h-4 w-4" />
-                    <span>Accounts</span>
-                  </a>
+                    <span>{t('navbar.accounts')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/watchlists">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/watchlists')}>
+                  <Link to="/watchlists">
                     <ListChecks className="h-4 w-4" />
-                    <span>Watchlists</span>
-                  </a>
+                    <span>{t('navbar.watchlists')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="gap-2">
-                  <a href="/activity">
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/activity')}>
+                  <Link to="/activity">
                     <Activity className="h-4 w-4" />
-                    <span>Activity</span>
-                  </a>
+                    <span>{t('navbar.activity')}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -166,11 +177,13 @@ const DashboardSidebar = () => {
         )}>
           <Avatar className="h-8 w-8">
             <AvatarImage src="" />
-            <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {user?.name?.split(' ').map(name => name[0]).join('') || 'JD'}
+            </AvatarFallback>
           </Avatar>
           <div className="flex flex-col justify-center overflow-hidden">
-            <p className="text-sm font-medium leading-none truncate">John Doe</p>
-            <p className="text-xs text-muted-foreground truncate">john.doe@example.com</p>
+            <p className="text-sm font-medium leading-none truncate">{user?.name || 'John Doe'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email || 'john.doe@example.com'}</p>
           </div>
         </div>
       </SidebarFooter>
