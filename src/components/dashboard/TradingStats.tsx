@@ -7,15 +7,8 @@ import {
   PercentIcon, 
   TrendingUp 
 } from 'lucide-react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -41,20 +34,20 @@ const StatCard = ({
   progressColor = 'bg-primary'
 }: StatCardProps) => {
   return (
-    <Card className={cn("overflow-hidden animate-fade-in", className)}>
-      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+    <div className={cn("overflow-hidden animate-fade-in bg-card rounded-lg border p-4", className)}>
+      <div className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle className="text-base font-medium text-muted-foreground">
+          <p className="text-base font-medium text-muted-foreground">
             {title}
-          </CardTitle>
+          </p>
         </div>
         {icon && (
           <div className="p-1.5 rounded-lg bg-accent/50">
             {icon}
           </div>
         )}
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
+      </div>
+      <div className="p-0 pt-0">
         <div className="flex items-baseline gap-2">
           <div className="text-2xl font-bold">{value}</div>
           {trend && trendValue && (
@@ -72,9 +65,9 @@ const StatCard = ({
         </div>
         
         {description && (
-          <CardDescription className="text-xs font-medium mt-1">
+          <p className="text-xs font-medium mt-1 text-muted-foreground">
             {description}
-          </CardDescription>
+          </p>
         )}
         
         {progressValue !== undefined && (
@@ -85,14 +78,14 @@ const StatCard = ({
             />
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
 const TradingStats = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-3">
       <StatCard
         title="Win Rate"
         value="71.43%"

@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -45,6 +44,27 @@ export function useIsTablet() {
   }, [])
 
   return !!isTablet
+}
+
+export function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= TABLET_BREAKPOINT)
+    }
+    
+    // Check on initial render
+    checkDesktop()
+    
+    // Add resize listener
+    window.addEventListener('resize', checkDesktop)
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
+
+  return !!isDesktop
 }
 
 export function useBreakpoint(breakpoint: number) {
