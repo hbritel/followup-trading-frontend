@@ -6,7 +6,6 @@ import {
   Bar, 
   BarChart, 
   CartesianGrid, 
-  Cell,
   Legend, 
   ResponsiveContainer, 
   Tooltip, 
@@ -103,11 +102,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   }
 
   return null;
-};
-
-// Helper to get the color based on PNL value
-const getPnlColor = (pnl: number) => {
-  return pnl >= 0 ? '#10b981' : '#ef4444';
 };
 
 const PerformanceChart = () => {
@@ -226,13 +220,8 @@ const PerformanceChart = () => {
                     dataKey="pnl" 
                     name="Daily P&L"
                     animationDuration={800}
-                    fill="#10b981"
-                    isAnimationActive={true}
-                  >
-                    {performanceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getPnlColor(entry.pnl)} />
-                    ))}
-                  </Bar>
+                    fill={(data: any) => (data.pnl >= 0 ? '#10b981' : '#ef4444')}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </TabsContent>

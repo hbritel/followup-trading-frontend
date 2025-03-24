@@ -22,25 +22,25 @@ const accountMetrics = [
   {
     title: 'Total R-Value',
     value: 0,
-    icon: <Calculator className="h-5 w-5" />,
+    icon: <Calculator />,
     description: 'Based on risk tolerance',
   },
   {
     title: 'Deposit Return %',
     value: 'N/A',
-    icon: <Percent className="h-5 w-5" />,
+    icon: <Percent />,
     description: 'Return on deposits',
   },
   {
     title: 'Account Value',
     value: '$1,739.02',
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: <DollarSign />,
     description: 'Current account value',
   },
   {
     title: 'Deposits',
     value: '$0.00',
-    icon: <CreditCard className="h-5 w-5" />,
+    icon: <CreditCard />,
     description: 'Total deposits',
   }
 ];
@@ -58,16 +58,16 @@ const MetricCard = ({
 }) => {
   return (
     <div className="flex flex-col p-4 bg-background border rounded-lg">
-      <div className="flex items-start justify-between mb-2">
-        <div className="p-2 rounded-full bg-primary/10 text-primary">
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-full bg-primary/10 text-primary">
           {icon}
         </div>
-        <div className="text-right">
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
           <p className="text-lg font-bold">{value}</p>
-          <h3 className="text-xs font-medium text-muted-foreground">{title}</h3>
         </div>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{description}</p>
     </div>
   );
 };
@@ -115,7 +115,7 @@ const StatItem = ({
 
 const AccountSummary = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <Card className="lg:col-span-2 animate-slide-up">
         <CardHeader className="px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

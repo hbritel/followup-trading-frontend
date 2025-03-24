@@ -36,8 +36,7 @@ const DashboardSidebar = () => {
   
   return (
     <Sidebar
-      // Use open and onOpenChange instead of defaultCollapsed 
-      collapsible={isMobile ? "offcanvas" : "icon"}
+      defaultCollapsed={isMobile}
       className="border-r"
     >
       <SidebarHeader className="flex justify-center items-center py-6">
