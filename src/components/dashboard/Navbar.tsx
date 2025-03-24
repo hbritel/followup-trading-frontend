@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from '@/contexts/auth-context';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 
 const Navbar = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -86,10 +87,14 @@ const Navbar = () => {
             <span className="hidden sm:inline">Filter</span>
           </Button>
           
-          <Button variant="default" size="sm" className="ml-2 h-9 gap-1">
-            <PlusCircle className="h-4 w-4" />
-            <span>New Trade</span>
-          </Button>
+          <NewTradeDialog
+            trigger={
+              <Button variant="default" size="sm" className="ml-2 h-9 gap-1">
+                <PlusCircle className="h-4 w-4" />
+                <span>New Trade</span>
+              </Button>
+            }
+          />
         </div>
         
         <div className="flex items-center gap-2">
@@ -151,10 +156,14 @@ const Navbar = () => {
             className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
           />
         </div>
-        <Button variant="default" size="sm" className="h-9">
-          <PlusCircle className="h-4 w-4 mr-1" />
-          <span>New</span>
-        </Button>
+        <NewTradeDialog
+          trigger={
+            <Button variant="default" size="sm" className="h-9">
+              <PlusCircle className="h-4 w-4 mr-1" />
+              <span>New</span>
+            </Button>
+          }
+        />
       </div>
     </header>
   );

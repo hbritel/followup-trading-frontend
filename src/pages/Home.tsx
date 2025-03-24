@@ -1,4 +1,6 @@
 
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TradingStats from '@/components/dashboard/TradingStats';
 import {
@@ -10,8 +12,11 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, TrendingUp, Clock, ArrowRight } from 'lucide-react';
+import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 
 const Home = () => {
+  const navigate = useNavigate();
+  
   return (
     <DashboardLayout pageTitle="Welcome to DashNest Trader">
       <div className="space-y-6">
@@ -23,17 +28,25 @@ const Home = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-auto py-4 justify-start">
-                  <div className="flex flex-col items-start text-left">
-                    <div className="flex items-center mb-1">
-                      <PlusCircle className="h-4 w-4 mr-1" />
-                      <span className="font-medium">New Trade</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">Record a new trading position</span>
-                  </div>
-                </Button>
+                <NewTradeDialog 
+                  trigger={
+                    <Button variant="outline" className="h-auto py-4 justify-start w-full">
+                      <div className="flex flex-col items-start text-left">
+                        <div className="flex items-center mb-1">
+                          <PlusCircle className="h-4 w-4 mr-1" />
+                          <span className="font-medium">New Trade</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Record a new trading position</span>
+                      </div>
+                    </Button>
+                  }
+                />
                 
-                <Button variant="outline" className="h-auto py-4 justify-start">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 justify-start"
+                  onClick={() => navigate('/performance')}
+                >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <TrendingUp className="h-4 w-4 mr-1" />
@@ -43,7 +56,11 @@ const Home = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-4 justify-start">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 justify-start"
+                  onClick={() => navigate('/activity')}
+                >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
@@ -53,7 +70,11 @@ const Home = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-4 justify-start">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 justify-start"
+                  onClick={() => navigate('/calendar')}
+                >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
@@ -95,7 +116,11 @@ const Home = () => {
                   </div>
                 </div>
                 
-                <Button variant="link" className="w-full justify-between mt-2 px-0">
+                <Button 
+                  variant="link" 
+                  className="w-full justify-between mt-2 px-0"
+                  onClick={() => navigate('/performance')}
+                >
                   <span>View detailed performance</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -135,7 +160,11 @@ const Home = () => {
                   <div className="font-medium text-profit">+$65.43</div>
                 </div>
               </div>
-              <Button variant="link" className="mt-4 px-0">
+              <Button 
+                variant="link" 
+                className="mt-4 px-0"
+                onClick={() => navigate('/trades')}
+              >
                 View all trades
               </Button>
             </CardContent>
@@ -164,7 +193,11 @@ const Home = () => {
                   <div className="font-medium">INTC</div>
                   <div className="text-loss">-1.23%</div>
                 </div>
-                <Button variant="link" className="mt-2 px-0">
+                <Button 
+                  variant="link" 
+                  className="mt-2 px-0"
+                  onClick={() => navigate('/watchlists')}
+                >
                   Manage watchlists
                 </Button>
               </div>
