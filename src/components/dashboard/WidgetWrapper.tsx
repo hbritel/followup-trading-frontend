@@ -31,7 +31,10 @@ const WidgetWrapper = ({
     <Card 
       className={`h-full w-full ${isEditMode ? 'border-dashed border-2' : ''} ${className || ''}`}
     >
-      <CardHeader className="px-6 py-3 flex flex-row items-center justify-between">
+      <CardHeader 
+        className="px-6 py-3 flex flex-row items-center justify-between card-header"
+        style={{ cursor: isEditMode ? 'move' : 'default' }}
+      >
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
         {isEditMode && (
           <Button 

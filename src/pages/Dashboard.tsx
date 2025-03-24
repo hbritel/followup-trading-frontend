@@ -102,30 +102,33 @@ const Dashboard = () => {
                 <WidgetControls />
               </div>
               
-              <ResponsiveGridLayout
-                className="layout"
-                layouts={{ lg: widgets, md: widgets, sm: widgets }}
-                breakpoints={{ lg: 1200, md: 996, sm: 768 }}
-                cols={{ lg: 12, md: 12, sm: 6 }}
-                rowHeight={150}
-                isDraggable={isEditMode}
-                isResizable={isEditMode}
-                onLayoutChange={handleLayoutChange}
-                draggableHandle=".card-header"
-                margin={[16, 16]}
-                containerPadding={[0, 0]}
-              >
-                {widgets.map((widget) => (
-                  <div key={widget.id} data-grid={widget}>
-                    <WidgetWrapper 
-                      id={widget.id} 
-                      title={widget.title}
-                    >
-                      {renderWidget(widget)}
-                    </WidgetWrapper>
-                  </div>
-                ))}
-              </ResponsiveGridLayout>
+              <div className="w-full">
+                <ResponsiveGridLayout
+                  className="layout"
+                  layouts={{ lg: widgets, md: widgets, sm: widgets }}
+                  breakpoints={{ lg: 1200, md: 996, sm: 768 }}
+                  cols={{ lg: 12, md: 12, sm: 6 }}
+                  rowHeight={150}
+                  isDraggable={isEditMode}
+                  isResizable={isEditMode}
+                  onLayoutChange={handleLayoutChange}
+                  draggableHandle=".card-header"
+                  margin={[16, 16]}
+                  containerPadding={[0, 0]}
+                  useCSSTransforms={true}
+                >
+                  {widgets.map((widget) => (
+                    <div key={widget.id} data-grid={widget}>
+                      <WidgetWrapper 
+                        id={widget.id} 
+                        title={widget.title}
+                      >
+                        {renderWidget(widget)}
+                      </WidgetWrapper>
+                    </div>
+                  ))}
+                </ResponsiveGridLayout>
+              </div>
             </div>
           </main>
         </div>

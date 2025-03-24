@@ -25,7 +25,7 @@ export interface WidgetConfig {
 const defaultWidgets: WidgetConfig[] = [
   { id: "stats", type: "stats", title: "Trading Stats", w: 12, h: 1, x: 0, y: 0, isResizable: false },
   { id: "performance", type: "performance", title: "Performance Chart", w: 12, h: 2, x: 0, y: 1 },
-  { id: "account", type: "account", title: "Account Summary", w: 8, h: 2, x: 0, y: 3 },
+  { id: "account", type: "account", title: "Account Summary", w: 12, h: 2, x: 0, y: 3 },
   { id: "trades", type: "trades", title: "Recent Trades", w: 6, h: 2, x: 0, y: 5 },
   { id: "calendar", type: "calendar", title: "Trading Calendar", w: 6, h: 2, x: 6, y: 5 }
 ];
@@ -43,6 +43,8 @@ export function useDashboardWidgets() {
   const [isEditMode, setIsEditMode] = React.useState(false);
 
   const updateLayout = (layout: any[]) => {
+    if (!layout.length) return;
+    
     setWidgets(prev => 
       prev.map(widget => {
         const updatedWidget = layout.find(item => item.i === widget.id);
@@ -85,7 +87,7 @@ export function useDashboardWidgets() {
         w: Math.max(6, typeConfig.minW),
         h: typeConfig.minH,
         x: 0,
-        y: 0, // This will be adjusted by the grid
+        y: Infinity, // Place at the bottom
         minW: typeConfig.minW,
         minH: typeConfig.minH
       };
