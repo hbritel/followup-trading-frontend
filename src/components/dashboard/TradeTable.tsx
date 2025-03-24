@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   ArrowDown, 
@@ -39,6 +38,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 
 interface Trade {
   id: string;
@@ -148,6 +149,8 @@ const TradeTable = () => {
   const [itemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<keyof Trade>('openDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const isMobile = useIsMobile();
 
   const totalPages = Math.ceil(sampleTrades.length / itemsPerPage);
 
@@ -206,9 +209,55 @@ const TradeTable = () => {
     setCurrentPage(totalPages);
   };
 
+  const TradeDetails = ({ trade }: { trade: Trade }) => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Symbol</p>
+          <p className="font-medium">{trade.symbol}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Position</p>
+          <Badge
+            variant="outline"
+            className={cn(
+              "capitalize",
+              trade.position === 'long' 
+                ? "border-profit text-profit bg-profit/10" 
+                : "border-loss text-loss bg-loss/10"
+            )}
+          >
+            {trade.position}
+          </Badge>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Open Time</p>
+          <p className="font-medium">{new Date(trade.openDate).toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Close Time</p>
+          <p className="font-medium">{new Date(trade.closeDate).toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">P&L</p>
+          <p className={cn(
+            "font-medium",
+            trade.profitLoss > 0 ? "text-profit" : "text-loss"
+          )}>
+            {trade.profitLoss > 0 ? "+" : ""}${trade.profitLoss.toFixed(2)}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Status</p>
+          <p className="font-medium capitalize">{trade.status}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <Card className="animate-slide-up">
-      <CardHeader className="px-6 py-4">
+      <CardHeader className="px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg font-semibold">Trade History</CardTitle>
@@ -235,13 +284,13 @@ const TradeTable = () => {
                   {getSortIcon('openDate')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors hidden md:table-cell" onClick={() => handleSort('closeDate')}>
+              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors hidden lg:table-cell" onClick={() => handleSort('closeDate')}>
                 <div className="flex items-center gap-1">
                   Close Time
                   {getSortIcon('closeDate')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors" onClick={() => handleSort('position')}>
+              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors hidden sm:table-cell" onClick={() => handleSort('position')}>
                 <div className="flex items-center gap-1">
                   Position
                   {getSortIcon('position')}
@@ -259,11 +308,39 @@ const TradeTable = () => {
           <TableBody>
             {paginatedTrades.map((trade) => (
               <TableRow key={trade.id} className="hover:bg-accent/20 transition-colors">
-                <TableCell className="font-medium">
-                  <div className="flex items-center">
-                    {trade.symbol}
-                  </div>
-                </TableCell>
+                {isMobile ? (
+                  <>
+                    <TableCell className="font-medium">
+                      <Drawer>
+                        <DrawerTrigger asChild>
+                          <Button variant="ghost" className="h-8 p-0 font-medium text-foreground text-left justify-start hover:underline">
+                            {trade.symbol}
+                          </Button>
+                        </DrawerTrigger>
+                        <DrawerContent>
+                          <DrawerHeader>
+                            <DrawerTitle>Trade Details</DrawerTitle>
+                            <DrawerDescription>Trade information for {trade.symbol}</DrawerDescription>
+                          </DrawerHeader>
+                          <div className="px-4">
+                            <TradeDetails trade={trade} />
+                          </div>
+                          <DrawerFooter>
+                            <DrawerClose asChild>
+                              <Button variant="outline">Close</Button>
+                            </DrawerClose>
+                          </DrawerFooter>
+                        </DrawerContent>
+                      </Drawer>
+                    </TableCell>
+                  </>
+                ) : (
+                  <TableCell className="font-medium">
+                    <div className="flex items-center">
+                      {trade.symbol}
+                    </div>
+                  </TableCell>
+                )}
                 <TableCell className="hidden md:table-cell">
                   {new Date(trade.openDate).toLocaleString(undefined, {
                     year: '2-digit',
@@ -273,7 +350,7 @@ const TradeTable = () => {
                     minute: '2-digit',
                   })}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden lg:table-cell">
                   {new Date(trade.closeDate).toLocaleString(undefined, {
                     year: '2-digit',
                     month: '2-digit',
@@ -282,7 +359,7 @@ const TradeTable = () => {
                     minute: '2-digit',
                   })}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <Badge
                     variant="outline"
                     className={cn(
@@ -338,8 +415,8 @@ const TradeTable = () => {
           </TableBody>
         </Table>
         
-        <div className="flex items-center justify-between px-4 py-4 border-t">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-4 border-t gap-3">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
             <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, sampleTrades.length)}</span> of{' '}
             <span className="font-medium text-foreground">{sampleTrades.length}</span> trades
