@@ -46,8 +46,9 @@ const DashboardSidebar = () => {
   
   return (
     <Sidebar
+      // Use data-state to control collapsed state instead of defaultCollapsed
+      data-state={isMobile ? "collapsed" : "expanded"}
       className="border-r"
-      collapsible={isMobile ? "offcanvas" : "icon"}
     >
       <SidebarHeader className="flex justify-center items-center py-6">
         <div className="flex flex-col items-center justify-center gap-1">

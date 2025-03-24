@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
@@ -32,11 +32,9 @@ import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from '@/contexts/auth-context';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
-import { NewTradeDialog } from '@/components/trades/NewTradeDialog';
 
 const Navbar = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -88,12 +86,7 @@ const Navbar = () => {
             <span className="hidden sm:inline">Filter</span>
           </Button>
           
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="ml-2 h-9 gap-1"
-            onClick={() => setTradeDialogOpen(true)}
-          >
+          <Button variant="default" size="sm" className="ml-2 h-9 gap-1">
             <PlusCircle className="h-4 w-4" />
             <span>New Trade</span>
           </Button>
@@ -158,21 +151,11 @@ const Navbar = () => {
             className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
           />
         </div>
-        <Button 
-          variant="default" 
-          size="sm" 
-          className="h-9"
-          onClick={() => setTradeDialogOpen(true)}
-        >
+        <Button variant="default" size="sm" className="h-9">
           <PlusCircle className="h-4 w-4 mr-1" />
           <span>New</span>
         </Button>
       </div>
-      
-      <NewTradeDialog 
-        open={tradeDialogOpen} 
-        onOpenChange={setTradeDialogOpen} 
-      />
     </header>
   );
 };
