@@ -1,8 +1,9 @@
 
-import React from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TradingStats from '@/components/dashboard/TradingStats';
+import { NewTradeDialog } from '@/components/trades/NewTradeDialog';
 import {
   Card,
   CardContent,
@@ -12,11 +13,31 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, TrendingUp, Clock, ArrowRight } from 'lucide-react';
-import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 
 const Home = () => {
+  const [tradeDialogOpen, setTradeDialogOpen] = useState(false);
   const navigate = useNavigate();
-  
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'newTrade':
+        setTradeDialogOpen(true);
+        break;
+      case 'viewPL':
+        navigate('/performance');
+        break;
+      case 'recent':
+        navigate('/activity');
+        break;
+      case 'reminders':
+        // For now, just open the calendar
+        navigate('/calendar');
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <DashboardLayout pageTitle="Welcome to DashNest Trader">
       <div className="space-y-6">
@@ -27,60 +48,60 @@ const Home = () => {
               <CardDescription>Common tasks and shortcuts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <NewTradeDialog 
-                  trigger={
-                    <Button variant="outline" className="h-auto py-4 justify-start w-full">
-                      <div className="flex flex-col items-start text-left">
-                        <div className="flex items-center mb-1">
-                          <PlusCircle className="h-4 w-4 mr-1" />
-                          <span className="font-medium">New Trade</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">Record a new trading position</span>
-                      </div>
-                    </Button>
-                  }
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-4 justify-start"
+                  onClick={() => handleQuickAction('newTrade')}
+                >
+                  <div className="flex flex-col items-start text-left">
+                    <div className="flex items-center mb-1">
+                      <PlusCircle className="h-4 w-4 mr-1" />
+                      <span className="font-medium">New Trade</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground truncate w-full">Record a new trading position</span>
+                  </div>
+                </Button>
                 
                 <Button 
                   variant="outline" 
                   className="h-auto py-4 justify-start"
-                  onClick={() => navigate('/performance')}
+                  onClick={() => handleQuickAction('viewPL')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <TrendingUp className="h-4 w-4 mr-1" />
                       <span className="font-medium">View P&L</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Check your profit and loss</span>
+                    <span className="text-xs text-muted-foreground truncate w-full">Check your profit and loss</span>
                   </div>
                 </Button>
                 
                 <Button 
                   variant="outline" 
                   className="h-auto py-4 justify-start"
-                  onClick={() => navigate('/activity')}
+                  onClick={() => handleQuickAction('recent')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
                       <span className="font-medium">Recent</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">View recent activities</span>
+                    <span className="text-xs text-muted-foreground truncate w-full">View recent activities</span>
                   </div>
                 </Button>
                 
                 <Button 
                   variant="outline" 
                   className="h-auto py-4 justify-start"
-                  onClick={() => navigate('/calendar')}
+                  onClick={() => handleQuickAction('reminders')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
                       <span className="font-medium">Reminders</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Set up trade reminders</span>
+                    <span className="text-xs text-muted-foreground truncate w-full">Set up trade reminders</span>
                   </div>
                 </Button>
               </div>
@@ -205,6 +226,11 @@ const Home = () => {
           </Card>
         </div>
       </div>
+      
+      <NewTradeDialog 
+        open={tradeDialogOpen} 
+        onOpenChange={setTradeDialogOpen} 
+      />
     </DashboardLayout>
   );
 };
