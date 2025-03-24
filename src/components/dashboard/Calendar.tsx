@@ -40,7 +40,9 @@ const TradingCalendar = () => {
     const dateStr = props.date.toISOString().split('T')[0];
     const tradeInfo = tradeData[dateStr as keyof typeof tradeData];
     
-    if (!tradeInfo || !props.inMonth) return null;
+    // Check if the date is in the current month and has trade data
+    // React-day-picker in newer versions uses isOutside instead of inMonth
+    if (!tradeInfo || props.outside) return null;
     
     return (
       <div className="w-full h-full flex items-center justify-center">
