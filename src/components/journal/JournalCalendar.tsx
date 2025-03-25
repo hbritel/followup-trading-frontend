@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
+import { DayClickEventHandler } from 'react-day-picker';
 
 const JournalCalendar = () => {
   const { t } = useTranslation();
@@ -40,13 +41,12 @@ const JournalCalendar = () => {
           onSelect={setDate}
           className="rounded-md border"
           components={{
-            DayContent: (props) => {
-              const day = props.date;
+            DayContent: ({ date: day, ...props }) => {
               const hasEntry = hasJournalEntry(day);
               
               return (
                 <div className="relative flex h-9 w-9 items-center justify-center">
-                  {props.children}
+                  <div>{day.getDate()}</div>
                   {hasEntry && (
                     <Badge 
                       className="absolute bottom-0 right-0 w-2 h-2 p-0" 

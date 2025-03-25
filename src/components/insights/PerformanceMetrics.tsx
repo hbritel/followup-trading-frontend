@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LineChart, ResponsiveContainer, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { BarChart, LineChart, ResponsiveContainer, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from "recharts";
 
 const PerformanceMetrics = () => {
   const { t } = useTranslation();
@@ -49,13 +48,11 @@ const PerformanceMetrics = () => {
                 name={t('insights.profit')} 
                 fill="#10b981"
                 radius={[4, 4, 0, 0]}
-                // Use cell component to color bars individually
-                children={
-                  monthlyPerformance.map((entry, index) => (
-                    <cell key={`cell-${index}`} fill={getBarFill(entry)} />
-                  ))
-                }
-              />
+              >
+                {monthlyPerformance.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarFill(entry)} />
+                ))}
+              </Bar>
               <Line 
                 type="monotone" 
                 dataKey="trades" 
