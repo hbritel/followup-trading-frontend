@@ -46,7 +46,7 @@ const JournalCalendar = () => {
               
               return (
                 <div className="relative flex h-9 w-9 items-center justify-center">
-                  {props.day}
+                  {props.children}
                   {hasEntry && (
                     <Badge 
                       className="absolute bottom-0 right-0 w-2 h-2 p-0" 

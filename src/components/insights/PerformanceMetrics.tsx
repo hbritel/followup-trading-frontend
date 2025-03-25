@@ -24,6 +24,11 @@ const PerformanceMetrics = () => {
     { name: 'Momentum', winRate: 62, profitFactor: 1.5, expectancy: 0.6 },
   ];
   
+  // Custom function to get bar fill color based on profit
+  const getBarFill = (entry: any) => {
+    return entry.profit >= 0 ? "#10b981" : "#ef4444";
+  };
+  
   return (
     <div className="space-y-6">
       <Card>
@@ -42,8 +47,14 @@ const PerformanceMetrics = () => {
               <Bar 
                 dataKey="profit" 
                 name={t('insights.profit')} 
-                fill={({ profit }) => profit >= 0 ? "#10b981" : "#ef4444"}
-                radius={[4, 4, 0, 0]} 
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
+                // Use cell component to color bars individually
+                children={
+                  monthlyPerformance.map((entry, index) => (
+                    <cell key={`cell-${index}`} fill={getBarFill(entry)} />
+                  ))
+                }
               />
               <Line 
                 type="monotone" 

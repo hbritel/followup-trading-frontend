@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, BarChart, ResponsiveContainer, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { LineChart, BarChart, ResponsiveContainer, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Download, Save } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,6 +46,11 @@ const BacktestResults = () => {
     { name: t('backtesting.largestWin'), value: '$850', highlight: false },
     { name: t('backtesting.largestLoss'), value: '-$430', highlight: false },
   ];
+  
+  // Function to determine bar color based on return value
+  const getReturnColor = (value: number) => {
+    return value >= 0 ? "#10b981" : "#ef4444";
+  };
   
   return (
     <div className="space-y-6">
@@ -121,9 +126,13 @@ const BacktestResults = () => {
               <Bar 
                 dataKey="return" 
                 name={t('backtesting.return')}
-                fill={({ return: value }) => value >= 0 ? "#10b981" : "#ef4444"}
-                radius={[4, 4, 0, 0]} 
-              />
+                radius={[4, 4, 0, 0]}
+                fill="#10b981"
+              >
+                {monthlyReturns.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getReturnColor(entry.return)} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
