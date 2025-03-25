@@ -30,6 +30,13 @@ import Settings from "./pages/Settings";
 import AccountManagement from "./pages/AccountManagement";
 import NotFound from "./pages/NotFound";
 
+// Nouvelles pages
+import DailyJournal from "./pages/DailyJournal";
+import Playbook from "./pages/Playbook";
+import Insights from "./pages/Insights";
+import Backtesting from "./pages/Backtesting";
+import TradeReplay from "./pages/TradeReplay";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -184,6 +191,48 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TrustedDevices />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Nouvelles routes */}
+            <Route 
+              path="/journal" 
+              element={
+                <ProtectedRoute>
+                  <DailyJournal />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/playbook" 
+              element={
+                <ProtectedRoute>
+                  <Playbook />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/insights" 
+              element={
+                <ProtectedRoute>
+                  <Insights />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/backtesting" 
+              element={
+                <ProtectedRoute>
+                  <Backtesting />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/trade-replay" 
+              element={
+                <ProtectedRoute>
+                  <TradeReplay />
                 </ProtectedRoute>
               } 
             />

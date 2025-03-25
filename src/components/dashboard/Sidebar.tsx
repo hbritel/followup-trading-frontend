@@ -14,7 +14,11 @@ import {
   Settings,
   Shuffle,
   TrendingUp,
-  Users
+  BookOpen,
+  Lightbulb,
+  BarChart2,
+  Play,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -106,6 +110,15 @@ const DashboardSidebar = ({ collapseState }: SidebarProps) => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/journal')} tooltip="Journal">
+                  <Link to="/journal">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{t('navbar.journal')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -133,10 +146,54 @@ const DashboardSidebar = ({ collapseState }: SidebarProps) => {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/insights')} tooltip="Insights">
+                  <Link to="/insights">
+                    <Lightbulb className="h-4 w-4" />
+                    <span>{t('navbar.insights')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild className="gap-2" isActive={isActive('/reports')} tooltip="Reports">
                   <Link to="/reports">
                     <PieChart className="h-4 w-4" />
                     <span>{t('navbar.reports')}</span>
+                    <Badge className="ml-auto text-xs" variant="secondary">New</Badge>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+          <SidebarGroupLabel>{t('sidebar.trading')}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/playbook')} tooltip="Playbook">
+                  <Link to="/playbook">
+                    <Layers className="h-4 w-4" />
+                    <span>{t('navbar.playbook')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/backtesting')} tooltip="Backtesting">
+                  <Link to="/backtesting">
+                    <BarChart2 className="h-4 w-4" />
+                    <span>{t('navbar.backtesting')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="gap-2" isActive={isActive('/trade-replay')} tooltip="Trade Replay">
+                  <Link to="/trade-replay">
+                    <Play className="h-4 w-4" />
+                    <span>{t('navbar.tradeReplay')}</span>
                     <Badge className="ml-auto text-xs" variant="secondary">New</Badge>
                   </Link>
                 </SidebarMenuButton>
