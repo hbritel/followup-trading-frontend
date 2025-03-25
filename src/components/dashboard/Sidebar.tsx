@@ -61,8 +61,8 @@ const DashboardSidebar = ({ collapseState }: SidebarProps) => {
     >
       <SidebarHeader className="flex justify-center items-center py-6">
         <div className="flex flex-col items-center justify-center gap-1">
-          <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">DN</div>
-          <span className="text-xs font-semibold transition-opacity duration-200 data-[state=collapsed]:opacity-0 data-[state=collapsed]:h-0 data-[state=collapsed]:overflow-hidden">DashNest Trader</span>
+          <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">FT</div>
+          <span className="text-xs font-semibold transition-opacity duration-200 data-[state=collapsed]:opacity-0 data-[state=collapsed]:h-0 data-[state=collapsed]:overflow-hidden">Followup Trading</span>
         </div>
       </SidebarHeader>
       

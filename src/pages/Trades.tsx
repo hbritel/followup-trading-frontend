@@ -23,6 +23,7 @@ import TradesTable from '@/components/trades/TradesTable';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
+import NewTradeDialog from "@/components/dialogs/NewTradeDialog.tsx";
 
 const Trades = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,11 +72,14 @@ const Trades = () => {
                   visibleColumns={visibleColumns}
                   onVisibilityChange={handleVisibilityChange}
                 />
-                
-                <Button className="w-full sm:w-auto">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  New Trade
-                </Button>
+                <NewTradeDialog
+                    trigger={
+                      <Button className="w-full sm:w-auto">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        New Trade
+                      </Button>
+                    }
+                    />
               </div>
             </div>
           </CardHeader>

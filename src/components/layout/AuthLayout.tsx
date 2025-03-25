@@ -21,7 +21,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       <div className="hidden md:flex md:w-1/2 bg-primary/10 items-center justify-center p-10">
         <div className="max-w-md">
           <div className="relative w-20 h-20 flex items-center justify-center rounded-xl bg-primary text-3xl font-bold text-white mb-8">DN</div>
-          <h1 className="text-4xl font-bold mb-6">DashNest Trader</h1>
+          <h1 className="text-4xl font-bold mb-6">Followup Trading</h1>
           <p className="text-lg text-muted-foreground">
             Streamline your trading workflow, track performance, and make data-driven decisions.
           </p>
@@ -49,7 +49,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
         </div>
         
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} DashNest Trader. All rights reserved.
+          &copy; {new Date().getFullYear()} Followup Trading. All rights reserved.
         </div>
       </div>
     </div>

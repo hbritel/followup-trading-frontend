@@ -73,5 +73,18 @@
     "location": "Ubicación",
     "device": "Dispositivo",
     "revokeAccess": "Revocar acceso"
+  },
+  "trades": {
+    "newTrade": "New Trade",
+    "newTradeDescription": "Enter the details of your trade",
+    "symbol": "Symbol",
+    "symbolDescription": "Enter the symbol of your trade",
+    "type": "Type",
+    "selectType": "Select a type",
+    "buy": "Buy",
+    "sell": "Sell",
+    "price": "Price",
+    "quantity": "Quantity",
+    "date": "Date"
   }
 }

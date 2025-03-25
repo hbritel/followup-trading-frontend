@@ -18,7 +18,7 @@ const Home = () => {
   const navigate = useNavigate();
   
   return (
-    <DashboardLayout pageTitle="Welcome to DashNest Trader">
+    <DashboardLayout pageTitle="Welcome to Followup Trading">
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>

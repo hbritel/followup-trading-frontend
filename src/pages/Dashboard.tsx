@@ -11,7 +11,7 @@ import TradingCalendar from '@/components/dashboard/Calendar';
 
 const Dashboard = () => {
   useEffect(() => {
-    document.title = "Dashboard | DashNest Trader";
+    document.title = "Dashboard | Followup Trading";
   }, []);
   
   return (

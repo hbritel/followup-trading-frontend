@@ -73,5 +73,18 @@
     "location": "Localisation",
     "device": "Appareil",
     "revokeAccess": "Révoquer l'accès"
+  },
+  "trades": {
+    "newTrade": "Nouveau Trade",
+    "newTradeDescription": "Entrer les détails de votre trade",
+    "symbol": "Symbole",
+    "symbolDescription": "Entrer le symbole de votre trade",
+    "type": "Type",
+    "selectType": "Selectionner un type",
+    "buy": "Buy",
+    "sell": "Sell",
+    "price": "Prix",
+    "quantity": "Quantité",
+    "date": "Date"
   }
 }

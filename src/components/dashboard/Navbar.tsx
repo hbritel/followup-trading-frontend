@@ -51,7 +51,7 @@ const Navbar = () => {
             </Button>
           </SidebarTrigger>
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-lg">DashNest Trader</span>
+            <span className="font-semibold text-lg">Followup Trading</span>
           </div>
         </div>
         

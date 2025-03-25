@@ -15,7 +15,8 @@
     "save": "Save",
     "delete": "Delete",
     "continue": "Continue",
-    "verificationCode": "Verification Code"
+    "verificationCode": "Verification Code",
+    "create": "Create"
   },
   "auth": {
     "loginTitle": "Log in to your account",
@@ -73,5 +74,18 @@
     "location": "Location",
     "device": "Device",
     "revokeAccess": "Revoke Access"
+  },
+  "trades": {
+    "newTrade": "New Trade",
+    "newTradeDescription": "Enter the details of your trade",
+    "symbol": "Symbol",
+    "symbolDescription": "Enter the symbol of your trade",
+    "type": "Type",
+    "selectType": "Select a type",
+    "buy": "Buy",
+    "sell": "Sell",
+    "price": "Price",
+    "quantity": "Quantity",
+    "date": "Date"
   }
 }
