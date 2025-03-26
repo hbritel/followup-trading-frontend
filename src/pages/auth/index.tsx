@@ -4,7 +4,7 @@ import Signup from './Signup';
 import ResetPassword from './ResetPassword';
 import MFA from './MFA';
 import MFASetup from './MFASetup';
-import Index from './Index';
+import IndexPage from './IndexPage';
 
 export {
   Login,
@@ -12,5 +12,5 @@ export {
   ResetPassword,
   MFA,
   MFASetup,
-  Index,
+  IndexPage as Index,
 };

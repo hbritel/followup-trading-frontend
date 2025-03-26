@@ -16,7 +16,7 @@ import TrustedDevices from './auth/TrustedDevices';
 import Reports from './Reports';
 import Backtesting from './Backtesting';
 import TradeReplay from './TradeReplay';
-import Index from './Index';
+import IndexPage from './IndexPage';
 
 export {
   Dashboard,
@@ -36,5 +36,5 @@ export {
   Reports,
   Backtesting,
   TradeReplay,
-  Index,
+  IndexPage as Index,
 };
