@@ -16,3 +16,4 @@ export { default as TrustedDevices } from './auth/TrustedDevices';
 export { default as Reports } from './Reports';
 export { default as Backtesting } from './Backtesting';
 export { default as TradeReplay } from './TradeReplay';
+export { default as Administration } from './Administration';

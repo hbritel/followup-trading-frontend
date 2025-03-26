@@ -13,15 +13,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   pageTitle = "Dashboard"
 }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   useEffect(() => {
     const handleScroll = () => {
       // Collapse sidebar when scrolling horizontally
       if (window.scrollX > 10) {
-        setSidebarCollapsed(true);
+        setSidebarOpen(false);
       } else if (window.scrollX < 5) {
-        setSidebarCollapsed(false);
+        setSidebarOpen(true);
       }
     };
     
@@ -30,9 +30,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   }, []);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="flex min-h-screen w-full bg-background">
-        <DashboardSidebar collapseState={sidebarCollapsed ? "collapsed" : "expanded"} />
+        <DashboardSidebar />
         <main className="flex flex-col flex-1 w-full">
           <Navbar />
           <div className="flex-1 p-4 pb-6 md:p-6">

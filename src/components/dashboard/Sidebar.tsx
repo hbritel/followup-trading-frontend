@@ -18,11 +18,11 @@ import {
   Shield as ShieldIcon,
   Wallet as WalletIcon,
 } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DashboardSidebar = () => {
   const { t } = useTranslation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const sidebarGroups = [
     {
