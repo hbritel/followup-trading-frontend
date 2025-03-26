@@ -3,6 +3,33 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
+interface FilterOptions {
+  symbols?: string[];
+  strategies?: string[];
+  dateRange?: {
+    from: Date | undefined;
+    to: Date | undefined;
+  };
+  status?: string[];
+  types?: string[];
+  tags?: string[];
+  profitRange?: [number, number];
+  riskRewardRange?: [number, number];
+  holdingPeriodRange?: [number, number];
+  winningTradesOnly?: boolean;
+  losingTradesOnly?: boolean;
+  withNotesOnly?: boolean;
+  marketAlignment?: string;
+  advancedFilters?: {
+    minProfitPercent?: number;
+    maxDrawdown?: number;
+    minEntryQuality?: number;
+    minExitQuality?: number;
+    hasStoploss?: boolean;
+    hasTakeProfit?: boolean;
+  };
+}
+
 interface TradesTableProps {
   visibleColumns: {
     symbol: boolean;
@@ -21,10 +48,16 @@ interface TradesTableProps {
     createdAt: boolean;
     updatedAt: boolean;
     plPercentage: boolean;
+    riskReward?: boolean;
+    holdingPeriod?: boolean;
+    marketAlignment?: boolean;
+    strategyName?: boolean;
+    tags?: boolean;
   };
   searchQuery: string;
   statusFilter: string;
   typeFilter: string;
+  advancedFilters?: FilterOptions | null;
 }
 
 // Sample data - in a real app, this would come from an API or context
@@ -45,7 +78,8 @@ const TradesTable: React.FC<TradesTableProps> = ({
   visibleColumns, 
   searchQuery,
   statusFilter,
-  typeFilter 
+  typeFilter,
+  advancedFilters 
 }) => {
   // Filter trades based on search query and filters
   const filteredTrades = tradesData.filter(trade => {
@@ -66,6 +100,8 @@ const TradesTable: React.FC<TradesTableProps> = ({
       typeFilter === 'all' || 
       trade.type === typeFilter;
 
+    // Advanced filters would be implemented here in a real app
+    // For now, we'll just return the simple filter matches
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -90,6 +126,11 @@ const TradesTable: React.FC<TradesTableProps> = ({
             {visibleColumns.notes && <TableHead>Notes</TableHead>}
             {visibleColumns.createdAt && <TableHead className="hidden md:table-cell">Created</TableHead>}
             {visibleColumns.updatedAt && <TableHead className="hidden md:table-cell">Updated</TableHead>}
+            {visibleColumns.riskReward && <TableHead>R:R</TableHead>}
+            {visibleColumns.holdingPeriod && <TableHead>Holding</TableHead>}
+            {visibleColumns.marketAlignment && <TableHead>Alignment</TableHead>}
+            {visibleColumns.strategyName && <TableHead>Strategy</TableHead>}
+            {visibleColumns.tags && <TableHead>Tags</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -150,6 +191,11 @@ const TradesTable: React.FC<TradesTableProps> = ({
                 {visibleColumns.notes && <TableCell>{trade.notes}</TableCell>}
                 {visibleColumns.createdAt && <TableCell className="hidden md:table-cell">{trade.createdAt}</TableCell>}
                 {visibleColumns.updatedAt && <TableCell className="hidden md:table-cell">{trade.updatedAt}</TableCell>}
+                {visibleColumns.riskReward && <TableCell>-</TableCell>}
+                {visibleColumns.holdingPeriod && <TableCell>-</TableCell>}
+                {visibleColumns.marketAlignment && <TableCell>-</TableCell>}
+                {visibleColumns.strategyName && <TableCell>-</TableCell>}
+                {visibleColumns.tags && <TableCell>-</TableCell>}
               </TableRow>
             ))
           )}

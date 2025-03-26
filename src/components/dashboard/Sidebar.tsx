@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,11 +19,15 @@ import {
   Shield as ShieldIcon,
   Wallet as WalletIcon,
 } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const DashboardSidebar = () => {
+interface SidebarProps {
+  collapseState?: "collapsed" | "expanded";
+}
+
+const DashboardSidebar: React.FC<SidebarProps> = ({ collapseState = "expanded" }) => {
   const { t } = useTranslation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const sidebarGroups = [
     {
