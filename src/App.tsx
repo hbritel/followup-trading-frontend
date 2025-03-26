@@ -1,249 +1,78 @@
-
+import React, { Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/auth-context";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { LoadingFallback } from "@/components/loading-fallback";
+import {
+  Index,
+  Login,
+  Signup,
+  ResetPassword,
+  MFA,
+  MFASetup,
+} from "@/pages/auth";
+import {
+  Dashboard,
+  Trades,
+  DailyJournal,
+  Calendar,
+  Activity,
+  Playbook,
+  Insights,
+  Performance,
+  Statistics,
+  Watchlists,
+  Accounts,
+  AccountManagement,
+  Settings,
+  TrustedDevices,
+  Reports,
+  Backtesting,
+  TradeReplay,
+} from "@/pages";
+import { Administration } from "@/pages/Administration";
+import { NotFound } from "@/pages/not-found";
+import { ProtectedRoute } from "@/components/protected-route";
 
-// Auth pages
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
-import ResetPassword from "./pages/auth/ResetPassword";
-import MFA from "./pages/auth/MFA";
-import MFASetup from "./pages/auth/MFASetup";
-import TrustedDevices from "./pages/auth/TrustedDevices";
-
-// Main app pages
-import Dashboard from "./pages/Dashboard";
-import Home from "./pages/Home";
-import Trades from "./pages/Trades";
-import Calendar from "./pages/Calendar";
-import Performance from "./pages/Performance";
-import Statistics from "./pages/Statistics";
-import Reports from "./pages/Reports";
-import Accounts from "./pages/Accounts";
-import Watchlists from "./pages/Watchlists";
-import Activity from "./pages/Activity";
-import Settings from "./pages/Settings";
-import AccountManagement from "./pages/AccountManagement";
-import NotFound from "./pages/NotFound";
-
-// Nouvelles pages
-import DailyJournal from "./pages/DailyJournal";
-import Playbook from "./pages/Playbook";
-import Insights from "./pages/Insights";
-import Backtesting from "./pages/Backtesting";
-import TradeReplay from "./pages/TradeReplay";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <div className="min-h-screen">
+      <Suspense fallback={<LoadingFallback />}>
         <AuthProvider>
           <Routes>
-            {/* Auth routes - no authentication required */}
-            <Route 
-              path="/auth/login" 
-              element={
-                <ProtectedRoute requireAuth={false}>
-                  <Login />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/auth/signup" 
-              element={
-                <ProtectedRoute requireAuth={false}>
-                  <Signup />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/auth/reset-password" 
-              element={
-                <ProtectedRoute requireAuth={false}>
-                  <ResetPassword />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/auth/mfa" 
-              element={
-                <ProtectedRoute>
-                  <MFA />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Protected routes - authentication required */}
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/trades" 
-              element={
-                <ProtectedRoute>
-                  <Trades />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/calendar" 
-              element={
-                <ProtectedRoute>
-                  <Calendar />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/performance" 
-              element={
-                <ProtectedRoute>
-                  <Performance />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/statistics" 
-              element={
-                <ProtectedRoute>
-                  <Statistics />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reports" 
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/accounts" 
-              element={
-                <ProtectedRoute>
-                  <Accounts />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/watchlists" 
-              element={
-                <ProtectedRoute>
-                  <Watchlists />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/activity" 
-              element={
-                <ProtectedRoute>
-                  <Activity />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/account" 
-              element={
-                <ProtectedRoute>
-                  <AccountManagement />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/auth/mfa-setup" 
-              element={
-                <ProtectedRoute>
-                  <MFASetup />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/auth/trusted-devices" 
-              element={
-                <ProtectedRoute>
-                  <TrustedDevices />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Nouvelles routes */}
-            <Route 
-              path="/journal" 
-              element={
-                <ProtectedRoute>
-                  <DailyJournal />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/playbook" 
-              element={
-                <ProtectedRoute>
-                  <Playbook />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/insights" 
-              element={
-                <ProtectedRoute>
-                  <Insights />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/backtesting" 
-              element={
-                <ProtectedRoute>
-                  <Backtesting />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/trade-replay" 
-              element={
-                <ProtectedRoute>
-                  <TradeReplay />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Catch-all route */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/mfa" element={<MFA />} />
+            <Route path="/mfa-setup" element={<MFASetup />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/trades" element={<Trades />} />
+              <Route path="/daily-journal" element={<DailyJournal />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/activity" element={<Activity />} />
+              <Route path="/playbook" element={<Playbook />} />
+              <Route path="/insights" element={<Insights />} />
+              <Route path="/performance" element={<Performance />} />
+              <Route path="/statistics" element={<Statistics />} />
+              <Route path="/watchlists" element={<Watchlists />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/account-management" element={<AccountManagement />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/trusted-devices" element={<TrustedDevices />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/backtesting" element={<Backtesting />} />
+              <Route path="/trade-replay" element={<TradeReplay />} />
+              <Route path="/administration" element={<Administration />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </Suspense>
+      <Toaster />
+    </div>
+  );
+}
 
 export default App;
