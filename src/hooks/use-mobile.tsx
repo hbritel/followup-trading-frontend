@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -18,6 +17,3 @@ export function useIsMobile() {
 
   return !!isMobile
 }
-
-// Export an alias for the hook to maintain compatibility with existing code
-export const useMobile = useIsMobile;
