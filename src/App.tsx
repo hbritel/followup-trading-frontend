@@ -30,6 +30,7 @@ import {
   Reports,
   Backtesting,
   TradeReplay,
+  Administration,
 } from "@/pages";
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -68,6 +69,7 @@ function App() {
               <Route path="/reports" element={<Reports />} />
               <Route path="/backtesting" element={<Backtesting />} />
               <Route path="/trade-replay" element={<TradeReplay />} />
+              <Route path="/administration" element={<Administration />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
