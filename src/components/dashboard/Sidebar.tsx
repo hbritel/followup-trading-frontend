@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,7 +15,6 @@ import {
   PieChart as PieChartIcon,
   RefreshCcw as RefreshCcwIcon,
   Rewind as RewindIcon,
-  Settings as SettingsIcon,
   Shield as ShieldIcon,
   Wallet as WalletIcon,
 } from "lucide-react";
@@ -53,7 +53,6 @@ const DashboardSidebar = () => {
       items: [
         { href: "/accounts", label: t('sidebar.accounts'), icon: WalletIcon },
         { href: "/account-management", label: t('sidebar.accountManagement'), icon: CircleDollarSignIcon },
-        { href: "/settings", label: t('sidebar.settings'), icon: SettingsIcon },
         { href: "/administration", label: t('sidebar.administration'), icon: ShieldIcon },
       ],
     },

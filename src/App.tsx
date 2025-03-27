@@ -30,10 +30,9 @@ import {
   Reports,
   Backtesting,
   TradeReplay,
-  Administration
 } from "@/pages";
 import { NotFound } from "@/pages/not-found";
-import { ProtectedRoute } from "@/components/protected-route";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 
 function App() {
   return (
@@ -42,12 +41,17 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/mfa" element={<MFA />} />
-            <Route path="/mfa-setup" element={<MFASetup />} />
-            <Route element={<ProtectedRoute />}>
+            
+            {/* Auth routes with correct paths */}
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/signup" element={<Signup />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/mfa" element={<MFA />} />
+            <Route path="/auth/mfa-setup" element={<MFASetup />} />
+            <Route path="/auth/trusted-devices" element={<TrustedDevices />} />
+            
+            {/* Protected routes */}
+            <Route path="/" element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/trades" element={<Trades />} />
               <Route path="/daily-journal" element={<DailyJournal />} />
@@ -61,12 +65,11 @@ function App() {
               <Route path="/accounts" element={<Accounts />} />
               <Route path="/account-management" element={<AccountManagement />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/trusted-devices" element={<TrustedDevices />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/backtesting" element={<Backtesting />} />
               <Route path="/trade-replay" element={<TradeReplay />} />
-              <Route path="/administration" element={<Administration />} />
             </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
