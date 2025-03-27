@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -19,8 +18,6 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Filter, 
-  Download, 
-  Upload, 
   Plus, 
   Columns, 
   Search 
@@ -361,7 +358,7 @@ const Trades = () => {
         {showAdvancedFilter && (
           <Card className="p-4">
             <AdvancedTradeFilter 
-              filters={advancedFilters}
+              advancedFilters={advancedFilters}
               onFilterChange={setAdvancedFilters}
               onApply={() => setShowAdvancedFilter(false)}
               onReset={handleResetAdvancedFilters}
@@ -372,7 +369,7 @@ const Trades = () => {
         {showColumnFilter && (
           <Card className="p-4">
             <TradeColumnFilter 
-              columns={visibleColumns}
+              visibleColumns={visibleColumns}
               onChange={handleColumnVisibilityChange}
               onApply={() => setShowColumnFilter(false)}
               onReset={handleResetColumnVisibility}

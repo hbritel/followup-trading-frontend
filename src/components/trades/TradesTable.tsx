@@ -61,7 +61,6 @@ export const TradesTable: React.FC<TradesTableProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  // Filter trades based on search query, status, and type
   const filteredTrades = trades.filter((trade) => {
     const matchesSearch =
       searchQuery === '' ||
@@ -75,7 +74,6 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Get status badge variant
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'open':
@@ -91,7 +89,6 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     }
   };
 
-  // Get type badge variant
   const getTypeBadgeVariant = (type: string) => {
     switch (type) {
       case 'long':
