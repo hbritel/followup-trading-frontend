@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,7 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const TradeImportExport = () => {
+interface TradeImportExportProps {
+  onImport?: (trades: any[]) => void;
+  onExport?: () => void;
+}
+
+const TradeImportExport: React.FC<TradeImportExportProps> = ({ onImport, onExport }) => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 

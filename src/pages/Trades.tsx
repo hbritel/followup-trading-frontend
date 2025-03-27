@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -11,9 +12,9 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { TradesTableWrapper } from '@/components/trades/TradesTableWrapper';
-import { AdvancedTradeFilter } from '@/components/trades/AdvancedTradeFilter';
-import { TradeColumnFilter } from '@/components/trades/TradeColumnFilter';
-import { TradeImportExport } from '@/components/trades/TradeImportExport';
+import AdvancedTradeFilter from '@/components/trades/AdvancedTradeFilter';
+import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
+import TradeImportExport from '@/components/trades/TradeImportExport';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { 
