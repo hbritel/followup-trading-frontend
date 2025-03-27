@@ -1,162 +1,282 @@
-
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useTranslation } from 'react-i18next';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils';
+import { Edit, Eye, MoreHorizontal, Trash2 } from 'lucide-react';
+
+interface Trade {
+  id: string;
+  symbol: string;
+  type: 'long' | 'short' | 'option' | 'future' | 'crypto' | 'forex';
+  status: 'open' | 'closed' | 'pending' | 'cancelled';
+  entryDate: string;
+  exitDate?: string;
+  entryPrice: number;
+  exitPrice?: number;
+  quantity: number;
+  profit?: number;
+  profitPercentage?: number;
+  strategy?: string;
+  tags?: string[];
+  notes?: string;
+}
 
 interface TradesTableProps {
-  visibleColumns: {
-    symbol: boolean;
-    type: boolean;
-    price: boolean;
-    quantity: boolean;
-    date: boolean;
-    status: boolean;
-    pl: boolean;
-    entryPrice: boolean;
-    exitPrice: boolean;
-    stoploss: boolean;
-    takeProfit: boolean;
-    fees: boolean;
-    notes: boolean;
-    createdAt: boolean;
-    updatedAt: boolean;
-    plPercentage: boolean;
-  };
+  trades: Trade[];
+  visibleColumns: Record<string, boolean>;
   searchQuery: string;
   statusFilter: string;
   typeFilter: string;
+  onEdit?: (tradeId: string) => void;
+  onDelete?: (tradeId: string) => void;
+  onView?: (tradeId: string) => void;
 }
 
-// Sample data - in a real app, this would come from an API or context
-const tradesData = [
-  { id: 1, symbol: 'AAPL', type: 'buy', price: 182.52, entryPrice: 180.00, exitPrice: 182.52, quantity: 10, date: '2023-06-12', status: 'closed', pl: '+125.32', plPercentage: '+6.86%', stoploss: 175.00, takeProfit: 190.00, fees: 5.99, notes: 'Strong earnings', createdAt: '2023-06-10', updatedAt: '2023-06-12' },
-  { id: 2, symbol: 'MSFT', type: 'buy', price: 337.94, entryPrice: 330.00, exitPrice: 337.94, quantity: 5, date: '2023-06-10', status: 'closed', pl: '+87.45', plPercentage: '+5.17%', stoploss: 325.00, takeProfit: 345.00, fees: 5.99, notes: 'Cloud growth', createdAt: '2023-06-08', updatedAt: '2023-06-10' },
-  { id: 3, symbol: 'TSLA', type: 'sell', price: 193.17, entryPrice: 200.00, exitPrice: 193.17, quantity: 8, date: '2023-06-08', status: 'closed', pl: '-43.21', plPercentage: '-2.79%', stoploss: 205.00, takeProfit: 185.00, fees: 5.99, notes: 'Market concerns', createdAt: '2023-06-06', updatedAt: '2023-06-08' },
-  { id: 4, symbol: 'AMZN', type: 'buy', price: 127.90, entryPrice: 120.00, exitPrice: 127.90, quantity: 15, date: '2023-06-05', status: 'closed', pl: '+102.67', plPercentage: '+5.34%', stoploss: 115.00, takeProfit: 130.00, fees: 5.99, notes: 'Retail strength', createdAt: '2023-06-03', updatedAt: '2023-06-05' },
-  { id: 5, symbol: 'GOOGL', type: 'buy', price: 122.23, entryPrice: 118.00, exitPrice: 122.23, quantity: 12, date: '2023-06-01', status: 'closed', pl: '+65.43', plPercentage: '+4.47%', stoploss: 115.00, takeProfit: 125.00, fees: 5.99, notes: 'AI advancements', createdAt: '2023-05-29', updatedAt: '2023-06-01' },
-  { id: 6, symbol: 'NVDA', type: 'buy', price: 426.92, entryPrice: 426.92, exitPrice: null, quantity: 3, date: '2023-05-30', status: 'open', pl: '', plPercentage: '', stoploss: 400.00, takeProfit: 450.00, fees: 5.99, notes: 'AI chip demand', createdAt: '2023-05-30', updatedAt: '2023-05-30' },
-  { id: 7, symbol: 'META', type: 'sell', price: 326.49, entryPrice: 315.00, exitPrice: 326.49, quantity: 6, date: '2023-05-25', status: 'closed', pl: '+93.76', plPercentage: '+4.78%', stoploss: 310.00, takeProfit: 330.00, fees: 5.99, notes: 'User growth', createdAt: '2023-05-23', updatedAt: '2023-05-25' },
-  { id: 8, symbol: 'AMD', type: 'buy', price: 122.41, entryPrice: 122.41, exitPrice: null, quantity: 20, date: '2023-05-20', status: 'open', pl: '', plPercentage: '', stoploss: 115.00, takeProfit: 130.00, fees: 5.99, notes: 'Product launch', createdAt: '2023-05-20', updatedAt: '2023-05-20' },
-  { id: 9, symbol: 'INTC', type: 'sell', price: 33.96, entryPrice: 36.00, exitPrice: 33.96, quantity: 30, date: '2023-05-15', status: 'closed', pl: '-48.90', plPercentage: '-4.58%', stoploss: 38.00, takeProfit: 32.00, fees: 5.99, notes: 'Competition', createdAt: '2023-05-13', updatedAt: '2023-05-15' },
-  { id: 10, symbol: 'PYPL', type: 'buy', price: 60.12, entryPrice: 60.12, exitPrice: null, quantity: 15, date: '2023-05-10', status: 'open', pl: '', plPercentage: '', stoploss: 55.00, takeProfit: 65.00, fees: 5.99, notes: 'Payment trends', createdAt: '2023-05-10', updatedAt: '2023-05-10' },
-];
-
-const TradesTable: React.FC<TradesTableProps> = ({ 
-  visibleColumns, 
+export const TradesTable: React.FC<TradesTableProps> = ({
+  trades,
+  visibleColumns,
   searchQuery,
   statusFilter,
-  typeFilter 
+  typeFilter,
+  onEdit,
+  onDelete,
+  onView,
 }) => {
-  // Filter trades based on search query and filters
-  const filteredTrades = tradesData.filter(trade => {
-    // Search query check
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = 
-      searchQuery === '' || 
-      trade.symbol.toLowerCase().includes(searchLower) ||
-      trade.notes?.toLowerCase().includes(searchLower);
+  const { t } = useTranslation();
 
-    // Status filter check
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      trade.status === statusFilter;
+  // Filter trades based on search query, status, and type
+  const filteredTrades = trades.filter((trade) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      trade.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (trade.strategy && trade.strategy.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (trade.notes && trade.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Type filter check
-    const matchesType = 
-      typeFilter === 'all' || 
-      trade.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || trade.status === statusFilter;
+    const matchesType = typeFilter === 'all' || trade.type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  // Get status badge variant
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'open':
+        return 'default';
+      case 'closed':
+        return 'secondary';
+      case 'pending':
+        return 'outline';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  // Get type badge variant
+  const getTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case 'long':
+        return 'default';
+      case 'short':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
 
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            {visibleColumns.symbol && <TableHead>Symbol</TableHead>}
-            {visibleColumns.type && <TableHead>Type</TableHead>}
-            {visibleColumns.entryPrice && <TableHead>Entry Price</TableHead>}
-            {visibleColumns.exitPrice && <TableHead>Exit Price</TableHead>}
-            {visibleColumns.price && <TableHead className="hidden md:table-cell">Price</TableHead>}
-            {visibleColumns.quantity && <TableHead className="hidden md:table-cell">Quantity</TableHead>}
-            {visibleColumns.date && <TableHead className="hidden md:table-cell">Date</TableHead>}
-            {visibleColumns.stoploss && <TableHead>Stop Loss</TableHead>}
-            {visibleColumns.takeProfit && <TableHead>Take Profit</TableHead>}
-            {visibleColumns.fees && <TableHead>Fees</TableHead>}
-            {visibleColumns.status && <TableHead>Status</TableHead>}
-            {visibleColumns.pl && <TableHead className="text-right">P&L</TableHead>}
-            {visibleColumns.plPercentage && <TableHead className="text-right hidden md:table-cell">P&L %</TableHead>}
-            {visibleColumns.notes && <TableHead>Notes</TableHead>}
-            {visibleColumns.createdAt && <TableHead className="hidden md:table-cell">Created</TableHead>}
-            {visibleColumns.updatedAt && <TableHead className="hidden md:table-cell">Updated</TableHead>}
+            {visibleColumns.symbol && (
+              <TableHead>{t('trades.symbol')}</TableHead>
+            )}
+            {visibleColumns.type && (
+              <TableHead>{t('trades.type')}</TableHead>
+            )}
+            {visibleColumns.status && (
+              <TableHead>{t('trades.status')}</TableHead>
+            )}
+            {visibleColumns.entryDate && (
+              <TableHead>{t('trades.entryDate')}</TableHead>
+            )}
+            {visibleColumns.exitDate && (
+              <TableHead>{t('trades.exitDate')}</TableHead>
+            )}
+            {visibleColumns.entryPrice && (
+              <TableHead className="text-right">{t('trades.entryPrice')}</TableHead>
+            )}
+            {visibleColumns.exitPrice && (
+              <TableHead className="text-right">{t('trades.exitPrice')}</TableHead>
+            )}
+            {visibleColumns.quantity && (
+              <TableHead className="text-right">{t('trades.quantity')}</TableHead>
+            )}
+            {visibleColumns.profit && (
+              <TableHead className="text-right">{t('trades.profit')}</TableHead>
+            )}
+            {visibleColumns.profitPercentage && (
+              <TableHead className="text-right">{t('trades.profitPercentage')}</TableHead>
+            )}
+            {visibleColumns.strategy && (
+              <TableHead>{t('trades.strategy')}</TableHead>
+            )}
+            {visibleColumns.tags && (
+              <TableHead>{t('trades.tags')}</TableHead>
+            )}
+            <TableHead className="text-right">{t('common.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredTrades.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={Object.values(visibleColumns).filter(Boolean).length} className="text-center py-8 text-muted-foreground">
-                No trades found matching your criteria
-              </TableCell>
-            </TableRow>
-          ) : (
+          {filteredTrades.length > 0 ? (
             filteredTrades.map((trade) => (
               <TableRow key={trade.id}>
-                {visibleColumns.symbol && <TableCell className="font-medium">{trade.symbol}</TableCell>}
+                {visibleColumns.symbol && (
+                  <TableCell className="font-medium">{trade.symbol}</TableCell>
+                )}
                 {visibleColumns.type && (
                   <TableCell>
-                    <Badge variant={trade.type === 'buy' ? 'default' : 'secondary'}>
-                      {trade.type.toUpperCase()}
+                    <Badge variant={getTypeBadgeVariant(trade.type)}>
+                      {t(`trades.${trade.type}`)}
                     </Badge>
                   </TableCell>
                 )}
-                {visibleColumns.entryPrice && <TableCell>${trade.entryPrice}</TableCell>}
-                {visibleColumns.exitPrice && <TableCell>{trade.exitPrice ? `$${trade.exitPrice}` : '-'}</TableCell>}
-                {visibleColumns.price && <TableCell className="hidden md:table-cell">${trade.price}</TableCell>}
-                {visibleColumns.quantity && <TableCell className="hidden md:table-cell">{trade.quantity}</TableCell>}
-                {visibleColumns.date && <TableCell className="hidden md:table-cell">{trade.date}</TableCell>}
-                {visibleColumns.stoploss && <TableCell>${trade.stoploss}</TableCell>}
-                {visibleColumns.takeProfit && <TableCell>${trade.takeProfit}</TableCell>}
-                {visibleColumns.fees && <TableCell>${trade.fees}</TableCell>}
                 {visibleColumns.status && (
                   <TableCell>
-                    <Badge variant={trade.status === 'open' ? 'outline' : 'secondary'}>
-                      {trade.status}
+                    <Badge variant={getStatusBadgeVariant(trade.status)}>
+                      {t(`trades.${trade.status}`)}
                     </Badge>
                   </TableCell>
                 )}
-                {visibleColumns.pl && (
+                {visibleColumns.entryDate && (
+                  <TableCell>{formatDate(trade.entryDate)}</TableCell>
+                )}
+                {visibleColumns.exitDate && (
+                  <TableCell>{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
+                )}
+                {visibleColumns.entryPrice && (
+                  <TableCell className="text-right">{formatCurrency(trade.entryPrice)}</TableCell>
+                )}
+                {visibleColumns.exitPrice && (
                   <TableCell className="text-right">
-                    {trade.status === 'closed' ? (
-                      <div className={trade.pl.startsWith('+') ? 'text-profit' : 'text-loss'}>
-                        ${trade.pl}
-                      </div>
+                    {trade.exitPrice ? formatCurrency(trade.exitPrice) : '-'}
+                  </TableCell>
+                )}
+                {visibleColumns.quantity && (
+                  <TableCell className="text-right">{trade.quantity}</TableCell>
+                )}
+                {visibleColumns.profit && (
+                  <TableCell className="text-right">
+                    {trade.profit !== undefined ? (
+                      <span className={trade.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {formatCurrency(trade.profit)}
+                      </span>
                     ) : (
-                      <span className="text-muted-foreground">-</span>
+                      '-'
                     )}
                   </TableCell>
                 )}
-                {visibleColumns.plPercentage && (
-                  <TableCell className="hidden md:table-cell text-right">
-                    {trade.status === 'closed' ? (
-                      <div className={trade.plPercentage.startsWith('+') ? 'text-profit' : 'text-loss'}>
-                        {trade.plPercentage}
-                      </div>
+                {visibleColumns.profitPercentage && (
+                  <TableCell className="text-right">
+                    {trade.profitPercentage !== undefined ? (
+                      <span
+                        className={
+                          trade.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'
+                        }
+                      >
+                        {formatPercentage(trade.profitPercentage)}
+                      </span>
                     ) : (
-                      <span className="text-muted-foreground">-</span>
+                      '-'
                     )}
                   </TableCell>
                 )}
-                {visibleColumns.notes && <TableCell>{trade.notes}</TableCell>}
-                {visibleColumns.createdAt && <TableCell className="hidden md:table-cell">{trade.createdAt}</TableCell>}
-                {visibleColumns.updatedAt && <TableCell className="hidden md:table-cell">{trade.updatedAt}</TableCell>}
+                {visibleColumns.strategy && (
+                  <TableCell>{trade.strategy || '-'}</TableCell>
+                )}
+                {visibleColumns.tags && (
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {trade.tags && trade.tags.length > 0 ? (
+                        trade.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline">
+                            {tag}
+                          </Badge>
+                        ))
+                      ) : (
+                        '-'
+                      )}
+                    </div>
+                  </TableCell>
+                )}
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <span className="sr-only">{t('common.openMenu')}</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{t('trades.tradeActions')}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {onView && (
+                        <DropdownMenuItem onClick={() => onView(trade.id)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('common.view')}
+                        </DropdownMenuItem>
+                      )}
+                      {onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(trade.id)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          {t('common.edit')}
+                        </DropdownMenuItem>
+                      )}
+                      {onDelete && (
+                        <DropdownMenuItem onClick={() => onDelete(trade.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('common.delete')}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={Object.values(visibleColumns).filter(Boolean).length + 1}
+                className="h-24 text-center"
+              >
+                {searchQuery || statusFilter !== 'all' || typeFilter !== 'all'
+                  ? t('trades.noTradesFound')
+                  : t('trades.noTrades')}
+              </TableCell>
+            </TableRow>
           )}
         </TableBody>
       </Table>
     </div>
   );
 };
-
-export default TradesTable;

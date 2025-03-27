@@ -1,3 +1,4 @@
+
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -29,8 +30,8 @@ import {
   Reports,
   Backtesting,
   TradeReplay,
+  Administration
 } from "@/pages";
-import { Administration } from "@/pages/Administration";
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/protected-route";
 
