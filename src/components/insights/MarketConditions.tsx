@@ -72,7 +72,7 @@ const MarketConditions = () => {
             <LineChart data={marketPerformance}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis />
+              <YAxis id="performance-axis" />
               <Tooltip />
               <Legend />
               <Line 
@@ -80,13 +80,15 @@ const MarketConditions = () => {
                 dataKey="marketReturn" 
                 name={t('insights.marketReturn')} 
                 stroke="#8884d8" 
-                activeDot={{ r: 8 }} 
+                activeDot={{ r: 8 }}
+                yAxisId="performance-axis"
               />
               <Line 
                 type="monotone" 
                 dataKey="userReturn" 
                 name={t('insights.yourReturn')} 
-                stroke="#82ca9d" 
+                stroke="#82ca9d"
+                yAxisId="performance-axis"
               />
               <Line 
                 type="monotone" 
@@ -94,6 +96,7 @@ const MarketConditions = () => {
                 name={t('insights.volatility')} 
                 stroke="#ffc658" 
                 strokeDasharray="3 3"
+                yAxisId="performance-axis"
               />
             </LineChart>
           </ResponsiveContainer>
