@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -31,11 +32,17 @@ interface Trade {
   entryPrice: number;
   exitPrice?: number;
   quantity: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  direction?: 'long' | 'short';
   profit?: number;
   profitPercentage?: number;
+  fees?: number;
   strategy?: string;
-  tags?: string[];
   notes?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface TradesTableProps {
@@ -100,6 +107,17 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     }
   };
 
+  const getDirectionBadgeVariant = (direction: string) => {
+    switch (direction) {
+      case 'long':
+        return 'default';
+      case 'short':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -126,8 +144,17 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             {visibleColumns.exitPrice && (
               <TableHead className="text-right">{t('trades.exitPrice')}</TableHead>
             )}
+            {visibleColumns.stopLoss && (
+              <TableHead className="text-right">{t('trades.stopLoss')}</TableHead>
+            )}
+            {visibleColumns.takeProfit && (
+              <TableHead className="text-right">{t('trades.takeProfit')}</TableHead>
+            )}
             {visibleColumns.quantity && (
               <TableHead className="text-right">{t('trades.quantity')}</TableHead>
+            )}
+            {visibleColumns.direction && (
+              <TableHead>{t('trades.direction')}</TableHead>
             )}
             {visibleColumns.profit && (
               <TableHead className="text-right">{t('trades.profit')}</TableHead>
@@ -135,11 +162,23 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             {visibleColumns.profitPercentage && (
               <TableHead className="text-right">{t('trades.profitPercentage')}</TableHead>
             )}
+            {visibleColumns.fees && (
+              <TableHead className="text-right">{t('trades.fees')}</TableHead>
+            )}
             {visibleColumns.strategy && (
               <TableHead>{t('trades.strategy')}</TableHead>
             )}
+            {visibleColumns.notes && (
+              <TableHead>{t('trades.notes')}</TableHead>
+            )}
             {visibleColumns.tags && (
               <TableHead>{t('trades.tags')}</TableHead>
+            )}
+            {visibleColumns.createdAt && (
+              <TableHead>{t('trades.createdAt')}</TableHead>
+            )}
+            {visibleColumns.updatedAt && (
+              <TableHead>{t('trades.updatedAt')}</TableHead>
             )}
             <TableHead className="text-right">{t('common.actions')}</TableHead>
           </TableRow>
@@ -179,8 +218,27 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                     {trade.exitPrice !== undefined ? formatCurrency(trade.exitPrice) : '-'}
                   </TableCell>
                 )}
+                {visibleColumns.stopLoss && (
+                  <TableCell className="text-right">
+                    {trade.stopLoss !== undefined ? formatCurrency(trade.stopLoss) : '-'}
+                  </TableCell>
+                )}
+                {visibleColumns.takeProfit && (
+                  <TableCell className="text-right">
+                    {trade.takeProfit !== undefined ? formatCurrency(trade.takeProfit) : '-'}
+                  </TableCell>
+                )}
                 {visibleColumns.quantity && (
                   <TableCell className="text-right">{trade.quantity}</TableCell>
+                )}
+                {visibleColumns.direction && (
+                  <TableCell>
+                    {trade.direction ? (
+                      <Badge variant={getDirectionBadgeVariant(trade.direction)}>
+                        {t(`trades.${trade.direction}`)}
+                      </Badge>
+                    ) : '-'}
+                  </TableCell>
                 )}
                 {visibleColumns.profit && (
                   <TableCell className="text-right">
@@ -208,8 +266,18 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                     )}
                   </TableCell>
                 )}
+                {visibleColumns.fees && (
+                  <TableCell className="text-right">
+                    {trade.fees !== undefined ? formatCurrency(trade.fees) : '-'}
+                  </TableCell>
+                )}
                 {visibleColumns.strategy && (
                   <TableCell>{trade.strategy || '-'}</TableCell>
+                )}
+                {visibleColumns.notes && (
+                  <TableCell>
+                    <div className="max-w-xs truncate">{trade.notes || '-'}</div>
+                  </TableCell>
                 )}
                 {visibleColumns.tags && (
                   <TableCell>
@@ -225,6 +293,12 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                       )}
                     </div>
                   </TableCell>
+                )}
+                {visibleColumns.createdAt && (
+                  <TableCell>{formatDate(trade.createdAt)}</TableCell>
+                )}
+                {visibleColumns.updatedAt && (
+                  <TableCell>{formatDate(trade.updatedAt)}</TableCell>
                 )}
                 <TableCell className="text-right">
                   <DropdownMenu>
