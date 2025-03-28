@@ -16,6 +16,7 @@ import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 import { 
   Filter, 
   Plus, 
@@ -184,6 +185,7 @@ const Trades = () => {
     profitRange: { min: null, max: null },
     tags: [] as string[],
   });
+  const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
 
   useEffect(() => {
     // Simulate loading trades from an API
@@ -192,10 +194,7 @@ const Trades = () => {
   }, []);
 
   const handleNewTrade = () => {
-    toast({
-      title: t('trades.newTrade'),
-      description: t('trades.newTradeDescription'),
-    });
+    setShowNewTradeDialog(true);
   };
 
   const handleEditTrade = (tradeId: string) => {
@@ -348,7 +347,7 @@ const Trades = () => {
               onImport={handleImportTrades}
               onExport={handleExportTrades}
             />
-            <Button onClick={() => handleNewTrade()}>
+            <Button onClick={handleNewTrade}>
               <Plus className="mr-2 h-4 w-4" />
               {t('trades.newTrade')}
             </Button>
@@ -391,6 +390,11 @@ const Trades = () => {
           />
         </div>
       </div>
+      
+      <NewTradeDialog 
+        open={showNewTradeDialog} 
+        onOpenChange={setShowNewTradeDialog} 
+      />
     </DashboardLayout>
   );
 };

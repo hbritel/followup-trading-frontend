@@ -12,6 +12,36 @@ import {
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 
 const eventTypes = {
   trade: { label: 'Trade', color: 'bg-blue-500' },
@@ -31,13 +61,44 @@ const events = [
   { id: 7, date: new Date(2023, 5, 22), title: 'Review Trading Strategy', type: 'reminder', description: 'Monthly review' },
 ];
 
+const eventFormSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  type: z.string().min(1, { message: "Event type is required" }),
+  date: z.date({ required_error: "Date is required" }),
+  description: z.string().optional(),
+});
+
+type EventFormValues = z.infer<typeof eventFormSchema>;
+
 const CalendarPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      title: "",
+      type: "",
+      date: selectedDate || new Date(),
+      description: "",
+    },
+  });
 
   const handleSelect = (day: Date | undefined) => {
     setDate(day);
     if (day) setSelectedDate(day);
+  };
+
+  const onSubmit = (data: EventFormValues) => {
+    console.log('New event:', data);
+    toast({
+      title: "Event added",
+      description: `${data.title} has been added to your calendar`,
+    });
+    setIsAddEventOpen(false);
+    form.reset();
   };
 
   // Get events for the selected date
@@ -58,7 +119,7 @@ const CalendarPage = () => {
               <CardTitle>Trading Calendar</CardTitle>
               <CardDescription>Plan and track your trading activities</CardDescription>
             </div>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddEventOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Event
             </Button>
@@ -153,6 +214,101 @@ const CalendarPage = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Add Event Dialog */}
+      <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Event</DialogTitle>
+            <DialogDescription>
+              Create a new event for your trading calendar.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Event title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(eventTypes).map(([key, { label }]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                        onChange={e => field.onChange(new Date(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Event details" 
+                        className="resize-none" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="submit">Add Event</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

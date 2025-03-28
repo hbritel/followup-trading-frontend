@@ -1,8 +1,10 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TradeColumnFilterProps {
   visibleColumns: Record<string, boolean>;
@@ -17,25 +19,50 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
   onApply,
   onReset
 }) => {
-  // This is a placeholder component
+  const { t } = useTranslation();
+  
+  const allColumns = [
+    { id: 'symbol', label: t('trades.symbol') },
+    { id: 'type', label: t('trades.type') },
+    { id: 'status', label: t('trades.status') },
+    { id: 'entryDate', label: t('trades.entryDate') },
+    { id: 'exitDate', label: t('trades.exitDate') },
+    { id: 'entryPrice', label: t('trades.entryPrice') },
+    { id: 'exitPrice', label: t('trades.exitPrice') },
+    { id: 'stopLoss', label: t('trades.stopLoss') },
+    { id: 'takeProfit', label: t('trades.takeProfit') },
+    { id: 'quantity', label: t('trades.quantity') },
+    { id: 'direction', label: t('trades.direction') },
+    { id: 'profit', label: t('trades.profit') },
+    { id: 'profitPercentage', label: t('trades.profitPercentage') },
+    { id: 'fees', label: t('trades.fees') },
+    { id: 'notes', label: t('trades.notes') },
+    { id: 'strategy', label: t('trades.strategy') },
+    { id: 'tags', label: t('trades.tags') },
+    { id: 'createdAt', label: t('trades.createdAt') },
+    { id: 'updatedAt', label: t('trades.updatedAt') }
+  ];
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Column Visibility</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {Object.entries(visibleColumns).map(([column, isVisible]) => (
-          <div key={column} className="flex items-center space-x-2">
-            <Checkbox 
-              id={`column-${column}`} 
-              checked={isVisible}
-              onCheckedChange={(checked) => onChange(column, checked as boolean)}
-            />
-            <Label htmlFor={`column-${column}`} className="capitalize">{column}</Label>
-          </div>
-        ))}
-      </div>
+      <h3 className="text-lg font-medium">{t('trades.columnVisibility')}</h3>
+      <ScrollArea className="h-72 pr-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {allColumns.map(column => (
+            <div key={column.id} className="flex items-center space-x-2">
+              <Checkbox 
+                id={`column-${column.id}`} 
+                checked={visibleColumns[column.id] || false}
+                onCheckedChange={(checked) => onChange(column.id, checked as boolean)}
+              />
+              <Label htmlFor={`column-${column.id}`}>{column.label}</Label>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
       <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={onReset}>Reset</Button>
-        <Button onClick={onApply}>Apply</Button>
+        <Button variant="outline" onClick={onReset}>{t('common.reset')}</Button>
+        <Button onClick={onApply}>{t('common.apply')}</Button>
       </div>
     </div>
   );

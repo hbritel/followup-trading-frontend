@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ArrowDown, 
   ArrowDownUp, 
@@ -143,6 +144,7 @@ const sampleTrades: Trade[] = [
 ];
 
 const TradeTable = () => {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<keyof Trade>('openDate');
@@ -213,7 +215,7 @@ const TradeTable = () => {
             <CardTitle className="text-lg font-semibold">Trade History</CardTitle>
             <CardDescription>Your recent trading activity</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => navigate('/trades')}>
             View All
           </Button>
         </div>
