@@ -20,14 +20,28 @@ export function formatCurrency(value: number): string {
 
 /**
  * Format a date string to a readable format
+ * Returns a dash if the date is invalid
  */
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date)
+export function formatDate(dateString: string | undefined | null): string {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '-';
+    }
+    
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', dateString, error);
+    return '-';
+  }
 }
 
 /**

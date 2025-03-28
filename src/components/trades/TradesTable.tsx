@@ -169,14 +169,14 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   <TableCell>{formatDate(trade.entryDate)}</TableCell>
                 )}
                 {visibleColumns.exitDate && (
-                  <TableCell>{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
+                  <TableCell>{formatDate(trade.exitDate)}</TableCell>
                 )}
                 {visibleColumns.entryPrice && (
                   <TableCell className="text-right">{formatCurrency(trade.entryPrice)}</TableCell>
                 )}
                 {visibleColumns.exitPrice && (
                   <TableCell className="text-right">
-                    {trade.exitPrice ? formatCurrency(trade.exitPrice) : '-'}
+                    {trade.exitPrice !== undefined ? formatCurrency(trade.exitPrice) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.quantity && (
