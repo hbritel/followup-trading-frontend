@@ -162,7 +162,6 @@ const PerformanceChart = () => {
                   minTickGap={20}
                 />
                 <YAxis 
-                  id="equity-axis"
                   tickFormatter={(value) => `$${value}`}
                   axisLine={false}
                   tickLine={false}
@@ -181,7 +180,6 @@ const PerformanceChart = () => {
                   name="Equity"
                   strokeWidth={2}
                   animationDuration={800}
-                  yAxisId="equity-axis"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -219,7 +217,6 @@ const PerformanceChart = () => {
                     minTickGap={20}
                   />
                   <YAxis 
-                    id="pnl-axis"
                     tickFormatter={(value) => `$${value}`}
                     axisLine={false}
                     tickLine={false}
@@ -232,7 +229,6 @@ const PerformanceChart = () => {
                     name="Daily P&L"
                     animationDuration={800}
                     shape={<CustomBar />}
-                    yAxisId="pnl-axis"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -252,7 +248,6 @@ const PerformanceChart = () => {
                     minTickGap={20}
                   />
                   <YAxis 
-                    id="volume-axis"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12 }}
@@ -264,7 +259,6 @@ const PerformanceChart = () => {
                     name="Trade Volume" 
                     fill="rgba(59,130,246,0.8)" 
                     animationDuration={800}
-                    yAxisId="volume-axis"
                   />
                 </BarChart>
               </ResponsiveContainer>

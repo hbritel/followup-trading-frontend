@@ -95,7 +95,7 @@ const BacktestResults = () => {
             <LineChart data={equityCurve}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis id="equity-axis" />
+              <YAxis />
               <Tooltip />
               <Legend />
               <Line 
@@ -105,7 +105,6 @@ const BacktestResults = () => {
                 stroke="#8884d8" 
                 strokeWidth={2}
                 dot={false}
-                yAxisId="equity-axis"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -121,7 +120,7 @@ const BacktestResults = () => {
             <BarChart data={monthlyReturns}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis id="return-axis" />
+              <YAxis />
               <Tooltip />
               <Legend />
               <Bar 
@@ -129,7 +128,6 @@ const BacktestResults = () => {
                 name={t('backtesting.return')}
                 radius={[4, 4, 0, 0]}
                 fill="#10b981"
-                yAxisId="return-axis"
               >
                 {monthlyReturns.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getReturnColor(entry.return)} />

@@ -208,11 +208,11 @@ const Statistics = () => {
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
-                    <YAxis id="day-axis" />
+                    <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="wins" name="Winning Trades" stackId="a" fill="#1E40AF" yAxisId="day-axis" />
-                    <Bar dataKey="losses" name="Losing Trades" stackId="a" fill="#dc2626" yAxisId="day-axis" />
+                    <Bar dataKey="wins" name="Winning Trades" stackId="a" fill="#1E40AF" />
+                    <Bar dataKey="losses" name="Losing Trades" stackId="a" fill="#dc2626" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -238,11 +238,11 @@ const Statistics = () => {
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
-                    <YAxis id="time-axis" />
+                    <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="wins" name="Winning Trades" stackId="a" fill="#1E40AF" yAxisId="time-axis" />
-                    <Bar dataKey="losses" name="Losing Trades" stackId="a" fill="#dc2626" yAxisId="time-axis" />
+                    <Bar dataKey="wins" name="Winning Trades" stackId="a" fill="#1E40AF" />
+                    <Bar dataKey="losses" name="Losing Trades" stackId="a" fill="#dc2626" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
