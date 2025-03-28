@@ -114,10 +114,12 @@ const PerformanceMetrics = () => {
                 <ComposedChart data={monthlyPerformance}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
                   <Tooltip />
                   <Legend />
                   <Bar 
+                    yAxisId="left"
                     dataKey="profit" 
                     name={t('insights.profit')} 
                     fill="#10b981"
@@ -128,6 +130,7 @@ const PerformanceMetrics = () => {
                     ))}
                   </Bar>
                   <Bar 
+                    yAxisId="left"
                     dataKey="loss" 
                     name={t('insights.loss')} 
                     fill="#ef4444"
@@ -137,8 +140,8 @@ const PerformanceMetrics = () => {
                     type="monotone" 
                     dataKey="trades" 
                     name={t('insights.trades')} 
-                    stroke="#8884d8" 
-                    yAxisId={1} 
+                    stroke="#8884d8"
+                    yAxisId="right"
                   />
                 </ComposedChart>
               </ResponsiveContainer>
