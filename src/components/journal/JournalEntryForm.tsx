@@ -12,20 +12,51 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-const JournalEntryForm = () => {
+interface JournalEntry {
+  id?: number;
+  date: Date;
+  title: string;
+  marketConditions: string;
+  trades: number;
+  content?: string;
+}
+
+interface JournalEntryFormProps {
+  initialValues?: JournalEntry;
+  onSubmit?: () => void;
+}
+
+const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ initialValues, onSubmit }) => {
   const { t } = useTranslation();
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(initialValues?.date || new Date());
+  const [title, setTitle] = useState(initialValues?.title || '');
+  const [marketConditions, setMarketConditions] = useState(initialValues?.marketConditions || '');
+  const [trades, setTrades] = useState(initialValues?.trades?.toString() || '');
+  const [content, setContent] = useState(initialValues?.content || '');
+  const [lessons, setLessons] = useState('');
+  const [emotions, setEmotions] = useState('');
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Journal entry submitted');
-    // TODO: Implement form submission
+    console.log('Journal entry submitted', {
+      date,
+      title,
+      marketConditions,
+      trades: parseInt(trades) || 0,
+      content,
+      lessons,
+      emotions
+    });
+    
+    if (onSubmit) {
+      onSubmit();
+    }
   };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('journal.newEntry')}</CardTitle>
+        <CardTitle>{initialValues ? t('journal.editEntry') : t('journal.newEntry')}</CardTitle>
         <CardDescription>{t('journal.newEntryDescription')}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -58,17 +89,32 @@ const JournalEntryForm = () => {
           
           <div className="space-y-2">
             <Label htmlFor="title">{t('journal.title')}</Label>
-            <Input id="title" placeholder={t('journal.titlePlaceholder')} />
+            <Input 
+              id="title" 
+              placeholder={t('journal.titlePlaceholder')}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="market-conditions">{t('journal.marketConditions')}</Label>
-            <Input id="market-conditions" placeholder={t('journal.marketConditionsPlaceholder')} />
+            <Input 
+              id="market-conditions" 
+              placeholder={t('journal.marketConditionsPlaceholder')}
+              value={marketConditions}
+              onChange={(e) => setMarketConditions(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="trades">{t('journal.tradesExecuted')}</Label>
-            <Input id="trades" placeholder={t('journal.tradesExecutedPlaceholder')} />
+            <Input 
+              id="trades" 
+              placeholder={t('journal.tradesExecutedPlaceholder')}
+              value={trades}
+              onChange={(e) => setTrades(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">
@@ -77,6 +123,8 @@ const JournalEntryForm = () => {
               id="content" 
               placeholder={t('journal.contentPlaceholder')} 
               className="min-h-32"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
           </div>
           
@@ -86,16 +134,23 @@ const JournalEntryForm = () => {
               id="lessons" 
               placeholder={t('journal.lessonsLearnedPlaceholder')} 
               className="min-h-20"
+              value={lessons}
+              onChange={(e) => setLessons(e.target.value)}
             />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="emotions">{t('journal.emotions')}</Label>
-            <Input id="emotions" placeholder={t('journal.emotionsPlaceholder')} />
+            <Input 
+              id="emotions" 
+              placeholder={t('journal.emotionsPlaceholder')}
+              value={emotions}
+              onChange={(e) => setEmotions(e.target.value)}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline">{t('common.cancel')}</Button>
+          <Button type="button" variant="outline" onClick={onSubmit}>{t('common.cancel')}</Button>
           <Button type="submit">{t('common.save')}</Button>
         </CardFooter>
       </form>

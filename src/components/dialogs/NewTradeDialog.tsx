@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -51,11 +51,22 @@ type FormValues = z.infer<typeof formSchema>;
 interface NewTradeDialogProps {
   children?: React.ReactNode;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const NewTradeDialog: React.FC<NewTradeDialogProps> = ({ children, trigger }) => {
+const NewTradeDialog: React.FC<NewTradeDialogProps> = ({ 
+  children, 
+  trigger, 
+  open, 
+  onOpenChange 
+}) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const isOpen = open !== undefined ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
   
   // Initialize the form
   const form = useForm<FormValues>({
@@ -78,14 +89,14 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({ children, trigger }) =>
     toast.success('Trade created successfully');
     
     // Close the dialog
-    setOpen(false);
+    setIsOpen(false);
     
     // Reset the form
     form.reset();
   };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {trigger ? (
         <DialogTrigger asChild>
           {trigger}
