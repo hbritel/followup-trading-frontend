@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Card,
@@ -14,8 +15,46 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const AccountManagement = () => {
+  const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [updatePaymentOpen, setUpdatePaymentOpen] = useState(false);
+  const [downloadInvoiceId, setDownloadInvoiceId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleChangePlan = () => {
+    setChangePlanOpen(false);
+    toast({
+      title: "Plan changed",
+      description: "Your subscription plan has been updated successfully.",
+    });
+  };
+
+  const handleUpdatePayment = () => {
+    setUpdatePaymentOpen(false);
+    toast({
+      title: "Payment method updated",
+      description: "Your payment method has been updated successfully.",
+    });
+  };
+
+  const handleDownloadInvoice = (invoiceId: string) => {
+    console.log(`Downloading invoice ${invoiceId}`);
+    toast({
+      title: "Invoice downloaded",
+      description: `Invoice #${invoiceId} has been downloaded.`,
+    });
+  };
+
   return (
     <DashboardLayout pageTitle="Account Management">
       <div className="space-y-6">
@@ -140,7 +179,7 @@ const AccountManagement = () => {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline">Change Plan</Button>
+                      <Button variant="outline" onClick={() => setChangePlanOpen(true)}>Change Plan</Button>
                       <Button variant="outline" className="text-destructive">Cancel</Button>
                     </div>
                   </div>
@@ -199,7 +238,13 @@ const AccountManagement = () => {
                         </p>
                       </div>
                       <div className="mt-4">
-                        <Button variant="outline" size="sm">Update Payment Method</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setUpdatePaymentOpen(true)}
+                        >
+                          Update Payment Method
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -217,7 +262,13 @@ const AccountManagement = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-medium">$29.99</div>
-                        <Button variant="outline" size="sm">Download</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadInvoice('12345')}
+                        >
+                          Download
+                        </Button>
                       </div>
                     </div>
                     
@@ -228,7 +279,13 @@ const AccountManagement = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-medium">$29.99</div>
-                        <Button variant="outline" size="sm">Download</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadInvoice('12344')}
+                        >
+                          Download
+                        </Button>
                       </div>
                     </div>
                     
@@ -239,7 +296,13 @@ const AccountManagement = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-sm font-medium">$29.99</div>
-                        <Button variant="outline" size="sm">Download</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadInvoice('12343')}
+                        >
+                          Download
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -363,6 +426,88 @@ const AccountManagement = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Change Plan Dialog */}
+      <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Subscription Plan</DialogTitle>
+            <DialogDescription>
+              Select a new plan that best suits your needs.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-md">
+                <div>
+                  <div className="font-medium">Basic</div>
+                  <div className="text-sm text-muted-foreground">$9.99/month</div>
+                </div>
+                <Button variant="outline" size="sm">Select</Button>
+              </div>
+              <div className="flex items-center justify-between p-4 border rounded-md bg-muted/20">
+                <div>
+                  <div className="font-medium">Professional</div>
+                  <div className="text-sm text-muted-foreground">$29.99/month</div>
+                  <div className="text-xs text-primary mt-1">Current Plan</div>
+                </div>
+                <Button variant="outline" size="sm" disabled>Selected</Button>
+              </div>
+              <div className="flex items-center justify-between p-4 border rounded-md">
+                <div>
+                  <div className="font-medium">Enterprise</div>
+                  <div className="text-sm text-muted-foreground">$99.99/month</div>
+                </div>
+                <Button variant="outline" size="sm">Select</Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChangePlanOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangePlan}>Confirm Change</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Update Payment Method Dialog */}
+      <Dialog open={updatePaymentOpen} onOpenChange={setUpdatePaymentOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update Payment Method</DialogTitle>
+            <DialogDescription>
+              Enter your new payment details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="card-number">Card Number</Label>
+              <Input id="card-number" placeholder="•••• •••• •••• ••••" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Expiration Date</Label>
+                <Input id="expiry" placeholder="MM/YY" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cvc">CVC</Label>
+                <Input id="cvc" placeholder="•••" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name on Card</Label>
+              <Input id="name" placeholder="John Doe" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpdatePaymentOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdatePayment}>Update Payment Method</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

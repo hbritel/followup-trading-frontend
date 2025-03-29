@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
@@ -16,6 +15,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
+import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog';
 
 const Settings = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -24,7 +26,36 @@ const Settings = () => {
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [tradeConfirmations, setTradeConfirmations] = useState(true);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [logoutAllDevicesOpen, setLogoutAllDevicesOpen] = useState(false);
+  const { toast } = useToast();
   
+  const toggleDarkMode = (checked: boolean) => {
+    setDarkMode(checked);
+    
+    // Toggle dark mode class on document
+    if (checked) {
+      document.documentElement.classList.add('dark');
+      toast({
+        title: "Dark mode enabled",
+        description: "Your preference has been saved.",
+      });
+    } else {
+      document.documentElement.classList.remove('dark');
+      toast({
+        title: "Light mode enabled",
+        description: "Your preference has been saved.",
+      });
+    }
+  };
+  
+  const handleSaveChanges = () => {
+    toast({
+      title: "Settings saved",
+      description: "Your changes have been saved successfully.",
+    });
+  };
+
   return (
     <DashboardLayout pageTitle="Settings">
       <div className="space-y-6">
@@ -182,7 +213,7 @@ const Settings = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
@@ -298,7 +329,7 @@ const Settings = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
@@ -323,7 +354,7 @@ const Settings = () => {
                     </div>
                     <Switch 
                       checked={darkMode} 
-                      onCheckedChange={setDarkMode} 
+                      onCheckedChange={toggleDarkMode} 
                     />
                   </div>
                   
@@ -435,7 +466,7 @@ const Settings = () => {
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
@@ -486,7 +517,13 @@ const Settings = () => {
                     </div>
                   )}
                   
-                  <Button variant="outline" className="w-full">Change Password</Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setChangePasswordOpen(true)}
+                  >
+                    Change Password
+                  </Button>
                 </div>
                 
                 <Separator />
@@ -581,17 +618,33 @@ const Settings = () => {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full">Log Out All Other Devices</Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setLogoutAllDevicesOpen(true)}
+                  >
+                    Log Out All Other Devices
+                  </Button>
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveChanges}>Save Changes</Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+      
+      <ChangePasswordDialog 
+        open={changePasswordOpen} 
+        onOpenChange={setChangePasswordOpen} 
+      />
+      
+      <ConfirmLogoutDialog 
+        open={logoutAllDevicesOpen} 
+        onOpenChange={setLogoutAllDevicesOpen} 
+      />
     </DashboardLayout>
   );
 };

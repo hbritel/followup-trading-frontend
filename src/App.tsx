@@ -31,6 +31,7 @@ import {
   Backtesting,
   TradeReplay,
   Administration,
+  Profile,
 } from "@/pages";
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -66,6 +67,7 @@ function App() {
               <Route path="/accounts" element={<Accounts />} />
               <Route path="/account-management" element={<AccountManagement />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/backtesting" element={<Backtesting />} />
               <Route path="/trade-replay" element={<TradeReplay />} />

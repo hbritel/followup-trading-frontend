@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Card,
@@ -12,6 +13,18 @@ import { PlusCircle, ArrowUpRight, CreditCard, RefreshCw, ExternalLink } from 'l
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const accountsData = [
   {
@@ -72,6 +85,31 @@ const accountsData = [
 ];
 
 const Accounts = () => {
+  const [linkAccountOpen, setLinkAccountOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<number | null>(null);
+  const [viewAccountOpen, setViewAccountOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const handleLinkAccount = () => {
+    setLinkAccountOpen(false);
+    toast({
+      title: "Account linked",
+      description: "Your trading account has been successfully linked.",
+    });
+  };
+  
+  const handleViewAccount = (accountId: number) => {
+    setSelectedAccount(accountId);
+    setViewAccountOpen(true);
+  };
+  
+  const handleSync = (accountId: number) => {
+    toast({
+      title: "Account synced",
+      description: `Account #${accountId} has been synced successfully.`,
+    });
+  };
+
   return (
     <DashboardLayout pageTitle="Accounts">
       <div className="space-y-6">
@@ -80,7 +118,7 @@ const Accounts = () => {
             <h1 className="text-2xl font-bold">Trading Accounts</h1>
             <p className="text-muted-foreground">Manage your connected trading accounts</p>
           </div>
-          <Button>
+          <Button onClick={() => setLinkAccountOpen(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Link Account
           </Button>
@@ -172,11 +210,19 @@ const Accounts = () => {
                     <p className="text-sm text-muted-foreground mt-1">{account.broker}</p>
                   </div>
                   <div className="mt-2 md:mt-0 flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleSync(account.id)}
+                    >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Sync
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewAccount(account.id)}
+                    >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View
                     </Button>
@@ -214,7 +260,11 @@ const Accounts = () => {
               </div>
             ))}
             
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => setLinkAccountOpen(true)}
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               Connect New Account
             </Button>
@@ -303,6 +353,127 @@ const Accounts = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Link Account Dialog */}
+      <Dialog open={linkAccountOpen} onOpenChange={setLinkAccountOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Link Trading Account</DialogTitle>
+            <DialogDescription>
+              Connect a new trading or investment account to your dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="broker">Select Broker</Label>
+              <Select>
+                <SelectTrigger id="broker">
+                  <SelectValue placeholder="Select broker" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="interactive-brokers">Interactive Brokers</SelectItem>
+                  <SelectItem value="td-ameritrade">TD Ameritrade</SelectItem>
+                  <SelectItem value="robinhood">Robinhood</SelectItem>
+                  <SelectItem value="webull">Webull</SelectItem>
+                  <SelectItem value="fidelity">Fidelity</SelectItem>
+                  <SelectItem value="etrade">E*TRADE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="account-name">Account Name</Label>
+              <Input id="account-name" placeholder="e.g., Main Trading Account" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="account-id">Account ID/Number</Label>
+              <Input id="account-id" placeholder="Your broker account ID" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="api-key">API Key (if applicable)</Label>
+              <Input id="api-key" placeholder="Your broker API key" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="api-secret">API Secret (if applicable)</Label>
+              <Input id="api-secret" type="password" placeholder="Your broker API secret" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkAccountOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleLinkAccount}>Link Account</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* View Account Dialog */}
+      {selectedAccount && (
+        <Dialog open={viewAccountOpen} onOpenChange={setViewAccountOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Account Details</DialogTitle>
+              <DialogDescription>
+                Detailed information about your trading account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="p-4 border rounded-md">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <h3 className="font-medium text-lg">
+                    {accountsData.find(a => a.id === selectedAccount)?.name}
+                  </h3>
+                  <Badge variant="outline">
+                    {accountsData.find(a => a.id === selectedAccount)?.status}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground">
+                  Broker: {accountsData.find(a => a.id === selectedAccount)?.broker}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">Balance</div>
+                  <div className="text-2xl font-bold">
+                    ${accountsData.find(a => a.id === selectedAccount)?.balance.toLocaleString()}
+                  </div>
+                  <div className={`text-sm ${(accountsData.find(a => a.id === selectedAccount)?.change || "").startsWith('+') ? 'text-profit' : 'text-loss'}`}>
+                    {accountsData.find(a => a.id === selectedAccount)?.change} 
+                    ({accountsData.find(a => a.id === selectedAccount)?.changeAmount})
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-md">
+                  <div className="text-sm text-muted-foreground">Buying Power</div>
+                  <div className="text-2xl font-bold">
+                    ${accountsData.find(a => a.id === selectedAccount)?.buyingPower.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-md">
+                <h4 className="font-medium mb-2">Account Actions</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button variant="outline" size="sm">View Positions</Button>
+                  <Button variant="outline" size="sm">View Orders</Button>
+                  <Button variant="outline" size="sm">Account History</Button>
+                  <Button variant="outline" size="sm">Account Settings</Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewAccountOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 };

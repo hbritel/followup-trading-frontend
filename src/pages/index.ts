@@ -17,3 +17,4 @@ export { default as Reports } from './Reports';
 export { default as Backtesting } from './Backtesting';
 export { default as TradeReplay } from './TradeReplay';
 export { default as Administration } from './Administration';
+export { default as Profile } from './Profile';
