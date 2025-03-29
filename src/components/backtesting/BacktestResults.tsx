@@ -6,9 +6,11 @@ import { LineChart, BarChart, ResponsiveContainer, Line, Bar, XAxis, YAxis, Cart
 import { Button } from "@/components/ui/button";
 import { Download, Save } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 
 const BacktestResults = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   // Mock data for backtest results
   const equityCurve = [
@@ -52,6 +54,20 @@ const BacktestResults = () => {
     return value >= 0 ? "#10b981" : "#ef4444";
   };
   
+  const handleSaveBacktest = () => {
+    toast({
+      title: "Backtest Saved",
+      description: "Your backtest has been saved successfully.",
+    });
+  };
+  
+  const handleExportResults = () => {
+    toast({
+      title: "Results Exported",
+      description: "Your backtest results have been exported successfully.",
+    });
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
@@ -60,11 +76,11 @@ const BacktestResults = () => {
           <p className="text-sm text-muted-foreground">AAPL | Daily | Jan 1, 2023 - Jun 1, 2023</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleSaveBacktest}>
             <Save className="h-4 w-4 mr-2" />
             {t('backtesting.saveBacktest')}
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportResults}>
             <Download className="h-4 w-4 mr-2" />
             {t('backtesting.exportResults')}
           </Button>

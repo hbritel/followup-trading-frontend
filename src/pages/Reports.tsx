@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
@@ -12,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Download, Share2, ArrowUpRight, PlusCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const reportsData = [
   {
@@ -82,10 +82,53 @@ const reportsData = [
 
 const Reports = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const { toast } = useToast();
   
   const filteredReports = selectedCategory === 'all' 
     ? reportsData 
     : reportsData.filter(report => report.category === selectedCategory);
+  
+  const handleNewReport = () => {
+    toast({
+      title: "New Report",
+      description: "Creating a new trading report.",
+    });
+  };
+  
+  const handleShareReport = (reportId: number) => {
+    toast({
+      title: "Report Shared",
+      description: `Report #${reportId} has been shared.`,
+    });
+  };
+  
+  const handleDownloadReport = (reportId: number) => {
+    toast({
+      title: "Report Downloaded",
+      description: `Report #${reportId} has been downloaded.`,
+    });
+  };
+  
+  const handleViewReport = (reportId: number) => {
+    toast({
+      title: "Report Viewed",
+      description: `Opening report #${reportId} for viewing.`,
+    });
+  };
+  
+  const handleCreateSchedule = () => {
+    toast({
+      title: "Create Schedule",
+      description: "Creating a new report schedule.",
+    });
+  };
+  
+  const handleSelectTemplate = (template: string) => {
+    toast({
+      title: "Template Selected",
+      description: `${template} template selected.`,
+    });
+  };
   
   return (
     <DashboardLayout pageTitle="Reports">
@@ -95,7 +138,7 @@ const Reports = () => {
             <h1 className="text-2xl font-bold">Trading Reports</h1>
             <p className="text-muted-foreground">Generate and access detailed trading reports</p>
           </div>
-          <Button>
+          <Button onClick={handleNewReport}>
             <PlusCircle className="h-4 w-4 mr-2" />
             New Report
           </Button>
@@ -135,15 +178,30 @@ const Reports = () => {
                         </div>
                         {report.status === 'ready' && (
                           <>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleShareReport(report.id)}
+                            >
                               <Share2 className="h-4 w-4" />
                               <span className="sr-only">Share</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDownloadReport(report.id)}
+                            >
                               <Download className="h-4 w-4" />
                               <span className="sr-only">Download</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewReport(report.id)}
+                            >
                               <ArrowUpRight className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
@@ -175,15 +233,30 @@ const Reports = () => {
                         </div>
                         {report.status === 'ready' && (
                           <>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleShareReport(report.id)}
+                            >
                               <Share2 className="h-4 w-4" />
                               <span className="sr-only">Share</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDownloadReport(report.id)}
+                            >
                               <Download className="h-4 w-4" />
                               <span className="sr-only">Download</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewReport(report.id)}
+                            >
                               <ArrowUpRight className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
@@ -215,15 +288,30 @@ const Reports = () => {
                         </div>
                         {report.status === 'ready' && (
                           <>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleShareReport(report.id)}
+                            >
                               <Share2 className="h-4 w-4" />
                               <span className="sr-only">Share</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDownloadReport(report.id)}
+                            >
                               <Download className="h-4 w-4" />
                               <span className="sr-only">Download</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewReport(report.id)}
+                            >
                               <ArrowUpRight className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
@@ -255,15 +343,30 @@ const Reports = () => {
                         </div>
                         {report.status === 'ready' && (
                           <>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleShareReport(report.id)}
+                            >
                               <Share2 className="h-4 w-4" />
                               <span className="sr-only">Share</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleDownloadReport(report.id)}
+                            >
                               <Download className="h-4 w-4" />
                               <span className="sr-only">Download</span>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleViewReport(report.id)}
+                            >
                               <ArrowUpRight className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
@@ -286,25 +389,41 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleSelectTemplate("Daily Summary")}
+                >
                   <div className="flex flex-col items-start text-left">
                     <span className="font-medium">Daily Summary</span>
                     <span className="text-xs text-muted-foreground">Daily trading performance summary</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleSelectTemplate("Weekly Review")}
+                >
                   <div className="flex flex-col items-start text-left">
                     <span className="font-medium">Weekly Review</span>
                     <span className="text-xs text-muted-foreground">Weekly trading performance analysis</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleSelectTemplate("Monthly Performance")}
+                >
                   <div className="flex flex-col items-start text-left">
                     <span className="font-medium">Monthly Performance</span>
                     <span className="text-xs text-muted-foreground">Comprehensive monthly report</span>
                   </div>
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleSelectTemplate("Strategy Analysis")}
+                >
                   <div className="flex flex-col items-start text-left">
                     <span className="font-medium">Strategy Analysis</span>
                     <span className="text-xs text-muted-foreground">Detailed strategy performance metrics</span>
@@ -348,7 +467,7 @@ const Reports = () => {
                     <Badge variant="outline">Paused</Badge>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleCreateSchedule}>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Schedule
                 </Button>

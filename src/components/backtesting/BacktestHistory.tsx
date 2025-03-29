@@ -6,9 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Eye, BarChart, Trash, ArrowUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 const BacktestHistory = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   
   // Mock data for backtest history
   const backtests = [
@@ -74,6 +76,28 @@ const BacktestHistory = () => {
     },
   ];
   
+  const handleViewBacktest = (id: number) => {
+    toast({
+      title: "Viewing Backtest",
+      description: `Viewing backtest #${id} details.`,
+    });
+  };
+  
+  const handleViewChart = (id: number) => {
+    toast({
+      title: "Viewing Chart",
+      description: `Viewing performance chart for backtest #${id}.`,
+    });
+  };
+  
+  const handleDeleteBacktest = (id: number) => {
+    toast({
+      title: "Backtest Deleted",
+      description: `Backtest #${id} has been deleted.`,
+      variant: "destructive",
+    });
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -120,13 +144,13 @@ const BacktestHistory = () => {
                 <TableCell>{backtest.runDate.slice(5)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button size="icon" variant="ghost">
+                    <Button size="icon" variant="ghost" onClick={() => handleViewBacktest(backtest.id)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost">
+                    <Button size="icon" variant="ghost" onClick={() => handleViewChart(backtest.id)}>
                       <BarChart className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost">
+                    <Button size="icon" variant="ghost" onClick={() => handleDeleteBacktest(backtest.id)}>
                       <Trash className="h-4 w-4" />
                     </Button>
                   </div>
