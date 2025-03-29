@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, Download, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 // Sample monthly performance data
 const monthlyData = [
@@ -52,7 +51,6 @@ const formatCurrency = (value: number) => {
 
 const Performance = () => {
   const [timeRange, setTimeRange] = useState('3m'); // Default to 3 months
-  const { toast } = useToast();
   
   // Summary statistics
   const totalProfit = 3059.23;
@@ -60,20 +58,6 @@ const Performance = () => {
   const netProfitLoss = totalProfit + totalLoss;
   const winRate = 72;
   const totalTrades = 101;
-
-  const handleFilter = () => {
-    toast({
-      title: "Filter Applied",
-      description: "Performance data filtered to selected criteria.",
-    });
-  };
-
-  const handleExport = () => {
-    toast({
-      title: "Data Exported",
-      description: "Performance data has been exported successfully.",
-    });
-  };
   
   return (
     <DashboardLayout pageTitle="Performance">
@@ -135,11 +119,11 @@ const Performance = () => {
                 <CardDescription>Detailed breakdown of your trading performance</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleFilter}>
+                <Button variant="outline" size="sm">
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExport}>
+                <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
