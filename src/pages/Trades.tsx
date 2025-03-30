@@ -288,7 +288,7 @@ const Trades = () => {
 
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
-      <div className="grid gap-4">
+      <div className="flex flex-col space-y-4 max-w-full">
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-full md:w-64">
@@ -376,7 +376,7 @@ const Trades = () => {
           </Card>
         )}
         
-        <div className="rounded-md border">
+        <div className="w-full">
           <TradesTableWrapper
             trades={filteredTrades}
             visibleColumns={visibleColumns}

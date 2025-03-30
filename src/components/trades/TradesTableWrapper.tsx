@@ -35,17 +35,18 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
   // Here we could implement any logic to transform advancedFilters 
   // into something the TradesTable can use
   
-  // Pass only the props that TradesTable accepts
   return (
-    <TradesTable
-      trades={trades}
-      visibleColumns={visibleColumns}
-      searchQuery={searchQuery}
-      statusFilter={statusFilter}
-      typeFilter={typeFilter}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      onView={onView}
-    />
+    <div className="overflow-auto border rounded-md">
+      <TradesTable
+        trades={trades}
+        visibleColumns={visibleColumns}
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        typeFilter={typeFilter}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onView={onView}
+      />
+    </div>
   );
 };
