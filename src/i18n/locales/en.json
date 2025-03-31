@@ -90,7 +90,8 @@
     "invalidEmail": "Please enter a valid email address.",
     "passwordTooShort": "Password must be at least 8 characters long.",
     "actions": "Actions",
-    "apply": "Apply"
+    "apply": "Apply",
+    "verify": "Verify"
   },
   "auth": {
     "login": "Login",
@@ -130,7 +131,10 @@
     "lastUsed": "Last Used",
     "revoke": "Revoke",
     "revokeAll": "Revoke All",
-    "deviceRevoked": "Device revoked successfully."
+    "deviceRevoked": "Device revoked successfully.",
+    "mfaTitle": "Two-Factor Authentication",
+    "mfaSubtitle": "Secure your account with two-factor authentication.",
+    "enterCode": "Enter Code"
   },
   "sidebar": {
     "general": "General",
@@ -302,7 +306,12 @@
     "search": "Search",
     "tradeActions": "Trade Actions",
     "columnVisibility": "Column Visibility",
-    "title": "Trades"
+    "title": "Trades",
+    "dateRangeFilter": "Date Range Filter",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "pickStartDate": "Pick a start date",
+    "pickEndDate": "Pick an end date"
   },
   "insights": {
     "metrics": "Metrics",

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TradesTableWrapper, Trade } from '@/components/trades/TradesTableWrapper';
-import AdvancedTradeFilter from '@/components/trades/AdvancedTradeFilter';
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
 import DateRangeFilter from '@/components/trades/DateRangeFilter';
@@ -178,7 +177,6 @@ const Trades = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showColumnFilter, setShowColumnFilter] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
