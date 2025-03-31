@@ -19,10 +19,15 @@ import {
   Wallet as WalletIcon,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSidebar } from "@/components/ui/sidebar";
 
 const DashboardSidebar = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { open, openMobile } = useSidebar();
+  
+  // Determine which state to use based on device type
+  const sidebarVisible = isMobile ? openMobile : open;
   
   const sidebarGroups = [
     {
@@ -58,8 +63,12 @@ const DashboardSidebar = () => {
     },
   ];
   
+  if (!sidebarVisible) {
+    return null;
+  }
+  
   return (
-    <div className="hidden border-r bg-secondary/10 lg:block h-full w-[var(--sidebar-width)]">
+    <div className="border-r bg-secondary/10 h-full w-[var(--sidebar-width)] md:block">
       <div className="flex flex-col gap-y-5 h-full">
         <div className="px-6 py-4">
           Followup Trading
@@ -88,11 +97,6 @@ const DashboardSidebar = () => {
             ))}
           </nav>
         </div>
-        {isMobile && (
-          <div className="px-6 py-4">
-            Mobile View
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -61,7 +60,6 @@ import {
   Edit
 } from 'lucide-react';
 
-// Define interfaces
 interface User {
   id: string;
   name: string;
@@ -101,7 +99,6 @@ interface AuditLog {
   ip: string;
 }
 
-// Sample data
 const mockUsers: User[] = [
   { 
     id: '1', 
@@ -258,7 +255,6 @@ const mockAuditLogs: AuditLog[] = [
   },
 ];
 
-// Admin page component
 const Administration = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('users');
@@ -268,7 +264,6 @@ const Administration = () => {
   const [auditLogs] = useState<AuditLog[]>(mockAuditLogs);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // State for dialogs
   const [newUserDialogOpen, setNewUserDialogOpen] = useState(false);
   const [newRoleDialogOpen, setNewRoleDialogOpen] = useState(false);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
@@ -276,7 +271,6 @@ const Administration = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   
-  // New user form state
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -285,27 +279,23 @@ const Administration = () => {
     twoFactorEnabled: true
   });
   
-  // New role form state
   const [newRole, setNewRole] = useState({
     name: '',
     description: '',
     permissions: [] as string[]
   });
   
-  // Filter users based on search query
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Filter roles based on search query
   const filteredRoles = roles.filter(role => 
     role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     role.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Filter audit logs based on search query
   const filteredAuditLogs = auditLogs.filter(log => 
     log.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -313,7 +303,6 @@ const Administration = () => {
     log.details.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Toggle user status (active/inactive)
   const toggleUserStatus = (userId: string) => {
     setUsers(users.map(user => {
       if (user.id === userId) {
@@ -332,7 +321,6 @@ const Administration = () => {
     }
   };
   
-  // Delete user
   const deleteUser = (userId: string) => {
     const userToDelete = users.find(u => u.id === userId);
     setUsers(users.filter(user => user.id !== userId));
@@ -345,7 +333,6 @@ const Administration = () => {
     }
   };
   
-  // Delete role
   const deleteRole = (roleId: string) => {
     const roleToDelete = roles.find(r => r.id === roleId);
     setRoles(roles.filter(role => role.id !== roleId));
@@ -358,7 +345,6 @@ const Administration = () => {
     }
   };
   
-  // Create new user
   const handleCreateUser = () => {
     if (!newUser.name || !newUser.email || !newUser.role) {
       toast({
@@ -383,14 +369,15 @@ const Administration = () => {
     setUsers([...users, createdUser]);
     setNewUserDialogOpen(false);
     
-    // Reset form
-    setNewUser({
-      name: '',
-      email: '',
-      role: '',
-      status: 'active',
-      twoFactorEnabled: true
-    });
+    setTimeout(() => {
+      setNewUser({
+        name: '',
+        email: '',
+        role: '',
+        status: 'active',
+        twoFactorEnabled: true
+      });
+    }, 100);
     
     toast({
       title: t('admin.userCreated'),
@@ -398,7 +385,6 @@ const Administration = () => {
     });
   };
   
-  // Create new role
   const handleCreateRole = () => {
     if (!newRole.name || !newRole.description) {
       toast({
@@ -423,12 +409,13 @@ const Administration = () => {
     setRoles([...roles, createdRole]);
     setNewRoleDialogOpen(false);
     
-    // Reset form
-    setNewRole({
-      name: '',
-      description: '',
-      permissions: []
-    });
+    setTimeout(() => {
+      setNewRole({
+        name: '',
+        description: '',
+        permissions: []
+      });
+    }, 100);
     
     toast({
       title: t('admin.roleCreated'),
@@ -436,7 +423,6 @@ const Administration = () => {
     });
   };
   
-  // Update user
   const handleUpdateUser = () => {
     if (!selectedUser) return;
     
@@ -446,13 +432,16 @@ const Administration = () => {
     
     setEditUserDialogOpen(false);
     
+    setTimeout(() => {
+      setSelectedUser(null);
+    }, 100);
+    
     toast({
       title: t('admin.userUpdated'),
       description: `${selectedUser.name} ${t('admin.hasBeenUpdated')}`,
     });
   };
   
-  // Update role
   const handleUpdateRole = () => {
     if (!selectedRole) return;
     
@@ -462,13 +451,16 @@ const Administration = () => {
     
     setEditRoleDialogOpen(false);
     
+    setTimeout(() => {
+      setSelectedRole(null);
+    }, 100);
+    
     toast({
       title: t('admin.roleUpdated'),
       description: `${selectedRole.name} ${t('admin.hasBeenUpdated')}`,
     });
   };
   
-  // Toggle permission for new role
   const togglePermission = (permissionId: string) => {
     setNewRole(prev => {
       const permissions = prev.permissions.includes(permissionId)
@@ -479,7 +471,6 @@ const Administration = () => {
     });
   };
   
-  // Toggle permission for existing role
   const toggleExistingPermission = (permissionId: string) => {
     if (!selectedRole) return;
     
@@ -537,7 +528,6 @@ const Administration = () => {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Users Tab */}
               <TabsContent value="users" className="space-y-4">
                 <div className="flex justify-end">
                   <Dialog open={newUserDialogOpen} onOpenChange={setNewUserDialogOpen}>
@@ -842,7 +832,6 @@ const Administration = () => {
                 </Dialog>
               </TabsContent>
               
-              {/* Roles Tab */}
               <TabsContent value="roles" className="space-y-4">
                 <div className="flex justify-end">
                   <Dialog open={newRoleDialogOpen} onOpenChange={setNewRoleDialogOpen}>
@@ -984,7 +973,6 @@ const Administration = () => {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     onClick={() => {
-                                      // View users with this role
                                       toast({
                                         title: t('admin.viewUsers'),
                                         description: t('admin.viewUsersByRoleFeatureComingSoon'),
@@ -1101,11 +1089,9 @@ const Administration = () => {
                 </Dialog>
               </TabsContent>
               
-              {/* Audit Log Tab */}
               <TabsContent value="auditLog" className="space-y-4">
                 <div className="flex justify-end">
                   <Button variant="outline" onClick={() => {
-                    // Refresh audit log
                     toast({
                       title: t('admin.auditLogRefreshed'),
                       description: t('admin.auditLogRefreshedDescription'),

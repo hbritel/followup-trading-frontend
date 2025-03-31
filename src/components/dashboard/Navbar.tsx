@@ -1,25 +1,14 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Button } from "@/components/ui/button";
 import { 
-  Calendar as CalendarIcon, 
-  Filter, 
-  LogOut,
-  Menu, 
-  PlusCircle, 
-  Search, 
+  Bell, 
   Settings, 
-  Shield,
-  User 
+  User,
+  MessageSquare,
+  Menu
 } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,145 +16,48 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dropdown-menu';
+import { useIsMobile } from "@/hooks/use-mobile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useAuth } from '@/contexts/auth-context';
-import { LanguageSwitcher } from '@/components/ui/language-switcher';
-import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 
-const Navbar = () => {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const { t } = useTranslation();
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  
+const Navbar: React.FC = () => {
+  const isMobile = useIsMobile();
+
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur-sm animate-slide-down">
-      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SidebarTrigger>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-lg">Followup Trading</span>
-          </div>
-        </div>
-        
-        <div className="hidden md:flex items-center gap-1">
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t('navbar.search')}
-              className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
-            />
-          </div>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-2 h-9 gap-1">
-                <CalendarIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">Date Range</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Button variant="outline" size="sm" className="ml-2 h-9 gap-1">
-            <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">Filter</span>
-          </Button>
-          
-          <NewTradeDialog
-            trigger={
-              <Button variant="default" size="sm" className="ml-2 h-9 gap-1">
-                <PlusCircle className="h-4 w-4" />
-                <span>New Trade</span>
-              </Button>
-            }
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Settings</span>
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
-                <span className="sr-only">User menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                {user?.name || 'User'}
-                <p className="text-xs font-normal text-muted-foreground mt-0.5">
-                  {user?.email || 'user@example.com'}
-                </p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/auth/trusted-devices')}>
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Trusted Devices</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+    <nav className="flex h-14 items-center border-b px-4 md:px-6">
+      <div className="flex items-center gap-2">
+        {isMobile ? (
+          <SidebarTrigger className="h-8 w-8" />
+        ) : null}
       </div>
-      
-      {/* Mobile search and actions */}
-      <div className="md:hidden flex items-center gap-2 px-4 pb-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder={t('navbar.search')}
-            className="w-full rounded-full pl-8 bg-accent/50 border-0 focus-visible:ring-primary"
-          />
-        </div>
-        <NewTradeDialog
-          trigger={
-            <Button variant="default" size="sm" className="h-9">
-              <PlusCircle className="h-4 w-4 mr-1" />
-              <span>New</span>
+      <div className="ml-auto flex items-center gap-2">
+        <Button variant="ghost" size="icon">
+          <Bell className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <MessageSquare className="h-5 w-5" />
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <User className="h-5 w-5" />
             </Button>
-          }
-        />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <a href="/profile" className="flex w-full">Profile</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <a href="/settings" className="flex w-full">Settings</a>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Logout</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </header>
+    </nav>
   );
 };
 

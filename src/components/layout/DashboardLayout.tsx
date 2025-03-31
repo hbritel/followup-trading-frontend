@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DashboardSidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarRail } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -13,37 +14,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   pageTitle = "Dashboard"
 }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
   
-  useEffect(() => {
-    const handleScroll = () => {
-      // Collapse sidebar when scrolling horizontally
-      if (window.scrollX > 10) {
-        setSidebarOpen(false);
-      } else if (window.scrollX < 5) {
-        setSidebarOpen(true);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex h-screen w-full bg-background overflow-hidden">
         <DashboardSidebar />
         <main className="flex flex-col flex-1 w-full overflow-hidden">
           <Navbar />
           <div className="flex-1 p-4 pb-6 md:p-6 overflow-auto">
-            <div className="mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <h1 className="text-2xl font-bold">{pageTitle}</h1>
+              <SidebarTrigger className="md:hidden" />
             </div>
             <div className="overflow-auto">
               {children}
             </div>
           </div>
         </main>
+        {!isMobile && <SidebarRail />}
       </div>
     </SidebarProvider>
   );
