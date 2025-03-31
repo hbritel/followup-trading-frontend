@@ -19,3 +19,4 @@ export { default as TradeReplay } from './TradeReplay';
 export { default as Administration } from './Administration';
 export { default as Profile } from './Profile';
 export { default as Alerts } from './Alerts';
+export { default as RiskMetrics } from './RiskMetrics';

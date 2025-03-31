@@ -18,6 +18,7 @@ import {
   Shield as ShieldIcon,
   Wallet as WalletIcon,
   BellRing as BellRingIcon,
+  AlertTriangle as AlertTriangleIcon,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -48,6 +49,7 @@ const DashboardSidebar = () => {
         { href: "/insights", label: t('sidebar.insights'), icon: LineChartIcon },
         { href: "/performance", label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: "/statistics", label: t('sidebar.statistics'), icon: PieChartIcon },
+        { href: "/risk-metrics", label: t('sidebar.riskMetrics', 'Métriques de Risque'), icon: AlertTriangleIcon },
         { href: "/watchlists", label: t('sidebar.watchlists'), icon: ListIcon },
         { href: "/alerts", label: t('sidebar.alerts'), icon: BellRingIcon },
         { href: "/backtesting", label: t('sidebar.backtesting'), icon: RefreshCcwIcon },

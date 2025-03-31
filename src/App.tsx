@@ -34,6 +34,7 @@ import {
   Administration,
   Profile,
   Alerts,
+  RiskMetrics,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -77,6 +78,7 @@ function App() {
                 <Route path="/trade-replay" element={<TradeReplay />} />
                 <Route path="/administration" element={<Administration />} />
                 <Route path="/alerts" element={<Alerts />} />
+                <Route path="/risk-metrics" element={<RiskMetrics />} />
                 
                 {/* Redirect from /account to /profile */}
                 <Route path="/account" element={<Navigate to="/profile" replace />} />
