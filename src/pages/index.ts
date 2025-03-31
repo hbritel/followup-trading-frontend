@@ -1,55 +1,20 @@
 
-import Index from './Index';
-import Dashboard from './Dashboard';
-import Trades from './Trades';
-import DailyJournal from './DailyJournal';
-import Calendar from './Calendar';
-import Activity from './Activity';
-import Playbook from './Playbook';
-import Insights from './Insights';
-import Performance from './Performance';
-import Statistics from './Statistics';
-import Watchlists from './Watchlists';
-import Accounts from './Accounts';
-import AccountManagement from './AccountManagement';
-import Settings from './Settings';
-import Reports from './Reports';
-import Backtesting from './Backtesting';
-import TradeReplay from './TradeReplay';
-import Administration from './Administration';
-import Profile from './Profile';
-import RiskAnalysis from './RiskAnalysis';
-import Alerts from './Alerts';
-
-// Import auth pages from auth directory
-import { Login, Signup, ResetPassword, MFA, MFASetup, TrustedDevices } from './auth';
-
-export {
-  Index,
-  Login,
-  Signup,
-  ResetPassword,
-  MFA,
-  MFASetup,
-  Dashboard,
-  Trades,
-  DailyJournal,
-  Calendar,
-  Activity,
-  Playbook,
-  Insights,
-  Performance,
-  Statistics,
-  Watchlists,
-  Accounts,
-  AccountManagement,
-  Settings,
-  TrustedDevices,
-  Reports,
-  Backtesting,
-  TradeReplay,
-  Administration,
-  Profile,
-  RiskAnalysis,
-  Alerts,
-};
+export { default as Dashboard } from './Dashboard';
+export { default as Trades } from './Trades';
+export { default as DailyJournal } from './DailyJournal';
+export { default as Calendar } from './Calendar';
+export { default as Activity } from './Activity';
+export { default as Playbook } from './Playbook';
+export { default as Insights } from './Insights';
+export { default as Performance } from './Performance';
+export { default as Statistics } from './Statistics';
+export { default as Watchlists } from './Watchlists';
+export { default as Accounts } from './Accounts';
+export { default as AccountManagement } from './AccountManagement';
+export { default as Settings } from './Settings';
+export { default as TrustedDevices } from './auth/TrustedDevices';
+export { default as Reports } from './Reports';
+export { default as Backtesting } from './Backtesting';
+export { default as TradeReplay } from './TradeReplay';
+export { default as Administration } from './Administration';
+export { default as Profile } from './Profile';
