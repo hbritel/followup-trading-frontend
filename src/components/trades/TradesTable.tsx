@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -119,8 +118,8 @@ export const TradesTable: React.FC<TradesTableProps> = ({
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="w-full">
+      <Table className="min-w-max">
         <TableHeader>
           <TableRow>
             {visibleColumns.symbol && (

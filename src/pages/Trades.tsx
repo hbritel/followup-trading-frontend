@@ -288,9 +288,9 @@ const Trades = () => {
 
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
-      <div className="grid gap-4">
-        <div className="flex flex-col justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap w-auto">
+      <div className="flex flex-col space-y-4 max-w-full">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -346,7 +346,7 @@ const Trades = () => {
             </Button>
           </div>
         </div>
-        
+
         {showColumnFilter && (
           <Card className="p-4 w-auto max-w-3xl">
             <TradeColumnFilter
@@ -358,7 +358,7 @@ const Trades = () => {
           </Card>
         )}
         
-        <div className="rounded-md border">
+        <div className="w-full">
           <TradesTableWrapper
             trades={filteredTrades}
             visibleColumns={visibleColumns}
