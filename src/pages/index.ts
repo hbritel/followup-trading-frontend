@@ -1,9 +1,5 @@
+
 import Index from './Index';
-import Login from './Login';
-import Signup from './Signup';
-import ResetPassword from './ResetPassword';
-import MFA from './MFA';
-import MFASetup from './MFASetup';
 import Dashboard from './Dashboard';
 import Trades from './Trades';
 import DailyJournal from './DailyJournal';
@@ -17,7 +13,6 @@ import Watchlists from './Watchlists';
 import Accounts from './Accounts';
 import AccountManagement from './AccountManagement';
 import Settings from './Settings';
-import TrustedDevices from './TrustedDevices';
 import Reports from './Reports';
 import Backtesting from './Backtesting';
 import TradeReplay from './TradeReplay';
@@ -25,6 +20,9 @@ import Administration from './Administration';
 import Profile from './Profile';
 import RiskAnalysis from './RiskAnalysis';
 import Alerts from './Alerts';
+
+// Import auth pages from auth directory
+import { Login, Signup, ResetPassword, MFA, MFASetup, TrustedDevices } from './auth';
 
 export {
   Index,

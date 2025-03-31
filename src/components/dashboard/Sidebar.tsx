@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSidebar } from "@/components/ui/sidebar";
@@ -42,7 +43,7 @@ import { Link } from 'react-router-dom';
 
 const DashboardSidebar = () => {
   const { t } = useTranslation();
-  const { isOpen, onOpen, onClose } = useSidebar();
+  const sidebar = useSidebar();
 
   const mainNavItems = [
     { label: t('navigation.dashboard'), icon: LayoutDashboard, path: '/dashboard' },
@@ -71,7 +72,7 @@ const DashboardSidebar = () => {
 
   return (
     <div>
-      <Sheet open={isOpen} onOpenChange={onClose}>
+      <Sheet open={sidebar.open} onOpenChange={sidebar.setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
             <LayoutDashboard className="h-4 w-4" />
