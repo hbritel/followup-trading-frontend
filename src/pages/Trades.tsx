@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -389,8 +390,8 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
       </div>
       <div className="flex items-center gap-2">
         <TradeImportExport
-          onImport={handleImportTrades}
-          onExport={handleExportTrades}
+          onImport={onImport}
+          onExport={onExport}
         />
         <Button onClick={onNewTrade}>
           <Plus className="mr-2 h-4 w-4" />
