@@ -33,6 +33,8 @@ import {
   TradeReplay,
   Administration,
   Profile,
+  RiskAnalysis,
+  Alerts,
 } from "@/pages";
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -74,6 +76,8 @@ function App() {
                 <Route path="/backtesting" element={<Backtesting />} />
                 <Route path="/trade-replay" element={<TradeReplay />} />
                 <Route path="/administration" element={<Administration />} />
+                <Route path="/risk-analysis" element={<RiskAnalysis />} />
+                <Route path="/alerts" element={<Alerts />} />
                 
                 {/* Redirect from /account to /profile */}
                 <Route path="/account" element={<Navigate to="/profile" replace />} />
