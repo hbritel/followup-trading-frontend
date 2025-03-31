@@ -368,7 +368,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder={t('trades.search')} value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="pl-8 py-[5px]" />
+          <Input type="search" placeholder={t('trades.search')} value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="pl-8 py-0" />
         </div>
         <Select value={statusFilter} onValueChange={onStatusChange}>
           <SelectTrigger className="w-full md:w-40">
