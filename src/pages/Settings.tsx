@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Card,
@@ -18,9 +18,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
 import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog';
+import { useTheme } from '@/components/providers/theme-provider';
 
 const Settings = () => {
-  const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [mobileNotifications, setMobileNotifications] = useState(true);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
@@ -29,24 +29,15 @@ const Settings = () => {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [logoutAllDevicesOpen, setLogoutAllDevicesOpen] = useState(false);
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   
   const toggleDarkMode = (checked: boolean) => {
-    setDarkMode(checked);
+    setTheme(checked ? 'dark' : 'light');
     
-    // Toggle dark mode class on document
-    if (checked) {
-      document.documentElement.classList.add('dark');
-      toast({
-        title: "Dark mode enabled",
-        description: "Your preference has been saved.",
-      });
-    } else {
-      document.documentElement.classList.remove('dark');
-      toast({
-        title: "Light mode enabled",
-        description: "Your preference has been saved.",
-      });
-    }
+    toast({
+      title: checked ? "Dark mode enabled" : "Light mode enabled",
+      description: "Your preference has been saved.",
+    });
   };
   
   const handleSaveChanges = () => {
@@ -353,7 +344,7 @@ const Settings = () => {
                       </p>
                     </div>
                     <Switch 
-                      checked={darkMode} 
+                      checked={theme === 'dark'} 
                       onCheckedChange={toggleDarkMode} 
                     />
                   </div>

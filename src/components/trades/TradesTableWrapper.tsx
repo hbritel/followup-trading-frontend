@@ -144,6 +144,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
           searchQuery={searchQuery}
           statusFilter={statusFilter}
           typeFilter={typeFilter}
+          advancedFilters={advancedFilters}
           onEdit={onEdit}
           onDelete={onDelete}
           onView={onView}
