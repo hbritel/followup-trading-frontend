@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,12 +13,19 @@ import { TableActions } from '@/components/trades/TableActions';
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils';
 import { Trade } from './TradesTableWrapper';
 
+interface AdvancedFilters {
+  dateRange: { from: Date | null; to: Date | null };
+  profitRange: { min: number | null; max: number | null };
+  tags: string[];
+}
+
 interface TradesTableProps {
   trades: Trade[];
   visibleColumns: Record<string, boolean>;
   searchQuery: string;
   statusFilter: string;
   typeFilter: string;
+  advancedFilters?: AdvancedFilters;
   onEdit?: (tradeId: string) => void;
   onDelete?: (tradeId: string) => void;
   onView?: (tradeId: string) => void;
@@ -31,6 +37,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
   searchQuery,
   statusFilter,
   typeFilter,
+  advancedFilters,
   onEdit,
   onDelete,
   onView,
