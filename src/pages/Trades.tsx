@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Filter, Plus, Columns, Search, Calendar as CalendarIcon } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +10,10 @@ import { TradesTableWrapper, Trade } from '@/components/trades/TradesTableWrappe
 import AdvancedTradeFilter from '@/components/trades/AdvancedTradeFilter';
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
+import DateRangeFilter from '@/components/trades/DateRangeFilter';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
-import { Filter, Plus, Columns, Search } from 'lucide-react';
 
 // Mocked trades data for demonstration
 const mockTrades: Trade[] = [
@@ -188,12 +189,61 @@ const Trades = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showColumnFilter, setShowColumnFilter] = useState(false);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [filteredTrades, setFilteredTrades] = useState<Trade[]>(trades);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [advancedFilters, setAdvancedFilters] = useState({
-    dateRange: { from: null, to: null },
-    profitRange: { min: null, max: null },
+    dateRange: { from: null as Date | null, to: null as Date | null },
+    profitRange: { min: null as number | null, max: null as number | null },
     tags: [] as string[],
   });
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
+
+  useEffect(() => {
+    filterTrades();
+  }, [trades, searchQuery, statusFilter, typeFilter, advancedFilters, startDate, endDate]);
+
+  const filterTrades = () => {
+    let filtered = trades.filter((trade) => {
+      // Search query filter
+      const matchesSearch =
+        searchQuery === '' ||
+        trade.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (trade.strategy && trade.strategy.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (trade.notes && trade.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      // Status and type filters
+      const matchesStatus = statusFilter === 'all' || trade.status === statusFilter;
+      const matchesType = typeFilter === 'all' || trade.type === typeFilter;
+
+      // Date range filter
+      let matchesDateRange = true;
+      if (startDate || endDate) {
+        const tradeDate = new Date(trade.entryDate);
+        
+        if (startDate && endDate) {
+          matchesDateRange = tradeDate >= startDate && tradeDate <= endDate;
+        } else if (startDate) {
+          matchesDateRange = tradeDate >= startDate;
+        } else if (endDate) {
+          matchesDateRange = tradeDate <= endDate;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesType && matchesDateRange;
+    });
+
+    setFilteredTrades(filtered);
+    setCurrentPage(1);  // Reset to first page when filters change
+  };
+
+  // Get current trades for pagination
+  const indexOfLastTrade = currentPage * itemsPerPage;
+  const indexOfFirstTrade = indexOfLastTrade - itemsPerPage;
+  const currentTrades = filteredTrades.slice(indexOfFirstTrade, indexOfLastTrade);
 
   const handleNewTrade = () => {
     setShowNewTradeDialog(true);
@@ -264,6 +314,36 @@ const Trades = () => {
     });
   };
 
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleDateFilterApply = () => {
+    // The filtering is already handled by the useEffect
+    setShowDateFilter(false);
+    
+    if (startDate || endDate) {
+      toast({
+        title: t('trades.dateFilterApplied'),
+        description: startDate && endDate 
+          ? `${t('trades.filteringTradesBetween')} ${startDate.toLocaleDateString()} ${t('common.and')} ${endDate.toLocaleDateString()}`
+          : startDate
+            ? `${t('trades.filteringTradesFrom')} ${startDate.toLocaleDateString()}`
+            : `${t('trades.filteringTradesUntil')} ${endDate?.toLocaleDateString()}`,
+      });
+    }
+  };
+
+  const handleDateFilterReset = () => {
+    setStartDate(null);
+    setEndDate(null);
+    
+    toast({
+      title: t('trades.dateFilterReset'),
+      description: t('trades.showingAllTrades'),
+    });
+  };
+
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
       <div className="flex flex-col space-y-4 max-w-full">
@@ -275,9 +355,20 @@ const Trades = () => {
           typeFilter={typeFilter}
           onTypeChange={setTypeFilter}
           onToggleColumnFilter={() => setShowColumnFilter(!showColumnFilter)}
+          onToggleDateFilter={() => setShowDateFilter(!showDateFilter)}
           onImport={handleImportTrades}
           onExport={handleExportTrades}
           onNewTrade={handleNewTrade}
+        />
+
+        <DateRangeFilter 
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onApply={handleDateFilterApply}
+          onReset={handleDateFilterReset}
+          isOpen={showDateFilter}
         />
 
         {showColumnFilter && (
@@ -293,12 +384,16 @@ const Trades = () => {
         
         <div className="w-full">
           <TradesTableWrapper
-            trades={trades}
+            trades={currentTrades}
             visibleColumns={visibleColumns}
             searchQuery={searchQuery}
             statusFilter={statusFilter}
             typeFilter={typeFilter}
             advancedFilters={advancedFilters}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            totalTrades={filteredTrades.length}
             onEdit={handleEditTrade}
             onDelete={handleDeleteTrade}
             onView={handleViewTrade}
@@ -322,6 +417,7 @@ interface FiltersSectionProps {
   typeFilter: string;
   onTypeChange: (value: string) => void;
   onToggleColumnFilter: () => void;
+  onToggleDateFilter: () => void;
   onImport: (trades: Trade[]) => void;
   onExport: () => void;
   onNewTrade: () => void;
@@ -335,6 +431,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   typeFilter,
   onTypeChange,
   onToggleColumnFilter,
+  onToggleDateFilter,
   onImport,
   onExport,
   onNewTrade
@@ -386,6 +483,14 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
           onClick={onToggleColumnFilter}
         >
           <Columns className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={onToggleDateFilter} 
+          className="relative"
+        >
+          <CalendarIcon className="h-4 w-4" />
         </Button>
       </div>
       <div className="flex items-center gap-2">
