@@ -17,6 +17,7 @@ import {
   Rewind as RewindIcon,
   Shield as ShieldIcon,
   Wallet as WalletIcon,
+  BellRing as BellRingIcon,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -48,6 +49,7 @@ const DashboardSidebar = () => {
         { href: "/performance", label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: "/statistics", label: t('sidebar.statistics'), icon: PieChartIcon },
         { href: "/watchlists", label: t('sidebar.watchlists'), icon: ListIcon },
+        { href: "/alerts", label: t('sidebar.alerts'), icon: BellRingIcon },
         { href: "/backtesting", label: t('sidebar.backtesting'), icon: RefreshCcwIcon },
         { href: "/trade-replay", label: t('sidebar.tradeReplay'), icon: RewindIcon },
         { href: "/reports", label: t('sidebar.reports'), icon: FileTextIcon },
