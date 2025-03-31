@@ -288,8 +288,12 @@ const RiskMetricsBoard = () => {
                           <div className="flex justify-between">
                             <div className="flex items-center space-x-2">
                               <span className="font-medium">{metric.metric}</span>
-                              <Info className="h-4 w-4 text-muted-foreground cursor-help" 
-                                title={metric.description} />
+                              <div className="group relative">
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                <span className="absolute left-0 -top-8 w-48 p-2 bg-popover text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                  {metric.description}
+                                </span>
+                              </div>
                             </div>
                             <div className={`flex items-center space-x-2 ${metric.value < metric.benchmark ? 'text-green-500' : 'text-red-500'}`}>
                               <span className="font-bold">{metric.value}</span>
@@ -572,7 +576,6 @@ const RiskMetricsBoard = () => {
                             <Progress 
                               value={item.value} 
                               className="h-2" 
-                              indicatorColor={item.color}
                               style={{ 
                                 '--progress-background': item.color 
                               } as React.CSSProperties} 
@@ -611,3 +614,4 @@ const RiskMetricsBoard = () => {
 };
 
 export default RiskMetricsBoard;
+
