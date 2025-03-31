@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,40 +10,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { TableActions } from '@/components/trades/TableActions';
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils';
-import { Edit, Eye, MoreHorizontal, Trash2 } from 'lucide-react';
-
-interface Trade {
-  id: string;
-  symbol: string;
-  type: 'long' | 'short' | 'option' | 'future' | 'crypto' | 'forex';
-  status: 'open' | 'closed' | 'pending' | 'cancelled';
-  entryDate: string;
-  exitDate?: string;
-  entryPrice: number;
-  exitPrice?: number;
-  quantity: number;
-  stopLoss?: number;
-  takeProfit?: number;
-  direction?: 'long' | 'short';
-  profit?: number;
-  profitPercentage?: number;
-  fees?: number;
-  strategy?: string;
-  notes?: string;
-  tags?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { Trade } from './TradesTableWrapper';
 
 interface TradesTableProps {
   trades: Trade[];
@@ -82,38 +52,27 @@ export const TradesTable: React.FC<TradesTableProps> = ({
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'open':
-        return 'default';
-      case 'closed':
-        return 'secondary';
-      case 'pending':
-        return 'outline';
-      case 'cancelled':
-        return 'destructive';
-      default:
-        return 'outline';
+      case 'open': return 'default';
+      case 'closed': return 'secondary';
+      case 'pending': return 'outline';
+      case 'cancelled': return 'destructive';
+      default: return 'outline';
     }
   };
 
   const getTypeBadgeVariant = (type: string) => {
     switch (type) {
-      case 'long':
-        return 'default';
-      case 'short':
-        return 'destructive';
-      default:
-        return 'outline';
+      case 'long': return 'default';
+      case 'short': return 'destructive';
+      default: return 'outline';
     }
   };
 
   const getDirectionBadgeVariant = (direction: string) => {
     switch (direction) {
-      case 'long':
-        return 'default';
-      case 'short':
-        return 'destructive';
-      default:
-        return 'outline';
+      case 'long': return 'default';
+      case 'short': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -207,7 +166,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   <TableCell>{formatDate(trade.entryDate)}</TableCell>
                 )}
                 {visibleColumns.exitDate && (
-                  <TableCell>{formatDate(trade.exitDate)}</TableCell>
+                  <TableCell>{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
                 )}
                 {visibleColumns.entryPrice && (
                   <TableCell className="text-right">{formatCurrency(trade.entryPrice)}</TableCell>
@@ -294,42 +253,18 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   </TableCell>
                 )}
                 {visibleColumns.createdAt && (
-                  <TableCell>{formatDate(trade.createdAt)}</TableCell>
+                  <TableCell>{trade.createdAt ? formatDate(trade.createdAt) : '-'}</TableCell>
                 )}
                 {visibleColumns.updatedAt && (
-                  <TableCell>{formatDate(trade.updatedAt)}</TableCell>
+                  <TableCell>{trade.updatedAt ? formatDate(trade.updatedAt) : '-'}</TableCell>
                 )}
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <span className="sr-only">{t('common.openMenu')}</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t('trades.tradeActions')}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {onView && (
-                        <DropdownMenuItem onClick={() => onView(trade.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          {t('common.view')}
-                        </DropdownMenuItem>
-                      )}
-                      {onEdit && (
-                        <DropdownMenuItem onClick={() => onEdit(trade.id)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          {t('common.edit')}
-                        </DropdownMenuItem>
-                      )}
-                      {onDelete && (
-                        <DropdownMenuItem onClick={() => onDelete(trade.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('common.delete')}
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <TableActions
+                    tradeId={trade.id}
+                    onView={onView}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
                 </TableCell>
               </TableRow>
             ))

@@ -26,20 +26,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     };
     
     window.addEventListener('scroll', handleScroll);
-    return () => window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex h-screen w-full bg-background overflow-hidden">
         <DashboardSidebar />
-        <main className="flex flex-col flex-1 w-full">
+        <main className="flex flex-col flex-1 w-full overflow-hidden">
           <Navbar />
-          <div className="flex-1 p-4 pb-6 md:p-6">
+          <div className="flex-1 p-4 pb-6 md:p-6 overflow-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-bold">{pageTitle}</h1>
             </div>
-            {children}
+            <div className="overflow-auto">
+              {children}
+            </div>
           </div>
         </main>
       </div>

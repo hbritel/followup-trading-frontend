@@ -1,6 +1,6 @@
 
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { LoadingFallback } from "@/components/loading-fallback";
@@ -72,6 +72,9 @@ function App() {
               <Route path="/backtesting" element={<Backtesting />} />
               <Route path="/trade-replay" element={<TradeReplay />} />
               <Route path="/administration" element={<Administration />} />
+              
+              {/* Redirect from /account to /profile */}
+              <Route path="/account" element={<Navigate to="/profile" replace />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />
