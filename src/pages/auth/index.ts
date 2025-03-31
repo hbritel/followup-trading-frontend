@@ -5,3 +5,4 @@ export { default as ResetPassword } from './ResetPassword';
 export { default as MFA } from './MFA';
 export { default as MFASetup } from './MFASetup';
 export { default as Index } from './IndexPage';
+export { default as TrustedDevices } from './TrustedDevices';
