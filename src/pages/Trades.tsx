@@ -289,8 +289,8 @@ const Trades = () => {
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
       <div className="grid gap-4">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap w-auto">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -334,13 +334,6 @@ const Trades = () => {
             >
               <Columns className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline" 
-              size="icon"
-              onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
           </div>
           <div className="flex items-center gap-2">
             <TradeImportExport
@@ -354,20 +347,9 @@ const Trades = () => {
           </div>
         </div>
         
-        {showAdvancedFilter && (
-          <Card className="p-4">
-            <AdvancedTradeFilter 
-              advancedFilters={advancedFilters}
-              onFilterChange={setAdvancedFilters}
-              onApply={() => setShowAdvancedFilter(false)}
-              onReset={handleResetAdvancedFilters}
-            />
-          </Card>
-        )}
-        
         {showColumnFilter && (
-          <Card className="p-4">
-            <TradeColumnFilter 
+          <Card className="p-4 w-auto max-w-3xl">
+            <TradeColumnFilter
               visibleColumns={visibleColumns}
               onChange={handleColumnVisibilityChange}
               onApply={() => setShowColumnFilter(false)}

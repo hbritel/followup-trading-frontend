@@ -46,7 +46,7 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">{t('trades.columnVisibility')}</h3>
-      <ScrollArea className="h-72 pr-4">
+      <ScrollArea className="h-auto max-h-72 w-auto pr-2">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {allColumns.map(column => (
             <div key={column.id} className="flex items-center space-x-2">
