@@ -87,6 +87,249 @@ const RiskMetrics = () => {
     kelly: t('insights.kellyDescription'),
   };
   
+  // Render the content based on selected metric
+  const renderMetricContent = () => {
+    switch(selectedMetric) {
+      case 'var':
+        return (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {valueAtRisk.map((item) => (
+                <Card key={item.confidence} className="bg-accent/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-medium">{t('insights.valueAtRisk')} ({item.confidence})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-2xl font-bold">{item.value}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {t('insights.benchmark')}: {item.benchmark}%
+                        </div>
+                      </div>
+                      <div className={`text-sm ${item.value > item.benchmark ? 'text-destructive' : 'text-green-500'}`}>
+                        {((item.benchmark - item.value) / Math.abs(item.benchmark) * 100).toFixed(1)}% {item.value > item.benchmark ? t('insights.worse') : t('insights.better')}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('insights.varEvolution')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={marginUtilization}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="utilization" name="VaR" stroke="#8884d8" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'diversity':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('insights.assetAllocation')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={portfolioDiversity}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {portfolioDiversity.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('insights.portfolioBalance')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {portfolioDiversity.map((item, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{item.name}</span>
+                      <span>{item.value}%</span>
+                    </div>
+                    <Progress value={item.value} className="h-2" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'margin':
+        return (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('insights.marginUtilization')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={marginUtilization}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="utilization" 
+                    name={t('insights.marginUtilization')} 
+                    stroke="#8884d8" 
+                    strokeWidth={2} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="safe" 
+                    name={t('insights.safeLevel')} 
+                    stroke="#10b981" 
+                    strokeWidth={1}
+                    strokeDasharray="5 5" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="warning" 
+                    name={t('insights.warningLevel')} 
+                    stroke="#f59e0b" 
+                    strokeWidth={1}
+                    strokeDasharray="5 5" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="danger" 
+                    name={t('insights.dangerLevel')} 
+                    stroke="#ef4444" 
+                    strokeWidth={1}
+                    strokeDasharray="5 5" 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        );
+      case 'holding':
+        return (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">{t('insights.holdingPeriodAnalysis')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={holdingPeriods}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="count" 
+                    name={t('insights.tradeCount')} 
+                    stroke="#8884d8" 
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="winRate" 
+                    name={t('insights.winRate')} 
+                    stroke="#10b981" 
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="avgReturn" 
+                    name={t('insights.avgReturn')} 
+                    stroke="#f59e0b" 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        );
+      case 'kelly':
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('insights.kellyPercentages')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {kellyMetrics.map((item, index) => (
+                    <div key={index}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="font-medium">{item.strategy}</span>
+                        <span>
+                          {t('insights.optimal')}: <span className="font-medium">{item.kelly}%</span> | 
+                          {t('insights.recommended')}: <span className="font-medium">{item.recommended}%</span>
+                        </span>
+                      </div>
+                      <div className="relative pt-1">
+                        <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                          <div style={{ width: `${item.recommended}%` }} className="bg-green-500 h-full"></div>
+                          <div style={{ width: `${item.aggressive - item.recommended}%` }} className="bg-yellow-500 h-full"></div>
+                          <div style={{ width: `${item.kelly - item.aggressive}%` }} className="bg-red-500 h-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t('insights.riskProfile')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={riskProfile}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis />
+                    <Radar name={t('insights.yourProfile')} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                    <Radar name={t('insights.benchmark')} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                    <Legend />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -115,238 +358,8 @@ const RiskMetrics = () => {
               {metricDescriptions[selectedMetric as keyof typeof metricDescriptions]}
             </div>
             
-            <TabsContent value="var" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {valueAtRisk.map((item) => (
-                  <Card key={item.confidence} className="bg-accent/20">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-medium">{t('insights.valueAtRisk')} ({item.confidence})</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold">{item.value}%</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {t('insights.benchmark')}: {item.benchmark}%
-                          </div>
-                        </div>
-                        <div className={`text-sm ${item.value > item.benchmark ? 'text-destructive' : 'text-green-500'}`}>
-                          {((item.benchmark - item.value) / Math.abs(item.benchmark) * 100).toFixed(1)}% {item.value > item.benchmark ? t('insights.worse') : t('insights.better')}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('insights.varEvolution')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={marginUtilization}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="utilization" name="VaR" stroke="#8884d8" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="diversity" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t('insights.assetAllocation')}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <PieChart>
-                        <Pie
-                          data={portfolioDiversity}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={true}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {portfolioDiversity.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t('insights.portfolioBalance')}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {portfolioDiversity.map((item, index) => (
-                      <div key={index}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>{item.name}</span>
-                          <span>{item.value}%</span>
-                        </div>
-                        <Progress value={item.value} className="h-2" />
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="margin" className="mt-0">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('insights.marginUtilization')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={marginUtilization}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="utilization" 
-                        name={t('insights.marginUtilization')} 
-                        stroke="#8884d8" 
-                        strokeWidth={2} 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="safe" 
-                        name={t('insights.safeLevel')} 
-                        stroke="#10b981" 
-                        strokeWidth={1}
-                        strokeDasharray="5 5" 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="warning" 
-                        name={t('insights.warningLevel')} 
-                        stroke="#f59e0b" 
-                        strokeWidth={1}
-                        strokeDasharray="5 5" 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="danger" 
-                        name={t('insights.dangerLevel')} 
-                        stroke="#ef4444" 
-                        strokeWidth={1}
-                        strokeDasharray="5 5" 
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="holding" className="mt-0">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('insights.holdingPeriodAnalysis')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={holdingPeriods}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
-                      <Legend />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="count" 
-                        name={t('insights.tradeCount')} 
-                        stroke="#8884d8" 
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="winRate" 
-                        name={t('insights.winRate')} 
-                        stroke="#10b981" 
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="avgReturn" 
-                        name={t('insights.avgReturn')} 
-                        stroke="#f59e0b" 
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="kelly" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t('insights.kellyPercentages')}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {kellyMetrics.map((item, index) => (
-                        <div key={index}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium">{item.strategy}</span>
-                            <span>
-                              {t('insights.optimal')}: <span className="font-medium">{item.kelly}%</span> | 
-                              {t('insights.recommended')}: <span className="font-medium">{item.recommended}%</span>
-                            </span>
-                          </div>
-                          <div className="relative pt-1">
-                            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                              <div style={{ width: `${item.recommended}%` }} className="bg-green-500 h-full"></div>
-                              <div style={{ width: `${item.aggressive - item.recommended}%` }} className="bg-yellow-500 h-full"></div>
-                              <div style={{ width: `${item.kelly - item.aggressive}%` }} className="bg-red-500 h-full"></div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t('insights.riskProfile')}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={riskProfile}>
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="subject" />
-                        <PolarRadiusAxis />
-                        <Radar name={t('insights.yourProfile')} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                        <Radar name={t('insights.benchmark')} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                        <Legend />
-                        <Tooltip />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+            {/* Render content based on selected metric */}
+            {renderMetricContent()}
           </CardContent>
         </Card>
       </div>
