@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TradesTable } from '@/components/trades/TradesTable';
 import { Card } from '@/components/ui/card';
 import {
@@ -9,6 +10,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis,
 } from "@/components/ui/pagination";
 
 interface AdvancedFilters {
@@ -71,6 +73,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
   onDelete,
   onView
 }) => {
+  const { t } = useTranslation();
   const totalPages = Math.ceil(totalTrades / itemsPerPage);
   
   const renderPaginationItems = () => {
@@ -86,7 +89,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
     if (startPage > 1) {
       items.push(
         <PaginationItem key="first">
-          <PaginationLink onClick={() => onPageChange(1)} isActive={false}>
+          <PaginationLink onClick={() => onPageChange(1)}>
             1
           </PaginationLink>
         </PaginationItem>
@@ -95,7 +98,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
       if (startPage > 2) {
         items.push(
           <PaginationItem key="ellipsis-start">
-            <span className="flex h-9 w-9 items-center justify-center">...</span>
+            <PaginationEllipsis />
           </PaginationItem>
         );
       }
@@ -115,14 +118,14 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
       if (endPage < totalPages - 1) {
         items.push(
           <PaginationItem key="ellipsis-end">
-            <span className="flex h-9 w-9 items-center justify-center">...</span>
+            <PaginationEllipsis />
           </PaginationItem>
         );
       }
       
       items.push(
         <PaginationItem key="last">
-          <PaginationLink onClick={() => onPageChange(totalPages)} isActive={false}>
+          <PaginationLink onClick={() => onPageChange(totalPages)}>
             {totalPages}
           </PaginationLink>
         </PaginationItem>
@@ -148,10 +151,14 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
         />
       </div>
       
-      {totalPages > 1 && (
+      {totalTrades > 0 && totalPages > 1 && (
         <div className="border-t p-4">
           <div className="text-sm text-muted-foreground mb-2">
-            Affichage de {Math.min((currentPage - 1) * itemsPerPage + 1, totalTrades)} à {Math.min(currentPage * itemsPerPage, totalTrades)} sur {totalTrades} trades
+            {t('trades.showing', {
+              from: Math.min((currentPage - 1) * itemsPerPage + 1, totalTrades),
+              to: Math.min(currentPage * itemsPerPage, totalTrades),
+              total: totalTrades
+            })}
           </div>
           <Pagination>
             <PaginationContent>

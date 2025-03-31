@@ -25,7 +25,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="flex-1 p-4 pb-6 md:p-6 overflow-auto">
             <div className="mb-6 flex items-center justify-between">
               <h1 className="text-2xl font-bold">{pageTitle}</h1>
-              <SidebarTrigger className="md:hidden" />
             </div>
             <div className="overflow-auto">
               {children}

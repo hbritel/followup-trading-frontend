@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
@@ -26,11 +27,10 @@ const Navbar: React.FC = () => {
   return (
     <nav className="flex h-14 items-center border-b px-4 md:px-6">
       <div className="flex items-center gap-2">
-        {isMobile ? (
-          <SidebarTrigger className="h-8 w-8" />
-        ) : null}
+        <SidebarTrigger className="h-8 w-8" />
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <LanguageSwitcher />
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
         </Button>
