@@ -156,7 +156,8 @@
     "accounts": "Accounts",
     "accountManagement": "Account Management",
     "settings": "Settings",
-    "administration": "Administration"
+    "administration": "Administration",
+    "alerts": "Alerts"
   },
   "pages": {
     "dashboard": "Dashboard",
