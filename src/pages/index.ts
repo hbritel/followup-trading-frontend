@@ -20,3 +20,4 @@ export { default as Administration } from './Administration';
 export { default as Profile } from './Profile';
 export { default as Alerts } from './Alerts';
 export { default as RiskMetrics } from './RiskMetrics';
+export { default as HomePage } from './HomePage';

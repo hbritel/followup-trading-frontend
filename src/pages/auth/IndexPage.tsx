@@ -10,7 +10,7 @@ const IndexPage = () => {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return <Navigate to="/auth/login" replace />;
+  return <Navigate to="/" replace />;
 };
 
 export default IndexPage;

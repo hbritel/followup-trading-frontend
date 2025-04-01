@@ -12,7 +12,7 @@ const Index = () => {
       if (isAuthenticated) {
         navigate('/dashboard', { replace: true });
       } else {
-        navigate('/auth/login', { replace: true });
+        navigate('/', { replace: true }); // Redirect to homepage instead of login
       }
     }
   }, [navigate, isAuthenticated, isLoading]);

@@ -35,6 +35,7 @@ import {
   Profile,
   Alerts,
   RiskMetrics,
+  HomePage,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -47,7 +48,9 @@ function App() {
         <AuthProvider>
           <ThemeProvider>
             <Routes>
-              <Route path="/" element={<Index />} />
+              {/* Make the homepage the root route */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/auth" element={<Index />} />
               
               {/* Auth routes with correct paths */}
               <Route path="/auth/login" element={<Login />} />
