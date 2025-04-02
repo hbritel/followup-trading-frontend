@@ -1,8 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "@/api/authService";
-import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -30,27 +28,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
-    // Vérifier la session utilisateur au chargement
+    // Check for existing session on initial load
     const checkAuth = async () => {
       try {
-        // Vérifier si un token existe
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          setIsLoading(false);
-          return;
+        // For now, we'll just use localStorage for testing
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         }
-
-        // Vérifier la validité du token avec l'API
-        const { user } = await authService.checkSession();
-        setUser(user);
       } catch (error) {
-        console.error("Erreur d'authentification:", error);
-        // En cas d'erreur, supprimer les données locales
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
+        console.error("Auth check failed:", error);
       } finally {
         setIsLoading(false);
       }
@@ -62,27 +51,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Appel à l'API de connexion
-      const response = await authService.login({ email, password });
+      // Simulating an API call to your backend
+      // Replace with actual API call to your Spring Boot backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Sauvegarder le token et les infos utilisateur
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
+      // Mock response - replace with actual backend response
+      const mockUser = {
+        id: "user123",
+        name: "John Doe",
+        email: email,
+        mfaEnabled: true
+      };
       
-      // Redirection en fonction de MFA
-      if (response.user.mfaEnabled) {
+      setUser(mockUser);
+      localStorage.setItem("user", JSON.stringify(mockUser));
+      
+      // If MFA is enabled, redirect to MFA verification
+      if (mockUser.mfaEnabled) {
         navigate("/auth/mfa");
       } else {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error("Échec de connexion:", error);
-      toast({
-        title: "Échec de connexion",
-        description: error instanceof Error ? error.message : "Identifiants invalides",
-        variant: "destructive",
-      });
+      console.error("Login failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -92,55 +83,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, name: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Appel à l'API d'inscription
-      const response = await authService.signup({ email, password, name });
+      // Simulating an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Sauvegarder le token et les infos utilisateur
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
+      // Mock response - replace with actual backend response
+      const mockUser = {
+        id: "user123",
+        name: name,
+        email: email,
+        mfaEnabled: false
+      };
       
+      setUser(mockUser);
+      localStorage.setItem("user", JSON.stringify(mockUser));
       navigate("/dashboard");
     } catch (error) {
-      console.error("Échec d'inscription:", error);
-      toast({
-        title: "Échec d'inscription",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite lors de l'inscription",
-        variant: "destructive",
-      });
+      console.error("Signup failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      await authService.logout();
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-    } finally {
-      setUser(null);
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-      setIsLoading(false);
-      navigate("/auth/login");
-    }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+    navigate("/auth/login");
   };
 
   const resetPassword = async (email: string): Promise<void> => {
     setIsLoading(true);
     try {
-      await authService.requestPasswordReset(email);
+      // Simulating an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Backend would send an email with reset instructions
       navigate("/auth/reset-success");
     } catch (error) {
-      console.error("Échec de réinitialisation du mot de passe:", error);
-      toast({
-        title: "Échec de la demande",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite",
-        variant: "destructive",
-      });
+      console.error("Password reset failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -150,20 +129,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyMfaCode = async (code: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const result = await authService.verifyMfa(code);
+      // Simulating an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (result.valid) {
+      // Mock response - replace with actual backend response
+      const isValid = code === "123456"; // Example validation
+      
+      if (isValid) {
         navigate("/dashboard");
       }
       
-      return result.valid;
+      return isValid;
     } catch (error) {
-      console.error("Échec de vérification MFA:", error);
-      toast({
-        title: "Code invalide",
-        description: "Le code d'authentification est incorrect ou a expiré",
-        variant: "destructive",
-      });
+      console.error("MFA verification failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -173,23 +151,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const enableMfa = async (): Promise<{ qrCodeUrl: string }> => {
     setIsLoading(true);
     try {
-      const result = await authService.enableMfa();
+      // Simulating an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mettre à jour l'utilisateur avec MFA activé
+      // Mock response - replace with actual backend response
+      const qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?data=otpauth://totp/DashNestTrader:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=DashNestTrader&algorithm=SHA1&digits=6&period=30";
+      
+      // Update user object
       if (user) {
         const updatedUser = { ...user, mfaEnabled: true };
         setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       }
       
-      return result;
+      return { qrCodeUrl };
     } catch (error) {
-      console.error("Échec d'activation MFA:", error);
-      toast({
-        title: "Échec d'activation MFA",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite",
-        variant: "destructive",
-      });
+      console.error("Enable MFA failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -199,21 +176,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const disableMfa = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      await authService.disableMfa();
+      // Simulating an API call to your backend
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mettre à jour l'utilisateur avec MFA désactivé
+      // Update user object
       if (user) {
         const updatedUser = { ...user, mfaEnabled: false };
         setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem("user", JSON.stringify(updatedUser));
       }
     } catch (error) {
-      console.error("Échec de désactivation MFA:", error);
-      toast({
-        title: "Échec de désactivation MFA",
-        description: error instanceof Error ? error.message : "Une erreur s'est produite",
-        variant: "destructive",
-      });
+      console.error("Disable MFA failed:", error);
       throw error;
     } finally {
       setIsLoading(false);
