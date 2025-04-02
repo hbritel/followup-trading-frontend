@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useTranslation } from 'react-i18next';
 
 interface AuthLayoutProps {
@@ -34,7 +35,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
             <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">DN</div>
             <span className="text-xl font-semibold">DashNest</span>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center">
+            <ThemeToggle />
             <LanguageSwitcher />
           </div>
         </div>

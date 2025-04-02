@@ -2,8 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink } from '@/components/ui/navigation-menu';
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem } from '@/components/ui/navigation-menu';
 import { BarChart3, TrendingUp, Shield, Zap, LineChart, BarChart2, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const HomePage = () => {
   return (
@@ -19,19 +21,23 @@ const HomePage = () => {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="gap-6">
               <NavigationMenuItem>
-                <Link to="#features" className="text-sm font-medium text-foreground/70 hover:text-foreground">
+                <a href="#features" className="text-sm font-medium text-foreground/70 hover:text-foreground">
                   Fonctionnalités
-                </Link>
+                </a>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="#pricing" className="text-sm font-medium text-foreground/70 hover:text-foreground">
+                <a href="#pricing" className="text-sm font-medium text-foreground/70 hover:text-foreground">
                   Tarifs
-                </Link>
+                </a>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
           
           <div className="flex items-center gap-4">
+            <div className="flex items-center">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
             <Link to="/auth/login">
               <Button variant="outline" size="sm">Connexion</Button>
             </Link>
@@ -59,11 +65,11 @@ const HomePage = () => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="#features">
+              <a href="#features">
                 <Button size="lg" variant="outline">
                   Découvrir les fonctionnalités
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
           
