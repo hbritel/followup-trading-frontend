@@ -14,7 +14,8 @@ import type {
   MfaSetupResponseDto, // Type retourné par initMfaSetup (mais pas stocké globalement)
   MfaResultDto,
   TotpVerifyRequestDto,
-  EmailOtpVerifyRequestDto
+  EmailOtpVerifyRequestDto,
+  ResetPasswordRequestDto
 } from '@/types/dto'; // Importer nos types DTO
 import { AxiosError } from 'axios';
 
@@ -40,6 +41,7 @@ interface AuthContextType {
   verifyMfaCode: (code: string, mfaTokenId: string, userId: string, type: 'TOTP' | 'EMAIL') => Promise<boolean>; // Ajout userId si nécessaire pour l'API TOTP/Email
   // --- Fonctions de récupération de mot de passe ---
   forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>; // Added resetPassword function
   // La réinitialisation effective (avec token + nouveau mdp) sera probablement gérée sur une page dédiée
   // qui appelle directement authService.resetPassword, pas besoin de la mettre dans le contexte global.
   //Pour le LOGIN MFA
@@ -224,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-
   const logout = useCallback(async () => {
     console.log("Logging out...");
     await clearAuthState();
@@ -246,7 +247,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fonction pour rafraîchir le profil utilisateur et mettre à jour l'état
+  const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await authService.resetPassword({ token, newPassword });
+      // Success will be handled in the component (toast + redirect)
+    } catch (error) {
+      console.error("Reset password context error:", error);
+      throw error; // Forward error for display in component
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const refreshUserProfile = useCallback(async () => {
     console.log("Refreshing user profile...");
     setIsLoading(true); // Optionnel: indiquer le chargement pendant le refresh
@@ -263,13 +276,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [setUser, logout]); // Ajouter les dépendances
 
-  // Fonction pour confirmer et ACTIVER MFA après vérification du code
   const confirmMfaSetup = async (userId: string, code: string): Promise<void> => {
-    // Note: setIsLoading(true/false) peut être géré ici ou dans le composant Settings
-    // pour un feedback plus localisé. Laissons Settings le gérer.
     console.log(`confirmMfaSetup called in context for userId: ${userId}`);
     try {
-      // Appeler le service backend pour compléter l'activation
       await authService.completeMfaSetup(userId, code);
       console.log("completeMfaSetup API call successful.");
       // Rafraîchir le profil pour obtenir le nouvel état mfaEnabled=true
@@ -282,10 +291,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fonction pour désactiver MFA
   const disableMfa = async (password: string): Promise<void> => {
     if (!user) throw new Error("User not authenticated for disableMfa");
-    // Laisser Settings gérer son propre état de chargement (isDisabling)
     console.log("disableMfa called in context");
     try {
       const data: MfaDisableRequestDto = { userId: user.id, password };
@@ -301,16 +308,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-
-  // ATTENTION: verifyMfaCode nécessite userId. Il faudra l'obtenir.
-  // Soit via le state passé par navigate, soit via un appel API pour récupérer
-  // l'utilisateur par son email/username avant d'appeler cette fonction.
-  // L'implémentation ci-dessous suppose que l'userId est fourni.
-  // Le backend (AuthController) prend aussi mfaTokenId pour la vérification email,
-  // mais userId pour la vérification TOTP. Adaptez selon le type de MFA.
-
-  // Fonction pour finaliser l'authentification après vérification MFA
-  // Prend le type de MFA pour appeler le bon service
   const verifyMfaCode = async (code: string, mfaTokenId: string, userId: string, type: 'TOTP' | 'EMAIL'): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -320,12 +317,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data: TotpVerifyRequestDto = { userId, code };
         response = await authService.verifyTotpCode(data);
       } else { // type === 'EMAIL'
-        // Pour l'email, l'API attend otpTokenId, qui correspond à notre mfaTokenId reçu lors du login
         const data: EmailOtpVerifyRequestDto = { otpTokenId: mfaTokenId, code };
         response = await authService.verifyEmailOtp(data);
       }
 
-      // Vérifier si la réponse contient bien les tokens
       if (response && response.accessToken) {
         console.log("MFA verification successful, tokens received.");
         // Utiliser setAuthState pour stocker les tokens et récupérer le profil
@@ -334,9 +329,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/dashboard'); // Naviguer vers le dashboard après succès
         return true;
       } else {
-        // Cas où l'API réussit (200 OK) mais ne renvoie pas de tokens ? Improbable.
         console.warn("MFA verification response did not contain expected tokens.");
-        // Traiter comme un échec côté client
         return false;
       }
 
@@ -349,35 +342,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-
-  // --- Appareil de confiance ---
-  // Exemple d'implémentation (peut être ajouté à AuthContextType si besoin global)
-  /*
-  const addTrustedDevice = async (deviceName: string, mfaExemptDays: number = 30): Promise<void> => {
-      if (!user) throw new Error("User not authenticated");
-
-      // Récupérer l'empreinte digitale (à implémenter, ex: avec une librairie comme fingerprintjs2)
-      const fingerprint = await getDeviceFingerprint(); // Placeholder
-      if (!fingerprint) {
-           console.error("Could not get device fingerprint.");
-           throw new Error("Device fingerprint is missing.");
-      }
-
-      setIsLoading(true);
-      try {
-          const data: TrustedDeviceRequestDto = { userId: user.id, deviceName, mfaExemptDays };
-          await authService.addTrustedDevice(data, fingerprint);
-          // Afficher un toast de succès ?
-      } catch (error) {
-          console.error("Add trusted device context error:", error);
-          throw error;
-      } finally {
-          setIsLoading(false);
-      }
-  };
-  */
-
-  // Utiliser useMemo pour l'objet de valeur du contexte afin d'éviter des rendus inutiles
   const authContextValue = useMemo(() => ({
     user,
     isAuthenticated: !!user,
@@ -386,28 +350,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signup,
     logout,
     forgotPassword,
-    verifyMfaCode, // Pour le login
-    confirmMfaSetup, // Pour le setup
-    disableMfa,      // Pour la désactivation
-    refreshUserProfile // Exporter la fonction de refresh
-  }), [user, isLoading, login, signup, logout, forgotPassword, verifyMfaCode, confirmMfaSetup, disableMfa, refreshUserProfile]); // Ajouter les dépendances
+    resetPassword,
+    verifyMfaCode,
+    confirmMfaSetup,
+    disableMfa,
+    refreshUserProfile
+  }), [user, isLoading, login, signup, logout, forgotPassword, resetPassword, verifyMfaCode, confirmMfaSetup, disableMfa, refreshUserProfile]);
 
   return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
 };
-
-interface AuthContextType {
-  user: UserContextType;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (emailOrUsername: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, username: string) => Promise<RegisterResponseDto | null>;
-  logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
-  verifyMfaCode: (code: string, mfaTokenId: string, userId: string, type: 'TOTP' | 'EMAIL') => Promise<boolean>; // Pour login
-  confirmMfaSetup: (userId: string, code: string) => Promise<void>; // Pour setup
-  disableMfa: (password: string) => Promise<void>; // Pour setup
-  refreshUserProfile: () => Promise<void>;
-}
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
