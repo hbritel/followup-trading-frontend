@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity as ActivityIcon,
@@ -75,7 +76,10 @@ const DashboardSidebar = () => {
     <div className="border-r bg-secondary/10 h-full w-[var(--sidebar-width)] md:block">
       <div className="flex flex-col gap-y-5 h-full">
         <div className="px-6 py-4">
-          Followup Trading
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="relative w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-lg font-bold text-white">FT</div>
+            <span className="text-lg font-semibold">Followup Trading</span>
+          </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
           <nav className="grid gap-y-8 px-6">

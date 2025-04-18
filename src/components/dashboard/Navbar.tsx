@@ -7,7 +7,8 @@ import {
   MessageSquare,
   Menu,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -23,13 +24,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useTheme } from "@/components/providers/theme-provider";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/auth-context';
 
 const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (
@@ -64,7 +74,12 @@ const Navbar: React.FC = () => {
               <a href="/settings" className="flex w-full">Settings</a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              <div className="flex items-center w-full">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </div>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

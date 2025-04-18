@@ -6,16 +6,21 @@ import { NavigationMenu, NavigationMenuList, NavigationMenuItem } from '@/compon
 import { BarChart3, TrendingUp, Shield, Zap, LineChart, BarChart2, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useAuth } from '@/contexts/auth-context';
 
 const HomePage = () => {
+  const { isAuthenticated } = useAuth();
+  
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header/Navbar */}
       <header className="border-b border-border sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between py-4">
           <div className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-lg font-bold text-white">FT</div>
-            <span className="text-xl font-semibold">Followup Trading</span>
+            <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
+              <div className="relative w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-lg font-bold text-white">FT</div>
+              <span className="text-xl font-semibold">Followup Trading</span>
+            </Link>
           </div>
           
           <NavigationMenu className="hidden md:flex">
@@ -38,12 +43,20 @@ const HomePage = () => {
               <ThemeToggle />
               <LanguageSwitcher />
             </div>
-            <Link to="/auth/login">
-              <Button variant="outline" size="sm">Connexion</Button>
-            </Link>
-            <Link to="/auth/signup">
-              <Button size="sm">Inscription</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button size="sm">Accéder à votre dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth/login">
+                  <Button variant="outline" size="sm">Connexion</Button>
+                </Link>
+                <Link to="/auth/signup">
+                  <Button size="sm">Inscription</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -283,12 +296,20 @@ const HomePage = () => {
             Rejoignez des milliers de traders qui ont optimisé leurs performances avec notre plateforme.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/auth/signup">
-              <Button size="lg">Commencer gratuitement</Button>
-            </Link>
-            <Link to="/auth/login">
-              <Button size="lg" variant="outline">Se connecter</Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard">
+                <Button size="lg">Accéder à votre dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth/signup">
+                  <Button size="lg">Commencer gratuitement</Button>
+                </Link>
+                <Link to="/auth/login">
+                  <Button size="lg" variant="outline">Se connecter</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
