@@ -142,33 +142,35 @@ const getErrorMessage = (error: unknown): string => {
 
 // --- Fonctions MFA ---
 
-const setupMfa = async (data: MfaSetupRequestDto): Promise<MfaSetupResponseDto> => {
-    try {
-        const response = await apiClient.post<MfaSetupResponseDto>('/auth/mfa/setup', data);
-        return response.data;
-    } catch (error) {
-        console.error('Setup MFA service error:', error);
-        throw error;
-    }
-};
+// const setupMfa = async (data: MfaSetupRequestDto): Promise<MfaSetupResponseDto> => {
+//     try {
+//         const response = await apiClient.post<MfaSetupResponseDto>('/auth/mfa/setup', data);
+//         return response.data;
+//     } catch (error) {
+//         console.error('Setup MFA service error:', error);
+//         throw error;
+//     }
+// };
 
 const initMfaSetup = async (userId: string): Promise<MfaSetupResponseDto> => {
     try {
-        const response = await apiClient.post<MfaSetupResponseDto>('/auth/mfa/init', { userId });
-        return response.data; // Contient qrCodeUri et secret
+        const response = await apiClient.post<MfaSetupResponseDto>('/auth/mfa/setup', { userId });
+        return response.data;
     } catch (error) {
         console.error('Init MFA setup service error:', error);
         throw error;
     }
 };
-  
+
 const completeMfaSetup = async (userId: string, verificationCode: string): Promise<MessageResponseDto> => {
     try {
-        const response = await apiClient.post<MessageResponseDto>('/auth/mfa/complete', { 
-            userId,
-            verificationCode 
-        });
-        return response.data; // Message de succès
+        // Le type de requête est MfaCompleteRequestDto
+        const data: MfaCompleteRequestDto = { userId, verificationCode };
+        // Dans l'app mobile ou navigateur
+        console.log("Temps client (ms): " + Date.now());
+        console.log("Période TOTP actuelle: " + Math.floor(Date.now() / 1000 / 30)); // 30 secondes est la période standard
+        const response = await apiClient.post<MessageResponseDto>('/auth/mfa/complete', data);
+        return response.data; // Renvoie un message de succès
     } catch (error) {
         console.error('Complete MFA setup service error:', error);
         throw error;
@@ -177,7 +179,6 @@ const completeMfaSetup = async (userId: string, verificationCode: string): Promi
 
 const disableMfa = async (data: MfaDisableRequestDto): Promise<MessageResponseDto> => {
     try {
-        // Renvoie un message de succès
         const response = await apiClient.post<MessageResponseDto>('/auth/mfa/disable', data);
         return response.data;
     } catch (error) {
@@ -224,7 +225,7 @@ export const authService = {
     logoutUser,
     verifyTotpCode,
     verifyEmailOtp,
-    setupMfa,
+    // setupMfa,
     initMfaSetup,
     completeMfaSetup, 
     disableMfa,

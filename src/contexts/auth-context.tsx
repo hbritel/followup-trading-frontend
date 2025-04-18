@@ -11,7 +11,7 @@ import type {
   MfaRequiredResponseDto,
   RegisterResponseDto,
   MfaDisableRequestDto,
-  MfaSetupResponseDto,
+  MfaSetupResponseDto, // Type retourné par initMfaSetup (mais pas stocké globalement)
   MfaResultDto,
   TotpVerifyRequestDto,
   EmailOtpVerifyRequestDto
@@ -42,10 +42,13 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   // La réinitialisation effective (avec token + nouveau mdp) sera probablement gérée sur une page dédiée
   // qui appelle directement authService.resetPassword, pas besoin de la mettre dans le contexte global.
-  // --- Autres fonctions (à implémenter si besoin) ---
-  // refreshAuthToken: () => Promise<boolean>;
-  enableMfa: () => Promise<MfaSetupResponseDto>; // Renvoie les infos pour le QR code
-  disableMfa: (password: string) => Promise<void>;
+  //Pour le LOGIN MFA
+  // Fonctions pour le SETUP MFA depuis Settings
+  // enableMfa n'est plus ici car l'initiation ne change pas l'état global
+  confirmMfaSetup: (userId: string, code: string) => Promise<void>; // Nouvelle fonction
+  disableMfa: (password: string) => Promise<void>; // Fonction modifiée pour rafraîchir l'état
+  // --- Fonction pour rafraîchir manuellement le profil si nécessaire ---
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -166,9 +169,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/dashboard'); // Ou la page par défaut
       }
       // Cas 2: MFA Requis
-      else if ('mfaTokenId' in response) {
+      else if ('mfaTokenId' in response && 'userId' in response) {
         const mfaResponse = response as MfaRequiredResponseDto;
-        console.log("Login requires MFA verification.");
+        console.log("Login requires MFA verification. Received userId:", mfaResponse.userId);
         // Ici, nous avons besoin de l'ID de l'utilisateur qui tente de se connecter.
         // Le backend devrait idéalement renvoyer cet ID avec mfaTokenId,
         // ou nous devons le stocker temporairement depuis la tentative initiale.
@@ -178,7 +181,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Pour l'exemple, stockons mfaTokenId. L'userId sera nécessaire pour verifyMfaCode.
         setMfaVerificationData({ mfaTokenId: mfaResponse.mfaTokenId });
         // Passer l'email/username à la page MFA via state pour pouvoir récupérer le userId si besoin
-        navigate('/auth/mfa', { state: { identifier: usernameOrEmail, mfaTokenId: mfaResponse.mfaTokenId } });
+        navigate('/auth/mfa', {
+          state: {
+            identifier: usernameOrEmail,
+            mfaTokenId: mfaResponse.mfaTokenId,
+            userId: mfaResponse.userId // <-- Passer userId ici
+          }
+        });
       }
       else {
         // Cas inattendu
@@ -237,52 +246,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fonction pour démarrer la configuration MFA
-  const enableMfa = async (): Promise<MfaSetupResponseDto> => {
-    if (!user) throw new Error("User not authenticated");
-    setIsLoading(true);
+  // Fonction pour rafraîchir le profil utilisateur et mettre à jour l'état
+  const refreshUserProfile = useCallback(async () => {
+    console.log("Refreshing user profile...");
+    setIsLoading(true); // Optionnel: indiquer le chargement pendant le refresh
     try {
-      // Appel API pour obtenir le secret et l'URI QR code
-      const response = await authService.setupMfa({ userId: user.id });
-      // NOTE: Le backend active MFA immédiatement ici ou attend la vérification ?
-      // Le code actuel du backend (configureMfa) semble l'activer immédiatement.
-      // Si la vérification est requise pour *finaliser* l'activation,
-      // il faudrait ajuster la logique ici et dans MFASetup.tsx.
-      // Supposons que l'activation est immédiate au backend pour l'instant.
-
-      // Mettre à jour l'état utilisateur localement (important!)
-      setUser(prevUser => prevUser ? { ...prevUser, mfaEnabled: true } : null);
-
-      return response; // Retourner les données pour affichage du QR code
+      const profile = await userService.getUserProfile();
+      setUser(profile);
+      console.log("User profile refreshed:", profile);
     } catch (error) {
-      console.error("Enable MFA context error:", error);
-      throw error;
+      console.error("Failed to refresh user profile:", error);
+      // Gérer l'erreur ? Déconnecter si 401 ?
+      await logout(); // Déconnecter si le refresh échoue (token invalide ?)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Fin du chargement
+    }
+  }, [setUser, logout]); // Ajouter les dépendances
+
+  // Fonction pour confirmer et ACTIVER MFA après vérification du code
+  const confirmMfaSetup = async (userId: string, code: string): Promise<void> => {
+    // Note: setIsLoading(true/false) peut être géré ici ou dans le composant Settings
+    // pour un feedback plus localisé. Laissons Settings le gérer.
+    console.log(`confirmMfaSetup called in context for userId: ${userId}`);
+    try {
+      // Appeler le service backend pour compléter l'activation
+      await authService.completeMfaSetup(userId, code);
+      console.log("completeMfaSetup API call successful.");
+      // Rafraîchir le profil pour obtenir le nouvel état mfaEnabled=true
+      await refreshUserProfile();
+      // Le composant Settings mettra à jour son état local (mfaStatus) en fonction du nouveau user.mfaEnabled
+    } catch (error) {
+      console.error("confirmMfaSetup context error:", error);
+      // Propager l'erreur pour que Settings puisse afficher un toast
+      throw error;
     }
   };
 
   // Fonction pour désactiver MFA
   const disableMfa = async (password: string): Promise<void> => {
-    if (!user) throw new Error("User not authenticated");
-    setIsLoading(true);
+    if (!user) throw new Error("User not authenticated for disableMfa");
+    // Laisser Settings gérer son propre état de chargement (isDisabling)
+    console.log("disableMfa called in context");
     try {
       const data: MfaDisableRequestDto = { userId: user.id, password };
       await authService.disableMfa(data);
-
-      // Mettre à jour l'état utilisateur localement
-      setUser(prevUser => prevUser ? { ...prevUser, mfaEnabled: false } : null);
-
-      // Afficher un toast de succès (peut aussi être fait dans le composant appelant)
-      // toast({ title: "MFA Disabled", description: "Two-factor authentication has been disabled." });
-
+      console.log("disableMfa API call successful.");
+      // Rafraîchir le profil pour obtenir le nouvel état mfaEnabled=false
+      await refreshUserProfile();
+      // Le composant Settings mettra à jour son état local (mfaStatus) en fonction du nouveau user.mfaEnabled
     } catch (error) {
-      console.error("Disable MFA context error:", error);
-      throw error; // L'erreur sera gérée par le composant appelant (ex: afficher toast)
-    } finally {
-      setIsLoading(false);
+      console.error("disableMfa context error:", error);
+      // Propager l'erreur pour que Settings puisse afficher un toast
+      throw error;
     }
   };
+
 
   // ATTENTION: verifyMfaCode nécessite userId. Il faudra l'obtenir.
   // Soit via le state passé par navigate, soit via un appel API pour récupérer
@@ -368,11 +386,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signup,
     logout,
     forgotPassword,
-    enableMfa,
-    disableMfa,
-    verifyMfaCode,
-    // addTrustedDevice, // <-- Exporter si implémenté et nécessaire globalement
-  }), [user, isLoading, login, signup, logout, forgotPassword, enableMfa, disableMfa, verifyMfaCode]); // Ajouter les nouvelles fonctions aux dépendances
+    verifyMfaCode, // Pour le login
+    confirmMfaSetup, // Pour le setup
+    disableMfa,      // Pour la désactivation
+    refreshUserProfile // Exporter la fonction de refresh
+  }), [user, isLoading, login, signup, logout, forgotPassword, verifyMfaCode, confirmMfaSetup, disableMfa, refreshUserProfile]); // Ajouter les dépendances
 
   return <AuthContext.Provider value={authContextValue}>{children}</AuthContext.Provider>;
 };
@@ -385,9 +403,10 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string, username: string) => Promise<RegisterResponseDto | null>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
-  verifyMfaCode: (mfaTokenId: string, code: string, userId: string, type: 'TOTP' | 'EMAIL') => Promise<boolean>; // Commenté
-  enableMfa: () => Promise<MfaSetupResponseDto>;
-  disableMfa: (password: string) => Promise<void>;
+  verifyMfaCode: (code: string, mfaTokenId: string, userId: string, type: 'TOTP' | 'EMAIL') => Promise<boolean>; // Pour login
+  confirmMfaSetup: (userId: string, code: string) => Promise<void>; // Pour setup
+  disableMfa: (password: string) => Promise<void>; // Pour setup
+  refreshUserProfile: () => Promise<void>;
 }
 
 export const useAuth = (): AuthContextType => {

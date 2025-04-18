@@ -44,7 +44,7 @@ const Settings = () => {
     const [logoutAllDevicesOpen, setLogoutAllDevicesOpen] = useState(false);
 
     // --- États MFA ---
-    const {user, isLoading: isAuthLoading, enableMfa, disableMfa} = useAuth();
+    const {user, isLoading: isAuthLoading, confirmMfaSetup, disableMfa} = useAuth();
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -76,33 +76,26 @@ const Settings = () => {
     }, [user, isAuthLoading]); // Retirer mfaStatus des dépendances ici pour éviter boucle infinie potentielle
 
     const handleStartSetup = useCallback(async () => {
-        // Vérifier le statut actuel explicitement
-        if (mfaStatus !== 'disabled' || !user) {
-            console.warn(`handleStartSetup blocked: mfaStatus=${mfaStatus}, user=${!!user}`);
-            return;
-        }
-        console.log("handleStartSetup called in Settings.tsx");
+        if (mfaStatus !== 'disabled' || !user) return;
+        console.log("handleStartSetup called");
         setIsLoadingSetup(true);
-        setQrCodeUrl('');
-        setSecret(''); // Reset
+        setQrCodeUrl(''); setSecret(''); // Reset
         try {
-            console.log("Calling enableMfa...");
-            const response = await enableMfa(); // Contexte met à jour user.mfaEnabled localement
-            console.log("enableMfa response:", response);
+            // Appel DIRECT au service pour initialiser, SANS changer l'état global
+            const response = await authService.initMfaSetup(user.id);
+            console.log("initMfaSetup service response:", response);
             setQrCodeUrl(response.qrCodeUri);
             setSecret(response.secret);
-            // Mettre à jour le statut ICI après succès
-            setMfaStatus('setup_qr');
-            console.log("mfaStatus set to 'setup_qr'");
+            setMfaStatus('setup_qr'); // Mise à jour de l'état LOCAL uniquement
         } catch (error) {
             console.error("Error in handleStartSetup:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({title: t('error.error'), description: errorMessage, variant: 'destructive'});
+            toast({ title: t('error.error'), description: errorMessage, variant: 'destructive' });
             setMfaStatus('disabled'); // Revenir si erreur
         } finally {
             setIsLoadingSetup(false);
         }
-    }, [enableMfa, mfaStatus, toast, t, user]); // Ajouter mfaStatus ici
+    }, [mfaStatus, toast, t, user]); // user est une dépendance maintenant
 
     const handleCancelSetup = useCallback(() => {
         setMfaStatus('disabled');
@@ -111,6 +104,8 @@ const Settings = () => {
         setVerificationCode('');
     }, []);
 
+
+    // Utilise maintenant la fonction du contexte pour confirmer
     const handleVerifySetupCode = useCallback(async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!user || mfaStatus !== 'setup_verify') return;
@@ -118,46 +113,49 @@ const Settings = () => {
 
         setIsVerifying(true);
         try {
-            console.log("Calling authService.verifyTotpCode...");
-            // Appel direct au service pour vérifier le code sans modifier l'état global Auth
-            await authService.verifyTotpCode({userId: user.id, code: verificationCode});
-            console.log("verifyTotpCode successful for setup confirmation.");
-            // Le backend/contexte a déjà marqué MFA comme activé, on met juste à jour l'UI
+            // Appel à la fonction du CONTEXTE qui gère l'API ET le refresh du user global
+            await confirmMfaSetup(user.id, verificationCode);
+            console.log("confirmMfaSetup (context) successful.");
+            // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
+            // Forcer ici par sécurité pour l'UI immédiate:
             setMfaStatus('enabled');
-            toast({title: t('success.success'), description: t('auth.mfaSetupVerified')});
+            toast({ title: t('success.success'), description: t('auth.mfaSetupVerified') });
             setVerificationCode(''); // Reset field
         } catch (error) {
             console.error("Error in handleVerifySetupCode:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive'});
-            // Rester sur l'étape 'setup_verify' pour réessayer
+            toast({ title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive' });
+            // Rester sur 'setup_verify'
         } finally {
             setIsVerifying(false);
         }
-    }, [user, verificationCode, mfaStatus, toast, t]);
+    }, [user, verificationCode, mfaStatus, toast, t, confirmMfaSetup]); // Ajouter confirmMfaSetup
 
+
+    // Utilise maintenant la fonction du contexte pour désactiver
     const handleConfirmDisable = useCallback(async () => {
         if (mfaStatus !== 'enabled' || !passwordConfirm || !user) return;
         console.log("handleConfirmDisable called");
 
         setIsDisabling(true);
         try {
-            console.log("Calling disableMfa...");
-            await disableMfa(passwordConfirm); // Contexte gère la mise à jour de user.mfaEnabled
-            console.log("disableMfa successful");
-            toast({title: t('success.success'), description: t('auth.mfaDisabledSuccess')});
-            // Le useEffect mettra à jour mfaStatus à 'disabled' car user.mfaEnabled aura changé
-            // setMfaStatus('disabled'); // On peut le forcer ici aussi par sécurité
+            // Appel à la fonction du CONTEXTE
+            await disableMfa(passwordConfirm);
+            console.log("disableMfa (context) successful.");
+            // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
+            // Forcer ici par sécurité pour l'UI immédiate:
+            setMfaStatus('disabled');
+            toast({ title: t('success.success'), description: t('auth.mfaDisabledSuccess') });
             setShowDisableConfirm(false);
             setPasswordConfirm('');
         } catch (error) {
             console.error("Error in handleConfirmDisable:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({title: t('auth.mfaDisableFailed'), description: errorMessage, variant: 'destructive'});
+            toast({ title: t('auth.mfaDisableFailed'), description: errorMessage, variant: 'destructive' });
         } finally {
             setIsDisabling(false);
         }
-    }, [disableMfa, passwordConfirm, mfaStatus, toast, t, user]);
+    }, [passwordConfirm, mfaStatus, toast, t, user, disableMfa]); // Ajouter disableMfa
     // --- Fin Fonctions MFA ---
 
 
@@ -700,11 +698,11 @@ const Settings = () => {
                                                     onCheckedChange={(checked) => {
                                                         console.log(`Switch changed to ${checked}, current status: ${mfaStatus}`);
                                                         if (checked && mfaStatus === 'disabled') {
-                                                            handleStartSetup();
+                                                            handleStartSetup(); // Appel correct
                                                         } else if (!checked && mfaStatus === 'enabled') {
-                                                            setShowDisableConfirm(true);
+                                                            setShowDisableConfirm(true); // Appel correct
                                                         } else if (!checked && (mfaStatus === 'setup_qr' || mfaStatus === 'setup_verify')) {
-                                                            handleCancelSetup();
+                                                            handleCancelSetup(); // Appel correct
                                                         }
                                                     }}
                                                     disabled={isAuthLoading || isLoadingSetup || isDisabling}
@@ -716,7 +714,7 @@ const Settings = () => {
                                     {/* Affichage conditionnel rendu par useMemo */}
                                     <div
                                         className={`pl-2 mt-4 space-y-4 ${mfaStatus !== 'disabled' && mfaStatus !== 'loading' ? 'border-l-2 border-border ml-1' : ''}`}>
-                                        {mfaSectionContent} {/* <- Utilisation du contenu mémorisé */}
+                                        {mfaSectionContent} {/* Utilisation du contenu mémorisé */}
                                     </div>
 
 

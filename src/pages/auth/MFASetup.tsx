@@ -25,7 +25,7 @@ import {
 const MFASetup = () => {
   const { t } = useTranslation();
   // Utiliser les fonctions et états du contexte
-  const { user, isLoading: isAuthLoading, enableMfa, disableMfa } = useAuth();
+  const { user, isLoading: isAuthLoading, disableMfa } = useAuth();
   const { toast } = useToast();
 
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -60,18 +60,18 @@ const MFASetup = () => {
     setIsLoadingSetup(true);
     setQrCodeUrl(''); // Réinitialiser
     setSecret('');
-    try {
-      const response = await enableMfa(); // Appel de la fonction du contexte
-      setQrCodeUrl(response.qrCodeUri);
-      setSecret(response.secret);
-      setMfaStatus('setup_qr'); // Passer à l'étape d'affichage du QR code
-    } catch (error) {
-      const errorMessage = authService.getErrorMessage(error);
-      toast({ title: t('error.error'), description: errorMessage, variant: 'destructive' });
-      setMfaStatus('disabled'); // Revenir à l'état désactivé si erreur
-    } finally {
-      setIsLoadingSetup(false);
-    }
+    // try {
+    //   const response = await enableMfa(); // Appel de la fonction du contexte
+    //   setQrCodeUrl(response.qrCodeUri);
+    //   setSecret(response.secret);
+    //   setMfaStatus('setup_qr'); // Passer à l'étape d'affichage du QR code
+    // } catch (error) {
+    //   const errorMessage = authService.getErrorMessage(error);
+    //   toast({ title: t('error.error'), description: errorMessage, variant: 'destructive' });
+    //   setMfaStatus('disabled'); // Revenir à l'état désactivé si erreur
+    // } finally {
+    //   setIsLoadingSetup(false);
+    // }
   };
 
   // Fonction pour vérifier le code pendant le setup

@@ -1,6 +1,6 @@
 // src/pages/auth/MFA.tsx
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom'; // Importer useLocation/useNavigate
 import {useTranslation} from 'react-i18next';
 import {useAuth} from '@/contexts/auth-context'; // Assurez-vous que le chemin est correct
@@ -11,7 +11,6 @@ import {useToast} from '@/hooks/use-toast';
 import {authService} from '@/services/auth.service'; // Pour getErrorMessage et sendEmailOtp
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"; // Pour choisir TOTP/Email
 import {Loader2} from 'lucide-react'; // Pour indicateur de chargement
-import {userService} from '@/services/user.service';
 
 // Type pour location.state (ce que AuthContext a envoyé)
 interface MfaLocationState {
@@ -36,42 +35,12 @@ const MFA = () => {
     // Récupérer les données passées par AuthContext via navigate
     const locationState = location.state as MfaLocationState | null;
     const mfaTokenIdFromLogin = locationState?.mfaTokenId; // ID temporaire de session MFA du login
-    //const userIdFromLogin = locationState?.userId; // ID utilisateur (si renvoyé par le backend)
+    const userIdFromLogin = locationState?.userId; // ID utilisateur (si renvoyé par le backend)
     const userIdentifier = locationState?.identifier; // email/username (utile si userId manque)
-
-    // État pour stocker le userId récupéré
-    const [retrievedUserId, setRetrievedUserId] = useState<string | null>(null);
-    const [isFetchingUserId, setIsFetchingUserId] = useState(false);
-
-    // Fonction pour récupérer et stocker userId si nécessaire
-    const ensureUserIdIsAvailable = useCallback(async (): Promise<string | null> => {
-        if (retrievedUserId) return retrievedUserId; // Déjà récupéré
-        if (!userIdentifier) {
-            toast({ title: "Error", description: "User identifier is missing.", variant: "destructive" });
-            return null;
-        }
-
-        setIsFetchingUserId(true);
-        try {
-            const userId = await userService.findUserIdByIdentifier(userIdentifier);
-            if (userId) {
-                setRetrievedUserId(userId);
-                return userId;
-            } else {
-                toast({ title: "Error", description: "Could not retrieve user information.", variant: "destructive" });
-                return null;
-            }
-        } catch (error) {
-            toast({ title: "Error", description: "Failed to fetch user data.", variant: "destructive" });
-            return null;
-        } finally {
-            setIsFetchingUserId(false);
-        }
-    }, [retrievedUserId, userIdentifier, toast]); // Ajouter les dépendances
 
     // Vérification initiale
     useEffect(() => {
-        if (!mfaTokenIdFromLogin || !userIdentifier) { // Vérifier mfaTokenId et identifier
+        if (!mfaTokenIdFromLogin || !userIdFromLogin) { // Vérifier mfaTokenId et identifier
             console.error("MFA page loaded without required mfaTokenId or identifier in location state.");
             toast({
                 title: "Error",
@@ -80,73 +49,93 @@ const MFA = () => {
             });
             navigate('/auth/login');
         }
-    }, [navigate, toast, mfaTokenIdFromLogin, userIdentifier]);
+        // Désactiver l'onglet email si userIdentifier (email) n'est pas disponible
+        if (!userIdentifier?.includes('@') && selectedTab === 'email') {
+            setSelectedTab('totp'); // Revenir à TOTP si l'identifiant n'est pas un email
+        }
+    }, [navigate, toast, mfaTokenIdFromLogin, userIdFromLogin, userIdentifier, selectedTab]);
 
     // Handler pour la soumission du code de vérification
     const handleVerifySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // userId est maintenant disponible via userIdFromLogin
+        if (!userIdFromLogin) {
+            toast({title: "Error", description: "User ID is missing.", variant: "destructive"});
+            return; // Ne devrait pas arriver grâce au useEffect
+        }
+
         let currentMfaTokenId: string | null = null;
-        let currentUserId: string | null = null;
         let mfaType: 'TOTP' | 'EMAIL' | null = null;
 
         if (selectedTab === 'totp') {
-            currentUserId = retrievedUserId ?? await ensureUserIdIsAvailable(); // Récupérer si pas déjà fait
-            if (!currentUserId) return; // Arrêter si userId non trouvé
+            // Pour TOTP, l'API verifyTotpCode attend userId.
+            // La fonction context verifyMfaCode attend aussi mfaTokenId même pour TOTP,
+            // passons celui reçu du login (même s'il n'est pas utilisé par l'API TOTP elle-même).
             currentMfaTokenId = mfaTokenIdFromLogin || '';
             mfaType = 'TOTP';
         } else { // email
             if (!otpTokenId) {
-                toast({ title: "Error", description: "Email OTP was not sent or ID is missing.", variant: "destructive" });
+                toast({
+                    title: "Error",
+                    description: "Email OTP was not sent or ID is missing.",
+                    variant: "destructive"
+                });
                 return;
             }
-            // Récupérer userId aussi pour l'appel context (même si l'API email n'en a pas besoin)
-            currentUserId = retrievedUserId ?? await ensureUserIdIsAvailable();
-            if (!currentUserId) return;
+            // Pour Email, l'API verifyEmailOtp attend otpTokenId (stocké localement après envoi).
             currentMfaTokenId = otpTokenId;
             mfaType = 'EMAIL';
         }
 
-        if (!mfaType || !currentMfaTokenId || !currentUserId) {
-            toast({ title: "Error", description: "Missing required information for verification.", variant: "destructive" });
+        if (!mfaType || !currentMfaTokenId) {
+            toast({
+                title: "Error",
+                description: "Missing required information for verification.",
+                variant: "destructive"
+            });
             return;
         }
 
         try {
-            const isValid = await verifyMfaCode(verificationCode, currentMfaTokenId, currentUserId, mfaType);
+            // Appel à la fonction du contexte avec userId directement disponible
+            const isValid = await verifyMfaCode(verificationCode, currentMfaTokenId, userIdFromLogin, mfaType);
             if (!isValid) {
-                toast({ title: t('auth.invalidCodeTitle'), description: t('auth.invalidCodeDesc'), variant: 'destructive' });
-            } // Navigation gérée par le contexte si succès
+                toast({
+                    title: t('auth.invalidCodeTitle'),
+                    description: t('auth.invalidCodeDesc'),
+                    variant: 'destructive'
+                });
+            }
         } catch (error) {
             console.error('MFA verification component error:', error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({ title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive' });
+            toast({title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive'});
         }
     };
 
 
     // Handler pour envoyer l'OTP par email
     const handleSendEmailOtp = async () => {
-        const userId = retrievedUserId ?? await ensureUserIdIsAvailable(); // Récupérer userId
-        if (!userId || !userIdentifier) {
-            toast({ title: "Error", description: "Missing user information to send email OTP.", variant: "destructive" });
+        // userId est maintenant disponible
+        if (!userIdFromLogin || !userIdentifier) {
+            toast({title: "Error", description: "Missing user information to send email OTP.", variant: "destructive"});
             return;
         }
-        // userIdentifier est supposé être l'email
-        const emailToSendTo = userIdentifier;
+        const emailToSendTo = userIdentifier; // Toujours l'hypothèse que c'est l'email
 
         setIsSendingEmail(true);
         setEmailOtpSent(false);
         setOtpTokenId(null);
 
         try {
-            const response = await authService.sendEmailOtp({ userId: userId, email: emailToSendTo });
+            const response = await authService.sendEmailOtp({userId: userIdFromLogin, email: emailToSendTo});
             setOtpTokenId(response.otpTokenId);
             setEmailOtpSent(true);
-            toast({ title: "Email Sent", description: `An OTP code has been sent to ${emailToSendTo}.` });
+            toast({title: "Email Sent", description: `An OTP code has been sent to ${emailToSendTo}.`});
         } catch (error) {
             const errorMessage = authService.getErrorMessage(error);
-            toast({ title: "Failed to Send Email", description: errorMessage, variant: "destructive" });
+            toast({title: "Failed to Send Email", description: errorMessage, variant: "destructive"});
         } finally {
             setIsSendingEmail(false);
         }
@@ -168,8 +157,8 @@ const MFA = () => {
                 <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'totp' | 'email')}
                       className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="totp" disabled={isFetchingUserId}>Authenticator App</TabsTrigger>
-                        <TabsTrigger value="email" disabled={isFetchingUserId}>Email OTP</TabsTrigger>
+                        <TabsTrigger value="totp">Authenticator App</TabsTrigger>
+                        <TabsTrigger value="email" disabled={!userIdentifier?.includes('@')}>Email OTP</TabsTrigger>
                     </TabsList>
 
                     {/* --- Onglet TOTP --- */}
@@ -213,13 +202,9 @@ const MFA = () => {
                                         Click the button below to send a one-time password to your registered email
                                         address ({userIdentifier || 'your email'}).
                                     </p>
-                                    <Button
-                                        onClick={handleSendEmailOtp}
-                                        disabled={isSendingEmail || isFetchingUserId}
-                                        className="w-full"
-                                    >
-                                        {(isSendingEmail || isFetchingUserId) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {(isSendingEmail || isFetchingUserId) ? 'Loading...' : 'Send Email OTP'}
+                                    <Button onClick={handleSendEmailOtp} disabled={isSendingEmail} className="w-full">
+                                        {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                        {isSendingEmail ? 'Sending...' : 'Send Email OTP'}
                                     </Button>
                                 </div>
                             ) : (
@@ -245,20 +230,13 @@ const MFA = () => {
                                             autoComplete="one-time-code"
                                         />
                                     </div>
-                                    <Button type="submit" className="w-full"
-                                            disabled={isLoading || verificationCode.length !== 6}>
-                                        {(isLoading || isFetchingUserId) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {(isLoading || isFetchingUserId) ? t('common.verifying') : t('common.verify')}
+                                    <Button type="submit" className="w-full" disabled={isLoading || verificationCode.length !== 6}>
+                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        {isLoading ? t('common.verifying') : t('common.verify')}
                                     </Button>
-                                    {/* Option pour renvoyer l'email */}
-                                    <Button
-                                        variant="link"
-                                        type="button"
-                                        onClick={handleSendEmailOtp}
-                                        disabled={isSendingEmail || isFetchingUserId}
-                                        className="w-full text-sm"
-                                    >
-                                        {(isSendingEmail || isFetchingUserId) ? 'Loading...' : 'Resend Email OTP'}
+                                    {/* Bouton Renvoyer */}
+                                    <Button variant="link" type="button" onClick={handleSendEmailOtp} disabled={isSendingEmail} className="w-full text-sm">
+                                        {isSendingEmail ? 'Sending...' : 'Resend Email OTP'}
                                     </Button>
                                 </form>
                             )}

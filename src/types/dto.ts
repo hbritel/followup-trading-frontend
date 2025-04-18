@@ -38,11 +38,6 @@ export interface TokenResponseDto {
     tokenType: string;
 }
 
-// Corresponds à AuthDto.MfaRequiredResponse
-// export interface MfaRequiredResponseDto {
-//     mfaTokenId: string; // Backend renvoie l'ID du token MFA temporaire
-// }
-
 // Structure générique pour les réponses d'erreur basée sur ErrorResponse.java
 export interface ApiErrorResponseDto {
     status: number;

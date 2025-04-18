@@ -49,31 +49,6 @@ const changePassword = async (passwords: ChangePasswordRequestDto): Promise<void
     }
 }
 
-// PLACEHOLDER: Endpoint pour trouver un utilisateur par email/username
-// Ce endpoint devrait être sécurisé d'une manière ou d'une autre ou limité
-// Remplacer par l'appel API réel une fois l'endpoint créé.
-const findUserIdByIdentifier = async (identifier: string): Promise<string | null> => {
-    console.warn("Using placeholder for findUserIdByIdentifier. Implement actual API call.");
-    // Simuler un appel API - REMPLACER CECI
-    try {
-        // Exemple d'appel API si l'endpoint existait :
-        // const response = await apiClient.get<{ id: string }>(`/users/find-by-identifier`, { params: { identifier } });
-        // return response.data.id;
-
-        // --- Début Simulation ---
-        if (identifier.includes('@')) { // Simuler la recherche par email
-            // Retourner un ID factice pour le test
-            return identifier === "test@example.com" ? "uuid-for-test-email" : null;
-        } else { // Simuler la recherche par username
-            return identifier === "testuser" ? "uuid-for-test-user" : null;
-        }
-        // --- Fin Simulation ---
-
-    } catch (error) {
-        console.error(`Failed to find user ID for identifier: ${identifier}`, error);
-        return null;
-    }
-};
 
 // Ajoutez d'autres fonctions userService ici si nécessaire (updateProfile, etc.)
 
@@ -82,7 +57,6 @@ export const userService = {
     getUserPreferences,
     updateUserPreferences,
     changePassword,
-    findUserIdByIdentifier,
     // Exposer getErrorMessage ici aussi peut être utile
     getErrorMessage: authService.getErrorMessage,
 };
