@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { userService } from '@/services/user.service';
+import type { ChangePasswordRequestDto } from '@/types/dto';
+import { Loader2 } from 'lucide-react';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -32,7 +35,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -52,19 +55,35 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       });
       return;
     }
+
+    // TODO: Ajouter une validation de force du mot de passe côté client (optionnel mais recommandé)
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const passwordData: ChangePasswordRequestDto = {
+        currentPassword,
+        newPassword,
+      };
+      await userService.changePassword(passwordData);
       toast({
         title: "Success",
-        description: "Your password has been updated successfully",
+        description: "Your password has been updated successfully.",
       });
-      setIsSubmitting(false);
       resetForm();
-      onOpenChange(false);
-    }, 1000);
+      onOpenChange(false); // Fermer le dialogue en cas de succès
+
+    } catch (error) {
+      console.error("Change password error:", error);
+      const errorMessage = userService.getErrorMessage(error); // Utiliser getErrorMessage
+      toast({
+        title: "Error updating password",
+        description: errorMessage, // Afficher l'erreur du backend (ex: "Mot de passe actuel incorrect")
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const resetForm = () => {
@@ -77,7 +96,7 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetForm(); onOpenChange(isOpen); }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
@@ -175,17 +194,11 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                resetForm();
-                onOpenChange(false);
-              }}
-            >
+            <Button type="button" variant="outline" onClick={() => { resetForm(); onOpenChange(false); }} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>

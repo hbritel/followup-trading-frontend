@@ -107,13 +107,9 @@ export interface MfaResultDto {
 }
 
 // Basé sur UserDto.ChangePasswordRequest
-export interface ChangePasswordRequestDto { // <-- Vérifiez le mot-clé 'export'
+export interface ChangePasswordRequestDto {
     currentPassword: string;
     newPassword: string;
-    // Ces champs sont dans le DTO Java mais ne sont peut-être pas envoyés depuis le front
-    // Si non envoyés, commentez-les ou rendez-les optionnels. Le backend les récupère via HttpServletRequest.
-    // ipAddress?: string;
-    // userAgent?: string;
 }
 
 // --- DTOs MFA ---
