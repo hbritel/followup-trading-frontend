@@ -9,6 +9,7 @@ import type {
   LoginResponseDto,
   TokenResponseDto,
   MfaRequiredResponseDto,
+  RegisterRequestDto,
   RegisterResponseDto,
   MfaDisableRequestDto,
   MfaSetupResponseDto, // Type retourné par initMfaSetup (mais pas stocké globalement)
@@ -34,7 +35,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (emailOrUsername: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, username: string) => Promise<RegisterResponseDto | null>;
+  signup: (name: string, email: string, password: string, username: string) => Promise<RegisterResponseDto>;
   logout: () => void;
   // --- Fonctions MFA ---
   // initiateMfaVerification: (data: MfaVerificationData) => void; // Peut-être pas nécessaire si login gère déjà
@@ -207,22 +208,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (name: string, email: string, password: string, username: string): Promise<RegisterResponseDto | null> => {
-    setIsLoading(true);
+  const signup = async (name: string, email: string, password: string, username: string): Promise<RegisterResponseDto> => {
+    setIsLoading(true); // Indiquer le début du chargement
     try {
-      const registerData = { username, email, password, fullName: name };
+      // Préparer les données pour l'API (correspond à RegisterRequestDto)
+      const registerData: RegisterRequestDto = { username, email, password, fullName: name };
+
+      // Appeler le service réel
       const response = await authService.registerUser(registerData);
-      console.log("Signup successful:", response);
-      // Après inscription réussie, on pourrait rediriger vers le login
-      // ou connecter automatiquement l'utilisateur (si le backend renvoie des tokens)
-      // Pour l'instant, on renvoie juste les données et le composant gérera la redirection vers login.
+
+      // En cas de succès, le service renvoie RegisterResponseDto.
+      // Nous ne connectons PAS l'utilisateur ici, nous retournons juste la réponse.
+      // La navigation vers le login sera gérée par le composant Signup.tsx.
+      console.log("Signup successful via service:", response);
       return response;
+
     } catch (error) {
-      console.error("Signup failed:", error);
-      // L'erreur sera affichée dans le composant Signup via toast
-      throw error; // Renvoyer l'erreur
+      // L'erreur (validation backend, email/username dupliqué, etc.) sera interceptée
+      // par Axios et formatée par getErrorMessage. Nous la propageons au composant.
+      console.error("Signup context error:", error);
+      throw error; // Renvoyer l'erreur pour que Signup.tsx l'affiche
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Fin du chargement
     }
   };
 
