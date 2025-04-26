@@ -20,16 +20,35 @@ import type {
     MfaDisableRequestDto,
     MfaSetupRequestDto,
     MfaSetupResponseDto, // Pour appareil de confiance
-    MfaCompleteRequestDto
+    MfaCompleteRequestDto, MfaRequiredResponseDto
 } from '@/types/dto'; // Assurez-vous que le chemin est correct
 import {AxiosError} from 'axios';
-// ...
+
+// Variable pour stocker temporairement le token MFA
+let currentMfaToken: string | null = null;
 
 // Fonction pour vérifier le code TOTP
 const verifyTotpCode = async (data: TotpVerifyRequestDto): Promise<MfaResultDto> => {
     try {
+        const headers: Record<string, string> = {};
+
+        // Utiliser la valeur stockée (qui est maintenant le mfaToken dédié ou mfaTokenId)
+        // pour le header X-MFA-Token que le backend attend.
+        if (currentMfaToken) {
+            headers['X-MFA-Token'] = currentMfaToken; // Envoyer la valeur stockée
+            console.log("X-MFA-Token header added for verification:", currentMfaToken);
+        } else {
+            console.warn("Attempting MFA verification without a stored MFA token/ID.");
+            // Vous pourriez vouloir lancer une erreur ici si ce token est obligatoire
+            // throw new Error("MFA verification token is missing.");
+        }
+
         // L'API /mfa/totp/verify renvoie directement les tokens en cas de succès (encapsulés dans MfaResult au backend)
-        const response = await apiClient.post<MfaResultDto>('/auth/mfa/totp/verify', data);
+        const response = await apiClient.post<MfaResultDto>('/auth/mfa/totp/verify', data, { headers });
+
+        // Effacer le token MFA après utilisation
+        currentMfaToken = null;
+
         return response.data;
     } catch (error) {
         console.error('Verify TOTP code service error:', error);
@@ -53,6 +72,39 @@ const loginUser = async (credentials: LoginRequestDto): Promise<LoginResponseDto
     try {
         console.log("Attempting login with:", credentials); // Log de débogage
         const response = await apiClient.post<LoginResponseDto>('/auth/login', credentials);
+        const responseData = response.data;
+
+        // Utiliser un type guard basé sur une propriété unique à MfaRequiredResponseDto
+        // (mfaTokenId ou mfaToken, selon ce que le backend renvoie maintenant)
+        if ('mfaTokenId' in responseData) { // Ou if ('mfaToken' in responseData) si c'est le nouveau champ clé
+
+            // TypeScript sait maintenant que responseData est MfaRequiredResponseDto
+            const mfaResponse = responseData as MfaRequiredResponseDto;
+
+            // Accéder à la propriété correcte renvoyée par le backend
+            // Si vous avez ajouté 'mfaToken' et que c'est celui à utiliser pour le header:
+            if (mfaResponse.mfaToken) {
+                currentMfaToken = mfaResponse.mfaToken;
+                console.log("Specific MFA token stored for verification:", currentMfaToken);
+            }
+                // Sinon, si vous voulez utiliser mfaTokenId dans le header :
+                // else if (mfaResponse.mfaTokenId) {
+                //    currentMfaToken = mfaResponse.mfaTokenId;
+                //    console.log("MFA token ID stored for verification:", currentMfaToken);
+            // }
+            else {
+                console.error("MFA required response is missing the expected token/ID field.");
+                currentMfaToken = null; // Assurer la propreté
+                // Peut-être lancer une erreur ici ?
+            }
+        } else if ('accessToken' in responseData) {
+            // Login réussi sans MFA, s'assurer que le token MFA est effacé
+            currentMfaToken = null;
+        } else {
+            console.error("Unexpected login response structure:", responseData);
+            currentMfaToken = null;
+        }
+
         console.log("Login response received:", response.data); // Log de débogage
         return response.data;
     } catch (error) {

@@ -17,6 +17,7 @@ interface MfaLocationState {
     identifier?: string; // email ou username utilisé pour le login
     mfaTokenId?: string; // Reçu du backend lors du login
     userId?: string;     // Reçu du backend lors du login (hypothèse)
+    mfaToken?: string;   // Token MFA spécial
 }
 
 const MFA = () => {
@@ -37,6 +38,21 @@ const MFA = () => {
     const mfaTokenIdFromLogin = locationState?.mfaTokenId; // ID temporaire de session MFA du login
     const userIdFromLogin = locationState?.userId; // ID utilisateur (si renvoyé par le backend)
     const userIdentifier = locationState?.identifier; // email/username (utile si userId manque)
+    const mfaToken = locationState?.mfaToken; // Récupérer le token MFA
+
+    // Stocker le token MFA dès le chargement du composant
+    useEffect(() => {
+        if (mfaToken) {
+            // Stocker le token MFA pour les appels API ultérieurs
+            console.log('Storing MFA token for API calls:', mfaToken.substring(0, 10) + '...');
+
+            // Stocker dans sessionStorage pour qu'il soit accessible par authService
+            window.sessionStorage.setItem('current_mfa_token', mfaToken);
+
+            // Alternative: appeler directement une méthode du service d'auth
+            // authService.setMfaToken(mfaToken);
+        }
+    }, [mfaToken]);
 
     // Vérification initiale
     useEffect(() => {
@@ -117,18 +133,18 @@ const MFA = () => {
 
     // Handler pour envoyer l'OTP par email
     const handleSendEmailOtp = async () => {
-        // userId est maintenant disponible
         if (!userIdFromLogin || !userIdentifier) {
             toast({title: "Error", description: "Missing user information to send email OTP.", variant: "destructive"});
             return;
         }
-        const emailToSendTo = userIdentifier; // Toujours l'hypothèse que c'est l'email
 
+        const emailToSendTo = userIdentifier;
         setIsSendingEmail(true);
         setEmailOtpSent(false);
         setOtpTokenId(null);
 
         try {
+            // Le token MFA sera utilisé automatiquement par authService pour cette requête également
             const response = await authService.sendEmailOtp({userId: userIdFromLogin, email: emailToSendTo});
             setOtpTokenId(response.otpTokenId);
             setEmailOtpSent(true);
@@ -141,6 +157,24 @@ const MFA = () => {
         }
     };
 
+    // Ajouter un petit composant de diagnostic pour le développement
+    const MfaDiagnostics = () => (
+        <div className="mt-6 text-xs text-muted-foreground">
+            <details>
+                <summary className="cursor-pointer">Diagnostic Info</summary>
+                <pre className="mt-2 p-2 bg-muted rounded overflow-x-auto">
+                    {JSON.stringify({
+                        mfaTokenPresent: !!mfaToken,
+                        currentTimeStep: Math.floor(Date.now() / 1000 / 30),
+                        mfaTokenIdFromLogin,
+                        userIdFromLogin,
+                        otpTokenId,
+                        tab: selectedTab
+                    }, null, 2)}
+                </pre>
+            </details>
+        </div>
+    );
 
     return (
         <AuthLayout
@@ -154,95 +188,103 @@ const MFA = () => {
                     <Button onClick={() => navigate('/auth/login')} className="mt-4">Go to Login</Button>
                 </div>
             ) : (
-                <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'totp' | 'email')}
-                      className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="totp">Authenticator App</TabsTrigger>
-                        <TabsTrigger value="email" disabled={!userIdentifier?.includes('@')}>Email OTP</TabsTrigger>
-                    </TabsList>
+                <>
+                    <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'totp' | 'email')}
+                          className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="totp">Authenticator App</TabsTrigger>
+                            <TabsTrigger value="email" disabled={!userIdentifier?.includes('@')}>Email OTP</TabsTrigger>
+                        </TabsList>
 
-                    {/* --- Onglet TOTP --- */}
-                    <TabsContent value="totp">
-                        <form onSubmit={handleVerifySubmit} className="space-y-6 mt-4">
-                            <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    {t('auth.enterTotpCode')} {/* Traduire */}
-                                </p>
-                                <Input
-                                    id="verificationCodeTotp"
-                                    type="text"
-                                    inputMode="numeric"
-                                    pattern="[0-9]*"
-                                    maxLength={6}
-                                    placeholder="123456"
-                                    value={verificationCode}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/\D/g, '');
-                                        setVerificationCode(value);
-                                    }}
-                                    className="text-center text-lg tracking-widest"
-                                    required
-                                    autoComplete="one-time-code"
-                                />
-                            </div>
-                            <Button type="submit" className="w-full"
-                                    disabled={isLoading || verificationCode.length !== 6}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                {isLoading ? t('common.verifying') : t('common.verify')}
-                            </Button>
-                        </form>
-                    </TabsContent>
-
-                    {/* --- Onglet Email OTP --- */}
-                    <TabsContent value="email">
-                        <div className="space-y-6 mt-4">
-                            {!emailOtpSent ? (
-                                <div className="text-center space-y-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        Click the button below to send a one-time password to your registered email
-                                        address ({userIdentifier || 'your email'}).
+                        {/* --- Onglet TOTP --- */}
+                        <TabsContent value="totp">
+                            <form onSubmit={handleVerifySubmit} className="space-y-6 mt-4">
+                                <div className="space-y-2">
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        {t('auth.enterTotpCode')}
                                     </p>
-                                    <Button onClick={handleSendEmailOtp} disabled={isSendingEmail} className="w-full">
-                                        {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                        {isSendingEmail ? 'Sending...' : 'Send Email OTP'}
-                                    </Button>
+                                    <Input
+                                        id="verificationCodeTotp"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        maxLength={6}
+                                        placeholder="123456"
+                                        value={verificationCode}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, '');
+                                            setVerificationCode(value);
+                                        }}
+                                        className="text-center text-lg tracking-widest"
+                                        required
+                                        autoComplete="one-time-code"
+                                    />
                                 </div>
-                            ) : (
-                                <form onSubmit={handleVerifySubmit} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground mb-4">
-                                            {t('auth.enterEmailOtpCode')} {/* Traduire */}
+                                <Button type="submit" className="w-full"
+                                        disabled={isLoading || verificationCode.length !== 6}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    {isLoading ? t('common.verifying') : t('common.verify')}
+                                </Button>
+                            </form>
+                        </TabsContent>
+
+                        {/* --- Onglet Email OTP --- */}
+                        <TabsContent value="email">
+                            <div className="space-y-6 mt-4">
+                                {!emailOtpSent ? (
+                                    <div className="text-center space-y-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Click the button below to send a one-time password to your registered email
+                                            address ({userIdentifier || 'your email'}).
                                         </p>
-                                        <Input
-                                            id="verificationCodeEmail"
-                                            type="text"
-                                            inputMode="numeric"
-                                            pattern="[0-9]*"
-                                            maxLength={6}
-                                            placeholder="123456"
-                                            value={verificationCode}
-                                            onChange={(e) => {
-                                                const value = e.target.value.replace(/\D/g, '');
-                                                setVerificationCode(value);
-                                            }}
-                                            className="text-center text-lg tracking-widest"
-                                            required
-                                            autoComplete="one-time-code"
-                                        />
+                                        <Button onClick={handleSendEmailOtp} disabled={isSendingEmail}
+                                                className="w-full">
+                                            {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                            {isSendingEmail ? 'Sending...' : 'Send Email OTP'}
+                                        </Button>
                                     </div>
-                                    <Button type="submit" className="w-full" disabled={isLoading || verificationCode.length !== 6}>
-                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {isLoading ? t('common.verifying') : t('common.verify')}
-                                    </Button>
-                                    {/* Bouton Renvoyer */}
-                                    <Button variant="link" type="button" onClick={handleSendEmailOtp} disabled={isSendingEmail} className="w-full text-sm">
-                                        {isSendingEmail ? 'Sending...' : 'Resend Email OTP'}
-                                    </Button>
-                                </form>
-                            )}
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                                ) : (
+                                    <form onSubmit={handleVerifySubmit} className="space-y-6">
+                                        <div className="space-y-2">
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                {t('auth.enterEmailOtpCode')}
+                                            </p>
+                                            <Input
+                                                id="verificationCodeEmail"
+                                                type="text"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                maxLength={6}
+                                                placeholder="123456"
+                                                value={verificationCode}
+                                                onChange={(e) => {
+                                                    const value = e.target.value.replace(/\D/g, '');
+                                                    setVerificationCode(value);
+                                                }}
+                                                className="text-center text-lg tracking-widest"
+                                                required
+                                                autoComplete="one-time-code"
+                                            />
+                                        </div>
+                                        <Button type="submit" className="w-full"
+                                                disabled={isLoading || verificationCode.length !== 6}>
+                                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                            {isLoading ? t('common.verifying') : t('common.verify')}
+                                        </Button>
+                                        {/* Bouton Renvoyer */}
+                                        <Button variant="link" type="button" onClick={handleSendEmailOtp}
+                                                disabled={isSendingEmail} className="w-full text-sm">
+                                            {isSendingEmail ? 'Sending...' : 'Resend Email OTP'}
+                                        </Button>
+                                    </form>
+                                )}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+
+                    {/* Afficher les infos de diagnostic en développement */}
+                    {process.env.NODE_ENV === 'development' && <MfaDiagnostics/>}
+                </>
             )}
         </AuthLayout>
     );

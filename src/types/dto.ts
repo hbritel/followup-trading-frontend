@@ -166,8 +166,10 @@ export interface MfaResultDto {
 // Ceci est CRUCIAL pour l'étape de vérification TOTP
 export interface MfaRequiredResponseDto {
     mfaTokenId: string; // Identifiant temporaire de session MFA
-    userId: string;     // <-- ASSUMPTION: Le backend renvoie aussi l'ID de l'utilisateur
-                        //     Si ce n'est pas le cas, il faudra le récupérer autrement dans MFA.tsx
+    userId: string;
+    mfaToken?: string; // <-- Si le backend renvoie maintenant ce champ spécifique
+                       //     Rendez-le optionnel (?) si ce n'est pas garanti.
+                       //     Si mfaToken REMPLACE mfaTokenId, ajustez en conséquence.
 }
 
 
