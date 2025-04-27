@@ -86,6 +86,7 @@ export interface UserPreferencesDto {
     performanceReportFrequency: string | null; // 'DAILY', 'WEEKLY', ...
     dateFormat: string | null;
     numberFormat: string | null;
+    inactivityTimeoutMinutes?: number | null;
     updatedAt: string; // ISO Date string
 }
 

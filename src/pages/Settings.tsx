@@ -29,6 +29,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { userService } from '@/services/user.service';
+import type { UserPreferencesDto } from '@/types/dto';
 
 const Settings = () => {
     const {t} = useTranslation();
@@ -55,6 +57,76 @@ const Settings = () => {
     const [isDisabling, setIsDisabling] = useState(false);
     // Initialiser à 'loading' pour attendre la fin du chargement user
     const [mfaStatus, setMfaStatus] = useState<'loading' | 'disabled' | 'setup_qr' | 'setup_verify' | 'enabled'>('loading');
+
+    // État pour TOUTES les préférences utilisateur modifiables
+    // Initialiser avec null ou un objet vide pour indiquer qu'elles ne sont pas encore chargées
+    const [preferences, setPreferences] = useState<Partial<UserPreferencesDto> | null>(null);
+    const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
+
+    // --- Chargement des préférences ---
+    useEffect(() => {
+        const fetchPreferences = async () => {
+            setIsLoadingPrefs(true);
+            try {
+                const prefs = await userService.getUserPreferences();
+                setPreferences(prefs);
+                console.log("Preferences loaded:", prefs);
+            } catch (error) {
+                console.error("Failed to load user preferences:", error);
+                toast({ title: "Error", description: "Could not load preferences.", variant: "destructive" });
+            } finally {
+                setIsLoadingPrefs(false);
+            }
+        };
+
+        if (user) { // Charger seulement si l'utilisateur est authentifié
+            fetchPreferences();
+        }
+    }, [user, toast]); // Recharger si l'utilisateur change
+
+    // --- Handler pour mettre à jour une préférence spécifique ---
+    // Utilisation d'un type générique pour le rendre réutilisable
+    const handlePreferenceChange = <K extends keyof UserPreferencesDto>(
+        key: K,
+        // L'entrée peut toujours être une chaîne (du Select) ou le type correct (du Switch)
+        value: UserPreferencesDto[K] | string
+    ) => {
+        // Déclarer la variable qui contiendra la valeur finale correctement typée
+        let finalValue: UserPreferencesDto[K] | null;
+
+        if (key === 'inactivityTimeoutMinutes') {
+            // Ici, nous savons que 'value' vient du Select et est une string
+            // ou potentiellement le type UserPreferencesDto[K] si l'état initial était chargé
+            const numValue = parseInt(value as string, 10); // Convertir en nombre
+
+            // Calculer la valeur finale (number ou null)
+            const timeoutValue = (!isNaN(numValue) && numValue > 0) ? numValue : null;
+
+            // Assigner à finalValue. TypeScript a besoin d'aide ici car il ne relie pas dynamiquement
+            // key === '...' à UserPreferencesDto[K]. Nous affirmons que timeoutValue (number | null)
+            // est un type valide pour UserPreferencesDto['inactivityTimeoutMinutes'].
+            finalValue = timeoutValue as UserPreferencesDto[K];
+
+        } else {
+            // Pour toutes les autres clés, nous nous attendons à ce que 'value' ait déjà le bon type UserPreferencesDto[K]
+            // (par exemple, boolean pour un Switch). Nous enlevons la possibilité 'string'.
+            // L'assertion 'as' est utilisée pour indiquer à TS que nous gérons le cas string ci-dessus.
+            if (typeof value === 'string') {
+                // Ce cas ne devrait pas se produire pour les clés autres que inactivityTimeoutMinutes
+                console.error(`handlePreferenceChange: Received unexpected string value "${value}" for key "${String(key)}"`);
+                // Optionnel : Retourner sans mettre à jour l'état pour éviter les erreurs
+                return;
+            }
+            finalValue = value;
+        }
+
+        // Mettre à jour l'état. 'finalValue' a maintenant le type UserPreferencesDto[K] | null,
+        // ce qui est compatible avec Partial<UserPreferencesDto>.
+        setPreferences(prev => (prev
+                ? { ...prev, [key]: finalValue }
+                : { [key]: finalValue } as Partial<UserPreferencesDto> // Petite assertion ici si le premier objet est vide
+        ));
+    };
 
     // --- Fonctions MFA (intégrées ici) ---
     // Mettre à jour mfaStatus SEULEMENT quand user/isAuthLoading changent
@@ -168,14 +240,35 @@ const Settings = () => {
         });
     };
 
-    const handleSaveChanges = (section: string) => {
-        // Logique de sauvegarde spécifique à chaque section (non MFA)
-        toast({
-            title: `${section} settings saved`,
-            description: "Your changes have been saved successfully.",
-        });
+    // --- Handler Sauvegarde (modifié pour utiliser l'état 'preferences') ---
+    const handleSaveChanges = async (section: string) => { // Rendre async
+        if (!preferences) return;
+
+        // Filtrer les clés non modifiables si nécessaire (ex: updatedAt)
+        const { updatedAt, ...prefsToSave } = preferences;
+
+        // Afficher un indicateur de chargement si besoin
+        setIsLoadingPrefs(true); // Réutiliser cet état ou créer un autre
+
+        try {
+            // Pourrait avoir des appels différents selon la section,
+            // mais ici on sauvegarde toutes les préférences modifiées.
+            await userService.updateUserPreferences(prefsToSave);
+            toast({
+                title: `${section} settings saved`,
+                description: "Your changes have been saved successfully.",
+            });
+            // Optionnel: Recharger les préférences après sauvegarde pour confirmer
+            // const updatedPrefs = await userService.getUserPreferences();
+            // setPreferences(updatedPrefs);
+        } catch (error) {
+            console.error(`Failed to save ${section} settings:`, error);
+            const errorMessage = userService.getErrorMessage(error);
+            toast({ title: "Error Saving Settings", description: errorMessage, variant: "destructive" });
+        } finally {
+            setIsLoadingPrefs(false);
+        }
     };
-    // --- Fin Fonctions existantes ---
 
     // --- Memoisation pour le rendu MFA (évite recalculs inutiles) ---
     const mfaSectionContent = useMemo(() => {
@@ -735,23 +828,34 @@ const Settings = () => {
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-medium">Session Security</h3>
 
+                                    {/* Auto Logout (Switch lié à la logique d'idle timer, pas directement à une pref) */}
+                                    {/* Pour l'instant, on peut juste l'afficher comme info */}
                                     <div className="flex items-center justify-between">
                                         <div className="space-y-0.5">
                                             <Label>Auto Logout</Label>
                                             <p className="text-sm text-muted-foreground">
-                                                Automatically log out after period of inactivity
+                                                {preferences?.inactivityTimeoutMinutes && preferences.inactivityTimeoutMinutes > 0
+                                                    ? `Enabled (${preferences.inactivityTimeoutMinutes} minutes)`
+                                                    : "Disabled"}
                                             </p>
                                         </div>
-                                        <Switch defaultChecked={true}/>
+                                        {/* Le switch ici serait redondant si contrôlé par le timeout */}
+                                        {/* <Switch defaultChecked={true} /> */}
                                     </div>
 
+                                    {/* Inactivity Timeout (Connecté à l'état 'preferences') */}
                                     <div className="space-y-2">
                                         <Label htmlFor="timeout">Inactivity Timeout</Label>
-                                        <Select defaultValue="30">
+                                        <Select
+                                            value={preferences?.inactivityTimeoutMinutes?.toString() ?? '0'} // Utiliser '0' pour "Disabled"
+                                            onValueChange={(value) => handlePreferenceChange('inactivityTimeoutMinutes', value)}
+                                            disabled={isLoadingPrefs}
+                                        >
                                             <SelectTrigger id="timeout">
-                                                <SelectValue placeholder="Select timeout period"/>
+                                                <SelectValue placeholder="Select timeout period" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="0">Disabled</SelectItem> {/* Option Désactivé */}
                                                 <SelectItem value="5">5 minutes</SelectItem>
                                                 <SelectItem value="15">15 minutes</SelectItem>
                                                 <SelectItem value="30">30 minutes</SelectItem>
@@ -769,6 +873,14 @@ const Settings = () => {
                                             </p>
                                         </div>
                                         <Switch defaultChecked={true}/>
+                                    </div>
+
+                                    {/* Bouton de sauvegarde spécifique à cette section */}
+                                    <div className="flex justify-end pt-4">
+                                        <Button onClick={() => handleSaveChanges('Session')} disabled={isLoadingPrefs}>
+                                            {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                            Save Session Settings
+                                        </Button>
                                     </div>
                                 </div>
 
