@@ -173,6 +173,38 @@ export interface MfaRequiredResponseDto {
                        //     Si mfaToken REMPLACE mfaTokenId, ajustez en conséquence.
 }
 
+// Interface correspondant à SessionDto.java
+export interface SessionDto {
+    id: string;
+    ipAddress: string | null; // Rendre nullable si le backend peut renvoyer null
+    userAgent: string | null; // Rendre nullable
+    createdAt: string; // ISO Date string
+    lastUsedAt: string; // ISO Date string
+    expiresAt: string; // ISO Date string
+    isCurrentSession: boolean;
+    // deviceName?: string | null; // Ajouter si le backend les inclut
+}
+
+// DTO pour les appareils de confiance
+export interface TrustedDeviceDto {
+    id: string;
+    name: string;
+    fingerprint: string;
+    lastIpAddress: string | null;
+    lastUserAgent: string | null;
+    lastUsedAt: string; // ISO Date string
+    createdAt: string; // ISO Date string
+    isMfaExempt: boolean;
+    mfaExemptUntil: string | null; // ISO Date string
+    isCurrentDevice: boolean;
+}
+
+// DTO pour la mise à jour d'un appareil de confiance
+export interface TrustedDeviceUpdateDto {
+    deviceName?: string;
+    mfaExemptDays?: number;
+}
+
 
 // --- DTOs Utilisateur existants ---
 // UserProfileDto, UserPreferencesDto, ChangePasswordRequestDto, etc.

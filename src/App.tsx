@@ -40,8 +40,10 @@ import {
 
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useFingerprint } from '@/hooks/useFingerprint';
 
 function App() {
+  useFingerprint();
   return (
     <div className="min-h-screen">
       <Suspense fallback={<LoadingFallback />}>

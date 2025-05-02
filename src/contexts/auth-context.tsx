@@ -4,21 +4,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; // Importer jwt-decode
 import { authService } from '@/services/auth.service'; // Importer notre service auth
 import { userService } from '@/services/user.service'; // Importer notre service user
+import { useToast } from '@/components/ui/use-toast';
 import type {
   UserProfileDto,
-  LoginResponseDto,
   TokenResponseDto,
   MfaRequiredResponseDto,
   RegisterRequestDto,
   RegisterResponseDto,
   MfaDisableRequestDto,
-  MfaSetupResponseDto, // Type retourné par initMfaSetup (mais pas stocké globalement)
   MfaResultDto,
   TotpVerifyRequestDto,
-  EmailOtpVerifyRequestDto,
-  ResetPasswordRequestDto
+  EmailOtpVerifyRequestDto
 } from '@/types/dto'; // Importer nos types DTO
-import { AxiosError } from 'axios';
 
 // Interface pour les données de l'utilisateur stockées dans le contexte
 // Utilise UserProfileDto car c'est ce que /users/me renvoie
@@ -75,6 +72,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Stocke les infos temporaires si MFA est requis après le login initial
   const [mfaVerificationData, setMfaVerificationData] = useState<MfaVerificationData | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Vérifier si un nouvel appareil a été détecté
+    const newDeviceDetected = sessionStorage.getItem('newDeviceDetected');
+
+    if (newDeviceDetected === 'true') {
+      // Afficher la notification
+      toast({
+        title: "Nouvel appareil détecté",
+        description: "Nous avons détecté que vous vous connectez depuis un nouvel appareil. Un e-mail de notification a été envoyé pour des raisons de sécurité.",
+        variant: "default",
+        duration: 8000 // Plus long pour s'assurer que l'utilisateur le voit
+      });
+
+      // Supprimer l'indicateur pour éviter d'afficher la notification plusieurs fois
+      sessionStorage.removeItem('newDeviceDetected');
+    }
+  }, [toast]); // Inclure toast dans les dépendances
 
   // Fonction pour définir l'état d'authentification après succès (login, refresh, load)
   const setAuthState = useCallback(async (accessToken: string, refreshToken?: string) => {

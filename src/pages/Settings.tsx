@@ -19,7 +19,7 @@ import {useTranslation} from 'react-i18next'; // Ajouter i18n
 // Imports nécessaires pour MFA
 import {useAuth} from '@/contexts/auth-context';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Loader2, ShieldCheck} from 'lucide-react';
+import {Laptop, Loader2, Monitor, ShieldCheck, Smartphone} from 'lucide-react';
 import {authService} from '@/services/auth.service';
 import {
     Dialog,
@@ -29,8 +29,36 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { userService } from '@/services/user.service';
-import type { UserPreferencesDto } from '@/types/dto';
+import {userService} from '@/services/user.service';
+import type {SessionDto, UserPreferencesDto} from '@/types/dto';
+import {format} from 'date-fns';
+import {sessionService} from "@/services/session.service.ts";
+import TrustedDevicesManager from '@/components/security/TrustedDevicesManager';
+
+// Helper simple pour deviner le type d'appareil depuis le User Agent
+const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
+    const ua = userAgent?.toLowerCase() || '';
+    if (ua.includes('iphone') || ua.includes('android') || ua.includes('mobile')) {
+        return <Smartphone className="h-5 w-5 mr-2 text-muted-foreground"/>;
+    }
+    if (ua.includes('macintosh') || ua.includes('mac os')) {
+        return <Laptop className="h-5 w-5 mr-2 text-muted-foreground"/>;
+    }
+    if (ua.includes('windows') || ua.includes('linux')) {
+        return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>; // Ou Laptop ?
+    }
+    return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>; // Défaut
+};
+
+// Helper pour formater la date de manière lisible
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+        return format(new Date(dateString), "PPpp"); // Ex: Sep 21, 2023, 4:15:30 PM
+    } catch {
+        return dateString; // Fallback si format invalide
+    }
+}
 
 const Settings = () => {
     const {t} = useTranslation();
@@ -63,6 +91,62 @@ const Settings = () => {
     const [preferences, setPreferences] = useState<Partial<UserPreferencesDto> | null>(null);
     const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
 
+    // --- États pour Device Management ---
+    const [sessions, setSessions] = useState<SessionDto[]>([]);
+    const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+    const [errorSessions, setErrorSessions] = useState<string | null>(null);
+    // --- Fin États Device Management ---
+
+    // --- Charger les sessions au montage ou quand l'utilisateur change ---
+    useEffect(() => {
+        const fetchSessions = async () => {
+            setIsLoadingSessions(true);
+            setErrorSessions(null);
+            try {
+                const activeSessions = await sessionService.getActiveSessions();
+                setSessions(activeSessions);
+            } catch (error) {
+                console.error("Failed to load sessions:", error);
+                setErrorSessions("Could not load session data.");
+                // Afficher un toast si nécessaire
+                // toast({ title: "Error", description: "Could not load session data.", variant: "destructive" });
+            } finally {
+                setIsLoadingSessions(false);
+            }
+        };
+
+        if (user) { // Charger seulement si l'utilisateur est connecté
+            fetchSessions();
+        } else {
+            setSessions([]); // Vider si l'utilisateur se déconnecte
+        }
+    }, [user]); // Recharger si l'utilisateur change
+
+    // --- Handler pour révoquer une session ---
+    const handleRevokeSession = async (sessionId: string) => {
+        // Optionnel: Demander confirmation
+        if (!confirm(`Are you sure you want to revoke this session? You might be logged out if it's your current session.`)) {
+            return;
+        }
+
+        // Mettre à jour l'UI pour indiquer le chargement (ex: désactiver le bouton)
+        // On pourrait ajouter un état spécifique 'revokingSessionId'
+
+        try {
+            await sessionService.revokeSession(sessionId);
+            toast({ title: "Session Revoked", description: "The session has been successfully revoked." });
+            // Rafraîchir la liste des sessions après révocation
+            const activeSessions = await sessionService.getActiveSessions();
+            setSessions(activeSessions);
+        } catch (error) {
+            console.error(`Failed to revoke session ${sessionId}:`, error);
+            const errorMessage = sessionService.getErrorMessage(error);
+            toast({ title: "Error Revoking Session", description: errorMessage, variant: "destructive" });
+        } finally {
+            // Arrêter l'indicateur de chargement
+        }
+    };
+
     // --- Chargement des préférences ---
     useEffect(() => {
         const fetchPreferences = async () => {
@@ -73,7 +157,7 @@ const Settings = () => {
                 console.log("Preferences loaded:", prefs);
             } catch (error) {
                 console.error("Failed to load user preferences:", error);
-                toast({ title: "Error", description: "Could not load preferences.", variant: "destructive" });
+                toast({title: "Error", description: "Could not load preferences.", variant: "destructive"});
             } finally {
                 setIsLoadingPrefs(false);
             }
@@ -123,8 +207,8 @@ const Settings = () => {
         // Mettre à jour l'état. 'finalValue' a maintenant le type UserPreferencesDto[K] | null,
         // ce qui est compatible avec Partial<UserPreferencesDto>.
         setPreferences(prev => (prev
-                ? { ...prev, [key]: finalValue }
-                : { [key]: finalValue } as Partial<UserPreferencesDto> // Petite assertion ici si le premier objet est vide
+                ? {...prev, [key]: finalValue}
+                : {[key]: finalValue} as Partial<UserPreferencesDto> // Petite assertion ici si le premier objet est vide
         ));
     };
 
@@ -151,7 +235,8 @@ const Settings = () => {
         if (mfaStatus !== 'disabled' || !user) return;
         console.log("handleStartSetup called");
         setIsLoadingSetup(true);
-        setQrCodeUrl(''); setSecret(''); // Reset
+        setQrCodeUrl('');
+        setSecret(''); // Reset
         try {
             // Appel DIRECT au service pour initialiser, SANS changer l'état global
             const response = await authService.initMfaSetup(user.id);
@@ -162,7 +247,7 @@ const Settings = () => {
         } catch (error) {
             console.error("Error in handleStartSetup:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({ title: t('error.error'), description: errorMessage, variant: 'destructive' });
+            toast({title: t('error.error'), description: errorMessage, variant: 'destructive'});
             setMfaStatus('disabled'); // Revenir si erreur
         } finally {
             setIsLoadingSetup(false);
@@ -191,12 +276,12 @@ const Settings = () => {
             // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
             // Forcer ici par sécurité pour l'UI immédiate:
             setMfaStatus('enabled');
-            toast({ title: t('success.success'), description: t('auth.mfaSetupVerified') });
+            toast({title: t('success.success'), description: t('auth.mfaSetupVerified')});
             setVerificationCode(''); // Reset field
         } catch (error) {
             console.error("Error in handleVerifySetupCode:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({ title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive' });
+            toast({title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive'});
             // Rester sur 'setup_verify'
         } finally {
             setIsVerifying(false);
@@ -217,13 +302,13 @@ const Settings = () => {
             // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
             // Forcer ici par sécurité pour l'UI immédiate:
             setMfaStatus('disabled');
-            toast({ title: t('success.success'), description: t('auth.mfaDisabledSuccess') });
+            toast({title: t('success.success'), description: t('auth.mfaDisabledSuccess')});
             setShowDisableConfirm(false);
             setPasswordConfirm('');
         } catch (error) {
             console.error("Error in handleConfirmDisable:", error);
             const errorMessage = authService.getErrorMessage(error);
-            toast({ title: t('auth.mfaDisableFailed'), description: errorMessage, variant: 'destructive' });
+            toast({title: t('auth.mfaDisableFailed'), description: errorMessage, variant: 'destructive'});
         } finally {
             setIsDisabling(false);
         }
@@ -245,7 +330,7 @@ const Settings = () => {
         if (!preferences) return;
 
         // Filtrer les clés non modifiables si nécessaire (ex: updatedAt)
-        const { updatedAt, ...prefsToSave } = preferences;
+        const {updatedAt, ...prefsToSave} = preferences;
 
         // Afficher un indicateur de chargement si besoin
         setIsLoadingPrefs(true); // Réutiliser cet état ou créer un autre
@@ -264,7 +349,7 @@ const Settings = () => {
         } catch (error) {
             console.error(`Failed to save ${section} settings:`, error);
             const errorMessage = userService.getErrorMessage(error);
-            toast({ title: "Error Saving Settings", description: errorMessage, variant: "destructive" });
+            toast({title: "Error Saving Settings", description: errorMessage, variant: "destructive"});
         } finally {
             setIsLoadingPrefs(false);
         }
@@ -502,7 +587,8 @@ const Settings = () => {
                                 </div>
 
                                 <div className="flex justify-end">
-                                    <Button onClick={() => handleSaveChanges('General')}>{t('common.saveChanges')}</Button>
+                                    <Button
+                                        onClick={() => handleSaveChanges('General')}>{t('common.saveChanges')}</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -618,7 +704,8 @@ const Settings = () => {
                                 </div>
 
                                 <div className="flex justify-end">
-                                    <Button onClick={() => handleSaveChanges('Notifications')}>{t('common.saveChanges')}</Button>
+                                    <Button
+                                        onClick={() => handleSaveChanges('Notifications')}>{t('common.saveChanges')}</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -755,7 +842,8 @@ const Settings = () => {
                                 </div>
 
                                 <div className="flex justify-end">
-                                    <Button onClick={() => handleSaveChanges('Appearance')}>{t('common.saveChanges')}</Button>
+                                    <Button
+                                        onClick={() => handleSaveChanges('Appearance')}>{t('common.saveChanges')}</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -852,7 +940,7 @@ const Settings = () => {
                                             disabled={isLoadingPrefs}
                                         >
                                             <SelectTrigger id="timeout">
-                                                <SelectValue placeholder="Select timeout period" />
+                                                <SelectValue placeholder="Select timeout period"/>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="0">Disabled</SelectItem> {/* Option Désactivé */}
@@ -887,62 +975,76 @@ const Settings = () => {
                                 <Separator/>
 
                                 {/* Section Device Management (conservée) */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Device Management</h3>
+                                {/*<div className="space-y-4">*/}
+                                {/*    <h3 className="text-lg font-medium">Device Management</h3>*/}
+                                {/*    <p className="text-sm text-muted-foreground">*/}
+                                {/*        Manage devices and sessions currently logged into your account.*/}
+                                {/*    </p>*/}
 
-                                    <div className="rounded-md border p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h4 className="font-medium">Current Device</h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Chrome on Windows • IP: 192.168.1.1
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Last active: Just now
-                                                </p>
-                                            </div>
-                                            <Badge>Current</Badge>
-                                        </div>
-                                    </div>
+                                {/*    {isLoadingSessions && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}*/}
+                                {/*    {errorSessions && <Alert variant="destructive"><AlertDescription>{errorSessions}</AlertDescription></Alert>}*/}
 
-                                    <div className="rounded-md border p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h4 className="font-medium">iPhone 13</h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Safari on iOS • IP: 192.168.1.2
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Last active: 2 hours ago
-                                                </p>
-                                            </div>
-                                            <Button variant="outline" size="sm">Revoke</Button>
-                                        </div>
-                                    </div>
+                                {/*    {!isLoadingSessions && !errorSessions && sessions.length === 0 && (*/}
+                                {/*        <p className="text-sm text-muted-foreground text-center py-4">No active sessions found.</p>*/}
+                                {/*    )}*/}
 
-                                    <div className="rounded-md border p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h4 className="font-medium">MacBook Pro</h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Safari on macOS • IP: 192.168.1.3
-                                                </p>
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Last active: Yesterday
-                                                </p>
-                                            </div>
-                                            <Button variant="outline" size="sm">Revoke</Button>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full"
-                                        onClick={() => setLogoutAllDevicesOpen(true)} // Garder ce bouton
-                                        disabled={isAuthLoading}
-                                    >
-                                        {t('settings.logoutOtherDevices')}
-                                    </Button>
-                                </div>
+                                {/*    {!isLoadingSessions && !errorSessions && sessions.length > 0 && (*/}
+                                {/*        <div className="space-y-3">*/}
+                                {/*            {sessions.map((session) => (*/}
+                                {/*                <div key={session.id} className="rounded-md border p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">*/}
+                                {/*                    <div className="flex items-center">*/}
+                                {/*                        {getDeviceIcon(session.userAgent)}*/}
+                                {/*                        <div>*/}
+                                {/*                            <h4 className="font-medium flex items-center">*/}
+                                {/*                                /!* Essayer d'extraire une info lisible de l'UA *!/*/}
+                                {/*                                {session.userAgent?.split('(')[0].trim() || 'Unknown Device'}*/}
+                                {/*                                {session.isCurrentSession && <Badge variant="outline" className="ml-2 text-xs">Current</Badge>}*/}
+                                {/*                            </h4>*/}
+                                {/*                            <p className="text-sm text-muted-foreground">*/}
+                                {/*                                {session.ipAddress || 'IP Unknown'}*/}
+                                {/*                                /!* Optionnel: Afficher plus de détails de l'UA *!/*/}
+                                {/*                                /!* {session.userAgent && ` • ${session.userAgent}`} *!/*/}
+                                {/*                            </p>*/}
+                                {/*                            <p className="text-xs text-muted-foreground mt-1">*/}
+                                {/*                                Last active: {formatDate(session.lastUsedAt)}*/}
+                                {/*                            </p>*/}
+                                {/*                            <p className="text-xs text-muted-foreground">*/}
+                                {/*                                Expires: {formatDate(session.expiresAt)}*/}
+                                {/*                            </p>*/}
+                                {/*                        </div>*/}
+                                {/*                    </div>*/}
+                                {/*                    {!session.isCurrentSession && (*/}
+                                {/*                        <Button*/}
+                                {/*                            variant="outline"*/}
+                                {/*                            size="sm"*/}
+                                {/*                            onClick={() => handleRevokeSession(session.id)}*/}
+                                {/*                            // Ajouter un état de chargement spécifique si besoin*/}
+                                {/*                        >*/}
+                                {/*                            Revoke*/}
+                                {/*                        </Button>*/}
+                                {/*                    )}*/}
+                                {/*                </div>*/}
+                                {/*            ))}*/}
+                                {/*        </div>*/}
+                                {/*    )}*/}
+
+                                {/*    /!* Bouton Logout All Other Devices *!/*/}
+                                {/*    {sessions.filter(s => !s.isCurrentSession).length > 0 && ( // Afficher seulement si d'autres sessions existent*/}
+                                {/*        <Button*/}
+                                {/*            variant="outline"*/}
+                                {/*            className="w-full mt-4"*/}
+                                {/*            onClick={() => setLogoutAllDevicesOpen(true)}*/}
+                                {/*            disabled={isLoadingSessions} // Désactiver pendant le chargement initial*/}
+                                {/*        >*/}
+                                {/*            {t('settings.logoutOtherDevices')}*/}
+                                {/*        </Button>*/}
+                                {/*    )}*/}
+                                {/*</div>*/}
+
+                                <Separator />
+
+                                {/* Section des appareils de confiance */}
+                                <TrustedDevicesManager />
 
                                 {/* Pas de bouton Save Changes global pour l'onglet Sécurité */}
                             </CardContent>

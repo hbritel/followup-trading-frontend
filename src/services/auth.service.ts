@@ -71,35 +71,42 @@ const verifyEmailOtp = async (data: EmailOtpVerifyRequestDto): Promise<MfaResult
 const loginUser = async (credentials: LoginRequestDto): Promise<LoginResponseDto> => {
     try {
         console.log("Attempting login with:", credentials); // Log de débogage
+        // L'empreinte sera ajoutée automatiquement par l'intercepteur
         const response = await apiClient.post<LoginResponseDto>('/auth/login', credentials);
         const responseData = response.data;
 
         // Utiliser un type guard basé sur une propriété unique à MfaRequiredResponseDto
-        // (mfaTokenId ou mfaToken, selon ce que le backend renvoie maintenant)
-        if ('mfaTokenId' in responseData) { // Ou if ('mfaToken' in responseData) si c'est le nouveau champ clé
-
+        if ('mfaTokenId' in responseData) {
             // TypeScript sait maintenant que responseData est MfaRequiredResponseDto
             const mfaResponse = responseData as MfaRequiredResponseDto;
 
-            // Accéder à la propriété correcte renvoyée par le backend
-            // Si vous avez ajouté 'mfaToken' et que c'est celui à utiliser pour le header:
+            // Stocker le token MFA pour la vérification ultérieure
             if (mfaResponse.mfaToken) {
                 currentMfaToken = mfaResponse.mfaToken;
                 console.log("Specific MFA token stored for verification:", currentMfaToken);
-            }
-                // Sinon, si vous voulez utiliser mfaTokenId dans le header :
-                // else if (mfaResponse.mfaTokenId) {
-                //    currentMfaToken = mfaResponse.mfaTokenId;
-                //    console.log("MFA token ID stored for verification:", currentMfaToken);
-            // }
-            else {
+            } else if (mfaResponse.mfaTokenId) {
+                currentMfaToken = mfaResponse.mfaTokenId;
+                console.log("MFA token ID stored for verification:", currentMfaToken);
+            } else {
                 console.error("MFA required response is missing the expected token/ID field.");
-                currentMfaToken = null; // Assurer la propreté
-                // Peut-être lancer une erreur ici ?
+                currentMfaToken = null;
+            }
+
+            // Si le backend indique que c'est un nouvel appareil, on pourrait stocker cette info
+            // pour l'afficher dans l'UI plus tard
+            if ('newDeviceDetected' in mfaResponse && mfaResponse.newDeviceDetected) {
+                // Stocker dans sessionStorage pour afficher une notification à l'utilisateur
+                sessionStorage.setItem('newDeviceDetected', 'true');
             }
         } else if ('accessToken' in responseData) {
             // Login réussi sans MFA, s'assurer que le token MFA est effacé
             currentMfaToken = null;
+
+            // Si le backend indique que c'est un nouvel appareil, on pourrait stocker cette info
+            const tokenResponse = responseData as TokenResponseDto & { newDeviceDetected?: boolean };
+            if (tokenResponse.newDeviceDetected) {
+                sessionStorage.setItem('newDeviceDetected', 'true');
+            }
         } else {
             console.error("Unexpected login response structure:", responseData);
             currentMfaToken = null;

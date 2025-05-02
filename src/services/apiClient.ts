@@ -1,6 +1,7 @@
 // src/services/apiClient.ts
 import axios, {type InternalAxiosRequestConfig} from 'axios';
 import {config} from '@/config';
+import { fingerprintService } from './fingerprint.service';
 
 // Fonction pour récupérer le token (nous l'implémenterons dans auth-context)
 const getAccessToken = (): string | null => {
@@ -21,7 +22,7 @@ const apiClient = axios.create({
 
 // Intercepteur pour ajouter le token JWT aux requêtes sortantes
 apiClient.interceptors.request.use(
-    (axiosConfig: InternalAxiosRequestConfig) => {
+    async (axiosConfig: InternalAxiosRequestConfig) => {
         const token = getAccessToken();
         if (token && axiosConfig.headers) {
             // Ne pas ajouter le header pour les routes d'auth publiques
@@ -32,8 +33,16 @@ apiClient.interceptors.request.use(
                 axiosConfig.headers.Authorization = `Bearer ${token}`;
             }
         }
-        // TODO: Ajouter potentiellement l'en-tête X-Fingerprint si nécessaire globalement
-        // axiosConfig.headers['X-Fingerprint'] = getDeviceFingerprint();
+        // Ajouter l'empreinte d'appareil à toutes les requêtes
+        try {
+            const fingerprint = await fingerprintService.getFingerprint();
+            if (fingerprint && axiosConfig.headers) {
+                axiosConfig.headers['X-Fingerprint'] = fingerprint;
+            }
+        } catch (error) {
+            console.error('Error getting fingerprint for request:', error);
+            // Continuer sans empreinte en cas d'erreur
+        }
         return axiosConfig;
     },
     (error) => {
