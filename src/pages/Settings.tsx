@@ -1,6 +1,7 @@
 // src/pages/Settings.tsx
 
 import React, {useCallback, useEffect, useMemo, useState} from 'react'; // Ajout React et useCallback
+import {usePreferences} from '@/contexts/preferences-context';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -10,10 +11,10 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Switch} from '@/components/ui/switch';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {Separator} from '@/components/ui/separator';
-import {Badge} from '@/components/ui/badge';
 import {useToast} from '@/components/ui/use-toast'; // Utiliser le hook shadcn/ui standard
 import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
 import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog'; // Gardé pour l'instant
+import type {Theme} from '@/components/providers/theme-provider';
 import {useTheme} from '@/components/providers/theme-provider';
 import {useTranslation} from 'react-i18next'; // Ajouter i18n
 // Imports nécessaires pour MFA
@@ -29,7 +30,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {userService} from '@/services/user.service';
 import type {SessionDto, UserPreferencesDto} from '@/types/dto';
 import {format} from 'date-fns';
 import {sessionService} from "@/services/session.service.ts";
@@ -88,8 +88,10 @@ const Settings = () => {
 
     // État pour TOUTES les préférences utilisateur modifiables
     // Initialiser avec null ou un objet vide pour indiquer qu'elles ne sont pas encore chargées
-    const [preferences, setPreferences] = useState<Partial<UserPreferencesDto> | null>(null);
-    const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
+    // const [preferences, setPreferences] = useState<Partial<UserPreferencesDto> | null>(null);
+    // const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
+    // --- Utilisation du contexte Preferences ---
+    const {preferences, isLoadingPrefs, setPreference, savePreferences} = usePreferences();
 
     // --- États pour Device Management ---
     const [sessions, setSessions] = useState<SessionDto[]>([]);
@@ -134,39 +136,18 @@ const Settings = () => {
 
         try {
             await sessionService.revokeSession(sessionId);
-            toast({ title: "Session Revoked", description: "The session has been successfully revoked." });
+            toast({title: "Session Revoked", description: "The session has been successfully revoked."});
             // Rafraîchir la liste des sessions après révocation
             const activeSessions = await sessionService.getActiveSessions();
             setSessions(activeSessions);
         } catch (error) {
             console.error(`Failed to revoke session ${sessionId}:`, error);
             const errorMessage = sessionService.getErrorMessage(error);
-            toast({ title: "Error Revoking Session", description: errorMessage, variant: "destructive" });
+            toast({title: "Error Revoking Session", description: errorMessage, variant: "destructive"});
         } finally {
             // Arrêter l'indicateur de chargement
         }
     };
-
-    // --- Chargement des préférences ---
-    useEffect(() => {
-        const fetchPreferences = async () => {
-            setIsLoadingPrefs(true);
-            try {
-                const prefs = await userService.getUserPreferences();
-                setPreferences(prefs);
-                console.log("Preferences loaded:", prefs);
-            } catch (error) {
-                console.error("Failed to load user preferences:", error);
-                toast({title: "Error", description: "Could not load preferences.", variant: "destructive"});
-            } finally {
-                setIsLoadingPrefs(false);
-            }
-        };
-
-        if (user) { // Charger seulement si l'utilisateur est authentifié
-            fetchPreferences();
-        }
-    }, [user, toast]); // Recharger si l'utilisateur change
 
     // --- Handler pour mettre à jour une préférence spécifique ---
     // Utilisation d'un type générique pour le rendre réutilisable
@@ -191,25 +172,28 @@ const Settings = () => {
             // est un type valide pour UserPreferencesDto['inactivityTimeoutMinutes'].
             finalValue = timeoutValue as UserPreferencesDto[K];
 
+        } else if (key === 'theme') { // Gérer le thème via le contexte de thème ET le contexte de prefs
+            const validTheme = ['light', 'dark', 'system'].includes(value as string) ? value as Theme : 'system';
+            setTheme(validTheme); // Met à jour le ThemeProvider
+            finalValue = validTheme as UserPreferencesDto[K]; // Met à jour l'état des préférences
         } else {
-            // Pour toutes les autres clés, nous nous attendons à ce que 'value' ait déjà le bon type UserPreferencesDto[K]
-            // (par exemple, boolean pour un Switch). Nous enlevons la possibilité 'string'.
-            // L'assertion 'as' est utilisée pour indiquer à TS que nous gérons le cas string ci-dessus.
-            if (typeof value === 'string') {
-                // Ce cas ne devrait pas se produire pour les clés autres que inactivityTimeoutMinutes
-                console.error(`handlePreferenceChange: Received unexpected string value "${value}" for key "${String(key)}"`);
-                // Optionnel : Retourner sans mettre à jour l'état pour éviter les erreurs
-                return;
+            // Conversion pour les booléens venant de Switch si nécessaire
+            if (typeof value === 'boolean' && (key === 'showChartVolume' || key === 'showExtendedHours')) {
+                finalValue = value as UserPreferencesDto[K];
             }
-            finalValue = value;
+            // Gérer autres types si besoin (ex: string pour selects)
+            else if (typeof value === 'string') {
+                finalValue = value as UserPreferencesDto[K];
+            } else {
+                console.warn(`Unhandled type for key ${String(key)} in handlePreferenceChange`);
+                return; // Ne pas mettre à jour si type inconnu
+            }
         }
 
         // Mettre à jour l'état. 'finalValue' a maintenant le type UserPreferencesDto[K] | null,
         // ce qui est compatible avec Partial<UserPreferencesDto>.
-        setPreferences(prev => (prev
-                ? {...prev, [key]: finalValue}
-                : {[key]: finalValue} as Partial<UserPreferencesDto> // Petite assertion ici si le premier objet est vide
-        ));
+        console.log(`Updating preference ${String(key)} to`, finalValue); // Log
+        setPreference(key, finalValue); // Met à jour le contexte
     };
 
     // --- Fonctions MFA (intégrées ici) ---
@@ -316,42 +300,22 @@ const Settings = () => {
     // --- Fin Fonctions MFA ---
 
 
-    // --- Fonctions existantes (conservées) ---
     const toggleDarkMode = (checked: boolean) => {
-        setTheme(checked ? 'dark' : 'light');
-        toast({
-            title: checked ? "Dark mode enabled" : "Light mode enabled",
-            description: "Your preference has been saved.",
-        });
+        handlePreferenceChange('theme', checked ? 'dark' : 'light');
+        toast({title: checked ? "Dark mode enabled" : "Light mode enabled"});
     };
 
     // --- Handler Sauvegarde (modifié pour utiliser l'état 'preferences') ---
     const handleSaveChanges = async (section: string) => { // Rendre async
-        if (!preferences) return;
-
-        // Filtrer les clés non modifiables si nécessaire (ex: updatedAt)
-        const {updatedAt, ...prefsToSave} = preferences;
-
-        // Afficher un indicateur de chargement si besoin
-        setIsLoadingPrefs(true); // Réutiliser cet état ou créer un autre
-
         try {
-            // Pourrait avoir des appels différents selon la section,
-            // mais ici on sauvegarde toutes les préférences modifiées.
-            await userService.updateUserPreferences(prefsToSave);
+            await savePreferences(); // Appelle la fonction de sauvegarde du contexte
             toast({
                 title: `${section} settings saved`,
                 description: "Your changes have been saved successfully.",
             });
-            // Optionnel: Recharger les préférences après sauvegarde pour confirmer
-            // const updatedPrefs = await userService.getUserPreferences();
-            // setPreferences(updatedPrefs);
         } catch (error) {
-            console.error(`Failed to save ${section} settings:`, error);
-            const errorMessage = userService.getErrorMessage(error);
+            const errorMessage = authService.getErrorMessage(error); // Utiliser un getErrorMessage ici
             toast({title: "Error Saving Settings", description: errorMessage, variant: "destructive"});
-        } finally {
-            setIsLoadingPrefs(false);
         }
     };
 
@@ -433,10 +397,10 @@ const Settings = () => {
         <DashboardLayout pageTitle={t('settings.title')}>
             <div className="space-y-6">
                 <Tabs defaultValue="general" className="space-y-6"> {/* Garder General par défaut */}
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
                         <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
-                        <TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>
+                        {/*<TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>*/}
                         <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
                     </TabsList>
 
@@ -711,144 +675,6 @@ const Settings = () => {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="appearance" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Appearance Settings</CardTitle>
-                                <CardDescription>Customize the look and feel of your dashboard</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Theme</h3>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Dark Mode</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Switch between light and dark theme
-                                            </p>
-                                        </div>
-                                        <Switch
-                                            checked={theme === 'dark'}
-                                            onCheckedChange={toggleDarkMode}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="theme-color">Accent Color</Label>
-                                            <Select defaultValue="blue">
-                                                <SelectTrigger id="theme-color">
-                                                    <SelectValue placeholder="Select color theme"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="blue">Blue</SelectItem>
-                                                    <SelectItem value="green">Green</SelectItem>
-                                                    <SelectItem value="purple">Purple</SelectItem>
-                                                    <SelectItem value="orange">Orange</SelectItem>
-                                                    <SelectItem value="red">Red</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="font-size">Font Size</Label>
-                                            <Select defaultValue="medium">
-                                                <SelectTrigger id="font-size">
-                                                    <SelectValue placeholder="Select font size"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="small">Small</SelectItem>
-                                                    <SelectItem value="medium">Medium</SelectItem>
-                                                    <SelectItem value="large">Large</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="layout-density">Layout Density</Label>
-                                            <Select defaultValue="comfortable">
-                                                <SelectTrigger id="layout-density">
-                                                    <SelectValue placeholder="Select layout density"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="compact">Compact</SelectItem>
-                                                    <SelectItem value="comfortable">Comfortable</SelectItem>
-                                                    <SelectItem value="spacious">Spacious</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator/>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Chart Preferences</h3>
-
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="chart-style">Default Chart Style</Label>
-                                            <Select defaultValue="candle">
-                                                <SelectTrigger id="chart-style">
-                                                    <SelectValue placeholder="Select chart style"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="candle">Candlestick</SelectItem>
-                                                    <SelectItem value="bar">OHLC Bars</SelectItem>
-                                                    <SelectItem value="line">Line</SelectItem>
-                                                    <SelectItem value="area">Area</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="chart-interval">Default Chart Interval</Label>
-                                            <Select defaultValue="D">
-                                                <SelectTrigger id="chart-interval">
-                                                    <SelectValue placeholder="Select chart interval"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="1">1 Minute</SelectItem>
-                                                    <SelectItem value="5">5 Minutes</SelectItem>
-                                                    <SelectItem value="15">15 Minutes</SelectItem>
-                                                    <SelectItem value="60">1 Hour</SelectItem>
-                                                    <SelectItem value="D">Daily</SelectItem>
-                                                    <SelectItem value="W">Weekly</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Show Volume</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Display volume bars on charts
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Show Extended Hours</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Display pre-market and after-hours data
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    <Button
-                                        onClick={() => handleSaveChanges('Appearance')}>{t('common.saveChanges')}</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
                     <TabsContent value="security" className="space-y-6">
                         <Card>
                             <CardHeader>
@@ -960,7 +786,12 @@ const Settings = () => {
                                                 Require password confirmation for trade actions
                                             </p>
                                         </div>
-                                        <Switch defaultChecked={true}/>
+                                        <Switch defaultChecked={true}
+                                            // TODO: Connecter à une préférence utilisateur
+                                            // checked={preferences?.requirePasswordForTrades ?? true}
+                                            // onCheckedChange={(checked) => handlePreferenceChange('requirePasswordForTrades', checked)}
+                                                disabled={isLoadingPrefs}
+                                        />
                                     </div>
 
                                     {/* Bouton de sauvegarde spécifique à cette section */}
@@ -974,77 +805,12 @@ const Settings = () => {
 
                                 <Separator/>
 
-                                {/* Section Device Management (conservée) */}
-                                {/*<div className="space-y-4">*/}
-                                {/*    <h3 className="text-lg font-medium">Device Management</h3>*/}
-                                {/*    <p className="text-sm text-muted-foreground">*/}
-                                {/*        Manage devices and sessions currently logged into your account.*/}
-                                {/*    </p>*/}
-
-                                {/*    {isLoadingSessions && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}*/}
-                                {/*    {errorSessions && <Alert variant="destructive"><AlertDescription>{errorSessions}</AlertDescription></Alert>}*/}
-
-                                {/*    {!isLoadingSessions && !errorSessions && sessions.length === 0 && (*/}
-                                {/*        <p className="text-sm text-muted-foreground text-center py-4">No active sessions found.</p>*/}
-                                {/*    )}*/}
-
-                                {/*    {!isLoadingSessions && !errorSessions && sessions.length > 0 && (*/}
-                                {/*        <div className="space-y-3">*/}
-                                {/*            {sessions.map((session) => (*/}
-                                {/*                <div key={session.id} className="rounded-md border p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">*/}
-                                {/*                    <div className="flex items-center">*/}
-                                {/*                        {getDeviceIcon(session.userAgent)}*/}
-                                {/*                        <div>*/}
-                                {/*                            <h4 className="font-medium flex items-center">*/}
-                                {/*                                /!* Essayer d'extraire une info lisible de l'UA *!/*/}
-                                {/*                                {session.userAgent?.split('(')[0].trim() || 'Unknown Device'}*/}
-                                {/*                                {session.isCurrentSession && <Badge variant="outline" className="ml-2 text-xs">Current</Badge>}*/}
-                                {/*                            </h4>*/}
-                                {/*                            <p className="text-sm text-muted-foreground">*/}
-                                {/*                                {session.ipAddress || 'IP Unknown'}*/}
-                                {/*                                /!* Optionnel: Afficher plus de détails de l'UA *!/*/}
-                                {/*                                /!* {session.userAgent && ` • ${session.userAgent}`} *!/*/}
-                                {/*                            </p>*/}
-                                {/*                            <p className="text-xs text-muted-foreground mt-1">*/}
-                                {/*                                Last active: {formatDate(session.lastUsedAt)}*/}
-                                {/*                            </p>*/}
-                                {/*                            <p className="text-xs text-muted-foreground">*/}
-                                {/*                                Expires: {formatDate(session.expiresAt)}*/}
-                                {/*                            </p>*/}
-                                {/*                        </div>*/}
-                                {/*                    </div>*/}
-                                {/*                    {!session.isCurrentSession && (*/}
-                                {/*                        <Button*/}
-                                {/*                            variant="outline"*/}
-                                {/*                            size="sm"*/}
-                                {/*                            onClick={() => handleRevokeSession(session.id)}*/}
-                                {/*                            // Ajouter un état de chargement spécifique si besoin*/}
-                                {/*                        >*/}
-                                {/*                            Revoke*/}
-                                {/*                        </Button>*/}
-                                {/*                    )}*/}
-                                {/*                </div>*/}
-                                {/*            ))}*/}
-                                {/*        </div>*/}
-                                {/*    )}*/}
-
-                                {/*    /!* Bouton Logout All Other Devices *!/*/}
-                                {/*    {sessions.filter(s => !s.isCurrentSession).length > 0 && ( // Afficher seulement si d'autres sessions existent*/}
-                                {/*        <Button*/}
-                                {/*            variant="outline"*/}
-                                {/*            className="w-full mt-4"*/}
-                                {/*            onClick={() => setLogoutAllDevicesOpen(true)}*/}
-                                {/*            disabled={isLoadingSessions} // Désactiver pendant le chargement initial*/}
-                                {/*        >*/}
-                                {/*            {t('settings.logoutOtherDevices')}*/}
-                                {/*        </Button>*/}
-                                {/*    )}*/}
-                                {/*</div>*/}
-
-                                <Separator />
-
-                                {/* Section des appareils de confiance */}
-                                <TrustedDevicesManager />
+                                {/* --- Section des appareils (maintenant via TrustedDevicesManager) --- */}
+                                {/* Si TrustedDevicesManager gère aussi le bouton "Logout All Other Devices",
+                            vous n'aurez peut-être pas besoin du bouton séparé ci-dessous.
+                            Vérifiez ce que fait TrustedDevicesManager.
+                            Pour l'instant, je garde le bouton ici pour le connecter. */}
+                                <TrustedDevicesManager/>
 
                                 {/* Pas de bouton Save Changes global pour l'onglet Sécurité */}
                             </CardContent>

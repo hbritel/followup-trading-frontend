@@ -88,6 +88,17 @@ export interface UserPreferencesDto {
     numberFormat: string | null;
     inactivityTimeoutMinutes?: number | null;
     updatedAt: string; // ISO Date string
+
+    // --- NOUVEAUX CHAMPS POUR L'APPARENCE ---
+    accentColor?: string | null;       // ex: 'blue', 'green', etc. ou null
+    fontSize?: string | null;          // ex: 'small', 'medium', 'large' ou null
+    layoutDensity?: string | null;     // ex: 'compact', 'comfortable', 'spacious' ou null
+
+    // --- NOUVEAUX CHAMPS POUR LES GRAPHIQUES ---
+    defaultChartStyle?: string | null; // ex: 'candle', 'bar', 'line', 'area' ou null
+    defaultChartInterval?: string | null;// ex: '1', '5', 'D', 'W' ou null
+    showChartVolume: boolean;         // Pas besoin de null si valeur par défaut existe (true/false)
+    showExtendedHours: boolean;       // Idem
 }
 
 export interface TotpVerifyRequestDto {

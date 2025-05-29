@@ -158,23 +158,23 @@ const MFA = () => {
     };
 
     // Ajouter un petit composant de diagnostic pour le développement
-    const MfaDiagnostics = () => (
-        <div className="mt-6 text-xs text-muted-foreground">
-            <details>
-                <summary className="cursor-pointer">Diagnostic Info</summary>
-                <pre className="mt-2 p-2 bg-muted rounded overflow-x-auto">
-                    {JSON.stringify({
-                        mfaTokenPresent: !!mfaToken,
-                        currentTimeStep: Math.floor(Date.now() / 1000 / 30),
-                        mfaTokenIdFromLogin,
-                        userIdFromLogin,
-                        otpTokenId,
-                        tab: selectedTab
-                    }, null, 2)}
-                </pre>
-            </details>
-        </div>
-    );
+    // const MfaDiagnostics = () => (
+    //     <div className="mt-6 text-xs text-muted-foreground">
+    //         <details>
+    //             <summary className="cursor-pointer">Diagnostic Info</summary>
+    //             <pre className="mt-2 p-2 bg-muted rounded overflow-x-auto">
+    //                 {JSON.stringify({
+    //                     mfaTokenPresent: !!mfaToken,
+    //                     currentTimeStep: Math.floor(Date.now() / 1000 / 30),
+    //                     mfaTokenIdFromLogin,
+    //                     userIdFromLogin,
+    //                     otpTokenId,
+    //                     tab: selectedTab
+    //                 }, null, 2)}
+    //             </pre>
+    //         </details>
+    //     </div>
+    // );
 
     return (
         <AuthLayout
@@ -283,7 +283,7 @@ const MFA = () => {
                     </Tabs>
 
                     {/* Afficher les infos de diagnostic en développement */}
-                    {process.env.NODE_ENV === 'development' && <MfaDiagnostics/>}
+                    {/*{process.env.NODE_ENV === 'development' && <MfaDiagnostics/>}*/}
                 </>
             )}
         </AuthLayout>

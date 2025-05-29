@@ -1,12 +1,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light' | 'system';
 
 type ThemeContextType = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 };
+
+interface ThemeProviderState {
+  theme: Theme;
+  setTheme: (theme: Theme) => void; // <-- Le paramètre attend maintenant le type Theme élargi
+}
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

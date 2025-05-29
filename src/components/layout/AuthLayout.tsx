@@ -32,8 +32,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       <div className="flex flex-col w-full md:w-1/2 p-6 sm:p-10">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2 md:hidden">
-            <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">DN</div>
-            <span className="text-xl font-semibold">DashNest</span>
+            <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-primary text-lg font-bold text-white">FT</div>
+            <span className="text-xl font-semibold">Followup-Trading</span>
           </div>
           <div className="ml-auto flex items-center">
             <ThemeToggle />

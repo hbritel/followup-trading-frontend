@@ -149,12 +149,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await clearAuthState();
         }
       } else if (refreshToken && !isTokenExpired(refreshToken)) {
+        // Access Token expiré ou absent, MAIS Refresh Token valide
         console.log("Access token expired or missing, attempting refresh...");
         try {
+          // APPEL À L'API DE REFRESH
           const refreshResponse = await authService.refreshToken({ refreshToken });
           console.log("Token refresh successful.");
+          // Stocker les nouveaux tokens et récupérer le profil
           await setAuthState(refreshResponse.accessToken, refreshResponse.refreshToken); // Mettre à jour les deux tokens
         } catch (error) {
+          // Si le refresh échoue (ex: Refresh Token aussi expiré ou révoqué)
           console.error("Token refresh failed:", error);
           await clearAuthState(); // Nettoyer si le refresh échoue
           navigate('/auth/login'); // Rediriger vers login si le refresh échoue
