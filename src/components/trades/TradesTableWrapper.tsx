@@ -35,6 +35,9 @@ export interface Trade {
   profit?: number;
   profitPercentage?: number;
   fees?: number;
+  commission?: number;
+  swap?: number;
+  currency?: string;
   strategy?: string;
   notes?: string;
   tags?: string[];

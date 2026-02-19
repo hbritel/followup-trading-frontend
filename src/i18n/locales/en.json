@@ -134,7 +134,8 @@
     "deviceRevoked": "Device revoked successfully.",
     "mfaTitle": "Two-Factor Authentication",
     "mfaSubtitle": "Secure your account with two-factor authentication.",
-    "enterCode": "Enter Code"
+    "enterCode": "Enter Code",
+    "heroDescription": "Streamline your trading workflow, track performance, and make data-driven decisions."
   },
   "sidebar": {
     "general": "General",
@@ -537,7 +538,6 @@
     "dataSynchronized": "data has been synchronized",
     "realTimeTrades": "Real-Time Trades",
     "historicalData": "Historical Data",
-    "paperTrading": "Paper Trading",
     "marketData": "Market Data",
     "orderManagement": "Order Management",
     "connectionError": "Connection Error",
@@ -618,7 +618,12 @@
     "editAlertFeatureComingSoon": "The ability to edit alerts will be available soon"
   },
   "navbar": {
-    "search": "Search"
+    "search": "Search",
+    "toggleTheme": "Toggle theme",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "userMenu": "User menu",
+    "myAccount": "My Account"
   },
   "journal": {
     "entries": "Entries",
@@ -755,5 +760,27 @@
     "stopLoss": "Stop Loss",
     "takeProfit": "Take Profit",
     "currentTime": "Current Time"
+  },
+  "calendar": {
+    "tradingCalendar": "Trading Calendar",
+    "description": "Plan and track your trading activities",
+    "addEvent": "Add Event",
+    "addNewEvent": "Add New Event",
+    "addNewEventDescription": "Create a new event for your trading calendar.",
+    "noEvents": "No events scheduled for this day",
+    "upcomingEvents": "Upcoming Events",
+    "eventTypesTitle": "Event Types",
+    "title": "Title",
+    "eventTitlePlaceholder": "Event title",
+    "eventType": "Event Type",
+    "selectEventType": "Select event type",
+    "eventDetailsPlaceholder": "Event details",
+    "eventTypes": {
+      "trade": "Trade",
+      "earnings": "Earnings",
+      "economic": "Economic",
+      "dividend": "Dividend",
+      "reminder": "Reminder"
+    }
   }
 }

@@ -151,6 +151,25 @@ apiClient.interceptors.response.use(
                 return Promise.reject(error); // Rejeter l'erreur originale 401
             }
         }
+
+        // --- Rate Limiting (429) ---
+        if (error.response?.status === 429) {
+            const retryAfter = error.response.headers['retry-after'];
+            const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+            const rateLimitError = Object.assign(new Error(
+                `Rate limit exceeded. Please try again in ${seconds} seconds.`
+            ), { isRateLimited: true, retryAfterSeconds: seconds, originalError: error });
+            return Promise.reject(rateLimitError);
+        }
+
+        // --- Circuit Breaker / Service Unavailable (503) ---
+        if (error.response?.status === 503) {
+            const cbError = Object.assign(new Error(
+                'Broker service is temporarily unavailable. Please try again later.'
+            ), { isServiceUnavailable: true, originalError: error });
+            return Promise.reject(cbError);
+        }
+
         return Promise.reject(error); // Pour les autres erreurs
     }
 );

@@ -208,47 +208,47 @@ const TradeTable = () => {
   };
 
   return (
-    <Card className="animate-slide-up">
-      <CardHeader className="px-6 py-4">
+    <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.2s' }}>
+      <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold">Trade History</CardTitle>
-            <CardDescription>Your recent trading activity</CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">Trade History</CardTitle>
+            <CardDescription className="text-muted-foreground">Your recent trading activity</CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate('/trades')}>
+          <Button variant="outline" size="sm" onClick={() => navigate('/trades')} className="h-8 text-xs">
             View All
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0 overflow-auto">
         <Table>
-          <TableHeader className="bg-accent/50">
-            <TableRow>
-              <TableHead className="w-[100px] cursor-pointer hover:bg-accent/80 transition-colors" onClick={() => handleSort('symbol')}>
+          <TableHeader className="bg-slate-100 dark:bg-white/5">
+            <TableRow className="border-slate-200/50 dark:border-white/5 hover:bg-transparent">
+              <TableHead className="w-[100px] cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('symbol')}>
                 <div className="flex items-center gap-1">
                   Symbol
                   {getSortIcon('symbol')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors hidden md:table-cell" onClick={() => handleSort('openDate')}>
+              <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('openDate')}>
                 <div className="flex items-center gap-1">
                   Open Time
                   {getSortIcon('openDate')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors hidden md:table-cell" onClick={() => handleSort('closeDate')}>
+              <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('closeDate')}>
                 <div className="flex items-center gap-1">
                   Close Time
                   {getSortIcon('closeDate')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors" onClick={() => handleSort('position')}>
+              <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('position')}>
                 <div className="flex items-center gap-1">
                   Position
                   {getSortIcon('position')}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hover:bg-accent/80 transition-colors text-right" onClick={() => handleSort('profitLoss')}>
+              <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('profitLoss')}>
                 <div className="flex items-center gap-1 justify-end">
                   P&L
                   {getSortIcon('profitLoss')}
@@ -259,13 +259,13 @@ const TradeTable = () => {
           </TableHeader>
           <TableBody>
             {paginatedTrades.map((trade) => (
-              <TableRow key={trade.id} className="hover:bg-accent/20 transition-colors">
-                <TableCell className="font-medium">
-                  <div className="flex items-center">
+              <TableRow key={trade.id} className="hover:bg-slate-100 dark:hover:bg-white/5 border-slate-200/50 dark:border-white/5 transition-colors group">
+                <TableCell className="font-bold text-foreground dark:text-white group-hover:text-primary transition-colors">
+                  <div className="flex items-center font-mono">
                     {trade.symbol}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
                   {new Date(trade.openDate).toLocaleString(undefined, {
                     year: '2-digit',
                     month: '2-digit',
@@ -274,7 +274,7 @@ const TradeTable = () => {
                     minute: '2-digit',
                   })}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
                   {new Date(trade.closeDate).toLocaleString(undefined, {
                     year: '2-digit',
                     month: '2-digit',
@@ -287,18 +287,18 @@ const TradeTable = () => {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "capitalize",
+                      "capitalize font-mono text-xs border backdrop-blur-sm",
                       trade.position === 'long' 
-                        ? "border-profit text-profit bg-profit/10" 
-                        : "border-loss text-loss bg-loss/10"
+                        ? "border-primary/30 text-primary bg-primary/10" 
+                        : "border-accent/30 text-foreground dark:text-white bg-accent/20"
                     )}
                   >
                     {trade.position}
                   </Badge>
                 </TableCell>
                 <TableCell className={cn(
-                  "text-right font-medium",
-                  trade.profitLoss > 0 ? "text-profit" : "text-loss"
+                  "text-right font-bold font-mono tracking-tight",
+                  trade.profitLoss > 0 ? "text-profit text-glow" : "text-loss"
                 )}>
                   {trade.profitLoss > 0 ? "+" : ""}${trade.profitLoss.toFixed(2)}
                 </TableCell>
@@ -307,27 +307,27 @@ const TradeTable = () => {
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuContent align="end" className="glass-panel border-slate-200/50 dark:border-white/10">
+                      <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                         <Copy className="mr-2 h-4 w-4" />
                         Duplicate
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                         <ExternalLink className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+                      <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-white/10" />
+                      <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -339,18 +339,18 @@ const TradeTable = () => {
           </TableBody>
         </Table>
         
-        <div className="flex items-center justify-between px-4 py-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-            <span className="font-medium text-foreground">{Math.min(currentPage * itemsPerPage, sampleTrades.length)}</span> of{' '}
-            <span className="font-medium text-foreground">{sampleTrades.length}</span> trades
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5">
+          <div className="text-xs text-muted-foreground">
+            Showing <span className="font-medium text-foreground dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+            <span className="font-medium text-foreground dark:text-white">{Math.min(currentPage * itemsPerPage, sampleTrades.length)}</span> of{' '}
+            <span className="font-medium text-foreground dark:text-white">{sampleTrades.length}</span> trades
           </div>
           
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-muted-foreground"
               onClick={handleFirstPage}
               disabled={currentPage === 1}
             >
@@ -360,20 +360,20 @@ const TradeTable = () => {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-muted-foreground"
               onClick={handlePrevPage}
               disabled={currentPage === 1}
             >
               <ChevronLeft className="h-4 w-4" />
               <span className="sr-only">Previous page</span>
             </Button>
-            <div className="text-sm font-medium">
-              Page {currentPage} of {totalPages}
+            <div className="text-xs font-medium px-2">
+              Page {currentPage} / {totalPages}
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-muted-foreground"
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
             >
@@ -383,7 +383,7 @@ const TradeTable = () => {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-muted-foreground"
               onClick={handleLastPage}
               disabled={currentPage === totalPages}
             >

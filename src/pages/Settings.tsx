@@ -11,7 +11,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Switch} from '@/components/ui/switch';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {Separator} from '@/components/ui/separator';
-import {useToast} from '@/components/ui/use-toast'; // Utiliser le hook shadcn/ui standard
+import {useToast} from '@/hooks/use-toast';
 import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
 import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog'; // Gardé pour l'instant
 import type {Theme} from '@/components/providers/theme-provider';
@@ -34,6 +34,16 @@ import type {SessionDto, UserPreferencesDto} from '@/types/dto';
 import {format} from 'date-fns';
 import {sessionService} from "@/services/session.service.ts";
 import TrustedDevicesManager from '@/components/security/TrustedDevicesManager';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -124,20 +134,14 @@ const Settings = () => {
         }
     }, [user]); // Recharger si l'utilisateur change
 
+    // --- State pour le dialog de confirmation de révocation ---
+    const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
+
     // --- Handler pour révoquer une session ---
     const handleRevokeSession = async (sessionId: string) => {
-        // Optionnel: Demander confirmation
-        if (!confirm(`Are you sure you want to revoke this session? You might be logged out if it's your current session.`)) {
-            return;
-        }
-
-        // Mettre à jour l'UI pour indiquer le chargement (ex: désactiver le bouton)
-        // On pourrait ajouter un état spécifique 'revokingSessionId'
-
         try {
             await sessionService.revokeSession(sessionId);
             toast({title: "Session Revoked", description: "The session has been successfully revoked."});
-            // Rafraîchir la liste des sessions après révocation
             const activeSessions = await sessionService.getActiveSessions();
             setSessions(activeSessions);
         } catch (error) {
@@ -145,7 +149,7 @@ const Settings = () => {
             const errorMessage = sessionService.getErrorMessage(error);
             toast({title: "Error Revoking Session", description: errorMessage, variant: "destructive"});
         } finally {
-            // Arrêter l'indicateur de chargement
+            setRevokeSessionId(null);
         }
     };
 
@@ -195,6 +199,13 @@ const Settings = () => {
         console.log(`Updating preference ${String(key)} to`, finalValue); // Log
         setPreference(key, finalValue); // Met à jour le contexte
     };
+
+    const handleGenericPreferenceChange = useCallback(<K extends keyof UserPreferencesDto>(
+        key: K,
+        value: UserPreferencesDto[K]
+    ) => {
+        setPreference(key, value); // Appelle la fonction du contexte PreferencesProvider
+    }, [setPreference]);
 
     // --- Fonctions MFA (intégrées ici) ---
     // Mettre à jour mfaStatus SEULEMENT quand user/isAuthLoading changent
@@ -565,112 +576,146 @@ const Settings = () => {
                                 <CardDescription>Manage how you receive notifications</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Notification Channels</h3>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Email Notifications</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Receive notifications via email
-                                            </p>
-                                        </div>
-                                        <Switch
-                                            checked={emailNotifications}
-                                            onCheckedChange={setEmailNotifications}
-                                        />
+                                {/* Afficher un loader si les préférences chargent */}
+                                {isLoadingPrefs && (
+                                    <div className="flex justify-center items-center py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin" />
                                     </div>
+                                )}
 
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Mobile Notifications</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Receive push notifications on your mobile device
-                                            </p>
+                                {!isLoadingPrefs && preferences && ( // Afficher seulement si les préférences sont chargées
+                                    <>
+                                        {/* --- Section Notification Channels --- */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-medium">{t('settings.notificationChannels')}</h3>
+                                            {/* Email Notifications */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="email-notifications">{t('settings.emailNotifications')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.emailNotificationsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="email-notifications"
+                                                    checked={preferences?.emailNotificationsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('emailNotificationsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* Mobile Notifications */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="mobile-notifications">{t('settings.mobileNotifications')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.mobileNotificationsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="mobile-notifications"
+                                                    checked={preferences?.mobilePushNotificationsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('mobilePushNotificationsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* Browser Notifications */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="browser-notifications">{t('settings.browserNotifications')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.browserNotificationsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="browser-notifications"
+                                                    checked={preferences?.browserPushNotificationsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('browserPushNotificationsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
                                         </div>
-                                        <Switch
-                                            checked={mobileNotifications}
-                                            onCheckedChange={setMobileNotifications}
-                                        />
-                                    </div>
 
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Browser Notifications</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Receive notifications in your browser
-                                            </p>
+                                        <Separator />
+
+                                        {/* --- Section Notification Types --- */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-medium">{t('settings.notificationTypes')}</h3>
+                                            {/* Price Alerts */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="price-alerts">{t('settings.priceAlerts')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.priceAlertsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="price-alerts"
+                                                    checked={preferences?.priceAlertsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('priceAlertsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* Trade Confirmations */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="trade-confirmations">{t('settings.tradeConfirmations')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.tradeConfirmationsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="trade-confirmations"
+                                                    checked={preferences?.tradeConfirmationsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('tradeConfirmationsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* News Alerts */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="news-alerts">{t('settings.newsAlerts')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.newsAlertsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="news-alerts"
+                                                    checked={preferences?.newsAlertsEnabled ?? false} // Peut-être false par défaut
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('newsAlertsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* Earnings Announcements */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="earnings-announcements">{t('settings.earningsAnnouncements')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.earningsAnnouncementsDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="earnings-announcements"
+                                                    checked={preferences?.earningsAnnouncementsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('earningsAnnouncementsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
+
+                                            {/* Account Activity */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="account-activity">{t('settings.accountActivity')}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t('settings.accountActivityDesc')}</p>
+                                                </div>
+                                                <Switch
+                                                    id="account-activity"
+                                                    checked={preferences?.accountActivityNotificationsEnabled ?? true}
+                                                    onCheckedChange={(checked) => handleGenericPreferenceChange('accountActivityNotificationsEnabled', checked)}
+                                                    disabled={isLoadingPrefs}
+                                                />
+                                            </div>
                                         </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-                                </div>
 
-                                <Separator/>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Notification Types</h3>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Price Alerts</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Get notified when price targets are hit
-                                            </p>
+                                        {/* --- Bouton Sauvegarder --- */}
+                                        <div className="flex justify-end">
+                                            <Button onClick={() => handleSaveChanges('Notifications')} disabled={isLoadingPrefs}>
+                                                {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                                {t('common.saveChanges')}
+                                            </Button>
                                         </div>
-                                        <Switch
-                                            checked={alertsEnabled}
-                                            onCheckedChange={setAlertsEnabled}
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Trade Confirmations</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Get notified about trade executions
-                                            </p>
-                                        </div>
-                                        <Switch
-                                            checked={tradeConfirmations}
-                                            onCheckedChange={setTradeConfirmations}
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>News Alerts</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Get notified about market news for watched securities
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={false}/>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Earnings Announcements</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Get notified about upcoming earnings reports
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Account Activity</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Get notified about login attempts and account changes
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    <Button
-                                        onClick={() => handleSaveChanges('Notifications')}>{t('common.saveChanges')}</Button>
-                                </div>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -863,6 +908,27 @@ const Settings = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* AlertDialog for session revocation confirmation */}
+            <AlertDialog open={revokeSessionId !== null} onOpenChange={(open) => { if (!open) setRevokeSessionId(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.revokeSessionTitle', 'Revoke Session')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('settings.revokeSessionDescription', 'Are you sure you want to revoke this session? You might be logged out if it\'s your current session.')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => revokeSessionId && handleRevokeSession(revokeSessionId)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {t('settings.revokeSession', 'Revoke')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </DashboardLayout>
     );
 };

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity as ActivityIcon,
@@ -28,6 +28,7 @@ const DashboardSidebar = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { open, openMobile } = useSidebar();
+  const location = useLocation();
   
   // Determine which state to use based on device type
   const sidebarVisible = isMobile ? openMobile : open;
@@ -73,33 +74,45 @@ const DashboardSidebar = () => {
   }
   
   return (
-    <div className="border-r bg-secondary/10 h-full w-[var(--sidebar-width)] md:block">
-      <div className="flex flex-col gap-y-5 h-full">
-        <div className="px-6 py-4">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-lg font-bold text-white">FT</div>
-            <span className="text-lg font-semibold">Followup Trading</span>
+    <div className="hidden md:block h-full py-4 pl-4">
+      <div className="glass-panel h-full w-[var(--sidebar-width)] rounded-2xl flex flex-col gap-y-5 border-slate-200/50 dark:border-white/5 bg-white/50 dark:bg-black/20">
+        <div className="px-6 py-6">
+          <Link to="/dashboard" className="flex items-center gap-3 group">
+            <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/50 text-xl font-bold text-white shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300">
+              FT
+            </div>
+            <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-white/70">
+              Followup
+            </span>
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <nav className="grid gap-y-8 px-6">
+        <div className="flex-1 overflow-y-auto px-4">
+          <nav className="grid gap-y-8">
             {sidebarGroups.map((group, index) => (
               <div key={index}>
-                <div className="text-sm font-semibold leading-6 text-muted-foreground">
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
                   {group.label}
                 </div>
-                <ul className="mt-2 space-y-1">
-                  {group.items.map((item) => (
-                    <li key={item.href}>
-                      <a
-                        href={item.href}
-                        className="group flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
+                <ul className="space-y-1">
+                {group.items.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            to={item.href}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={`group flex w-full items-center gap-x-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
+                              isActive 
+                                ? 'bg-primary/10 text-primary shadow-sm dark:shadow-[0_0_15px_rgba(var(--primary),0.15)] border border-primary/20' 
+                                : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-foreground dark:hover:text-white'
+                            }`}
+                          >
+                            <item.icon className={`h-4 w-4 shrink-0 transition-colors duration-300 ${isActive ? 'text-primary' : 'group-hover:text-foreground dark:group-hover:text-white'}`} />
+                            {item.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
                 </ul>
               </div>
             ))}

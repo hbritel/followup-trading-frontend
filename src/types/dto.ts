@@ -81,7 +81,13 @@ export interface UserPreferencesDto {
     timezone: string | null;
     theme: string | null; // 'light', 'dark', 'system'
     defaultDateRange: string | null; // '1d', '1w', '1m', ...
-    pushNotificationsEnabled: boolean;
+    mobilePushNotificationsEnabled: boolean;
+    browserPushNotificationsEnabled: boolean;
+    priceAlertsEnabled: boolean;
+    tradeConfirmationsEnabled: boolean;
+    newsAlertsEnabled: boolean;
+    earningsAnnouncementsEnabled: boolean;
+    accountActivityNotificationsEnabled: boolean;
     emailNotificationsEnabled: boolean;
     performanceReportFrequency: string | null; // 'DAILY', 'WEEKLY', ...
     dateFormat: string | null;

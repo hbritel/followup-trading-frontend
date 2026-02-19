@@ -49,9 +49,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex h-screen w-full bg-background overflow-hidden">
+        {/* Nebula Background Mesh */}
+        <div className="fixed inset-0 z-[-1] bg-background pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px] animate-pulse-glow" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-accent/5 blur-[120px] animate-pulse-glow" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] rounded-full bg-secondary/5 blur-[100px]" />
+        </div>
+
+        <div className="flex h-screen w-full bg-transparent overflow-hidden">
           <DashboardSidebar />
-          <main className="flex flex-col flex-1 w-full overflow-hidden">
+          <main className="flex flex-col flex-1 w-full overflow-hidden bg-transparent">
             <Navbar />
             <div className="flex-1 p-4 pb-6 md:p-6 overflow-auto">
               {/* ... (Titre et contenu) ... */}

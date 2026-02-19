@@ -1,15 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem } from '@/components/ui/navigation-menu';
-import { BarChart3, TrendingUp, Shield, Zap, LineChart, BarChart2, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Shield, Zap, LineChart, BarChart2, ChevronRight, CheckCircle2, Menu, X } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/auth-context';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -43,26 +47,65 @@ const HomePage = () => {
               <ThemeToggle />
               <LanguageSwitcher />
             </div>
-            {isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button size="sm">Accéder à votre dashboard</Button>
-              </Link>
-            ) : (
-              <>
-                <Link to="/auth/login">
-                  <Button variant="outline" size="sm">Connexion</Button>
+            <div className="hidden md:flex items-center gap-2">
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button size="sm">Accéder à votre dashboard</Button>
                 </Link>
-                <Link to="/auth/signup">
-                  <Button size="sm">Inscription</Button>
-                </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link to="/auth/login">
+                    <Button variant="outline" size="sm">Connexion</Button>
+                  </Link>
+                  <Link to="/auth/signup">
+                    <Button size="sm">Inscription</Button>
+                  </Link>
+                </>
+              )}
+            </div>
+            {/* Mobile Hamburger Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('navbar.menu', 'Menu')}>
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72 pt-10">
+                <nav className="flex flex-col gap-4">
+                  <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium py-2 border-b border-border">
+                    Fonctionnalités
+                  </a>
+                  <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium py-2 border-b border-border">
+                    Tarifs
+                  </a>
+                  {isAuthenticated ? (
+                    <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full mt-4">Accéder à votre dashboard</Button>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-col gap-2 mt-4">
+                      <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full">Connexion</Button>
+                      </Link>
+                      <Link to="/auth/signup" onClick={() => setMobileMenuOpen(false)}>
+                        <Button className="w-full">Inscription</Button>
+                      </Link>
+                    </div>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
       
       {/* Hero Section */}
-      <section className="py-20 px-6">
+      <section className="relative py-20 px-6 overflow-hidden">
+        {/* Gradient mesh background */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        </div>
         <div className="container mx-auto text-center">
           <div className="max-w-3xl mx-auto space-y-6">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
@@ -87,12 +130,12 @@ const HomePage = () => {
           </div>
           
           {/* Preview Image */}
-          <div className="mt-16 max-w-5xl mx-auto rounded-xl overflow-hidden border border-border shadow-lg">
+          <div className="mt-16 max-w-5xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl ring-1 ring-white/10">
             <img 
-              src="/placeholder.svg" 
+              src="/dashboard-hero.png" 
               alt="Dashboard Preview" 
               className="w-full h-auto"
-              style={{ aspectRatio: '16/9' }}
+              style={{ aspectRatio: '16/9', objectFit: 'cover' }}
             />
           </div>
         </div>
@@ -218,7 +261,7 @@ const HomePage = () => {
             </div>
             
             {/* Pro Plan */}
-            <div className="bg-primary rounded-xl p-8 border border-primary shadow-lg flex flex-col scale-105 z-10">
+            <div className="bg-primary rounded-xl p-8 border border-primary shadow-lg flex flex-col md:scale-105 z-10">
               <div className="mb-5">
                 <h3 className="text-xl font-semibold text-primary-foreground">Pro</h3>
                 <div className="mt-4 flex items-baseline text-5xl font-extrabold text-primary-foreground">
