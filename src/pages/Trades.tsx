@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Filter, Plus, Columns, Search, Calendar as CalendarIcon } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Filter, Plus, Columns, Search, Calendar as CalendarIcon, Loader2, AlertTriangle } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,149 +13,46 @@ import DateRangeFilter from '@/components/trades/DateRangeFilter';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
+import { tradeService } from '@/services/trade.service';
 
-// Mocked trades data for demonstration
-const mockTrades: Trade[] = [{
-  id: '1',
-  symbol: 'AAPL',
-  type: 'long',
-  status: 'closed',
-  entryDate: '2023-01-05',
-  exitDate: '2023-01-07',
-  entryPrice: 130.50,
-  exitPrice: 135.75,
-  quantity: 100,
-  profit: 5.25,
-  profitPercentage: 4.02,
-  direction: 'long',
-  currency: 'USD',
-  notes: 'Good trade on AAPL',
-  tags: ['tech', 'swing']
-}, {
-  id: '2',
-  symbol: 'TSLA',
-  type: 'short',
-  status: 'closed',
-  entryDate: '2023-01-10',
-  exitDate: '2023-01-11',
-  entryPrice: 900.00,
-  exitPrice: 850.00,
-  quantity: 50,
-  profit: 50.00,
-  profitPercentage: 5.56,
-  direction: 'short',
-  currency: 'USD',
-  notes: 'Short position on TSLA',
-  tags: ['tech', 'day']
-}, {
-  id: '3',
-  symbol: 'GOOG',
-  type: 'long',
-  status: 'open',
-  entryDate: '2023-01-15',
-  entryPrice: 2500.00,
-  quantity: 20,
-  stopLoss: 2400.00,
-  takeProfit: 2600.00,
-  direction: 'long',
-  notes: 'Long position on GOOG',
-  tags: ['tech', 'swing']
-}, {
-  id: '4',
-  symbol: 'AMZN',
-  type: 'short',
-  status: 'pending',
-  entryDate: '2023-01-20',
-  entryPrice: 3200.00,
-  quantity: 30,
-  direction: 'short',
-  notes: 'Short position on AMZN',
-  tags: ['tech', 'day']
-}, {
-  id: '5',
-  symbol: 'MSFT',
-  type: 'long',
-  status: 'cancelled',
-  entryDate: '2023-01-25',
-  entryPrice: 280.00,
-  quantity: 150,
-  direction: 'long',
-  notes: 'Long position on MSFT',
-  tags: ['tech', 'swing']
-}, {
-  id: '6',
-  symbol: 'NVDA',
-  type: 'long',
-  status: 'closed',
-  entryDate: '2023-02-01',
-  exitDate: '2023-02-05',
-  entryPrice: 250.00,
-  exitPrice: 260.00,
-  quantity: 80,
-  profit: 10.00,
-  profitPercentage: 4.00,
-  direction: 'long',
-  notes: 'Long position on NVDA',
-  tags: ['tech', 'swing']
-}, {
-  id: '7',
-  symbol: 'NFLX',
-  type: 'short',
-  status: 'closed',
-  entryDate: '2023-02-05',
-  exitDate: '2023-02-07',
-  entryPrice: 500.00,
-  exitPrice: 480.00,
-  quantity: 60,
-  profit: 20.00,
-  profitPercentage: 4.00,
-  direction: 'short',
-  notes: 'Short position on NFLX',
-  tags: ['tech', 'day']
-}, {
-  id: '8',
-  symbol: 'FB',
-  type: 'long',
-  status: 'open',
-  entryDate: '2023-02-10',
-  entryPrice: 200.00,
-  quantity: 120,
-  stopLoss: 190.00,
-  takeProfit: 220.00,
-  direction: 'long',
-  notes: 'Long position on FB',
-  tags: ['tech', 'swing']
-}, {
-  id: '9',
-  symbol: 'SNAP',
-  type: 'short',
-  status: 'pending',
-  entryDate: '2023-02-15',
-  entryPrice: 30.00,
-  quantity: 200,
-  direction: 'short',
-  notes: 'Short position on SNAP',
-  tags: ['tech', 'day']
-}, {
-  id: '10',
-  symbol: 'TWTR',
-  type: 'long',
-  status: 'cancelled',
-  entryDate: '2023-02-20',
-  entryPrice: 50.00,
-  quantity: 180,
-  direction: 'long',
-  notes: 'Long position on TWTR',
-  tags: ['tech', 'swing']
-}];
 const Trades = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // --- Fetch trades from backend ---
   const {
-    t
-  } = useTranslation();
-  const {
-    toast
-  } = useToast();
-  const [trades, setTrades] = useState<Trade[]>(mockTrades);
+    data: trades = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['trades'],
+    queryFn: () => tradeService.getTrades(),
+    retry: 2,
+    staleTime: 30_000, // 30s before refetch
+  });
+
+  // --- Delete mutation ---
+  const deleteMutation = useMutation({
+    mutationFn: (tradeId: string) => tradeService.deleteTrade(tradeId),
+    onSuccess: (_data, tradeId) => {
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      toast({
+        title: t('trades.deleteTrade'),
+        description: `${t('trades.trade')} ${tradeId} ${t('trades.hasBeenDeleted')}`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: t('trades.deleteTrade'),
+        description: err.message || 'Failed to delete trade.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // --- UI state ---
   const [visibleColumns, setVisibleColumns] = useState({
     symbol: true,
     type: true,
@@ -175,7 +73,7 @@ const Trades = () => {
     currency: false,
     strategy: false,
     createdAt: false,
-    updatedAt: false
+    updatedAt: false,
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -184,28 +82,35 @@ const Trades = () => {
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [filteredTrades, setFilteredTrades] = useState<Trade[]>(trades);
+  const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [advancedFilters, setAdvancedFilters] = useState({
     dateRange: {
       from: null as Date | null,
-      to: null as Date | null
+      to: null as Date | null,
     },
     profitRange: {
       min: null as number | null,
-      max: null as number | null
+      max: null as number | null,
     },
-    tags: [] as string[]
+    tags: [] as string[],
   });
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
+
+  // --- Client-side filtering ---
   useEffect(() => {
     filterTrades();
   }, [trades, searchQuery, statusFilter, typeFilter, advancedFilters, startDate, endDate]);
+
   const filterTrades = () => {
-    let filtered = trades.filter(trade => {
+    const filtered = trades.filter((trade) => {
       // Search query filter
-      const matchesSearch = searchQuery === '' || trade.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || trade.strategy && trade.strategy.toLowerCase().includes(searchQuery.toLowerCase()) || trade.notes && trade.notes.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        searchQuery === '' ||
+        trade.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (trade.strategy && trade.strategy.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (trade.notes && trade.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Status and type filters
       const matchesStatus = statusFilter === 'all' || trade.status === statusFilter;
@@ -226,52 +131,51 @@ const Trades = () => {
       return matchesSearch && matchesStatus && matchesType && matchesDateRange;
     });
     setFilteredTrades(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
-  // Get current trades for pagination
+  // Pagination
   const indexOfLastTrade = currentPage * itemsPerPage;
   const indexOfFirstTrade = indexOfLastTrade - itemsPerPage;
   const currentTrades = filteredTrades.slice(indexOfFirstTrade, indexOfLastTrade);
+
+  // --- Handlers ---
   const handleNewTrade = () => {
     setShowNewTradeDialog(true);
   };
   const handleEditTrade = (tradeId: string) => {
     toast({
       title: t('trades.editTrade'),
-      description: `${t('trades.editingTrade')} ${tradeId}`
+      description: `${t('trades.editingTrade')} ${tradeId}`,
     });
   };
   const handleDeleteTrade = (tradeId: string) => {
-    setTrades(trades.filter(trade => trade.id !== tradeId));
-    toast({
-      title: t('trades.deleteTrade'),
-      description: `${t('trades.trade')} ${tradeId} ${t('trades.hasBeenDeleted')}`
-    });
+    deleteMutation.mutate(tradeId);
   };
   const handleViewTrade = (tradeId: string) => {
     toast({
       title: t('trades.viewTrade'),
-      description: `${t('trades.viewingTrade')} ${tradeId}`
+      description: `${t('trades.viewingTrade')} ${tradeId}`,
     });
   };
   const handleImportTrades = (importedTrades: Trade[]) => {
-    setTrades([...trades, ...importedTrades]);
+    // After import, refetch trades from the backend
+    queryClient.invalidateQueries({ queryKey: ['trades'] });
     toast({
       title: t('trades.importTrades'),
-      description: `${importedTrades.length} ${t('trades.tradesImportedSuccessfully')}`
+      description: `${importedTrades.length} ${t('trades.tradesImportedSuccessfully')}`,
     });
   };
   const handleExportTrades = () => {
     toast({
       title: t('trades.exportTrades'),
-      description: t('trades.tradesExportedSuccessfully')
+      description: t('trades.tradesExportedSuccessfully'),
     });
   };
   const handleColumnVisibilityChange = (column: string, visible: boolean) => {
     setVisibleColumns({
       ...visibleColumns,
-      [column]: visible
+      [column]: visible,
     });
   };
   const handleResetColumnVisibility = () => {
@@ -295,19 +199,23 @@ const Trades = () => {
       currency: false,
       strategy: false,
       createdAt: false,
-      updatedAt: false
+      updatedAt: false,
     });
   };
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
   const handleDateFilterApply = () => {
-    // The filtering is already handled by the useEffect
     setShowDateFilter(false);
     if (startDate || endDate) {
       toast({
         title: t('trades.dateFilterApplied'),
-        description: startDate && endDate ? `${t('trades.filteringTradesBetween')} ${startDate.toLocaleDateString()} ${t('common.and')} ${endDate.toLocaleDateString()}` : startDate ? `${t('trades.filteringTradesFrom')} ${startDate.toLocaleDateString()}` : `${t('trades.filteringTradesUntil')} ${endDate?.toLocaleDateString()}`
+        description:
+          startDate && endDate
+            ? `${t('trades.filteringTradesBetween')} ${startDate.toLocaleDateString()} ${t('common.and')} ${endDate.toLocaleDateString()}`
+            : startDate
+              ? `${t('trades.filteringTradesFrom')} ${startDate.toLocaleDateString()}`
+              : `${t('trades.filteringTradesUntil')} ${endDate?.toLocaleDateString()}`,
       });
     }
   };
@@ -316,27 +224,116 @@ const Trades = () => {
     setEndDate(null);
     toast({
       title: t('trades.dateFilterReset'),
-      description: t('trades.showingAllTrades')
+      description: t('trades.showingAllTrades'),
     });
   };
-  return <DashboardLayout pageTitle={t('trades.title')}>
+
+  // --- Render ---
+  return (
+    <DashboardLayout pageTitle={t('trades.title')}>
       <div className="flex flex-col space-y-4 max-w-full">
-        <FiltersSection searchQuery={searchQuery} onSearchChange={setSearchQuery} statusFilter={statusFilter} onStatusChange={setStatusFilter} typeFilter={typeFilter} onTypeChange={setTypeFilter} onToggleColumnFilter={() => setShowColumnFilter(!showColumnFilter)} onToggleDateFilter={() => setShowDateFilter(!showDateFilter)} onImport={handleImportTrades} onExport={handleExportTrades} onNewTrade={handleNewTrade} />
+        <FiltersSection
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          typeFilter={typeFilter}
+          onTypeChange={setTypeFilter}
+          onToggleColumnFilter={() => setShowColumnFilter(!showColumnFilter)}
+          onToggleDateFilter={() => setShowDateFilter(!showDateFilter)}
+          onImport={handleImportTrades}
+          onExport={handleExportTrades}
+          onNewTrade={handleNewTrade}
+        />
 
-        <DateRangeFilter startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} onApply={handleDateFilterApply} onReset={handleDateFilterReset} isOpen={showDateFilter} />
+        <DateRangeFilter
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onApply={handleDateFilterApply}
+          onReset={handleDateFilterReset}
+          isOpen={showDateFilter}
+        />
 
-        {showColumnFilter && <Card className="p-4 w-auto">
-            <TradeColumnFilter visibleColumns={visibleColumns} onChange={handleColumnVisibilityChange} onApply={() => setShowColumnFilter(false)} onReset={handleResetColumnVisibility} />
-          </Card>}
-        
-        <div className="w-full">
-          <TradesTableWrapper trades={currentTrades} visibleColumns={visibleColumns} searchQuery={searchQuery} statusFilter={statusFilter} typeFilter={typeFilter} advancedFilters={advancedFilters} currentPage={currentPage} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} totalTrades={filteredTrades.length} onEdit={handleEditTrade} onDelete={handleDeleteTrade} onView={handleViewTrade} />
-        </div>
+        {showColumnFilter && (
+          <Card className="p-4 w-auto">
+            <TradeColumnFilter
+              visibleColumns={visibleColumns}
+              onChange={handleColumnVisibilityChange}
+              onApply={() => setShowColumnFilter(false)}
+              onReset={handleResetColumnVisibility}
+            />
+          </Card>
+        )}
+
+        {/* Loading state */}
+        {isLoading && (
+          <Card className="p-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground text-sm">{t('common.loading', 'Loading trades...')}</p>
+          </Card>
+        )}
+
+        {/* Error state */}
+        {isError && !isLoading && (
+          <Card className="p-8 flex flex-col items-center justify-center gap-3 border-destructive/50">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <p className="text-destructive font-medium">Failed to load trades</p>
+            <p className="text-muted-foreground text-sm text-center max-w-md">
+              {(error as Error)?.message || 'Could not connect to the server. Please check your connection and try again.'}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['trades'] })}
+            >
+              Retry
+            </Button>
+          </Card>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !isError && trades.length === 0 && (
+          <Card className="p-12 flex flex-col items-center justify-center gap-3">
+            <p className="text-muted-foreground font-medium">No trades yet</p>
+            <p className="text-muted-foreground text-sm text-center max-w-md">
+              Connect a broker account and sync your trades, or add a trade manually.
+            </p>
+            <Button onClick={handleNewTrade} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              {t('trades.newTrade')}
+            </Button>
+          </Card>
+        )}
+
+        {/* Trades table */}
+        {!isLoading && !isError && trades.length > 0 && (
+          <div className="w-full">
+            <TradesTableWrapper
+              trades={currentTrades}
+              visibleColumns={visibleColumns}
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              typeFilter={typeFilter}
+              advancedFilters={advancedFilters}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              totalTrades={filteredTrades.length}
+              onEdit={handleEditTrade}
+              onDelete={handleDeleteTrade}
+              onView={handleViewTrade}
+            />
+          </div>
+        )}
       </div>
-      
+
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
-    </DashboardLayout>;
+    </DashboardLayout>
+  );
 };
+
 interface FiltersSectionProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -350,6 +347,7 @@ interface FiltersSectionProps {
   onExport: () => void;
   onNewTrade: () => void;
 }
+
 const FiltersSection: React.FC<FiltersSectionProps> = ({
   searchQuery,
   onSearchChange,
@@ -361,16 +359,21 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   onToggleDateFilter,
   onImport,
   onExport,
-  onNewTrade
+  onNewTrade,
 }) => {
-  const {
-    t
-  } = useTranslation();
-  return <div className="flex flex-col md:flex-row justify-between gap-4">
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col md:flex-row justify-between gap-4">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder={t('trades.search')} value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="pl-8 py-0" />
+          <Input
+            type="search"
+            placeholder={t('trades.search')}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8 py-0"
+          />
         </div>
         <Select value={statusFilter} onValueChange={onStatusChange}>
           <SelectTrigger className="w-full md:w-40">
@@ -412,6 +415,8 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
           {t('trades.newTrade')}
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Trades;

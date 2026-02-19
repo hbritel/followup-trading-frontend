@@ -22,8 +22,8 @@ interface AdvancedFilters {
 export interface Trade {
   id: string;
   symbol: string;
-  type: 'long' | 'short' | 'option' | 'future' | 'crypto' | 'forex';
-  status: 'open' | 'closed' | 'pending' | 'cancelled';
+  type: string;                  // backend sends direction as type (long, short, etc.)
+  status: string;                // backend sends OPEN/CLOSED, mapped to lowercase
   entryDate: string;
   exitDate?: string;
   entryPrice: number;
@@ -31,7 +31,7 @@ export interface Trade {
   quantity: number;
   stopLoss?: number;
   takeProfit?: number;
-  direction?: 'long' | 'short';
+  direction?: string;
   profit?: number;
   profitPercentage?: number;
   fees?: number;
