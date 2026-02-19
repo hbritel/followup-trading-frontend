@@ -59,31 +59,31 @@ const TradingCalendar = () => {
   const selectedDateTrade = tradeData[selectedDateStr as keyof typeof tradeData];
 
   return (
-    <Card className="animate-slide-up">
-      <CardHeader className="px-6 py-4">
+    <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.3s' }}>
+      <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold">Trading Calendar</CardTitle>
-            <CardDescription>Your trading activity for March 2022</CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">Trading Calendar</CardTitle>
+            <CardDescription className="text-muted-foreground">Your trading activity for March 2022</CardDescription>
           </div>
-          <div className="text-sm font-medium">
-            <Badge variant="outline" className="bg-profit/10 border-profit text-profit">
+          <div className="text-xs font-medium flex gap-2">
+            <Badge variant="outline" className="bg-profit/10 border-profit/30 text-profit">
               Win
             </Badge>
-            <Badge variant="outline" className="bg-loss/10 border-loss text-loss ml-2">
+            <Badge variant="outline" className="bg-loss/10 border-loss/30 text-loss">
               Loss
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-1 pb-5">
+      <CardContent className="px-1 pb-6 pt-2">
         <div className="flex flex-col lg:flex-row">
           <div className="flex-1">
             <Calendar
               mode="single"
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
-              className="rounded-md"
+              className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4"
               components={{
                 DayContent: renderDay
               }}
@@ -92,53 +92,56 @@ const TradingCalendar = () => {
             />
           </div>
           
-          <div className="lg:w-72 mt-6 lg:mt-0 lg:ml-6 lg:border-l lg:pl-6 px-6 lg:px-0">
-            <h3 className="text-sm font-medium mb-2">
-              Selected Date: {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <div className="lg:w-72 mt-6 lg:mt-0 lg:ml-6 lg:border-l border-slate-200/50 dark:border-white/10 lg:pl-6 px-6 lg:px-0">
+            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
+              Selected: {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </h3>
             
             {selectedDateTrade ? (
               <div className="space-y-4">
-                <div className="p-3 bg-accent/50 rounded-lg">
+                <div className="p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Result</span>
-                    <Badge variant={selectedDateTrade.result === 'win' ? 'default' : 'destructive'} className="capitalize">
+                    <span className="text-sm font-medium text-white">Result</span>
+                    <Badge variant={selectedDateTrade.result === 'win' ? 'default' : 'destructive'} className={cn(
+                      "capitalize shadow-[0_0_10px_rgba(0,0,0,0.2)]",
+                      selectedDateTrade.result === 'win' ? "bg-profit hover:bg-profit/90 text-black font-bold" : "bg-loss hover:bg-loss/90 text-white font-bold"
+                    )}>
                       {selectedDateTrade.result}
                     </Badge>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-medium">P&L</span>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-sm font-medium text-white">P&L</span>
                     <span className={cn(
-                      "text-sm font-medium",
-                      selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"
+                      "text-xl font-bold font-mono tracking-tight",
+                      selectedDateTrade.amount > 0 ? "text-profit text-glow" : "text-loss"
                     )}>
                       {selectedDateTrade.amount > 0 ? "+" : ""}${Math.abs(selectedDateTrade.amount).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-medium">Trades</span>
-                    <span className="text-sm font-medium">3</span>
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/10">
+                    <span className="text-sm font-medium text-muted-foreground">Trades</span>
+                    <span className="text-sm font-medium text-white">3</span>
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Trade Summary</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span>AAPL</span>
-                      <span className={selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Trade Summary</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <span className="font-bold">AAPL</span>
+                      <span className={cn("font-mono font-medium", selectedDateTrade.amount > 0 ? "text-profit" : "text-loss")}>
                         {selectedDateTrade.amount > 0 ? "+" : ""}${Math.abs(selectedDateTrade.amount / 2).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span>MSFT</span>
-                      <span className={selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"}>
+                    <div className="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <span className="font-bold">MSFT</span>
+                      <span className={cn("font-mono font-medium", selectedDateTrade.amount > 0 ? "text-profit" : "text-loss")}>
                         {selectedDateTrade.amount > 0 ? "+" : ""}${Math.abs(selectedDateTrade.amount / 3).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span>NVDA</span>
-                      <span className={selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"}>
+                    <div className="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <span className="font-bold">NVDA</span>
+                      <span className={cn("font-mono font-medium", selectedDateTrade.amount > 0 ? "text-profit" : "text-loss")}>
                         {selectedDateTrade.amount > 0 ? "+" : ""}${Math.abs(selectedDateTrade.amount / 6).toFixed(2)}
                       </span>
                     </div>
@@ -146,7 +149,7 @@ const TradingCalendar = () => {
                 </div>
               </div>
             ) : (
-              <div className="py-8 flex flex-col items-center justify-center text-muted-foreground">
+              <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
                 <p className="text-sm">No trades on this date</p>
               </div>
             )}

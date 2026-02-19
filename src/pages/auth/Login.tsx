@@ -103,7 +103,7 @@ const Login = () => {
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
-                            tabIndex={-1} // Ne pas inclure dans la navigation au clavier
+                            tabIndex={0}
                             aria-label={showPassword ? "Hide password" : "Show password"}
                         >
                             {showPassword ? (

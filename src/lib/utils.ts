@@ -7,15 +7,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a number as currency with $ symbol
+ * Format a number as currency. Accepts an optional currency code (ISO 4217).
+ * Defaults to USD if not provided.
  */
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value)
+export function formatCurrency(value: number, currencyCode: string = 'USD'): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value)
+  } catch {
+    // Fallback for unsupported currency codes
+    return `${currencyCode} ${value.toFixed(2)}`;
+  }
 }
 
 /**

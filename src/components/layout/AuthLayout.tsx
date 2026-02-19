@@ -24,7 +24,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
           <div className="relative w-20 h-20 flex items-center justify-center rounded-xl bg-primary text-3xl font-bold text-white mb-8">FT</div>
           <h1 className="text-4xl font-bold mb-6">Followup Trading</h1>
           <p className="text-lg text-muted-foreground">
-            Streamline your trading workflow, track performance, and make data-driven decisions.
+            {t('auth.heroDescription', 'Streamline your trading workflow, track performance, and make data-driven decisions.')}
           </p>
         </div>
       </div>

@@ -42,14 +42,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-
-const eventTypes = {
-  trade: { label: 'Trade', color: 'bg-blue-500' },
-  earnings: { label: 'Earnings', color: 'bg-amber-500' },
-  economic: { label: 'Economic', color: 'bg-green-500' },
-  dividend: { label: 'Dividend', color: 'bg-purple-500' },
-  reminder: { label: 'Reminder', color: 'bg-rose-500' },
-};
+import { useTranslation } from 'react-i18next';
 
 const events = [
   { id: 1, date: new Date(2023, 5, 12), title: 'AAPL Trade Entry', type: 'trade', description: 'Long position entry' },
@@ -75,6 +68,15 @@ const CalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  const eventTypes = {
+    trade: { label: t('calendar.eventTypes.trade', 'Trade'), color: 'bg-blue-500' },
+    earnings: { label: t('calendar.eventTypes.earnings', 'Earnings'), color: 'bg-amber-500' },
+    economic: { label: t('calendar.eventTypes.economic', 'Economic'), color: 'bg-green-500' },
+    dividend: { label: t('calendar.eventTypes.dividend', 'Dividend'), color: 'bg-purple-500' },
+    reminder: { label: t('calendar.eventTypes.reminder', 'Reminder'), color: 'bg-rose-500' },
+  };
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -116,12 +118,12 @@ const CalendarPage = () => {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle>Trading Calendar</CardTitle>
-              <CardDescription>Plan and track your trading activities</CardDescription>
+              <CardTitle>{t('calendar.tradingCalendar', 'Trading Calendar')}</CardTitle>
+              <CardDescription>{t('calendar.description', 'Plan and track your trading activities')}</CardDescription>
             </div>
             <Button size="sm" onClick={() => setIsAddEventOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
-              Add Event
+              {t('calendar.addEvent', 'Add Event')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -164,7 +166,7 @@ const CalendarPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
-                  No events scheduled for this day
+                  {t('calendar.noEvents', 'No events scheduled for this day')}
                 </div>
               )}
             </CardContent>
@@ -172,7 +174,7 @@ const CalendarPage = () => {
           
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Upcoming Events</CardTitle>
+              <CardTitle>{t('calendar.upcomingEvents', 'Upcoming Events')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -199,7 +201,7 @@ const CalendarPage = () => {
           
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Event Types</CardTitle>
+              <CardTitle>{t('calendar.eventTypesTitle', 'Event Types')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -219,9 +221,9 @@ const CalendarPage = () => {
       <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Event</DialogTitle>
+            <DialogTitle>{t('calendar.addNewEvent', 'Add New Event')}</DialogTitle>
             <DialogDescription>
-              Create a new event for your trading calendar.
+              {t('calendar.addNewEventDescription', 'Create a new event for your trading calendar.')}
             </DialogDescription>
           </DialogHeader>
           
@@ -232,9 +234,9 @@ const CalendarPage = () => {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>{t('calendar.title', 'Title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Event title" {...field} />
+                      <Input placeholder={t('calendar.eventTitlePlaceholder', 'Event title')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -246,11 +248,11 @@ const CalendarPage = () => {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Event Type</FormLabel>
+                    <FormLabel>{t('calendar.eventType', 'Event Type')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select event type" />
+                          <SelectValue placeholder={t('calendar.selectEventType', 'Select event type')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -271,7 +273,7 @@ const CalendarPage = () => {
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{t('common.date')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
@@ -289,10 +291,10 @@ const CalendarPage = () => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('common.description')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Event details" 
+                        placeholder={t('calendar.eventDetailsPlaceholder', 'Event details')} 
                         className="resize-none" 
                         {...field} 
                       />
@@ -303,7 +305,7 @@ const CalendarPage = () => {
               />
               
               <DialogFooter>
-                <Button type="submit">Add Event</Button>
+                <Button type="submit">{t('calendar.addEvent', 'Add Event')}</Button>
               </DialogFooter>
             </form>
           </Form>

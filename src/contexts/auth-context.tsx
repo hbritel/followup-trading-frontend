@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode'; // Importer jwt-decode
 import { authService } from '@/services/auth.service'; // Importer notre service auth
 import { userService } from '@/services/user.service'; // Importer notre service user
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import type {
   UserProfileDto,
   TokenResponseDto,

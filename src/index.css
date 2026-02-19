@@ -1,102 +1,165 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Laboratory Light Theme (Crisp, Technical) */
+    --background: 210 40% 98%; /* Slate 50 */
+    --foreground: 222 47% 11%; /* Slate 900 */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
+    --card-foreground: 222 47% 11%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 243 75% 59%; /* Indigo 600 */
     --primary-foreground: 210 40% 98%;
- 
+
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
+    --secondary-foreground: 222 47% 11%;
+
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
+    --muted-foreground: 215 16% 47%;
+
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
+    --accent-foreground: 222 47% 11%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --sidebar: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 215 20.2% 65.1%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
- 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
- 
-    --radius: 0.5rem;
-    
-    --profit: 142.1 76.2% 36.3%;
-    --loss: 0 72.2% 50.6%;
+    --ring: 243 75% 59%;
+
+    --radius: 0.75rem;
+
+    --profit: 151 55% 41%; /* Emerald 600 - Darker for visibility on white */
+    --loss: 0 72% 51%; /* Red 500 */
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-ring: 243 75% 59%;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* NEBULA THEME (Deep Space Glass) */
+    --background: 240 10% 3.9%; /* Rich Black #0a0a0b */
     --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
+
+    /* Glass Cards: Very dark blue/black with slight transparency */
+    --card: 240 10% 6%;
     --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
+
+    --popover: 240 10% 6%;
     --popover-foreground: 210 40% 98%;
- 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
+
+    /* Electric Indigo Glow */
+    --primary: 243 100% 69%; /* Indigo 400 - Glowing */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 240 5% 15%; /* Dark Gray */
     --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 5% 15%;
     --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
+
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --sidebar: 222.2 84% 4.9%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 243 75% 59%;
+
+    /* Neon Data Colors */
+    --profit: 151 65% 55%; /* Emerald 400 - Neon */
+    --loss: 0 85% 65%; /* Red 400 - Neon */
+
+    --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 224.3 76.3% 48%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-accent: 240 4% 16%;
     --sidebar-accent-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    
-    --profit: 142.1 70.6% 45.3%;
-    --loss: 0 72.2% 50.6%;
+    --sidebar-ring: 243 75% 59%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+
+  /* Headings use the display font */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Outfit", sans-serif;
+  }
+
+  /* Code/Numbers use mono */
+  code,
+  pre,
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
   }
 }
 
+/* Glassmorphism Utilities */
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-xl dark:shadow-none;
+  }
+
+  .glass-card {
+    @apply bg-white/60 dark:bg-card/60 backdrop-blur-lg border border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 transition-colors duration-300 shadow-sm dark:shadow-none;
+  }
+
+  .text-glow {
+    @apply dark:drop-shadow-[0_0_10px_rgba(var(--primary),0.5)];
+  }
+
+  .border-glow {
+    @apply dark:shadow-[0_0_10px_hsla(var(--primary),0.3)_inset,0_0_5px_hsla(var(--primary),0.3)];
+  }
+}
+
+/* Animations */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Utility classes for Profit/Loss text */
 .text-profit {
   color: hsl(var(--profit));
 }
@@ -111,32 +174,4 @@
 
 .bg-loss {
   background-color: hsl(var(--loss));
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-down {
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
 }

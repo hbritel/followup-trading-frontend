@@ -130,6 +130,9 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             {visibleColumns.fees && (
               <TableHead className="text-right">{t('trades.fees')}</TableHead>
             )}
+            {visibleColumns.currency && (
+              <TableHead>Currency</TableHead>
+            )}
             {visibleColumns.strategy && (
               <TableHead>{t('trades.strategy')}</TableHead>
             )}
@@ -176,21 +179,21 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   <TableCell>{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
                 )}
                 {visibleColumns.entryPrice && (
-                  <TableCell className="text-right">{formatCurrency(trade.entryPrice)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(trade.entryPrice, trade.currency)}</TableCell>
                 )}
                 {visibleColumns.exitPrice && (
                   <TableCell className="text-right">
-                    {trade.exitPrice !== undefined ? formatCurrency(trade.exitPrice) : '-'}
+                    {trade.exitPrice !== undefined ? formatCurrency(trade.exitPrice, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.stopLoss && (
                   <TableCell className="text-right">
-                    {trade.stopLoss !== undefined ? formatCurrency(trade.stopLoss) : '-'}
+                    {trade.stopLoss !== undefined ? formatCurrency(trade.stopLoss, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.takeProfit && (
                   <TableCell className="text-right">
-                    {trade.takeProfit !== undefined ? formatCurrency(trade.takeProfit) : '-'}
+                    {trade.takeProfit !== undefined ? formatCurrency(trade.takeProfit, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.quantity && (
@@ -209,7 +212,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   <TableCell className="text-right">
                     {trade.profit !== undefined ? (
                       <span className={trade.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                        {formatCurrency(trade.profit)}
+                        {formatCurrency(trade.profit, trade.currency)}
                       </span>
                     ) : (
                       '-'
@@ -233,7 +236,14 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 )}
                 {visibleColumns.fees && (
                   <TableCell className="text-right">
-                    {trade.fees !== undefined ? formatCurrency(trade.fees) : '-'}
+                    {trade.fees !== undefined ? formatCurrency(trade.fees, trade.currency) : '-'}
+                  </TableCell>
+                )}
+                {visibleColumns.currency && (
+                  <TableCell>
+                    {trade.currency ? (
+                      <Badge variant="outline">{trade.currency}</Badge>
+                    ) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.strategy && (

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Card,
@@ -9,11 +10,11 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowUpRight, CreditCard, RefreshCw, ExternalLink } from 'lucide-react';
+import { PlusCircle, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -25,90 +26,192 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { brokerService, type BrokerConnectionResponse, type ConnectBrokerRequest } from '@/services/broker.service';
 
-const accountsData = [
+// --- Fallback mock data (used when API is unavailable) ---
+const fallbackAccounts = [
   {
-    id: 1,
-    name: 'Trading Account (Main)',
-    broker: 'Interactive Brokers',
-    balance: 58742.63,
-    buyingPower: 117485.26,
-    positions: 12,
-    status: 'active',
-    change: '+2.34%',
-    changeAmount: '+1346.28',
+    id: '1',
+    brokerType: 'INTERACTIVE_BROKERS',
+    displayName: 'Trading Account (Main)',
+    connectionStatus: 'ACTIVE',
+    syncFrequency: 'DAILY',
+    enabled: true,
+    lastSyncTime: '2023-06-15T10:30:00Z',
+    createdAt: '2023-01-05T00:00:00Z',
+    updatedAt: '2023-06-15T10:30:00Z',
   },
   {
-    id: 2,
-    name: 'Retirement Account',
-    broker: 'Fidelity',
-    balance: 124836.49,
-    buyingPower: 0,
-    positions: 18,
-    status: 'active',
-    change: '+0.87%',
-    changeAmount: '+1076.28',
-  },
-  {
-    id: 3,
-    name: 'Options Trading',
-    broker: 'ThinkorSwim',
-    balance: 24516.82,
-    buyingPower: 24516.82,
-    positions: 5,
-    status: 'active',
-    change: '-1.24%',
-    changeAmount: '-308.23',
-  },
-  {
-    id: 4,
-    name: 'Forex Trading',
-    broker: 'Oanda',
-    balance: 10825.47,
-    buyingPower: 108254.70,
-    positions: 3,
-    status: 'active',
-    change: '+0.56%',
-    changeAmount: '+60.15',
-  },
-  {
-    id: 5,
-    name: 'Paper Trading',
-    broker: 'TradingView',
-    balance: 100000.00,
-    buyingPower: 100000.00,
-    positions: 8,
-    status: 'demo',
-    change: '-0.78%',
-    changeAmount: '-786.42',
+    id: '2',
+    brokerType: 'MT5',
+    displayName: 'Forex Trading',
+    connectionStatus: 'ACTIVE',
+    syncFrequency: 'HOURLY',
+    enabled: true,
+    lastSyncTime: '2023-06-15T09:00:00Z',
+    createdAt: '2023-02-10T00:00:00Z',
+    updatedAt: '2023-06-15T09:00:00Z',
   },
 ];
 
+// --- Helper ---
+const formatBrokerName = (brokerType: string): string => {
+  const map: Record<string, string> = {
+    INTERACTIVE_BROKERS: 'Interactive Brokers',
+    MT5: 'MetaTrader 5',
+    OANDA: 'Oanda',
+    ALPACA: 'Alpaca',
+  };
+  return map[brokerType] || brokerType;
+};
+
+const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  switch (status) {
+    case 'ACTIVE': return 'default';
+    case 'DISCONNECTED': return 'destructive';
+    case 'ERROR': return 'destructive';
+    default: return 'secondary';
+  }
+};
+
 const Accounts = () => {
+  const queryClient = useQueryClient();
   const [linkAccountOpen, setLinkAccountOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<number | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [viewAccountOpen, setViewAccountOpen] = useState(false);
+  const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
-  
+
+  // --- Form state for linking ---
+  const [newBrokerType, setNewBrokerType] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [newApiKey, setNewApiKey] = useState('');
+  const [newApiSecret, setNewApiSecret] = useState('');
+
+  // --- Queries ---
+  const {
+    data: accounts = fallbackAccounts,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['broker-connections'],
+    queryFn: brokerService.getConnections,
+    retry: 2,
+  });
+
+  // --- Mutations ---
+  const connectMutation = useMutation({
+    mutationFn: (req: ConnectBrokerRequest) => brokerService.connectBroker(req),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      setLinkAccountOpen(false);
+      resetLinkForm();
+      toast({
+        title: 'Account linked',
+        description: 'Your trading account has been successfully linked.',
+      });
+    },
+    onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean }) => {
+      if (err.isRateLimited) {
+        toast({ title: 'Too many requests', description: err.message, variant: 'destructive' });
+      } else if (err.isServiceUnavailable) {
+        toast({ title: 'Service unavailable', description: err.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Connection failed', description: 'Failed to link your account. Please check credentials.', variant: 'destructive' });
+      }
+    },
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: ({ connectionId, idempotencyKey }: { connectionId: string; idempotencyKey: string }) =>
+      brokerService.syncConnection(connectionId, idempotencyKey),
+    onSuccess: (_data, variables) => {
+      setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
+      queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      toast({
+        title: 'Sync complete',
+        description: `Account synced successfully. ${_data.tradesImported ?? 0} trades imported.`,
+      });
+    },
+    onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean; retryAfterSeconds?: number }, variables) => {
+      setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
+      if (err.isRateLimited) {
+        toast({
+          title: 'Sync rate limited',
+          description: `You are syncing too frequently. Please try again in ${err.retryAfterSeconds ?? 60} seconds.`,
+          variant: 'destructive',
+        });
+      } else if (err.isServiceUnavailable) {
+        toast({
+          title: 'Broker unavailable',
+          description: 'The broker service is temporarily unavailable. Please try again later.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Sync failed',
+          description: err.message || 'An error occurred during sync.',
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: (connectionId: string) => brokerService.disconnectBroker(connectionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      setViewAccountOpen(false);
+      toast({ title: 'Account disconnected', description: 'The broker connection has been removed.' });
+    },
+    onError: () => {
+      toast({ title: 'Disconnect failed', description: 'Failed to disconnect the account.', variant: 'destructive' });
+    },
+  });
+
+  // --- Handlers ---
+  const resetLinkForm = () => {
+    setNewBrokerType('');
+    setNewDisplayName('');
+    setNewApiKey('');
+    setNewApiSecret('');
+  };
+
   const handleLinkAccount = () => {
-    setLinkAccountOpen(false);
-    toast({
-      title: "Account linked",
-      description: "Your trading account has been successfully linked.",
+    if (!newBrokerType) {
+      toast({ title: 'Select a broker', description: 'Please select a broker type.', variant: 'destructive' });
+      return;
+    }
+    const credentials = JSON.stringify({ apiKey: newApiKey, apiSecret: newApiSecret });
+    connectMutation.mutate({
+      brokerType: newBrokerType,
+      credentials,
+      displayName: newDisplayName || undefined,
     });
   };
-  
-  const handleViewAccount = (accountId: number) => {
+
+  const handleViewAccount = (accountId: string) => {
     setSelectedAccount(accountId);
     setViewAccountOpen(true);
   };
-  
-  const handleSync = (accountId: number) => {
-    toast({
-      title: "Account synced",
-      description: `Account #${accountId} has been synced successfully.`,
+
+  const handleSync = (accountId: string) => {
+    const idempotencyKey = crypto.randomUUID();
+    setSyncingIds(prev => new Set(prev).add(accountId));
+    syncMutation.mutate({ connectionId: accountId, idempotencyKey });
+  };
+
+  const handleSyncAll = () => {
+    accounts.forEach(account => {
+      if (account.connectionStatus === 'ACTIVE' && account.enabled) {
+        handleSync(account.id);
+      }
     });
   };
+
+  const selectedAccountData = accounts.find(a => a.id === selectedAccount);
+  const activeCount = accounts.filter(a => a.connectionStatus === 'ACTIVE').length;
 
   return (
     <DashboardLayout pageTitle="Accounts">
@@ -118,147 +221,166 @@ const Accounts = () => {
             <h1 className="text-2xl font-bold">Trading Accounts</h1>
             <p className="text-muted-foreground">Manage your connected trading accounts</p>
           </div>
-          <Button onClick={() => setLinkAccountOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Link Account
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSyncAll} disabled={syncMutation.isPending}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+              Sync All
+            </Button>
+            <Button onClick={() => setLinkAccountOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Link Account
+            </Button>
+          </div>
         </div>
         
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Total Balance</CardTitle>
+              <CardTitle className="text-base">Connected Accounts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$218,921.41</div>
-              <div className="flex items-center text-xs text-profit mt-1">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                <span>+$2,174.48 (1.18%)</span>
-              </div>
-              <div className="mt-4">
-                <Progress value={78} className="h-1.5" />
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>Target: $280,000</span>
-                  <span>78% Complete</span>
-                </div>
+              <div className="text-2xl font-bold">{accounts.length}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                <span>{activeCount} active</span>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Open Positions</CardTitle>
+              <CardTitle className="text-base">Broker Types</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">46</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span>Across 5 accounts</span>
+              <div className="text-2xl font-bold">
+                {new Set(accounts.map(a => a.brokerType)).size}
               </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-xs font-medium">
-                  <span>Profit:</span>
-                  <span className="text-profit">28 positions</span>
-                </div>
-                <div className="flex justify-between text-xs font-medium">
-                  <span>Loss:</span>
-                  <span className="text-loss">18 positions</span>
-                </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                <span>Unique brokers connected</span>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Total Buying Power</CardTitle>
+              <CardTitle className="text-base">Last Sync</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$350,256.78</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span>With margin across all accounts</span>
+              <div className="text-2xl font-bold">
+                {accounts.some(a => a.lastSyncTime) 
+                  ? new Date(
+                      Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
+                    ).toLocaleTimeString()
+                  : 'Never'}
               </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-xs font-medium">
-                  <span>Margin Used:</span>
-                  <span>32%</span>
-                </div>
-                <Progress value={32} className="h-1.5 mt-1" />
+              <div className="text-xs text-muted-foreground mt-1">
+                Most recent sync across accounts
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Error State */}
+        {isError && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Failed to load accounts: {(error as Error)?.message || 'Unknown error'}. Showing cached data.</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
+        {/* Accounts List */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle>Linked Accounts</CardTitle>
             <CardDescription>Manage your connected trading and investment accounts</CardDescription>
           </CardHeader>
           <CardContent>
-            {accountsData.map((account) => (
-              <div 
-                key={account.id} 
-                className="mb-4 last:mb-0 border rounded-lg overflow-hidden"
-              >
-                <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between border-b">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                      <h3 className="font-medium">{account.name}</h3>
-                      <Badge variant={account.status === 'active' ? 'outline' : 'secondary'}>
-                        {account.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{account.broker}</p>
-                  </div>
-                  <div className="mt-2 md:mt-0 flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleSync(account.id)}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Sync
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewAccount(account.id)}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                  </div>
-                </div>
-                <div className="bg-muted/40 p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Balance</div>
-                      <div className="font-medium">${account.balance.toLocaleString()}</div>
-                      <div className={`text-xs ${account.change.startsWith('+') ? 'text-profit' : 'text-loss'}`}>
-                        {account.change} (${account.changeAmount})
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Buying Power</div>
-                      <div className="font-medium">${account.buyingPower.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Positions</div>
-                      <div className="font-medium">{account.positions}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Allocation</div>
-                      <div className="font-medium">
-                        {((account.balance / 218921.41) * 100).toFixed(1)}%
-                      </div>
-                      <Progress 
-                        value={((account.balance / 218921.41) * 100)} 
-                        className="h-1.5 mt-1" 
-                      />
-                    </div>
-                  </div>
-                </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ))}
+            ) : (
+              <>
+                {accounts.map((account) => {
+                  const isSyncing = syncingIds.has(account.id);
+                  return (
+                    <div 
+                      key={account.id} 
+                      className="mb-4 last:mb-0 border rounded-lg overflow-hidden"
+                    >
+                      <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between border-b">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4 text-primary" />
+                            <h3 className="font-medium">{account.displayName || formatBrokerName(account.brokerType)}</h3>
+                            <Badge variant={getStatusVariant(account.connectionStatus)}>
+                              {account.connectionStatus.toLowerCase()}
+                            </Badge>
+                            {!account.enabled && (
+                              <Badge variant="secondary">disabled</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{formatBrokerName(account.brokerType)}</p>
+                        </div>
+                        <div className="mt-2 md:mt-0 flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleSync(account.id)}
+                            disabled={isSyncing || !account.enabled || account.connectionStatus !== 'ACTIVE'}
+                          >
+                            {isSyncing ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            {isSyncing ? 'Syncing...' : 'Sync'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewAccount(account.id)}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="bg-muted/40 p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <div className="text-sm text-muted-foreground">Sync Frequency</div>
+                            <div className="font-medium">{account.syncFrequency}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Last Synced</div>
+                            <div className="font-medium">
+                              {account.lastSyncTime 
+                                ? new Date(account.lastSyncTime).toLocaleString() 
+                                : 'Never'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Connected Since</div>
+                            <div className="font-medium">
+                              {new Date(account.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Status</div>
+                            <div className="font-medium capitalize">{account.connectionStatus.toLowerCase()}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
             
             <Button 
               variant="outline" 
@@ -270,88 +392,6 @@ const Accounts = () => {
             </Button>
           </CardContent>
         </Card>
-        
-        <Tabs defaultValue="allocation">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="allocation">Portfolio Allocation</TabsTrigger>
-            <TabsTrigger value="performance">Account Performance</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="allocation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Asset Allocation</CardTitle>
-                <CardDescription>Distribution of assets across accounts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Stocks</span>
-                      <span className="text-sm">65%</span>
-                    </div>
-                    <Progress value={65} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">ETFs</span>
-                      <span className="text-sm">15%</span>
-                    </div>
-                    <Progress value={15} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Options</span>
-                      <span className="text-sm">8%</span>
-                    </div>
-                    <Progress value={8} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Forex</span>
-                      <span className="text-sm">5%</span>
-                    </div>
-                    <Progress value={5} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Cash</span>
-                      <span className="text-sm">7%</span>
-                    </div>
-                    <Progress value={7} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="performance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Performance Comparison</CardTitle>
-                <CardDescription>Performance metrics for connected accounts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {accountsData.map((account) => (
-                    <div key={account.id}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">{account.name}</span>
-                        <span className={`text-sm ${account.change.startsWith('+') ? 'text-profit' : 'text-loss'}`}>
-                          {account.change}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={parseFloat(account.change.replace(/[^0-9.-]+/g, "")) * 10} 
-                        className={`h-2 ${account.change.startsWith('+') ? 'bg-profit' : 'bg-loss'}`} 
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
       
       {/* Link Account Dialog */}
@@ -366,52 +406,68 @@ const Accounts = () => {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="broker">Select Broker</Label>
-              <Select>
+              <Select value={newBrokerType} onValueChange={setNewBrokerType}>
                 <SelectTrigger id="broker">
                   <SelectValue placeholder="Select broker" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="interactive-brokers">Interactive Brokers</SelectItem>
-                  <SelectItem value="td-ameritrade">TD Ameritrade</SelectItem>
-                  <SelectItem value="robinhood">Robinhood</SelectItem>
-                  <SelectItem value="webull">Webull</SelectItem>
-                  <SelectItem value="fidelity">Fidelity</SelectItem>
-                  <SelectItem value="etrade">E*TRADE</SelectItem>
+                  <SelectItem value="INTERACTIVE_BROKERS">Interactive Brokers</SelectItem>
+                  <SelectItem value="MT5">MetaTrader 5</SelectItem>
+                  <SelectItem value="OANDA">Oanda</SelectItem>
+                  <SelectItem value="ALPACA">Alpaca</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="account-name">Account Name</Label>
-              <Input id="account-name" placeholder="e.g., Main Trading Account" />
+              <Label htmlFor="account-name">Display Name</Label>
+              <Input
+                id="account-name"
+                placeholder="e.g., Main Trading Account"
+                value={newDisplayName}
+                onChange={(e) => setNewDisplayName(e.target.value)}
+              />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="account-id">Account ID/Number</Label>
-              <Input id="account-id" placeholder="Your broker account ID" />
+              <Label htmlFor="api-key">API Key</Label>
+              <Input
+                id="api-key"
+                placeholder="Your broker API key"
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+              />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="api-key">API Key (if applicable)</Label>
-              <Input id="api-key" placeholder="Your broker API key" />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="api-secret">API Secret (if applicable)</Label>
-              <Input id="api-secret" type="password" placeholder="Your broker API secret" />
+              <Label htmlFor="api-secret">API Secret</Label>
+              <Input
+                id="api-secret"
+                type="password"
+                placeholder="Your broker API secret"
+                value={newApiSecret}
+                onChange={(e) => setNewApiSecret(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLinkAccountOpen(false)}>
+            <Button variant="outline" onClick={() => { setLinkAccountOpen(false); resetLinkForm(); }}>
               Cancel
             </Button>
-            <Button onClick={handleLinkAccount}>Link Account</Button>
+            <Button onClick={handleLinkAccount} disabled={connectMutation.isPending}>
+              {connectMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Linking...
+                </>
+              ) : 'Link Account'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       {/* View Account Dialog */}
-      {selectedAccount && (
+      {selectedAccountData && (
         <Dialog open={viewAccountOpen} onOpenChange={setViewAccountOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -425,33 +481,29 @@ const Accounts = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="h-5 w-5 text-primary" />
                   <h3 className="font-medium text-lg">
-                    {accountsData.find(a => a.id === selectedAccount)?.name}
+                    {selectedAccountData.displayName || formatBrokerName(selectedAccountData.brokerType)}
                   </h3>
-                  <Badge variant="outline">
-                    {accountsData.find(a => a.id === selectedAccount)?.status}
+                  <Badge variant={getStatusVariant(selectedAccountData.connectionStatus)}>
+                    {selectedAccountData.connectionStatus.toLowerCase()}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">
-                  Broker: {accountsData.find(a => a.id === selectedAccount)?.broker}
+                  Broker: {formatBrokerName(selectedAccountData.brokerType)}
                 </p>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">Balance</div>
-                  <div className="text-2xl font-bold">
-                    ${accountsData.find(a => a.id === selectedAccount)?.balance.toLocaleString()}
-                  </div>
-                  <div className={`text-sm ${(accountsData.find(a => a.id === selectedAccount)?.change || "").startsWith('+') ? 'text-profit' : 'text-loss'}`}>
-                    {accountsData.find(a => a.id === selectedAccount)?.change} 
-                    ({accountsData.find(a => a.id === selectedAccount)?.changeAmount})
-                  </div>
+                  <div className="text-sm text-muted-foreground">Sync Frequency</div>
+                  <div className="text-xl font-bold">{selectedAccountData.syncFrequency}</div>
                 </div>
                 
                 <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">Buying Power</div>
-                  <div className="text-2xl font-bold">
-                    ${accountsData.find(a => a.id === selectedAccount)?.buyingPower.toLocaleString()}
+                  <div className="text-sm text-muted-foreground">Last Synced</div>
+                  <div className="text-xl font-bold">
+                    {selectedAccountData.lastSyncTime 
+                      ? new Date(selectedAccountData.lastSyncTime).toLocaleString()
+                      : 'Never'}
                   </div>
                 </div>
               </div>
@@ -459,10 +511,30 @@ const Accounts = () => {
               <div className="p-4 border rounded-md">
                 <h4 className="font-medium mb-2">Account Actions</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <Button variant="outline" size="sm">View Positions</Button>
-                  <Button variant="outline" size="sm">View Orders</Button>
-                  <Button variant="outline" size="sm">Account History</Button>
-                  <Button variant="outline" size="sm">Account Settings</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSync(selectedAccountData.id)}
+                    disabled={syncingIds.has(selectedAccountData.id)}
+                  >
+                    {syncingIds.has(selectedAccountData.id) ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Sync Now
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => disconnectMutation.mutate(selectedAccountData.id)}
+                    disabled={disconnectMutation.isPending}
+                  >
+                    {disconnectMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    Disconnect
+                  </Button>
                 </div>
               </div>
             </div>

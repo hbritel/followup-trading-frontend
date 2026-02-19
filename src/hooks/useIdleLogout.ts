@@ -3,7 +3,7 @@ import {useEffect, useState, useCallback, Dispatch, SetStateAction} from 'react'
 import { useIdleTimer } from 'react-idle-timer';
 import { useAuth } from '@/contexts/auth-context';
 import { userService } from '@/services/user.service';
-import { useToast } from '@/components/ui/use-toast'; // Utiliser le hook standard
+import { useToast } from '@/hooks/use-toast';
 
 const DEFAULT_TIMEOUT_MINUTES = 30; // Timeout par défaut si non défini ou erreur
 

@@ -1,9 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import Navbar from '@/components/dashboard/Navbar';
-import DashboardSidebar from '@/components/dashboard/Sidebar';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import JournalEntryForm from '@/components/journal/JournalEntryForm';
 import JournalEntries from '@/components/journal/JournalEntries';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,10 +11,6 @@ const DailyJournal = () => {
   const { t } = useTranslation();
   const [viewEntryId, setViewEntryId] = useState<number | null>(null);
   const [editEntryId, setEditEntryId] = useState<number | null>(null);
-  
-  useEffect(() => {
-    document.title = "Daily Journal | Followup Trading";
-  }, []);
   
   // Mock data for journal entries - in a real app this would come from an API
   const journalEntries = [
@@ -57,38 +51,26 @@ const DailyJournal = () => {
   const currentEntry = journalEntries.find(entry => entry.id === viewEntryId || entry.id === editEntryId);
   
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-accent/10">
-        <DashboardSidebar />
-        <div className="flex-1 flex flex-col min-h-screen">
-          <Navbar />
-          <main className="flex-1 px-4 py-4 md:px-6 md:py-6 overflow-auto">
-            <div className="max-w-screen-2xl mx-auto space-y-6">
-              <h1 className="text-2xl font-bold animate-fade-in">{t('pages.dailyJournal')}</h1>
-              
-              <Tabs defaultValue="entries" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="entries">{t('journal.entries')}</TabsTrigger>
-                  <TabsTrigger value="new">{t('journal.newEntry')}</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="entries" className="space-y-4">
-                  <JournalEntries 
-                    entries={journalEntries}
-                    onView={(id) => setViewEntryId(id)}
-                    onEdit={(id) => setEditEntryId(id)}
-                    onDelete={(id) => console.log('Delete entry:', id)}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="new" className="space-y-4">
-                  <JournalEntryForm />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </main>
-        </div>
-      </div>
+    <DashboardLayout pageTitle={t('pages.dailyJournal')}>
+      <Tabs defaultValue="entries" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="entries">{t('journal.entries')}</TabsTrigger>
+          <TabsTrigger value="new">{t('journal.newEntry')}</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="entries" className="space-y-4">
+          <JournalEntries 
+            entries={journalEntries}
+            onView={(id) => setViewEntryId(id)}
+            onEdit={(id) => setEditEntryId(id)}
+            onDelete={(id) => console.log('Delete entry:', id)}
+          />
+        </TabsContent>
+        
+        <TabsContent value="new" className="space-y-4">
+          <JournalEntryForm />
+        </TabsContent>
+      </Tabs>
       
       {/* View Entry Dialog */}
       <Dialog open={viewEntryId !== null} onOpenChange={() => setViewEntryId(null)}>
@@ -126,7 +108,7 @@ const DailyJournal = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+    </DashboardLayout>
   );
 };
 

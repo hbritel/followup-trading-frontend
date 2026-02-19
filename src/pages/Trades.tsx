@@ -27,6 +27,7 @@ const mockTrades: Trade[] = [{
   profit: 5.25,
   profitPercentage: 4.02,
   direction: 'long',
+  currency: 'USD',
   notes: 'Good trade on AAPL',
   tags: ['tech', 'swing']
 }, {
@@ -42,6 +43,7 @@ const mockTrades: Trade[] = [{
   profit: 50.00,
   profitPercentage: 5.56,
   direction: 'short',
+  currency: 'USD',
   notes: 'Short position on TSLA',
   tags: ['tech', 'day']
 }, {
@@ -170,6 +172,7 @@ const Trades = () => {
     notes: false,
     tags: false,
     fees: false,
+    currency: false,
     strategy: false,
     createdAt: false,
     updatedAt: false
@@ -289,6 +292,7 @@ const Trades = () => {
       notes: false,
       tags: false,
       fees: false,
+      currency: false,
       strategy: false,
       createdAt: false,
       updatedAt: false

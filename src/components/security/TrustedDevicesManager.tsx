@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield, ShieldAlert, ShieldCheck, Smartphone, Laptop, Monitor } from 'lucide-react';
 import { trustedDeviceService } from '@/services/trustedDevice.service';
 import { fingerprintService } from '@/services/fingerprint.service';
