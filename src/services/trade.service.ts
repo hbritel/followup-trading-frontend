@@ -40,11 +40,42 @@ export interface TradeApiResponse {
     strategies: StrategyResponse[];
     createdAt: string;
     updatedAt: string;
+    balance?: number;
+}
+
+export interface PageDto<T> {
+    content: T[];
+    pageNumber: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
 }
 
 export interface TradeListParams {
     page?: number;
     size?: number;
+    accountIds?: string;
+    direction?: string;
+    status?: string;
+    searchText?: string;
+    entryDateFrom?: string;
+    entryDateTo?: string;
+}
+
+export interface AnalyticsDashboard {
+    totalProfitLoss: number;
+    winRate: number;
+    totalTrades: number;
+    winningTrades: number;
+    losingTrades: number;
+    totalFees: number;
+    longProfitLoss: number;
+    shortProfitLoss: number;
+    bestTrade: number;
+    worstTrade: number;
+    priorEquity: number;
+    equityCurve: { date: string; dailyProfit: number; dailyVolume: number }[];
 }
 
 // --- Mapping: Backend DTO → Frontend Trade type ---
@@ -73,6 +104,7 @@ export const mapApiResponseToTrade = (r: TradeApiResponse): Trade => ({
     tags: r.tags?.map(t => t.name) ?? [],
     strategy: r.strategies?.[0]?.name ?? undefined,
     currency: 'USD',   // backend doesn't send currency yet
+    balance: r.balance !== undefined && r.balance !== null ? r.balance : undefined, // Check for running balance
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
 });
@@ -100,12 +132,47 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
 // --- Service ---
 export const tradeService = {
     /**
-     * Get trades for the authenticated user.
-     * Backend returns a flat List<TradeDto.Response>, already mapped to frontend Trade type.
+     * Get paginated trades for the authenticated user.
+     * Backend returns PageDto<TradeDto.Response>.
      */
-    getTrades: async (params?: TradeListParams): Promise<Trade[]> => {
-        const response = await apiClient.get<TradeApiResponse[]>('/trades', { params });
-        return response.data.map(mapApiResponseToTrade);
+    getTrades: async (params?: TradeListParams): Promise<PageDto<Trade>> => {
+        const searchBody: Record<string, unknown> = {
+            page: params?.page || 0,
+            size: params?.size || 50,
+        };
+        if (params?.accountIds) searchBody.accountIds = [params.accountIds];
+        if (params?.direction) searchBody.direction = params.direction.toUpperCase();
+        if (params?.status) searchBody.status = params.status.toUpperCase();
+        if (params?.searchText) searchBody.searchText = params.searchText;
+        if (params?.entryDateFrom) searchBody.entryDateFrom = params.entryDateFrom;
+        if (params?.entryDateTo) searchBody.entryDateTo = params.entryDateTo;
+
+        const response = await apiClient.post<any>('/trades/search', searchBody);
+        
+        const mappedContent = (response.data.trades || []).map(mapApiResponseToTrade);
+        
+        return {
+            content: mappedContent,
+            pageNumber: response.data.page,
+            pageSize: response.data.size,
+            totalElements: response.data.totalCount,
+            totalPages: response.data.totalPages,
+            last: response.data.page >= (response.data.totalPages - 1)
+        };
+    },
+
+    /**
+     * Get Dashboard Analytics from the new aggregated SQL endpoint.
+     */
+    getAnalytics: async (accountIds?: string, startDate?: string, endDate?: string): Promise<AnalyticsDashboard> => {
+        const params: Record<string, string> = {};
+        if (accountIds) params.accountIds = accountIds;
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        const response = await apiClient.get<AnalyticsDashboard>('/analytics/dashboard', {
+            params: Object.keys(params).length > 0 ? params : undefined,
+        });
+        return response.data;
     },
 
     /**
@@ -121,5 +188,19 @@ export const tradeService = {
      */
     deleteTrade: async (tradeId: string): Promise<void> => {
         await apiClient.delete(`/trades/${tradeId}`);
+    },
+
+    /**
+     * Fetch all trades (unpaginated) for export.
+     * Sends a large page size to get everything in one request.
+     */
+    getAllTrades: async (accountIds?: string): Promise<Trade[]> => {
+        const searchBody = {
+            page: 0,
+            size: 10000,
+            accountIds: accountIds ? [accountIds] : undefined
+        };
+        const response = await apiClient.post<any>('/trades/search', searchBody);
+        return (response.data.trades || []).map(mapApiResponseToTrade);
     },
 };

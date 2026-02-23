@@ -85,6 +85,8 @@
     "sell": "Sell",
     "price": "Price",
     "quantity": "Quantity",
-    "date": "Date"
+    "date": "Date",
+    "showing": "Mostrando {{from}}-{{to}} de {{total}}",
+    "rowsPerPage": "Filas por página"
   }
 }

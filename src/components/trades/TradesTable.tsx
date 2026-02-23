@@ -75,14 +75,6 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     }
   };
 
-  const getDirectionBadgeVariant = (direction: string) => {
-    switch (direction) {
-      case 'long': return 'default';
-      case 'short': return 'destructive';
-      default: return 'outline';
-    }
-  };
-
   return (
     <div className="w-full">
       <Table className="min-w-max">
@@ -118,8 +110,8 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             {visibleColumns.quantity && (
               <TableHead className="text-right">{t('trades.quantity')}</TableHead>
             )}
-            {visibleColumns.direction && (
-              <TableHead>{t('trades.direction')}</TableHead>
+            {visibleColumns.balance && (
+              <TableHead className="text-right">Balance</TableHead>
             )}
             {visibleColumns.profit && (
               <TableHead className="text-right">{t('trades.profit')}</TableHead>
@@ -199,13 +191,15 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 {visibleColumns.quantity && (
                   <TableCell className="text-right">{trade.quantity}</TableCell>
                 )}
-                {visibleColumns.direction && (
-                  <TableCell>
-                    {trade.direction ? (
-                      <Badge variant={getDirectionBadgeVariant(trade.direction)}>
-                        {t(`trades.${trade.direction}`)}
-                      </Badge>
-                    ) : '-'}
+                {visibleColumns.balance && (
+                  <TableCell className="text-right font-medium">
+                    {trade.balance !== undefined ? (
+                      <span className={trade.balance >= 0 ? 'text-profit' : 'text-loss'}>
+                        {formatCurrency(trade.balance, trade.currency)}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                 )}
                 {visibleColumns.profit && (

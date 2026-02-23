@@ -42,6 +42,7 @@ import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useFingerprint } from '@/hooks/useFingerprint';
 import { PreferencesProvider } from '@/contexts/preferences-context';
+import { PageFiltersProvider } from '@/contexts/page-filters-context';
 
 function App() {
   useFingerprint();
@@ -51,6 +52,7 @@ function App() {
         <AuthProvider>
           <ThemeProvider>
             <PreferencesProvider>
+              <PageFiltersProvider>
               <Routes>
                 {/* Make the homepage the root route */}
                 <Route path="/" element={<HomePage />} />
@@ -93,6 +95,7 @@ function App() {
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </PageFiltersProvider>
             </PreferencesProvider>
           </ThemeProvider>
         </AuthProvider>

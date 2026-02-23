@@ -10,10 +10,9 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowUpRight, ArrowDownRight, CreditCard, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { PlusCircle, CreditCard, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -26,7 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { brokerService, type BrokerConnectionResponse, type ConnectBrokerRequest } from '@/services/broker.service';
+import { Switch } from '@/components/ui/switch';
+import { brokerService, type ConnectBrokerRequest } from '@/services/broker.service';
 
 // --- Fallback mock data (used when API is unavailable) ---
 const fallbackAccounts = [
@@ -34,7 +34,7 @@ const fallbackAccounts = [
     id: '1',
     brokerType: 'INTERACTIVE_BROKERS',
     displayName: 'Trading Account (Main)',
-    connectionStatus: 'ACTIVE',
+    status: 'ACTIVE',
     syncFrequency: 'DAILY',
     enabled: true,
     lastSyncTime: '2023-06-15T10:30:00Z',
@@ -45,7 +45,7 @@ const fallbackAccounts = [
     id: '2',
     brokerType: 'MT5',
     displayName: 'Forex Trading',
-    connectionStatus: 'ACTIVE',
+    status: 'ACTIVE',
     syncFrequency: 'HOURLY',
     enabled: true,
     lastSyncTime: '2023-06-15T09:00:00Z',
@@ -65,10 +65,11 @@ const formatBrokerName = (brokerType: string): string => {
   return map[brokerType] || brokerType;
 };
 
-const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+const getStatusVariant = (status: string | undefined): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (status) {
-    case 'ACTIVE': return 'default';
-    case 'DISCONNECTED': return 'destructive';
+    case 'CONNECTED': return 'default';
+    case 'PENDING': return 'outline';
+    case 'DISCONNECTED': return 'secondary';
     case 'ERROR': return 'destructive';
     default: return 'secondary';
   }
@@ -79,14 +80,19 @@ const Accounts = () => {
   const [linkAccountOpen, setLinkAccountOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [viewAccountOpen, setViewAccountOpen] = useState(false);
+  const [editAccountOpen, setEditAccountOpen] = useState(false);
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // --- Form state for linking ---
   const [newBrokerType, setNewBrokerType] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
-  const [newApiKey, setNewApiKey] = useState('');
-  const [newApiSecret, setNewApiSecret] = useState('');
+  const [credentials, setCredentials] = useState<Record<string, string>>({});
+
+  // --- Form state for editing ---
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editSyncFrequency, setEditSyncFrequency] = useState('');
+  const [editEnabled, setEditEnabled] = useState(true);
 
   // --- Queries ---
   const {
@@ -100,17 +106,34 @@ const Accounts = () => {
     retry: 2,
   });
 
+  const { data: availableBrokers, isLoading: brokersLoading } = useQuery({
+    queryKey: ['available-brokers'],
+    queryFn: brokerService.getBrokers
+  });
+
+  const { data: credentialSchema, isLoading: schemaLoading } = useQuery({
+    queryKey: ['credential-schema', newBrokerType],
+    queryFn: () => brokerService.getCredentialSchema(newBrokerType),
+    enabled: !!newBrokerType,
+    retry: 1,
+  });
+
   // --- Mutations ---
   const connectMutation = useMutation({
     mutationFn: (req: ConnectBrokerRequest) => brokerService.connectBroker(req),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
       setLinkAccountOpen(false);
       resetLinkForm();
       toast({
         title: 'Account linked',
-        description: 'Your trading account has been successfully linked.',
+        description: 'Your trading account has been successfully linked. Syncing trades...',
       });
+      // Auto-trigger sync
+      if (data && data.id) {
+        setSyncingIds(prev => new Set(prev).add(data.id));
+        syncMutation.mutate({ connectionId: data.id, idempotencyKey: crypto.randomUUID() });
+      }
     },
     onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean }) => {
       if (err.isRateLimited) {
@@ -129,6 +152,7 @@ const Accounts = () => {
     onSuccess: (_data, variables) => {
       setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
       toast({
         title: 'Sync complete',
         description: `Account synced successfully. ${_data.tradesImported ?? 0} trades imported.`,
@@ -162,6 +186,7 @@ const Accounts = () => {
     mutationFn: (connectionId: string) => brokerService.disconnectBroker(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
       setViewAccountOpen(false);
       toast({ title: 'Account disconnected', description: 'The broker connection has been removed.' });
     },
@@ -170,12 +195,32 @@ const Accounts = () => {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: (req: { connectionId: string; syncFrequency?: string; enabled?: boolean; displayName?: string }) => 
+      brokerService.updateSettings(req.connectionId, { 
+        syncFrequency: req.syncFrequency, 
+        enabled: req.enabled, 
+        displayName: req.displayName 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      setEditAccountOpen(false);
+      setViewAccountOpen(false);
+      toast({
+        title: 'Account updated',
+        description: 'Your account settings have been successfully updated.',
+      });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Update failed', description: err.message || 'Failed to update account.', variant: 'destructive' });
+    },
+  });
+
   // --- Handlers ---
   const resetLinkForm = () => {
     setNewBrokerType('');
     setNewDisplayName('');
-    setNewApiKey('');
-    setNewApiSecret('');
+    setCredentials({});
   };
 
   const handleLinkAccount = () => {
@@ -183,10 +228,27 @@ const Accounts = () => {
       toast({ title: 'Select a broker', description: 'Please select a broker type.', variant: 'destructive' });
       return;
     }
-    const credentials = JSON.stringify({ apiKey: newApiKey, apiSecret: newApiSecret });
+    
+    // Check required fields
+    if (credentialSchema?.fields) {
+      const missingFields = credentialSchema.fields
+        .filter(f => f.required && !credentials[f.name])
+        .map(f => f.label);
+        
+      if (missingFields.length > 0) {
+        toast({ 
+          title: 'Missing information', 
+          description: `Please fill in: ${missingFields.join(', ')}`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     connectMutation.mutate({
-      brokerType: newBrokerType,
-      credentials,
+      brokerCode: newBrokerType,
+      protocol: credentialSchema?.protocol,
+      credentials: JSON.stringify(credentials),
       displayName: newDisplayName || undefined,
     });
   };
@@ -194,6 +256,26 @@ const Accounts = () => {
   const handleViewAccount = (accountId: string) => {
     setSelectedAccount(accountId);
     setViewAccountOpen(true);
+  };
+
+  const handleOpenEdit = () => {
+    if (selectedAccountData) {
+      setEditDisplayName(selectedAccountData.displayName || '');
+      setEditSyncFrequency(selectedAccountData.syncFrequency || 'HOURLY');
+      setEditEnabled(selectedAccountData.enabled);
+      setEditAccountOpen(true);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (selectedAccountData) {
+      editMutation.mutate({
+        connectionId: selectedAccountData.id,
+        displayName: editDisplayName || undefined,
+        syncFrequency: editSyncFrequency,
+        enabled: editEnabled,
+      });
+    }
   };
 
   const handleSync = (accountId: string) => {
@@ -204,14 +286,14 @@ const Accounts = () => {
 
   const handleSyncAll = () => {
     accounts.forEach(account => {
-      if (account.connectionStatus === 'ACTIVE' && account.enabled) {
+      if ((account.status === 'CONNECTED' || account.status === 'PENDING') && account.enabled) {
         handleSync(account.id);
       }
     });
   };
 
   const selectedAccountData = accounts.find(a => a.id === selectedAccount);
-  const activeCount = accounts.filter(a => a.connectionStatus === 'ACTIVE').length;
+  const activeCount = accounts.filter(a => a.status === 'CONNECTED' || a.status === 'PENDING').length;
 
   return (
     <DashboardLayout pageTitle="Accounts">
@@ -317,8 +399,8 @@ const Accounts = () => {
                           <div className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4 text-primary" />
                             <h3 className="font-medium">{account.displayName || formatBrokerName(account.brokerType)}</h3>
-                            <Badge variant={getStatusVariant(account.connectionStatus)}>
-                              {account.connectionStatus.toLowerCase()}
+                            <Badge variant={getStatusVariant(account.status)}>
+                              {account.status?.toLowerCase() || 'unknown'}
                             </Badge>
                             {!account.enabled && (
                               <Badge variant="secondary">disabled</Badge>
@@ -331,7 +413,7 @@ const Accounts = () => {
                             variant="outline" 
                             size="sm"
                             onClick={() => handleSync(account.id)}
-                            disabled={isSyncing || !account.enabled || account.connectionStatus !== 'ACTIVE'}
+                            disabled={isSyncing || !account.enabled || (account.status !== 'CONNECTED' && account.status !== 'PENDING')}
                           >
                             {isSyncing ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -372,7 +454,7 @@ const Accounts = () => {
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Status</div>
-                            <div className="font-medium capitalize">{account.connectionStatus.toLowerCase()}</div>
+                            <div className="font-medium capitalize">{account.status?.toLowerCase() || 'unknown'}</div>
                           </div>
                         </div>
                       </div>
@@ -411,10 +493,15 @@ const Accounts = () => {
                   <SelectValue placeholder="Select broker" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="INTERACTIVE_BROKERS">Interactive Brokers</SelectItem>
-                  <SelectItem value="MT5">MetaTrader 5</SelectItem>
-                  <SelectItem value="OANDA">Oanda</SelectItem>
-                  <SelectItem value="ALPACA">Alpaca</SelectItem>
+                  {brokersLoading ? (
+                    <SelectItem value="loading" disabled>Loading brokers...</SelectItem>
+                  ) : (
+                    availableBrokers?.map(broker => (
+                      <SelectItem key={broker.code} value={broker.code}>
+                        {broker.displayName}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -429,26 +516,31 @@ const Accounts = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
-              <Input
-                id="api-key"
-                placeholder="Your broker API key"
-                value={newApiKey}
-                onChange={(e) => setNewApiKey(e.target.value)}
-              />
-            </div>
+            {newBrokerType && schemaLoading && (
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
             
-            <div className="space-y-2">
-              <Label htmlFor="api-secret">API Secret</Label>
-              <Input
-                id="api-secret"
-                type="password"
-                placeholder="Your broker API secret"
-                value={newApiSecret}
-                onChange={(e) => setNewApiSecret(e.target.value)}
-              />
-            </div>
+            {newBrokerType && !schemaLoading && credentialSchema && (
+              credentialSchema.fields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label htmlFor={field.name}>
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </Label>
+                  <Input
+                    id={field.name}
+                    type={field.type === 'password' ? 'password' : 'text'}
+                    placeholder={field.placeholder || ''}
+                    value={credentials[field.name] || ''}
+                    onChange={(e) => setCredentials(prev => ({ ...prev, [field.name]: e.target.value }))}
+                  />
+                  {field.helpText && (
+                    <p className="text-xs text-muted-foreground">{field.helpText}</p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setLinkAccountOpen(false); resetLinkForm(); }}>
@@ -483,8 +575,8 @@ const Accounts = () => {
                   <h3 className="font-medium text-lg">
                     {selectedAccountData.displayName || formatBrokerName(selectedAccountData.brokerType)}
                   </h3>
-                  <Badge variant={getStatusVariant(selectedAccountData.connectionStatus)}>
-                    {selectedAccountData.connectionStatus.toLowerCase()}
+                  <Badge variant={getStatusVariant(selectedAccountData.status)}>
+                    {selectedAccountData.status?.toLowerCase() || 'unknown'}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">
@@ -525,6 +617,13 @@ const Accounts = () => {
                     Sync Now
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenEdit}
+                  >
+                    Edit Settings
+                  </Button>
+                  <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => disconnectMutation.mutate(selectedAccountData.id)}
@@ -541,6 +640,71 @@ const Accounts = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setViewAccountOpen(false)}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Account Dialog */}
+      {selectedAccountData && (
+        <Dialog open={editAccountOpen} onOpenChange={setEditAccountOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Account Settings</DialogTitle>
+              <DialogDescription>
+                Update settings for your {formatBrokerName(selectedAccountData.brokerType)} account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-account-name">Display Name</Label>
+                <Input
+                  id="edit-account-name"
+                  placeholder="e.g., Main Trading Account"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-sync-frequency">Sync Frequency</Label>
+                <Select value={editSyncFrequency} onValueChange={setEditSyncFrequency}>
+                  <SelectTrigger id="edit-sync-frequency">
+                    <SelectValue placeholder="Select sync frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HOURLY">Hourly</SelectItem>
+                    <SelectItem value="DAILY">Daily</SelectItem>
+                    <SelectItem value="WEEKLY">Weekly</SelectItem>
+                    <SelectItem value="MANUAL">Manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between space-y-2 pt-2">
+                <div className="flex flex-col space-y-0.5">
+                  <Label htmlFor="edit-enabled">Connection Enabled</Label>
+                  <p className="text-[0.8rem] text-muted-foreground">
+                    Temporarily pause automatic syncing without deleting.
+                  </p>
+                </div>
+                <Switch
+                  id="edit-enabled"
+                  checked={editEnabled}
+                  onCheckedChange={setEditEnabled}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditAccountOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} disabled={editMutation.isPending}>
+                {editMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : 'Save Changes'}
               </Button>
             </DialogFooter>
           </DialogContent>
