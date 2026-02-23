@@ -1,6 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { brokerService } from '@/services/broker.service';
+import { useBrokerConnections } from '@/hooks/useBrokers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 
@@ -12,25 +11,57 @@ interface AccountSelectorProps {
 
 const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, className }) => {
   const { t } = useTranslation();
-  
-  const { data: accounts, isLoading } = useQuery({
-    queryKey: ['broker-connections'],
-    queryFn: brokerService.getConnections,
-    staleTime: 5 * 60 * 1000,
-  });
+
+  const { data: connections, isLoading } = useBrokerConnections();
+
+  // Only show accounts that are currently connected
+  const connectedAccounts = React.useMemo(
+    () => connections?.filter(c => c.status === 'CONNECTED') || [],
+    [connections],
+  );
+
+  const hasAccounts = connectedAccounts.length > 0;
 
   return (
     <Select value={value} onValueChange={onChange} disabled={isLoading}>
       <SelectTrigger className={className}>
-        <SelectValue placeholder={t('trades.accountFilter', 'All Accounts')} />
+        <SelectValue
+          placeholder={
+            isLoading
+              ? t('common.loading', 'Loading...')
+              : hasAccounts
+                ? t('trades.accountFilter', 'All Accounts')
+                : t('settings.noAccountsConnected', 'No accounts connected')
+          }
+        />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{t('trades.allAccounts', 'All Accounts')}</SelectItem>
-        {accounts?.filter(a => a.status === 'CONNECTED').map((account) => (
-          <SelectItem key={account.id} value={account.id}>
-            {account.displayName || account.brokerDisplayName}
+        {hasAccounts ? (
+          <>
+            <SelectItem value="all">
+              {t('trades.allAccounts', 'All Accounts')}
+            </SelectItem>
+            {connectedAccounts.map(account => {
+              const label = account.brokerDisplayName
+                ? account.displayName
+                  ? `${account.brokerDisplayName} - ${account.displayName}`
+                  : account.brokerDisplayName
+                : account.displayName || account.id;
+
+              return (
+                <SelectItem key={account.id} value={account.id}>
+                  {label}
+                </SelectItem>
+              );
+            })}
+          </>
+        ) : (
+          <SelectItem value="all" disabled={false}>
+            {isLoading
+              ? t('common.loading', 'Loading...')
+              : t('settings.noAccountsConnected', 'No accounts connected')}
           </SelectItem>
-        ))}
+        )}
       </SelectContent>
     </Select>
   );
