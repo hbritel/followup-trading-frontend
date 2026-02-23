@@ -1,69 +1,95 @@
-# Welcome to your Lovable project
+# FollowUp Trading - Frontend
 
-## Project info
+Trading journal and analytics platform frontend built with React 18, TypeScript, and Vite.
 
-**URL**: https://lovable.dev/projects/46cfed64-3069-4779-9fce-bf43da3e55bc
+## Tech Stack
 
-## How can I edit this code?
+- **React 18** + TypeScript
+- **Vite** — build tool
+- **Tailwind CSS** — utility-first styling
+- **shadcn/ui** — component library (Radix UI primitives)
+- **TanStack Query v5** — server state management
+- **Recharts** — charting
+- **Zod** — schema validation
+- **React Hook Form** — form management
+- **React Router** — client-side routing
+- **i18next** — internationalization
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+```bash
+# Install dependencies
+npm install
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/46cfed64-3069-4779-9fce-bf43da3e55bc) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start dev server (default: http://localhost:5173)
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint
+npm run lint
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+  components/         # Reusable UI components
+    skeletons/        # Loading skeleton components
+    ui/               # shadcn/ui primitives (Button, Card, Dialog, etc.)
+    dashboard/        # Dashboard-specific components
+    trades/           # Trade management components
+    settings/         # Settings page components
+  pages/              # Route-level page components
+    auth/             # Login, Register, ForgotPassword
+    Dashboard.tsx     # Main dashboard with metrics + charts
+    Trades.tsx        # Trade list/table with search and filters
+    Accounts.tsx      # Broker account connections
+    Statistics.tsx    # Performance statistics
+    RiskMetrics.tsx   # Risk analytics (VaR, Sharpe, etc.)
+    Performance.tsx   # Performance charts
+    Settings.tsx      # User settings + broker connections
+    ...
+  hooks/              # Custom React hooks
+    useTrades.ts      # Trade CRUD via TanStack Query
+    useAdvancedMetrics.ts  # Risk/trade metrics
+    useBrokers.ts     # Broker catalog + connections
+    useAnalytics.ts   # Analytics dashboard data
+    useCreateTrade.ts # New trade creation
+  services/           # API client layer
+    apiClient.ts      # Axios instance with interceptors
+    trade.service.ts  # /api/v1/trades
+    metrics.service.ts # /api/v1/metrics
+    broker.service.ts # /api/v1/brokers, /api/v1/broker-connections
+    auth.service.ts   # /api/v1/auth
+    user.service.ts   # /api/v1/users
+  contexts/           # React contexts (auth, theme)
+  types/              # TypeScript type definitions
+  config.ts           # API base URL and app config
+  i18n/               # Translation files
+```
 
-**Use GitHub Codespaces**
+## Backend API
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The frontend connects to the FollowUp Trading backend (Spring Boot) at `http://localhost:9870/api/v1/`.
 
-## What technologies are used for this project?
+Configure the API URL in `src/config.ts`.
 
-This project is built with .
+Key endpoints consumed:
+- `/trades` — Trade CRUD, search, import/export
+- `/metrics/advanced/risk` — Sharpe, Sortino, VaR, drawdown
+- `/brokers` — Broker catalog (8 brokers)
+- `/broker-connections` — Connect, sync, test broker accounts
+- `/auth` — JWT login, register, MFA, OAuth2
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Development Notes
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/46cfed64-3069-4779-9fce-bf43da3e55bc) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- All API calls use `apiClient.ts` (Axios) with JWT token injection and error interceptors
+- TanStack Query handles caching, refetching, and loading states
+- Skeleton components in `components/skeletons/` provide structural loading placeholders
+- Error boundaries and toast notifications handle API errors globally
+- The app uses shadcn/ui components — add new ones with `npx shadcn@latest add <component>`

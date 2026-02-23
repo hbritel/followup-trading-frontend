@@ -10,7 +10,7 @@ import AccountSummary from '@/components/dashboard/AccountSummary';
 import TradingCalendar from '@/components/dashboard/Calendar';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardSkeleton } from '@/components/skeletons';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -47,14 +47,7 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <DashboardLayout pageTitle="Dashboard">
-        <div className="flex justify-end mb-4">
-          <Skeleton className="h-10 w-48" />
-        </div>
-        <div className="space-y-6">
-           <Skeleton className="h-32 w-full" />
-           <Skeleton className="h-96 w-full" />
-           <Skeleton className="h-64 w-full" />
-        </div>
+        <DashboardSkeleton />
       </DashboardLayout>
     );
   }

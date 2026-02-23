@@ -74,6 +74,16 @@ export interface DashboardSummary {
   profitLossThisYear: number;
 }
 
+/** Matches backend RiskDistribution (core/domain/model/metrics) */
+export interface RiskDistribution {
+  profitLossDistribution: Record<string, number>;
+  standardDeviation: number;
+  downside: number;
+  var95: number;
+  var99: number;
+  cvar95: number;
+}
+
 // --- API service functions ---
 
 export const metricsService = {
@@ -81,10 +91,11 @@ export const metricsService = {
    * Get advanced risk metrics for the authenticated user.
    * Backend: GET /api/v1/metrics/advanced/risk
    */
-  getAdvancedRiskMetrics: async (startDate?: string, endDate?: string): Promise<AdvancedRiskMetrics> => {
+  getAdvancedRiskMetrics: async (startDate?: string, endDate?: string, accountIds?: string): Promise<AdvancedRiskMetrics> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
     const response = await apiClient.get<AdvancedRiskMetrics>('/metrics/advanced/risk', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -95,10 +106,11 @@ export const metricsService = {
    * Get dashboard summary with all metrics (sharpe, sortino, drawdown, performance, etc.).
    * Backend: GET /api/v1/metrics/dashboard/summary
    */
-  getDashboardSummary: async (startDate?: string, endDate?: string): Promise<DashboardSummary> => {
+  getDashboardSummary: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DashboardSummary> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
     const response = await apiClient.get<DashboardSummary>('/metrics/dashboard/summary', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -109,10 +121,11 @@ export const metricsService = {
    * Get drawdown metrics for the authenticated user.
    * Backend: GET /api/v1/metrics/risk/drawdown
    */
-  getDrawdownMetrics: async (startDate?: string, endDate?: string): Promise<DrawdownMetrics> => {
+  getDrawdownMetrics: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DrawdownMetrics> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
     const response = await apiClient.get<DrawdownMetrics>('/metrics/risk/drawdown', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -123,10 +136,11 @@ export const metricsService = {
    * Get trade performance summary.
    * Backend: GET /api/v1/metrics/trade/performance
    */
-  getTradePerformance: async (startDate?: string, endDate?: string): Promise<TradePerformanceSummary> => {
+  getTradePerformance: async (startDate?: string, endDate?: string, accountIds?: string): Promise<TradePerformanceSummary> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
     const response = await apiClient.get<TradePerformanceSummary>('/metrics/trade/performance', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -139,6 +153,21 @@ export const metricsService = {
    */
   getAdvancedTradeMetrics: async (tradeId: string): Promise<AdvancedTradeMetrics> => {
     const response = await apiClient.get<AdvancedTradeMetrics>(`/metrics/advanced/trade/${tradeId}`);
+    return response.data;
+  },
+
+  /**
+   * Get risk distribution metrics (VaR95, VaR99, CVaR95, P&L distribution).
+   * Backend: GET /api/v1/metrics/risk/distribution
+   */
+  getRiskDistribution: async (startDate?: string, endDate?: string, accountIds?: string): Promise<RiskDistribution> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
+    const response = await apiClient.get<RiskDistribution>('/metrics/risk/distribution', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
     return response.data;
   },
 };

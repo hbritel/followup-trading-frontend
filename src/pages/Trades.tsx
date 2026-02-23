@@ -3,7 +3,7 @@ import { usePageFilter } from '@/contexts/page-filters-context';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, Calendar as CalendarIcon, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Columns, Search, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 import { tradeService } from '@/services/trade.service';
+import { TradeTableSkeleton } from '@/components/skeletons';
 
 /** Format a Date to ISO date string (YYYY-MM-DDT00:00:00+0000) for the backend */
 const toBackendDate = (d: Date | null, endOfDay = false): string | undefined => {
@@ -227,6 +228,9 @@ const Trades = () => {
   // Determine empty state: differentiate "no trades at all" from "no results for filters"
   const hasActiveFilters = directionFilter !== 'all' || statusFilter !== 'all' || !!debouncedSearch || !!startDate || !!endDate;
 
+  // Count visible columns for the skeleton
+  const visibleColumnCount = Object.values(visibleColumns).filter(Boolean).length + 1; // +1 for actions column
+
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
       <div className="flex flex-col space-y-4 max-w-full">
@@ -269,12 +273,9 @@ const Trades = () => {
           </Card>
         )}
 
-        {/* Loading state */}
+        {/* Loading state - skeleton table */}
         {isLoading && (
-          <Card className="p-12 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">{t('common.loading', 'Loading trades...')}</p>
-          </Card>
+          <TradeTableSkeleton rows={itemsPerPage} columns={Math.min(visibleColumnCount, 10)} />
         )}
 
         {/* Error state */}
@@ -386,10 +387,10 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   return (
     <div className="flex flex-col md:flex-row justify-between gap-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <AccountSelector 
-          value={accountFilter} 
-          onChange={onAccountChange} 
-          className="w-full md:w-40" 
+        <AccountSelector
+          value={accountFilter}
+          onChange={onAccountChange}
+          className="w-full md:w-40"
         />
         <div className="relative w-full md:w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

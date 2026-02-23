@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { brokerService, type ConnectBrokerRequest } from '@/services/broker.service';
+import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
 
 // --- Fallback mock data (used when API is unavailable) ---
 const fallbackAccounts = [
@@ -196,11 +197,11 @@ const Accounts = () => {
   });
 
   const editMutation = useMutation({
-    mutationFn: (req: { connectionId: string; syncFrequency?: string; enabled?: boolean; displayName?: string }) => 
-      brokerService.updateSettings(req.connectionId, { 
-        syncFrequency: req.syncFrequency, 
-        enabled: req.enabled, 
-        displayName: req.displayName 
+    mutationFn: (req: { connectionId: string; syncFrequency?: string; enabled?: boolean; displayName?: string }) =>
+      brokerService.updateSettings(req.connectionId, {
+        syncFrequency: req.syncFrequency,
+        enabled: req.enabled,
+        displayName: req.displayName
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
@@ -228,18 +229,18 @@ const Accounts = () => {
       toast({ title: 'Select a broker', description: 'Please select a broker type.', variant: 'destructive' });
       return;
     }
-    
+
     // Check required fields
     if (credentialSchema?.fields) {
       const missingFields = credentialSchema.fields
         .filter(f => f.required && !credentials[f.name])
         .map(f => f.label);
-        
+
       if (missingFields.length > 0) {
-        toast({ 
-          title: 'Missing information', 
-          description: `Please fill in: ${missingFields.join(', ')}`, 
-          variant: 'destructive' 
+        toast({
+          title: 'Missing information',
+          description: `Please fill in: ${missingFields.join(', ')}`,
+          variant: 'destructive'
         });
         return;
       }
@@ -314,52 +315,62 @@ const Accounts = () => {
             </Button>
           </div>
         </div>
-        
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Connected Accounts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{accounts.length}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span>{activeCount} active</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Broker Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Set(accounts.map(a => a.brokerType)).size}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span>Unique brokers connected</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Last Sync</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {accounts.some(a => a.lastSyncTime) 
-                  ? new Date(
-                      Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
-                    ).toLocaleTimeString()
-                  : 'Never'}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Most recent sync across accounts
-              </div>
-            </CardContent>
-          </Card>
+          {isLoading ? (
+            <>
+              <SummaryCardSkeleton />
+              <SummaryCardSkeleton />
+              <SummaryCardSkeleton />
+            </>
+          ) : (
+            <>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Connected Accounts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{accounts.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span>{activeCount} active</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Broker Types</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {new Set(accounts.map(a => a.brokerType)).size}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span>Unique brokers connected</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Last Sync</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {accounts.some(a => a.lastSyncTime)
+                      ? new Date(
+                          Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
+                        ).toLocaleTimeString()
+                      : 'Never'}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Most recent sync across accounts
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {/* Error State */}
@@ -373,7 +384,7 @@ const Accounts = () => {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Accounts List */}
         <Card>
           <CardHeader className="pb-3">
@@ -382,16 +393,14 @@ const Accounts = () => {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <AccountsListSkeleton count={3} />
             ) : (
               <>
                 {accounts.map((account) => {
                   const isSyncing = syncingIds.has(account.id);
                   return (
-                    <div 
-                      key={account.id} 
+                    <div
+                      key={account.id}
                       className="mb-4 last:mb-0 border rounded-lg overflow-hidden"
                     >
                       <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between border-b">
@@ -409,8 +418,8 @@ const Accounts = () => {
                           <p className="text-sm text-muted-foreground mt-1">{formatBrokerName(account.brokerType)}</p>
                         </div>
                         <div className="mt-2 md:mt-0 flex gap-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleSync(account.id)}
                             disabled={isSyncing || !account.enabled || (account.status !== 'CONNECTED' && account.status !== 'PENDING')}
@@ -422,8 +431,8 @@ const Accounts = () => {
                             )}
                             {isSyncing ? 'Syncing...' : 'Sync'}
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleViewAccount(account.id)}
                           >
@@ -441,8 +450,8 @@ const Accounts = () => {
                           <div>
                             <div className="text-sm text-muted-foreground">Last Synced</div>
                             <div className="font-medium">
-                              {account.lastSyncTime 
-                                ? new Date(account.lastSyncTime).toLocaleString() 
+                              {account.lastSyncTime
+                                ? new Date(account.lastSyncTime).toLocaleString()
                                 : 'Never'}
                             </div>
                           </div>
@@ -463,9 +472,9 @@ const Accounts = () => {
                 })}
               </>
             )}
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               className="w-full mt-4"
               onClick={() => setLinkAccountOpen(true)}
             >
@@ -475,7 +484,7 @@ const Accounts = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Link Account Dialog */}
       <Dialog open={linkAccountOpen} onOpenChange={setLinkAccountOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -505,7 +514,7 @@ const Accounts = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="account-name">Display Name</Label>
               <Input
@@ -515,13 +524,13 @@ const Accounts = () => {
                 onChange={(e) => setNewDisplayName(e.target.value)}
               />
             </div>
-            
+
             {newBrokerType && schemaLoading && (
               <div className="flex justify-center p-4">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             )}
-            
+
             {newBrokerType && !schemaLoading && credentialSchema && (
               credentialSchema.fields.map((field) => (
                 <div key={field.name} className="space-y-2">
@@ -557,7 +566,7 @@ const Accounts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* View Account Dialog */}
       {selectedAccountData && (
         <Dialog open={viewAccountOpen} onOpenChange={setViewAccountOpen}>
@@ -583,23 +592,23 @@ const Accounts = () => {
                   Broker: {formatBrokerName(selectedAccountData.brokerType)}
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Sync Frequency</div>
                   <div className="text-xl font-bold">{selectedAccountData.syncFrequency}</div>
                 </div>
-                
+
                 <div className="p-4 border rounded-md">
                   <div className="text-sm text-muted-foreground">Last Synced</div>
                   <div className="text-xl font-bold">
-                    {selectedAccountData.lastSyncTime 
+                    {selectedAccountData.lastSyncTime
                       ? new Date(selectedAccountData.lastSyncTime).toLocaleString()
                       : 'Never'}
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-4 border rounded-md">
                 <h4 className="font-medium mb-2">Account Actions</h4>
                 <div className="grid grid-cols-2 gap-4">
