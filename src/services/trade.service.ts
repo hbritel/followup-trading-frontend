@@ -78,7 +78,27 @@ export interface AnalyticsDashboard {
     equityCurve: { date: string; dailyProfit: number; dailyVolume: number }[];
 }
 
-// --- Mapping: Backend DTO → Frontend Trade type ---
+/**
+ * Request body for POST /api/v1/trades.
+ * Matches the Java TradeDto.Request exactly.
+ */
+export interface CreateTradeRequest {
+    symbol: string;
+    direction: 'LONG' | 'SHORT';
+    entryDate: string;        // ISO 8601 with timezone, e.g. "2026-02-23T10:30:00+0000"
+    exitDate?: string | null;
+    entryPrice: number;
+    exitPrice?: number | null;
+    quantity: number;
+    stopLoss?: number | null;
+    takeProfit?: number | null;
+    fees?: number | null;
+    notes?: string | null;
+    status?: string;
+    assetType?: string | null;
+}
+
+// --- Mapping: Backend DTO -> Frontend Trade type ---
 
 /**
  * Maps a raw backend TradeApiResponse to the frontend Trade interface.
@@ -87,8 +107,8 @@ export interface AnalyticsDashboard {
 export const mapApiResponseToTrade = (r: TradeApiResponse): Trade => ({
     id: r.id,
     symbol: r.symbol,
-    type: r.direction?.toLowerCase() as Trade['type'],       // LONG → long
-    status: r.status?.toLowerCase() as Trade['status'],       // CLOSED → closed
+    type: r.direction?.toLowerCase() as Trade['type'],       // LONG -> long
+    status: r.status?.toLowerCase() as Trade['status'],       // CLOSED -> closed
     direction: r.direction?.toLowerCase() as Trade['direction'],
     entryDate: r.entryDate,
     exitDate: r.exitDate ?? undefined,
@@ -132,6 +152,15 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
 // --- Service ---
 export const tradeService = {
     /**
+     * Create a new trade via POST /api/v1/trades.
+     * Returns the created trade mapped to the frontend Trade type.
+     */
+    createTrade: async (data: CreateTradeRequest): Promise<Trade> => {
+        const response = await apiClient.post<TradeApiResponse>('/trades', data);
+        return mapApiResponseToTrade(response.data);
+    },
+
+    /**
      * Get paginated trades for the authenticated user.
      * Backend returns PageDto<TradeDto.Response>.
      */
@@ -148,9 +177,9 @@ export const tradeService = {
         if (params?.entryDateTo) searchBody.entryDateTo = params.entryDateTo;
 
         const response = await apiClient.post<any>('/trades/search', searchBody);
-        
+
         const mappedContent = (response.data.trades || []).map(mapApiResponseToTrade);
-        
+
         return {
             content: mappedContent,
             pageNumber: response.data.page,
