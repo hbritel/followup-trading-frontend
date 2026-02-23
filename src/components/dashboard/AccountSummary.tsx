@@ -15,8 +15,10 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Trade } from '@/components/trades/TradesTableWrapper';
+import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
 
 const MetricCard = ({
   title,
@@ -52,6 +54,7 @@ interface StatItemProps {
   changePercentage?: string | number;
   trend?: 'up' | 'down' | 'neutral';
   className?: string;
+  isLoading?: boolean;
 }
 
 const StatItem = ({
@@ -60,18 +63,23 @@ const StatItem = ({
   previousValue,
   changePercentage,
   trend,
-  className
+  className,
+  isLoading
 }: StatItemProps) => {
   return (
     <div className={cn("flex flex-col min-w-0", className)}>
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-      <span className="text-base sm:text-lg font-bold mt-1 font-mono tracking-tight text-foreground dark:text-white truncate">{value}</span>
-      {previousValue && (
+      {isLoading ? (
+        <Skeleton className="h-6 w-16 mt-1" />
+      ) : (
+        <span className="text-base sm:text-lg font-bold mt-1 font-mono tracking-tight text-foreground dark:text-white truncate">{value}</span>
+      )}
+      {previousValue && !isLoading && (
         <span className="text-xs mt-1 text-muted-foreground">
           Prev: {previousValue}
         </span>
       )}
-      {changePercentage && (
+      {changePercentage && !isLoading && (
         <span className={cn(
           "text-xs font-bold mt-1 px-1.5 py-0.5 rounded w-fit backdrop-blur-sm",
           trend === 'up' && "text-profit bg-profit/10 border border-profit/20",
@@ -89,6 +97,9 @@ const StatItem = ({
 import { AnalyticsDashboard } from '@/services/trade.service';
 
 const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
+  // Fetch real metrics from the backend dashboard summary endpoint
+  const { data: dashboardSummary, isLoading: metricsLoading } = useDashboardSummary();
+
   if (!analytics) return null;
 
   const {
@@ -106,6 +117,31 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
 
   // Win/Loss Ratio
   const winLossRatio = losingTrades > 0 ? (winningTrades / losingTrades) : (winningTrades > 0 ? winningTrades : 0);
+
+  // Extract real metrics from backend (with fallbacks)
+  const sharpeRatio = dashboardSummary?.sharpeRatio;
+  const maxDrawdownPercent = dashboardSummary?.drawdownMetrics?.maxDrawdownPercent;
+  const marginUtilization = dashboardSummary?.marginUtilization;
+
+  // Format Sharpe Ratio display
+  const sharpeDisplay = sharpeRatio != null ? sharpeRatio.toFixed(2) : '-';
+  const sharpeTrend: 'up' | 'down' | 'neutral' | undefined =
+    sharpeRatio != null ? (sharpeRatio >= 1 ? 'up' : sharpeRatio >= 0 ? 'neutral' : 'down') : undefined;
+
+  // Format Max Drawdown display
+  const drawdownDisplay = maxDrawdownPercent != null ? `-${maxDrawdownPercent.toFixed(1)}%` : '-';
+  // Lower drawdown is better, so a lower value is an "up" trend
+  const drawdownTrend: 'up' | 'down' | 'neutral' | undefined =
+    maxDrawdownPercent != null ? (maxDrawdownPercent <= 10 ? 'up' : maxDrawdownPercent <= 20 ? 'neutral' : 'down') : undefined;
+
+  // Portfolio risk level derived from real margin utilization
+  const riskLevel = marginUtilization != null ? marginUtilization : 0;
+  const riskLabel = riskLevel <= 30 ? 'Low Risk' : riskLevel <= 60 ? 'Medium Risk' : 'High Risk';
+
+  // Performance label derived from Sharpe ratio
+  const perfLabel = sharpeRatio != null
+    ? (sharpeRatio >= 2 ? 'Excellent' : sharpeRatio >= 1 ? 'Above Average' : sharpeRatio >= 0 ? 'Average' : 'Below Average')
+    : 'Calculating...';
 
   const accountMetrics = [
     {
@@ -163,16 +199,24 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Assessment</h3>
-                  <p className="text-lg sm:text-xl font-bold mt-1 text-foreground dark:text-white">Low Risk</p>
+                  {metricsLoading ? (
+                    <Skeleton className="h-7 w-24 mt-1" />
+                  ) : (
+                    <p className="text-lg sm:text-xl font-bold mt-1 text-foreground dark:text-white">{riskLabel}</p>
+                  )}
                 </div>
                 <ShieldAlert className="h-5 w-5 text-primary animate-pulse-glow shrink-0" />
               </div>
               <div className="mt-4 sm:mt-5">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-muted-foreground">Portfolio Risk Level</span>
-                  <span className="text-xs font-bold text-primary">15%</span>
+                  {metricsLoading ? (
+                    <Skeleton className="h-4 w-8" />
+                  ) : (
+                    <span className="text-xs font-bold text-primary">{riskLevel.toFixed(0)}%</span>
+                  )}
                 </div>
-                <Progress value={15} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-primary/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                <Progress value={riskLevel} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-primary/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
               </div>
             </div>
 
@@ -180,24 +224,26 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Performance Metrics</h3>
-                  <p className="text-lg sm:text-xl font-bold mt-1 text-foreground dark:text-white">Above Average</p>
+                  {metricsLoading ? (
+                    <Skeleton className="h-7 w-28 mt-1" />
+                  ) : (
+                    <p className="text-lg sm:text-xl font-bold mt-1 text-foreground dark:text-white">{perfLabel}</p>
+                  )}
                 </div>
                 <LineChart className="h-5 w-5 text-profit shrink-0" />
               </div>
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
                 <StatItem
                   label="Sharpe Ratio"
-                  value="1.87"
-                  previousValue="1.43"
-                  changePercentage="30.8"
-                  trend="up"
+                  value={sharpeDisplay}
+                  isLoading={metricsLoading}
+                  trend={sharpeTrend}
                 />
                 <StatItem
                   label="Max Drawdown"
-                  value="-8.2%"
-                  previousValue="-12.6%"
-                  changePercentage="34.9"
-                  trend="up"
+                  value={drawdownDisplay}
+                  isLoading={metricsLoading}
+                  trend={drawdownTrend}
                 />
               </div>
             </div>
