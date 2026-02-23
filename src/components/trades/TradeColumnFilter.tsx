@@ -32,7 +32,7 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
     { id: 'stopLoss', label: t('trades.stopLoss') },
     { id: 'takeProfit', label: t('trades.takeProfit') },
     { id: 'quantity', label: t('trades.quantity') },
-    { id: 'direction', label: t('trades.direction') },
+    { id: 'balance', label: t('trades.balance', 'Balance') },
     { id: 'profit', label: t('trades.profit') },
     { id: 'profitPercentage', label: t('trades.profitPercentage') },
     { id: 'fees', label: t('trades.fees') },

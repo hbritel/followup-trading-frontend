@@ -5,8 +5,11 @@ import apiClient from './apiClient';
 export interface BrokerConnectionResponse {
     id: string;
     brokerType: string;
+    brokerCode?: string;
+    protocol?: string;
+    brokerDisplayName?: string;
     displayName: string;
-    connectionStatus: string;
+    status: string;
     syncFrequency: string;
     enabled: boolean;
     lastSyncTime: string | null;
@@ -26,10 +29,42 @@ export interface SyncResultResponse {
 }
 
 export interface ConnectBrokerRequest {
-    brokerType: string;
-    credentials: string;
-    syncFrequency?: string;
+    brokerType?: string; // Legacy
+    brokerCode?: string; // New flow
+    protocol?: string;   // New flow
     displayName?: string;
+    credentials: string; // Must be a JSON string for the backend
+    syncFrequency?: string;
+}
+
+export interface BrokerResponse {
+    code: string;
+    displayName: string;
+    logoUrl?: string;
+    propFirm: boolean;
+    country?: string;
+    defaultProtocol: string;
+    supportedProtocols: {
+        protocol: string;
+        displayName: string;
+    }[];
+}
+
+export interface CredentialField {
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+    placeholder?: string;
+    helpText?: string;
+}
+
+export interface CredentialSchemaResponse {
+    brokerCode: string;
+    brokerName: string;
+    protocol: string;
+    protocolName: string;
+    fields: CredentialField[];
 }
 
 // --- Service ---
@@ -39,6 +74,24 @@ export const brokerService = {
      */
     getConnections: async (): Promise<BrokerConnectionResponse[]> => {
         const response = await apiClient.get<BrokerConnectionResponse[]>('/broker-connections');
+        return response.data;
+    },
+
+    /**
+     * Get the catalog of supported brokers.
+     */
+    getBrokers: async (): Promise<BrokerResponse[]> => {
+        const response = await apiClient.get<BrokerResponse[]>('/brokers');
+        return response.data;
+    },
+
+    /**
+     * Get the credential schema (required fields) for a specific broker & protocol.
+     */
+    getCredentialSchema: async (brokerCode: string, protocol?: string): Promise<CredentialSchemaResponse> => {
+        const response = await apiClient.get<CredentialSchemaResponse>(`/brokers/${brokerCode}/credential-schema`, {
+            params: protocol ? { protocol } : {}
+        });
         return response.data;
     },
 
@@ -55,6 +108,14 @@ export const brokerService = {
      */
     disconnectBroker: async (connectionId: string): Promise<void> => {
         await apiClient.delete(`/broker-connections/${connectionId}`);
+    },
+
+    /**
+     * Update broker connection settings.
+     */
+    updateSettings: async (connectionId: string, request: { syncFrequency?: string; enabled?: boolean; displayName?: string }): Promise<BrokerConnectionResponse> => {
+        const response = await apiClient.put<BrokerConnectionResponse>(`/broker-connections/${connectionId}/settings`, request);
+        return response.data;
     },
 
     /**

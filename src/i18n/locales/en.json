@@ -313,7 +313,9 @@
     "startDate": "Start Date",
     "endDate": "End Date",
     "pickStartDate": "Pick a start date",
-    "pickEndDate": "Pick an end date"
+    "pickEndDate": "Pick an end date",
+    "showing": "Showing {{from}}-{{to}} of {{total}}",
+    "rowsPerPage": "Rows per page"
   },
   "insights": {
     "metrics": "Metrics",

@@ -12,6 +12,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdvancedFilters {
   dateRange: { from: Date | null; to: Date | null };
@@ -22,8 +23,8 @@ interface AdvancedFilters {
 export interface Trade {
   id: string;
   symbol: string;
-  type: 'long' | 'short' | 'option' | 'future' | 'crypto' | 'forex';
-  status: 'open' | 'closed' | 'pending' | 'cancelled';
+  type: string;                  // backend sends direction as type (long, short, etc.)
+  status: string;                // backend sends OPEN/CLOSED, mapped to lowercase
   entryDate: string;
   exitDate?: string;
   entryPrice: number;
@@ -31,7 +32,7 @@ export interface Trade {
   quantity: number;
   stopLoss?: number;
   takeProfit?: number;
-  direction?: 'long' | 'short';
+  direction?: string;
   profit?: number;
   profitPercentage?: number;
   fees?: number;
@@ -43,6 +44,7 @@ export interface Trade {
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
+  balance?: number;
 }
 
 export interface TradesTableWrapperProps {
@@ -55,6 +57,7 @@ export interface TradesTableWrapperProps {
   currentPage: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (size: number) => void;
   totalTrades: number;
   onEdit?: (tradeId: string) => void;
   onDelete?: (tradeId: string) => void;
@@ -71,6 +74,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
   currentPage,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
   totalTrades,
   onEdit,
   onDelete,
@@ -154,22 +158,46 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
         />
       </div>
       
-      {totalTrades > 0 && totalPages > 1 && (
-        <div className="border-t p-4">
-          <div className="text-sm text-muted-foreground mb-2">
-            {t('trades.showing', {
-              from: Math.min((currentPage - 1) * itemsPerPage + 1, totalTrades),
-              to: Math.min(currentPage * itemsPerPage, totalTrades),
-              total: totalTrades
-            })}
+      {totalTrades > 0 && (
+        <div className="border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div>
+              {t('trades.showing', {
+                from: Math.min((currentPage - 1) * itemsPerPage + 1, totalTrades),
+                to: Math.min(currentPage * itemsPerPage, totalTrades),
+                total: totalTrades
+              })}
+            </div>
+            
+            {onItemsPerPageChange && (
+              <div className="flex items-center gap-2">
+                <span>{t('trades.rowsPerPage', 'Rows per page')}</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => onItemsPerPageChange(Number(value))}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={itemsPerPage.toString()} />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[10, 20, 50, 100].map((pageSize) => (
+                      <SelectItem key={pageSize} value={pageSize.toString()}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
-          <Pagination>
+          
+          <Pagination className="mx-0 w-auto">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious 
                   onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                   aria-disabled={currentPage === 1}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
               
@@ -178,8 +206,8 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
               <PaginationItem>
                 <PaginationNext 
                   onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                  aria-disabled={currentPage === totalPages}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  aria-disabled={currentPage === totalPages || totalPages === 0}
+                  className={(currentPage === totalPages || totalPages === 0) ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
             </PaginationContent>
