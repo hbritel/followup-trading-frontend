@@ -175,3 +175,62 @@
 .bg-loss {
   background-color: hsl(var(--loss));
 }
+
+/* ===== Accent Color Themes ===== */
+/* Blue is the default (--primary already set in :root / .dark), no override needed */
+
+body.theme-green {
+  --primary: 151 55% 41%;
+  --ring: 151 55% 41%;
+  --sidebar-ring: 151 55% 41%;
+}
+.dark body.theme-green {
+  --primary: 151 65% 55%;
+  --ring: 151 55% 41%;
+  --sidebar-ring: 151 55% 41%;
+}
+
+body.theme-purple {
+  --primary: 271 91% 65%;
+  --ring: 271 91% 65%;
+  --sidebar-ring: 271 91% 65%;
+}
+.dark body.theme-purple {
+  --primary: 271 91% 72%;
+  --ring: 271 91% 65%;
+  --sidebar-ring: 271 91% 65%;
+}
+
+body.theme-orange {
+  --primary: 25 95% 53%;
+  --ring: 25 95% 53%;
+  --sidebar-ring: 25 95% 53%;
+}
+.dark body.theme-orange {
+  --primary: 25 95% 63%;
+  --ring: 25 95% 53%;
+  --sidebar-ring: 25 95% 53%;
+}
+
+body.theme-red {
+  --primary: 0 84% 60%;
+  --ring: 0 84% 60%;
+  --sidebar-ring: 0 84% 60%;
+}
+.dark body.theme-red {
+  --primary: 0 85% 65%;
+  --ring: 0 84% 60%;
+  --sidebar-ring: 0 84% 60%;
+}
+
+/* ===== Font Size Scaling ===== */
+/* Applied on <html> so all rem-based Tailwind values scale proportionally */
+html.font-size-small {
+  font-size: 14px;
+}
+html.font-size-medium {
+  font-size: 16px; /* browser default */
+}
+html.font-size-large {
+  font-size: 18px;
+}

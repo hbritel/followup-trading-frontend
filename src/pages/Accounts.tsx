@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
@@ -77,6 +78,7 @@ const getStatusVariant = (status: string | undefined): 'default' | 'secondary' |
 };
 
 const Accounts = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [linkAccountOpen, setLinkAccountOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -127,8 +129,8 @@ const Accounts = () => {
       setLinkAccountOpen(false);
       resetLinkForm();
       toast({
-        title: 'Account linked',
-        description: 'Your trading account has been successfully linked. Syncing trades...',
+        title: t('accounts.accountLinked'),
+        description: t('accounts.accountLinkedDescription'),
       });
       // Auto-trigger sync
       if (data && data.id) {
@@ -138,11 +140,11 @@ const Accounts = () => {
     },
     onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean }) => {
       if (err.isRateLimited) {
-        toast({ title: 'Too many requests', description: err.message, variant: 'destructive' });
+        toast({ title: t('accounts.tooManyRequests'), description: err.message, variant: 'destructive' });
       } else if (err.isServiceUnavailable) {
-        toast({ title: 'Service unavailable', description: err.message, variant: 'destructive' });
+        toast({ title: t('accounts.serviceUnavailable'), description: err.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Connection failed', description: 'Failed to link your account. Please check credentials.', variant: 'destructive' });
+        toast({ title: t('accounts.connectionFailed'), description: t('accounts.connectionFailedDescription'), variant: 'destructive' });
       }
     },
   });
@@ -155,28 +157,28 @@ const Accounts = () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
       queryClient.invalidateQueries({ queryKey: ['trades'] });
       toast({
-        title: 'Sync complete',
-        description: `Account synced successfully. ${_data.tradesImported ?? 0} trades imported.`,
+        title: t('accounts.syncComplete'),
+        description: t('accounts.syncCompleteDescription', { count: _data.tradesImported ?? 0 }),
       });
     },
     onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean; retryAfterSeconds?: number }, variables) => {
       setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
       if (err.isRateLimited) {
         toast({
-          title: 'Sync rate limited',
-          description: `You are syncing too frequently. Please try again in ${err.retryAfterSeconds ?? 60} seconds.`,
+          title: t('accounts.syncRateLimited'),
+          description: t('accounts.syncRateLimitedDescription', { seconds: err.retryAfterSeconds ?? 60 }),
           variant: 'destructive',
         });
       } else if (err.isServiceUnavailable) {
         toast({
-          title: 'Broker unavailable',
-          description: 'The broker service is temporarily unavailable. Please try again later.',
+          title: t('accounts.brokerUnavailable'),
+          description: t('accounts.brokerUnavailableDescription'),
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Sync failed',
-          description: err.message || 'An error occurred during sync.',
+          title: t('accounts.syncFailed'),
+          description: err.message || t('accounts.syncFailedDescription'),
           variant: 'destructive',
         });
       }
@@ -189,10 +191,10 @@ const Accounts = () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
       queryClient.invalidateQueries({ queryKey: ['trades'] });
       setViewAccountOpen(false);
-      toast({ title: 'Account disconnected', description: 'The broker connection has been removed.' });
+      toast({ title: t('accounts.accountDisconnected'), description: t('accounts.accountDisconnectedDescription') });
     },
     onError: () => {
-      toast({ title: 'Disconnect failed', description: 'Failed to disconnect the account.', variant: 'destructive' });
+      toast({ title: t('accounts.disconnectFailed'), description: t('accounts.disconnectFailedDescription'), variant: 'destructive' });
     },
   });
 
@@ -208,12 +210,12 @@ const Accounts = () => {
       setEditAccountOpen(false);
       setViewAccountOpen(false);
       toast({
-        title: 'Account updated',
-        description: 'Your account settings have been successfully updated.',
+        title: t('accounts.accountUpdated'),
+        description: t('accounts.accountUpdatedDescription'),
       });
     },
     onError: (err: Error) => {
-      toast({ title: 'Update failed', description: err.message || 'Failed to update account.', variant: 'destructive' });
+      toast({ title: t('accounts.updateFailed'), description: err.message || t('accounts.updateFailedDescription'), variant: 'destructive' });
     },
   });
 
@@ -226,7 +228,7 @@ const Accounts = () => {
 
   const handleLinkAccount = () => {
     if (!newBrokerType) {
-      toast({ title: 'Select a broker', description: 'Please select a broker type.', variant: 'destructive' });
+      toast({ title: t('accounts.selectBroker'), description: t('accounts.selectBrokerDescription'), variant: 'destructive' });
       return;
     }
 
@@ -238,8 +240,8 @@ const Accounts = () => {
 
       if (missingFields.length > 0) {
         toast({
-          title: 'Missing information',
-          description: `Please fill in: ${missingFields.join(', ')}`,
+          title: t('accounts.missingInformation'),
+          description: t('accounts.missingInformationDescription', { fields: missingFields.join(', ') }),
           variant: 'destructive'
         });
         return;
@@ -297,21 +299,21 @@ const Accounts = () => {
   const activeCount = accounts.filter(a => a.status === 'CONNECTED' || a.status === 'PENDING').length;
 
   return (
-    <DashboardLayout pageTitle="Accounts">
+    <DashboardLayout pageTitle={t('pages.accounts')}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Trading Accounts</h1>
-            <p className="text-muted-foreground">Manage your connected trading accounts</p>
+            <h1 className="text-2xl font-bold">{t('accounts.tradingAccounts')}</h1>
+            <p className="text-muted-foreground">{t('accounts.tradingAccountsDescription')}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleSyncAll} disabled={syncMutation.isPending}>
               <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              Sync All
+              {t('accounts.syncAll')}
             </Button>
             <Button onClick={() => setLinkAccountOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
-              Link Account
+              {t('accounts.linkAccount')}
             </Button>
           </div>
         </div>
@@ -328,33 +330,33 @@ const Accounts = () => {
             <>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Connected Accounts</CardTitle>
+                  <CardTitle className="text-base">{t('accounts.connectedAccounts')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{accounts.length}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    <span>{activeCount} active</span>
+                    <span>{t('accounts.activeCount', { count: activeCount })}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Broker Types</CardTitle>
+                  <CardTitle className="text-base">{t('accounts.brokerTypes')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {new Set(accounts.map(a => a.brokerType)).size}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    <span>Unique brokers connected</span>
+                    <span>{t('accounts.uniqueBrokersConnected')}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Last Sync</CardTitle>
+                  <CardTitle className="text-base">{t('accounts.lastSync')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -362,10 +364,10 @@ const Accounts = () => {
                       ? new Date(
                           Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
                         ).toLocaleTimeString()
-                      : 'Never'}
+                      : t('accounts.never')}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Most recent sync across accounts
+                    {t('accounts.mostRecentSync')}
                   </div>
                 </CardContent>
               </Card>
@@ -379,7 +381,7 @@ const Accounts = () => {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
-                <span>Failed to load accounts: {(error as Error)?.message || 'Unknown error'}. Showing cached data.</span>
+                <span>{t('accounts.failedToLoadAccounts', { error: (error as Error)?.message || t('accounts.unknownError') })}</span>
               </div>
             </CardContent>
           </Card>
@@ -388,8 +390,8 @@ const Accounts = () => {
         {/* Accounts List */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>Linked Accounts</CardTitle>
-            <CardDescription>Manage your connected trading and investment accounts</CardDescription>
+            <CardTitle>{t('accounts.linkedAccounts')}</CardTitle>
+            <CardDescription>{t('accounts.linkedAccountsDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -409,10 +411,10 @@ const Accounts = () => {
                             <CreditCard className="h-4 w-4 text-primary" />
                             <h3 className="font-medium">{account.displayName || formatBrokerName(account.brokerType)}</h3>
                             <Badge variant={getStatusVariant(account.status)}>
-                              {account.status?.toLowerCase() || 'unknown'}
+                              {account.status?.toLowerCase() || t('accounts.unknown')}
                             </Badge>
                             {!account.enabled && (
-                              <Badge variant="secondary">disabled</Badge>
+                              <Badge variant="secondary">{t('accounts.disabled')}</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{formatBrokerName(account.brokerType)}</p>
@@ -429,7 +431,7 @@ const Accounts = () => {
                             ) : (
                               <RefreshCw className="h-4 w-4 mr-2" />
                             )}
-                            {isSyncing ? 'Syncing...' : 'Sync'}
+                            {isSyncing ? t('accounts.syncing') : t('accounts.sync')}
                           </Button>
                           <Button
                             variant="outline"
@@ -437,33 +439,33 @@ const Accounts = () => {
                             onClick={() => handleViewAccount(account.id)}
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            View
+                            {t('common.view')}
                           </Button>
                         </div>
                       </div>
                       <div className="bg-muted/40 p-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
-                            <div className="text-sm text-muted-foreground">Sync Frequency</div>
+                            <div className="text-sm text-muted-foreground">{t('accounts.syncFrequency')}</div>
                             <div className="font-medium">{account.syncFrequency}</div>
                           </div>
                           <div>
-                            <div className="text-sm text-muted-foreground">Last Synced</div>
+                            <div className="text-sm text-muted-foreground">{t('accounts.lastSynced')}</div>
                             <div className="font-medium">
                               {account.lastSyncTime
                                 ? new Date(account.lastSyncTime).toLocaleString()
-                                : 'Never'}
+                                : t('accounts.never')}
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm text-muted-foreground">Connected Since</div>
+                            <div className="text-sm text-muted-foreground">{t('accounts.connectedSince')}</div>
                             <div className="font-medium">
                               {new Date(account.createdAt).toLocaleDateString()}
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm text-muted-foreground">Status</div>
-                            <div className="font-medium capitalize">{account.status?.toLowerCase() || 'unknown'}</div>
+                            <div className="text-sm text-muted-foreground">{t('common.status')}</div>
+                            <div className="font-medium capitalize">{account.status?.toLowerCase() || t('accounts.unknown')}</div>
                           </div>
                         </div>
                       </div>
@@ -479,7 +481,7 @@ const Accounts = () => {
               onClick={() => setLinkAccountOpen(true)}
             >
               <PlusCircle className="h-4 w-4 mr-2" />
-              Connect New Account
+              {t('accounts.connectNewAccount')}
             </Button>
           </CardContent>
         </Card>
@@ -489,21 +491,21 @@ const Accounts = () => {
       <Dialog open={linkAccountOpen} onOpenChange={setLinkAccountOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Link Trading Account</DialogTitle>
+            <DialogTitle>{t('accounts.linkTradingAccount')}</DialogTitle>
             <DialogDescription>
-              Connect a new trading or investment account to your dashboard.
+              {t('accounts.linkTradingAccountDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="broker">Select Broker</Label>
+              <Label htmlFor="broker">{t('accounts.selectBrokerLabel')}</Label>
               <Select value={newBrokerType} onValueChange={setNewBrokerType}>
                 <SelectTrigger id="broker">
-                  <SelectValue placeholder="Select broker" />
+                  <SelectValue placeholder={t('accounts.selectBrokerPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {brokersLoading ? (
-                    <SelectItem value="loading" disabled>Loading brokers...</SelectItem>
+                    <SelectItem value="loading" disabled>{t('accounts.loadingBrokers')}</SelectItem>
                   ) : (
                     availableBrokers?.map(broker => (
                       <SelectItem key={broker.code} value={broker.code}>
@@ -516,10 +518,10 @@ const Accounts = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="account-name">Display Name</Label>
+              <Label htmlFor="account-name">{t('accounts.displayName')}</Label>
               <Input
                 id="account-name"
-                placeholder="e.g., Main Trading Account"
+                placeholder={t('accounts.displayNamePlaceholder')}
                 value={newDisplayName}
                 onChange={(e) => setNewDisplayName(e.target.value)}
               />
@@ -553,15 +555,15 @@ const Accounts = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setLinkAccountOpen(false); resetLinkForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleLinkAccount} disabled={connectMutation.isPending}>
               {connectMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Linking...
+                  {t('accounts.linking')}
                 </>
-              ) : 'Link Account'}
+              ) : t('accounts.linkAccount')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -572,9 +574,9 @@ const Accounts = () => {
         <Dialog open={viewAccountOpen} onOpenChange={setViewAccountOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Account Details</DialogTitle>
+              <DialogTitle>{t('accounts.accountDetails')}</DialogTitle>
               <DialogDescription>
-                Detailed information about your trading account.
+                {t('accounts.accountDetailsDescription')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -585,32 +587,32 @@ const Accounts = () => {
                     {selectedAccountData.displayName || formatBrokerName(selectedAccountData.brokerType)}
                   </h3>
                   <Badge variant={getStatusVariant(selectedAccountData.status)}>
-                    {selectedAccountData.status?.toLowerCase() || 'unknown'}
+                    {selectedAccountData.status?.toLowerCase() || t('accounts.unknown')}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">
-                  Broker: {formatBrokerName(selectedAccountData.brokerType)}
+                  {t('accounts.broker')}: {formatBrokerName(selectedAccountData.brokerType)}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">Sync Frequency</div>
+                  <div className="text-sm text-muted-foreground">{t('accounts.syncFrequency')}</div>
                   <div className="text-xl font-bold">{selectedAccountData.syncFrequency}</div>
                 </div>
 
                 <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">Last Synced</div>
+                  <div className="text-sm text-muted-foreground">{t('accounts.lastSynced')}</div>
                   <div className="text-xl font-bold">
                     {selectedAccountData.lastSyncTime
                       ? new Date(selectedAccountData.lastSyncTime).toLocaleString()
-                      : 'Never'}
+                      : t('accounts.never')}
                   </div>
                 </div>
               </div>
 
               <div className="p-4 border rounded-md">
-                <h4 className="font-medium mb-2">Account Actions</h4>
+                <h4 className="font-medium mb-2">{t('accounts.accountActions')}</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Button
                     variant="outline"
@@ -623,14 +625,14 @@ const Accounts = () => {
                     ) : (
                       <RefreshCw className="h-4 w-4 mr-2" />
                     )}
-                    Sync Now
+                    {t('accounts.syncNow')}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleOpenEdit}
                   >
-                    Edit Settings
+                    {t('accounts.editSettings')}
                   </Button>
                   <Button
                     variant="destructive"
@@ -641,14 +643,14 @@ const Accounts = () => {
                     {disconnectMutation.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : null}
-                    Disconnect
+                    {t('accounts.disconnect')}
                   </Button>
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setViewAccountOpen(false)}>
-                Close
+                {t('accounts.close')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -660,40 +662,40 @@ const Accounts = () => {
         <Dialog open={editAccountOpen} onOpenChange={setEditAccountOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Edit Account Settings</DialogTitle>
+              <DialogTitle>{t('accounts.editAccountSettings')}</DialogTitle>
               <DialogDescription>
-                Update settings for your {formatBrokerName(selectedAccountData.brokerType)} account.
+                {t('accounts.editAccountSettingsDescription', { broker: formatBrokerName(selectedAccountData.brokerType) })}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-account-name">Display Name</Label>
+                <Label htmlFor="edit-account-name">{t('accounts.displayName')}</Label>
                 <Input
                   id="edit-account-name"
-                  placeholder="e.g., Main Trading Account"
+                  placeholder={t('accounts.displayNamePlaceholder')}
                   value={editDisplayName}
                   onChange={(e) => setEditDisplayName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-sync-frequency">Sync Frequency</Label>
+                <Label htmlFor="edit-sync-frequency">{t('accounts.syncFrequency')}</Label>
                 <Select value={editSyncFrequency} onValueChange={setEditSyncFrequency}>
                   <SelectTrigger id="edit-sync-frequency">
-                    <SelectValue placeholder="Select sync frequency" />
+                    <SelectValue placeholder={t('accounts.selectSyncFrequency')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HOURLY">Hourly</SelectItem>
-                    <SelectItem value="DAILY">Daily</SelectItem>
-                    <SelectItem value="WEEKLY">Weekly</SelectItem>
-                    <SelectItem value="MANUAL">Manual</SelectItem>
+                    <SelectItem value="HOURLY">{t('accounts.hourly')}</SelectItem>
+                    <SelectItem value="DAILY">{t('accounts.daily')}</SelectItem>
+                    <SelectItem value="WEEKLY">{t('accounts.weekly')}</SelectItem>
+                    <SelectItem value="MANUAL">{t('accounts.manual')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center justify-between space-y-2 pt-2">
                 <div className="flex flex-col space-y-0.5">
-                  <Label htmlFor="edit-enabled">Connection Enabled</Label>
+                  <Label htmlFor="edit-enabled">{t('accounts.connectionEnabled')}</Label>
                   <p className="text-[0.8rem] text-muted-foreground">
-                    Temporarily pause automatic syncing without deleting.
+                    {t('accounts.connectionEnabledDescription')}
                   </p>
                 </div>
                 <Switch
@@ -705,15 +707,15 @@ const Accounts = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditAccountOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleSaveEdit} disabled={editMutation.isPending}>
                 {editMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
+                    {t('accounts.saving')}
                   </>
-                ) : 'Save Changes'}
+                ) : t('common.saveChanges')}
               </Button>
             </DialogFooter>
           </DialogContent>

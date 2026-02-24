@@ -1,20 +1,24 @@
 // src/services/user.service.ts
 import apiClient from './apiClient';
-import type { UserProfileDto, UserPreferencesDto, ChangePasswordRequestDto } from '@/types/dto'; // Ajustez le chemin si nécessaire
-import { AxiosError } from 'axios';
-import { authService } from './auth.service'; // Pour getErrorMessage
+import type { UserProfileDto, UserPreferencesDto, ChangePasswordRequestDto, ActivityPageDto } from '@/types/dto';
+import { authService } from './auth.service';
+
+interface UpdateProfileRequest {
+    fullName?: string;
+    profilePictureUrl?: string;
+    preferredCurrency?: string;
+    timezone?: string;
+    mfaEnabled?: boolean;
+    phone?: string;
+    tradingBio?: string;
+}
 
 const getUserProfile = async (): Promise<UserProfileDto> => {
     try {
-        // L'intercepteur Axios ajoutera le token automatiquement
         const response = await apiClient.get<UserProfileDto>('/users/me');
         return response.data;
     } catch (error) {
         console.error('Get user profile service error:', error);
-        // Peut-être déclencher une déconnexion si 401 non géré par l'intercepteur
-        // if (error instanceof AxiosError && error.response?.status === 401) {
-        //    // déclencher logout globalement ?
-        // }
         throw error;
     }
 };
@@ -41,22 +45,47 @@ const updateUserPreferences = async (preferences: Partial<UserPreferencesDto>): 
 
 const changePassword = async (passwords: ChangePasswordRequestDto): Promise<void> => {
     try {
-        // Le backend répond par 200 OK ou une erreur (401 si currentPassword est faux)
         await apiClient.post('/users/me/change-password', passwords);
     } catch (error) {
         console.error('Change password service error:', error);
-        throw error; // L'erreur sera traitée dans le composant (e.g., ChangePasswordDialog)
+        throw error;
     }
-}
+};
 
+const updateProfile = async (data: UpdateProfileRequest): Promise<UserProfileDto> => {
+    const response = await apiClient.put<UserProfileDto>('/users/me', data);
+    return response.data;
+};
 
-// Ajoutez d'autres fonctions userService ici si nécessaire (updateProfile, etc.)
+const uploadAvatar = async (file: File): Promise<UserProfileDto> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<UserProfileDto>('/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+};
+
+const deleteAvatar = async (): Promise<UserProfileDto> => {
+    const response = await apiClient.delete<UserProfileDto>('/users/me/avatar');
+    return response.data;
+};
+
+const getActivity = async (page = 0, size = 20, type = 'all'): Promise<ActivityPageDto> => {
+    const response = await apiClient.get<ActivityPageDto>('/users/me/activity', {
+        params: { page, size, type },
+    });
+    return response.data;
+};
 
 export const userService = {
     getUserProfile,
     getUserPreferences,
     updateUserPreferences,
     changePassword,
-    // Exposer getErrorMessage ici aussi peut être utile
+    updateProfile,
+    uploadAvatar,
+    deleteAvatar,
+    getActivity,
     getErrorMessage: authService.getErrorMessage,
 };

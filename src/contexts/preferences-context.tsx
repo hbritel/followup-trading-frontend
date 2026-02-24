@@ -8,7 +8,8 @@ interface PreferencesContextType {
     preferences: Partial<UserPreferencesDto> | null;
     isLoadingPrefs: boolean;
     setPreference: <K extends keyof UserPreferencesDto>(key: K, value: UserPreferencesDto[K]) => void;
-    savePreferences: () => Promise<void>; // Fonction pour sauvegarder
+    savePreferences: () => Promise<void>;
+    refreshPreferences: () => Promise<void>;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -66,46 +67,29 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, [preferences, isAuthenticated]);
 
 
-    // --- APPLICATION VISUELLE DES PREFERENCESS ---
+    // --- APPLY VISUAL PREFERENCES ---
     useEffect(() => {
         const body = document.body;
-        // Nettoyer les classes précédentes
-        body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-red');
-        body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
-        body.classList.remove('density-compact', 'density-comfortable', 'density-spacious');
+        const html = document.documentElement;
 
+        // Clean previous classes
+        body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-red');
+        html.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
 
         if (preferences) {
-            // Appliquer la couleur d'accentuation
-            if (preferences.accentColor) {
-                body.classList.add(`theme-${preferences.accentColor}`);
-            } else {
-                body.classList.add('theme-blue'); // Défaut
-            }
+            // Accent color → overrides --primary CSS variable via body class
+            body.classList.add(`theme-${preferences.accentColor || 'blue'}`);
 
-            // Appliquer la taille de police
-            if (preferences.fontSize) {
-                body.classList.add(`font-size-${preferences.fontSize}`);
-            } else {
-                body.classList.add('font-size-medium'); // Défaut
-            }
-
-            // Appliquer la densité
-            if (preferences.layoutDensity) {
-                body.classList.add(`density-${preferences.layoutDensity}`);
-            } else {
-                body.classList.add('density-comfortable'); // Défaut
-            }
+            // Font size → applied on <html> so all rem-based values scale
+            html.classList.add(`font-size-${preferences.fontSize || 'medium'}`);
         } else {
-            // Appliquer les défauts si pas de préférences
-            body.classList.add('theme-blue', 'font-size-medium', 'density-comfortable');
+            body.classList.add('theme-blue');
+            html.classList.add('font-size-medium');
         }
-        // Le thème light/dark est géré par ThemeProvider, pas besoin ici.
-
-    }, [preferences]); // Réappliquer si les préférences changent
+    }, [preferences]);
 
     return (
-        <PreferencesContext.Provider value={{ preferences, isLoadingPrefs, setPreference, savePreferences }}>
+        <PreferencesContext.Provider value={{ preferences, isLoadingPrefs, setPreference, savePreferences, refreshPreferences: loadPreferences }}>
             {children}
         </PreferencesContext.Provider>
     );

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -42,6 +43,7 @@ const initialTechStocksData = [
 ];
 
 const Watchlists = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [watchlists, setWatchlists] = useState(initialWatchlists);
   const [activeWatchlist, setActiveWatchlist] = useState('1');
@@ -50,7 +52,7 @@ const Watchlists = () => {
   const [showFavorites, setShowFavorites] = useState(false);
   const [editingWatchlist, setEditingWatchlist] = useState<{ id: number, name: string, description: string } | null>(null);
   const [watchlistToDelete, setWatchlistToDelete] = useState<number | null>(null);
-  
+
   // Dialog open states
   const [openNewWatchlistDialog, setOpenNewWatchlistDialog] = useState(false);
   const [openEditWatchlistDialog, setOpenEditWatchlistDialog] = useState(false);
@@ -62,17 +64,17 @@ const Watchlists = () => {
   );
 
   const handleToggleFavorite = (symbol: string) => {
-    setStocksData(stocks => 
-      stocks.map(stock => 
-        stock.symbol === symbol 
-          ? { ...stock, starred: !stock.starred } 
+    setStocksData(stocks =>
+      stocks.map(stock =>
+        stock.symbol === symbol
+          ? { ...stock, starred: !stock.starred }
           : stock
       )
     );
-    
+
     toast({
-      title: "Favorites updated",
-      description: `${symbol} ${stocksData.find(s => s.symbol === symbol)?.starred ? 'removed from' : 'added to'} favorites`,
+      title: t('watchlists.favoritesUpdated'),
+      description: `${symbol} ${stocksData.find(s => s.symbol === symbol)?.starred ? t('watchlists.removedFromFavorites') : t('watchlists.addedToFavorites')}`,
     });
   };
 
@@ -83,52 +85,52 @@ const Watchlists = () => {
       description: data.description,
       symbols: 0,
     };
-    
+
     setWatchlists([...watchlists, newWatchlist]);
     setActiveWatchlist(newWatchlist.id.toString());
     setOpenNewWatchlistDialog(false);
-    
+
     toast({
-      title: "Watchlist created",
-      description: `${data.name} watchlist has been created`
+      title: t('watchlists.watchlistCreated'),
+      description: t('watchlists.watchlistHasBeenCreated', { name: data.name })
     });
   };
 
   const handleEditWatchlist = (data: WatchlistFormValues) => {
     if (!editingWatchlist) return;
-    
-    setWatchlists(lists => 
-      lists.map(list => 
-        list.id === editingWatchlist.id 
-          ? { ...list, name: data.name, description: data.description } 
+
+    setWatchlists(lists =>
+      lists.map(list =>
+        list.id === editingWatchlist.id
+          ? { ...list, name: data.name, description: data.description }
           : list
       )
     );
-    
+
     setOpenEditWatchlistDialog(false);
     setEditingWatchlist(null);
-    
+
     toast({
-      title: "Watchlist updated",
-      description: `${data.name} watchlist has been updated`
+      title: t('watchlists.watchlistUpdated'),
+      description: t('watchlists.watchlistHasBeenUpdated', { name: data.name })
     });
   };
 
   const handleDeleteWatchlist = () => {
     if (!watchlistToDelete) return;
-    
+
     setWatchlists(lists => lists.filter(list => list.id !== watchlistToDelete));
-    
+
     if (activeWatchlist === watchlistToDelete.toString() && watchlists.length > 1) {
       setActiveWatchlist(watchlists[0].id.toString());
     }
-    
+
     setOpenDeleteWatchlistDialog(false);
     setWatchlistToDelete(null);
-    
+
     toast({
-      title: "Watchlist deleted",
-      description: `Watchlist has been removed`
+      title: t('watchlists.watchlistDeleted'),
+      description: t('watchlists.watchlistHasBeenRemoved')
     });
   };
 
@@ -143,41 +145,41 @@ const Watchlists = () => {
       marketCap: `${Math.floor(Math.random() * 1000) + 1}.${Math.floor(Math.random() * 9)}B`,
       starred: false,
     };
-    
+
     setStocksData([newSymbol, ...stocksData]);
-    
+
     // Update watchlist symbols count
-    setWatchlists(lists => 
-      lists.map(list => 
-        list.id.toString() === activeWatchlist 
-          ? { ...list, symbols: list.symbols + 1 } 
+    setWatchlists(lists =>
+      lists.map(list =>
+        list.id.toString() === activeWatchlist
+          ? { ...list, symbols: list.symbols + 1 }
           : list
       )
     );
-    
+
     setOpenAddSymbolDialog(false);
-    
+
     toast({
-      title: "Symbol added",
-      description: `${data.symbol.toUpperCase()} has been added to the watchlist`
+      title: t('watchlists.symbolAdded'),
+      description: t('watchlists.symbolHasBeenAdded', { symbol: data.symbol.toUpperCase() })
     });
   };
 
   const handleRemoveSymbol = (symbol: string) => {
     setStocksData(stocks => stocks.filter(stock => stock.symbol !== symbol));
-    
+
     // Update watchlist symbols count
-    setWatchlists(lists => 
-      lists.map(list => 
-        list.id.toString() === activeWatchlist 
-          ? { ...list, symbols: list.symbols - 1 } 
+    setWatchlists(lists =>
+      lists.map(list =>
+        list.id.toString() === activeWatchlist
+          ? { ...list, symbols: list.symbols - 1 }
           : list
       )
     );
-    
+
     toast({
-      title: "Symbol removed",
-      description: `${symbol} has been removed from the watchlist`
+      title: t('watchlists.symbolRemoved'),
+      description: t('watchlists.symbolHasBeenRemoved', { symbol })
     });
   };
 
@@ -192,21 +194,21 @@ const Watchlists = () => {
   };
 
   return (
-    <DashboardLayout pageTitle="Watchlists">
+    <DashboardLayout pageTitle={t('pages.watchlists')}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Stock Watchlists</h1>
-            <p className="text-muted-foreground">Monitor and track your favorite securities</p>
+            <h1 className="text-2xl font-bold">{t('watchlists.title')}</h1>
+            <p className="text-muted-foreground">{t('watchlists.description')}</p>
           </div>
           <Button onClick={() => setOpenNewWatchlistDialog(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            New Watchlist
+            {t('watchlists.newWatchlist')}
           </Button>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <WatchlistsSidebar 
+          <WatchlistsSidebar
             watchlists={watchlists}
             activeWatchlist={activeWatchlist}
             onSelectWatchlist={setActiveWatchlist}
@@ -214,8 +216,8 @@ const Watchlists = () => {
             onEditWatchlist={openEditDialog}
             onDeleteWatchlist={openDeleteDialog}
           />
-          
-          <WatchlistContent 
+
+          <WatchlistContent
             title={activeWatchlistData?.name || 'Watchlist'}
             description={activeWatchlistData?.description || 'Your securities'}
             stocks={stocksData}
@@ -233,11 +235,11 @@ const Watchlists = () => {
             onRemoveSymbol={handleRemoveSymbol}
           />
         </div>
-        
+
         <StockSummaryCards stocks={stocksData} />
       </div>
 
-      <WatchlistDialogs 
+      <WatchlistDialogs
         newWatchlistOpen={openNewWatchlistDialog}
         editWatchlistOpen={openEditWatchlistDialog}
         addSymbolOpen={openAddSymbolDialog}

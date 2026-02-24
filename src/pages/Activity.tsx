@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Card,
@@ -87,22 +88,23 @@ const activities: Activity[] = [
 ];
 
 const ActivityPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  
+
   const filteredActivities = activities.filter(activity => {
-    const matchesSearch = 
-      searchQuery === '' || 
+    const matchesSearch =
+      searchQuery === '' ||
       activity.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
       activity.details.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesType = 
-      typeFilter === null || 
+
+    const matchesType =
+      typeFilter === null ||
       activity.type === typeFilter;
-      
+
     return matchesSearch && matchesType;
   });
-  
+
   const getBadgeColor = (type: string) => {
     switch (type) {
       case 'trade':
@@ -119,55 +121,55 @@ const ActivityPage = () => {
         return 'bg-gray-500';
     }
   };
-  
+
   return (
-    <DashboardLayout pageTitle="Activity Log">
+    <DashboardLayout pageTitle={t('activity.pageTitle')}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search activities..."
+              placeholder={t('activity.searchPlaceholder')}
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
-                {typeFilter ? `Filter: ${typeFilter}` : 'Filter'}
+                {typeFilter ? `${t('common.filter')}: ${typeFilter}` : t('common.filter')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setTypeFilter(null)}>
-                All activities
+                {t('activity.allActivities')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTypeFilter('trade')}>
-                Trades only
+                {t('activity.tradesOnly')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTypeFilter('login')}>
-                Logins only
+                {t('activity.loginsOnly')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTypeFilter('setting')}>
-                Settings only
+                {t('activity.settingsOnly')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTypeFilter('export')}>
-                Exports only
+                {t('activity.exportsOnly')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTypeFilter('journal')}>
-                Journal only
+                {t('activity.journalOnly')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>Activity Log</CardTitle>
-            <CardDescription>Recent actions and changes in your account</CardDescription>
+            <CardTitle>{t('activity.pageTitle')}</CardTitle>
+            <CardDescription>{t('activity.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -188,7 +190,7 @@ const ActivityPage = () => {
                 ))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No activities found matching your criteria
+                  {t('activity.noActivitiesFound')}
                 </div>
               )}
             </div>

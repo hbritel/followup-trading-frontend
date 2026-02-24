@@ -76,10 +76,6 @@ const Settings = () => {
     const {theme, setTheme} = useTheme();
 
     // --- États NON-MFA ---
-    const [emailNotifications, setEmailNotifications] = useState(true);
-    const [mobileNotifications, setMobileNotifications] = useState(true);
-    const [alertsEnabled, setAlertsEnabled] = useState(true);
-    const [tradeConfirmations, setTradeConfirmations] = useState(true);
     const [changePasswordOpen, setChangePasswordOpen] = useState(false);
     const [logoutAllDevicesOpen, setLogoutAllDevicesOpen] = useState(false);
 
@@ -97,9 +93,6 @@ const Settings = () => {
     const [mfaStatus, setMfaStatus] = useState<'loading' | 'disabled' | 'setup_qr' | 'setup_verify' | 'enabled'>('loading');
 
     // État pour TOUTES les préférences utilisateur modifiables
-    // Initialiser avec null ou un objet vide pour indiquer qu'elles ne sont pas encore chargées
-    // const [preferences, setPreferences] = useState<Partial<UserPreferencesDto> | null>(null);
-    // const [isLoadingPrefs, setIsLoadingPrefs] = useState(false);
     // --- Utilisation du contexte Preferences ---
     const {preferences, isLoadingPrefs, setPreference, savePreferences} = usePreferences();
 
@@ -120,8 +113,6 @@ const Settings = () => {
             } catch (error) {
                 console.error("Failed to load sessions:", error);
                 setErrorSessions("Could not load session data.");
-                // Afficher un toast si nécessaire
-                // toast({ title: "Error", description: "Could not load session data.", variant: "destructive" });
             } finally {
                 setIsLoadingSessions(false);
             }
@@ -422,149 +413,138 @@ const Settings = () => {
                                 <CardDescription>Manage your general application preferences</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Time & Region</h3>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="timezone">Timezone</Label>
-                                            <Select defaultValue="America/New_York">
-                                                <SelectTrigger id="timezone">
-                                                    <SelectValue placeholder="Select timezone"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                                                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                                                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                                                    <SelectItem value="America/Los_Angeles">Pacific Time
-                                                        (PT)</SelectItem>
-                                                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="date-format">Date Format</Label>
-                                            <Select defaultValue="MM/DD/YYYY">
-                                                <SelectTrigger id="date-format">
-                                                    <SelectValue placeholder="Select date format"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                                                    <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                                                    <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="currency">Currency</Label>
-                                            <Select defaultValue="USD">
-                                                <SelectTrigger id="currency">
-                                                    <SelectValue placeholder="Select currency"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="USD">USD ($)</SelectItem>
-                                                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                                                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                                                    <SelectItem value="JPY">JPY (¥)</SelectItem>
-                                                    <SelectItem value="CAD">CAD (C$)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="number-format">Number Format</Label>
-                                            <Select defaultValue="dot">
-                                                <SelectTrigger id="number-format">
-                                                    <SelectValue placeholder="Select number format"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="dot">1,234.56</SelectItem>
-                                                    <SelectItem value="comma">1.234,56</SelectItem>
-                                                    <SelectItem value="space">1 234,56</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                {isLoadingPrefs && (
+                                    <div className="flex justify-center items-center py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin" />
                                     </div>
-                                </div>
+                                )}
 
-                                <Separator/>
+                                {!isLoadingPrefs && preferences && (
+                                    <>
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-medium">Time & Region</h3>
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="timezone">Timezone</Label>
+                                                    <Select
+                                                        value={preferences?.timezone || 'America/New_York'}
+                                                        onValueChange={(value) => handleGenericPreferenceChange('timezone', value)}
+                                                        disabled={isLoadingPrefs}
+                                                    >
+                                                        <SelectTrigger id="timezone">
+                                                            <SelectValue placeholder="Select timezone"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                                                            <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                                                            <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                                                            <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                                                            <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                                                            <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                                                            <SelectItem value="Europe/Berlin">Berlin (CET)</SelectItem>
+                                                            <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                                                            <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                                                            <SelectItem value="Asia/Kolkata">Kolkata (IST)</SelectItem>
+                                                            <SelectItem value="Australia/Sydney">Sydney (AEST)</SelectItem>
+                                                            <SelectItem value="Pacific/Auckland">Auckland (NZST)</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
 
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Default View Settings</h3>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="default-page">Default Landing Page</Label>
-                                            <Select defaultValue="dashboard">
-                                                <SelectTrigger id="default-page">
-                                                    <SelectValue placeholder="Select default page"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="dashboard">Dashboard</SelectItem>
-                                                    <SelectItem value="trades">Trades</SelectItem>
-                                                    <SelectItem value="performance">Performance</SelectItem>
-                                                    <SelectItem value="watchlists">Watchlists</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="date-format">Date Format</Label>
+                                                    <Select
+                                                        value={preferences?.dateFormat || 'MM/dd/yyyy'}
+                                                        onValueChange={(value) => handleGenericPreferenceChange('dateFormat', value)}
+                                                        disabled={isLoadingPrefs}
+                                                    >
+                                                        <SelectTrigger id="date-format">
+                                                            <SelectValue placeholder="Select date format"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                                                            <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                                                            <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="currency">Currency</Label>
+                                                    <Select
+                                                        value={preferences?.defaultCurrency || 'USD'}
+                                                        onValueChange={(value) => handleGenericPreferenceChange('defaultCurrency', value)}
+                                                        disabled={isLoadingPrefs}
+                                                    >
+                                                        <SelectTrigger id="currency">
+                                                            <SelectValue placeholder="Select currency"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="USD">USD ($)</SelectItem>
+                                                            <SelectItem value="EUR">EUR</SelectItem>
+                                                            <SelectItem value="GBP">GBP</SelectItem>
+                                                            <SelectItem value="JPY">JPY</SelectItem>
+                                                            <SelectItem value="CAD">CAD (C$)</SelectItem>
+                                                            <SelectItem value="CHF">CHF</SelectItem>
+                                                            <SelectItem value="AUD">AUD (A$)</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="number-format">Number Format</Label>
+                                                    <Select
+                                                        value={preferences?.numberFormat || '1,234.56'}
+                                                        onValueChange={(value) => handleGenericPreferenceChange('numberFormat', value)}
+                                                        disabled={isLoadingPrefs}
+                                                    >
+                                                        <SelectTrigger id="number-format">
+                                                            <SelectValue placeholder="Select number format"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="1,234.56">1,234.56</SelectItem>
+                                                            <SelectItem value="1.234,56">1.234,56</SelectItem>
+                                                            <SelectItem value="1 234,56">1 234,56</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="default-period">Default Time Period</Label>
-                                            <Select defaultValue="1m">
-                                                <SelectTrigger id="default-period">
-                                                    <SelectValue placeholder="Select default period"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="1d">1 Day</SelectItem>
-                                                    <SelectItem value="1w">1 Week</SelectItem>
-                                                    <SelectItem value="1m">1 Month</SelectItem>
-                                                    <SelectItem value="3m">3 Months</SelectItem>
-                                                    <SelectItem value="1y">1 Year</SelectItem>
-                                                    <SelectItem value="all">All Time</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                        <Separator/>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-medium">Default View Settings</h3>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="default-period">Default Time Period</Label>
+                                                <Select
+                                                    value={preferences?.defaultDateRange || '1m'}
+                                                    onValueChange={(value) => handleGenericPreferenceChange('defaultDateRange', value)}
+                                                    disabled={isLoadingPrefs}
+                                                >
+                                                    <SelectTrigger id="default-period">
+                                                        <SelectValue placeholder="Select default period"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="1d">1 Day</SelectItem>
+                                                        <SelectItem value="1w">1 Week</SelectItem>
+                                                        <SelectItem value="1m">1 Month</SelectItem>
+                                                        <SelectItem value="3m">3 Months</SelectItem>
+                                                        <SelectItem value="1y">1 Year</SelectItem>
+                                                        <SelectItem value="all">All Time</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <Separator/>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Data Refresh</h3>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="auto-refresh">Auto-Refresh Interval</Label>
-                                            <Select defaultValue="5">
-                                                <SelectTrigger id="auto-refresh">
-                                                    <SelectValue placeholder="Select refresh interval"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="0">Disabled</SelectItem>
-                                                    <SelectItem value="1">1 Minute</SelectItem>
-                                                    <SelectItem value="5">5 Minutes</SelectItem>
-                                                    <SelectItem value="15">15 Minutes</SelectItem>
-                                                    <SelectItem value="30">30 Minutes</SelectItem>
-                                                    <SelectItem value="60">1 Hour</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                        <div className="flex justify-end">
+                                            <Button onClick={() => handleSaveChanges('General')} disabled={isLoadingPrefs}>
+                                                {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                                {t('common.saveChanges')}
+                                            </Button>
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Real-time Market Data</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Enable real-time market data updates
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}/>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    <Button
-                                        onClick={() => handleSaveChanges('General')}>{t('common.saveChanges')}</Button>
-                                </div>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -788,7 +768,6 @@ const Settings = () => {
                                     <h3 className="text-lg font-medium">Session Security</h3>
 
                                     {/* Auto Logout (Switch lié à la logique d'idle timer, pas directement à une pref) */}
-                                    {/* Pour l'instant, on peut juste l'afficher comme info */}
                                     <div className="flex items-center justify-between">
                                         <div className="space-y-0.5">
                                             <Label>Auto Logout</Label>
@@ -798,8 +777,6 @@ const Settings = () => {
                                                     : "Disabled"}
                                             </p>
                                         </div>
-                                        {/* Le switch ici serait redondant si contrôlé par le timeout */}
-                                        {/* <Switch defaultChecked={true} /> */}
                                     </div>
 
                                     {/* Inactivity Timeout (Connecté à l'état 'preferences') */}
@@ -824,21 +801,6 @@ const Settings = () => {
                                         </Select>
                                     </div>
 
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Require Password for Trades</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                Require password confirmation for trade actions
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked={true}
-                                            // TODO: Connecter à une préférence utilisateur
-                                            // checked={preferences?.requirePasswordForTrades ?? true}
-                                            // onCheckedChange={(checked) => handlePreferenceChange('requirePasswordForTrades', checked)}
-                                                disabled={isLoadingPrefs}
-                                        />
-                                    </div>
-
                                     {/* Bouton de sauvegarde spécifique à cette section */}
                                     <div className="flex justify-end pt-4">
                                         <Button onClick={() => handleSaveChanges('Session')} disabled={isLoadingPrefs}>
@@ -851,10 +813,6 @@ const Settings = () => {
                                 <Separator/>
 
                                 {/* --- Section des appareils (maintenant via TrustedDevicesManager) --- */}
-                                {/* Si TrustedDevicesManager gère aussi le bouton "Logout All Other Devices",
-                            vous n'aurez peut-être pas besoin du bouton séparé ci-dessous.
-                            Vérifiez ce que fait TrustedDevicesManager.
-                            Pour l'instant, je garde le bouton ici pour le connecter. */}
                                 <TrustedDevicesManager/>
 
                                 {/* Pas de bouton Save Changes global pour l'onglet Sécurité */}

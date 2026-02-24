@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TradingStats from '@/components/dashboard/TradingStats';
 import {
@@ -16,126 +17,127 @@ import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
 
 const Home = () => {
   const navigate = useNavigate();
-  
+  const { t } = useTranslation();
+
   return (
-    <DashboardLayout pageTitle="Welcome to Followup Trading">
+    <DashboardLayout pageTitle={t('home.welcomeTitle')}>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-xl">Quick Actions</CardTitle>
-              <CardDescription>Common tasks and shortcuts</CardDescription>
+              <CardTitle className="text-xl">{t('home.quickActions')}</CardTitle>
+              <CardDescription>{t('home.quickActionsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <NewTradeDialog 
+                <NewTradeDialog
                   trigger={
                     <Button variant="outline" className="h-auto py-4 justify-start w-full">
                       <div className="flex flex-col items-start text-left">
                         <div className="flex items-center mb-1">
                           <PlusCircle className="h-4 w-4 mr-1" />
-                          <span className="font-medium">New Trade</span>
+                          <span className="font-medium">{t('home.newTrade')}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">Record a new trading position</span>
+                        <span className="text-xs text-muted-foreground">{t('home.newTradeDescription')}</span>
                       </div>
                     </Button>
                   }
                 />
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="h-auto py-4 justify-start"
                   onClick={() => navigate('/performance')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <TrendingUp className="h-4 w-4 mr-1" />
-                      <span className="font-medium">View P&L</span>
+                      <span className="font-medium">{t('home.viewPnL')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Check your profit and loss</span>
+                    <span className="text-xs text-muted-foreground">{t('home.viewPnLDescription')}</span>
                   </div>
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="h-auto py-4 justify-start"
                   onClick={() => navigate('/activity')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
-                      <span className="font-medium">Recent</span>
+                      <span className="font-medium">{t('home.recent')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">View recent activities</span>
+                    <span className="text-xs text-muted-foreground">{t('home.recentDescription')}</span>
                   </div>
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="h-auto py-4 justify-start"
                   onClick={() => navigate('/calendar')}
                 >
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center mb-1">
                       <Clock className="h-4 w-4 mr-1" />
-                      <span className="font-medium">Reminders</span>
+                      <span className="font-medium">{t('home.reminders')}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Set up trade reminders</span>
+                    <span className="text-xs text-muted-foreground">{t('home.remindersDescription')}</span>
                   </div>
                 </Button>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-xl">Trading Summary</CardTitle>
-              <CardDescription>Recent trading performance</CardDescription>
+              <CardTitle className="text-xl">{t('home.tradingSummary')}</CardTitle>
+              <CardDescription>{t('home.tradingSummaryDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">Today's P&L</h3>
-                    <p className="text-sm text-muted-foreground">3 trades</p>
+                    <h3 className="font-medium">{t('home.todaysPnL')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('home.tradesCount', { count: 3 })}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-profit">+$142.56</p>
                     <p className="text-sm text-profit">+1.24%</p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">This Week</h3>
-                    <p className="text-sm text-muted-foreground">12 trades</p>
+                    <h3 className="font-medium">{t('common.thisWeek')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('home.tradesCount', { count: 12 })}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-profit">+$567.23</p>
                     <p className="text-sm text-profit">+3.85%</p>
                   </div>
                 </div>
-                
-                <Button 
-                  variant="link" 
+
+                <Button
+                  variant="link"
                   className="w-full justify-between mt-2 px-0"
                   onClick={() => navigate('/performance')}
                 >
-                  <span>View detailed performance</span>
+                  <span>{t('home.viewDetailedPerformance')}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-        
+
         <TradingStats />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Recent Trades</CardTitle>
-              <CardDescription>Your last 5 trading activities</CardDescription>
+              <CardTitle>{t('home.recentTrades')}</CardTitle>
+              <CardDescription>{t('home.recentTradesDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="border rounded-md">
@@ -160,20 +162,20 @@ const Home = () => {
                   <div className="font-medium text-profit">+$65.43</div>
                 </div>
               </div>
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 className="mt-4 px-0"
                 onClick={() => navigate('/trades')}
               >
-                View all trades
+                {t('home.viewAllTrades')}
               </Button>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
-              <CardTitle>Watchlist Alerts</CardTitle>
-              <CardDescription>Price movements on your watchlist</CardDescription>
+              <CardTitle>{t('home.watchlistAlerts')}</CardTitle>
+              <CardDescription>{t('home.watchlistAlertsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -193,12 +195,12 @@ const Home = () => {
                   <div className="font-medium">INTC</div>
                   <div className="text-loss">-1.23%</div>
                 </div>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="mt-2 px-0"
                   onClick={() => navigate('/watchlists')}
                 >
-                  Manage watchlists
+                  {t('home.manageWatchlists')}
                 </Button>
               </div>
             </CardContent>

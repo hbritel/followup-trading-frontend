@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePageFilter } from '@/contexts/page-filters-context';
 import { useTrades } from '@/hooks/useTrades';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -17,6 +18,7 @@ function toISODate(d: Date): string {
 }
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('dashboard', 'accountId', 'all');
   const [datePreset, setDatePreset] = usePageFilter('dashboard', 'datePreset', 'all');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('dashboard', 'customStart', null);
@@ -46,14 +48,14 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout pageTitle="Dashboard">
+      <DashboardLayout pageTitle={t('pages.dashboard')}>
         <DashboardSkeleton />
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout pageTitle="Dashboard">
+    <DashboardLayout pageTitle={t('pages.dashboard')}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <DashboardDateFilter
           preset={datePreset}

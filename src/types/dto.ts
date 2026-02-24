@@ -64,6 +64,8 @@ export interface UserProfileDto {
     email: string;
     fullName: string | null;
     profilePictureUrl: string | null;
+    phone: string | null;
+    tradingBio: string | null;
     preferredCurrency: string | null;
     timezone: string | null;
     enabled: boolean;
@@ -105,6 +107,10 @@ export interface UserPreferencesDto {
     defaultChartInterval?: string | null;// ex: '1', '5', 'D', 'W' ou null
     showChartVolume: boolean;         // Pas besoin de null si valeur par défaut existe (true/false)
     showExtendedHours: boolean;       // Idem
+
+    // --- NOUVEAUX CHAMPS POUR LE PROFIL TRADING ---
+    experienceLevel?: string | null;
+    yearsTrading?: string | null;
 }
 
 export interface TotpVerifyRequestDto {
@@ -161,19 +167,19 @@ export interface EmailOtpResponseDto {
     message: string;
 }
 
-// Requête de vérification TOTP (AuthDto.TotpVerifyRequest) - DÉJÀ AJOUTÉ NORMALEMENT
+// Requête de vérification TOTP (AuthDto.TotpVerifyRequest)
 export interface TotpVerifyRequestDto {
     userId: string;
     code: string;
 }
 
-// Requête de vérification OTP Email (AuthDto.EmailOtpVerifyRequest) - DÉJÀ AJOUTÉ NORMALEMENT
+// Requête de vérification OTP Email (AuthDto.EmailOtpVerifyRequest)
 export interface EmailOtpVerifyRequestDto {
     otpTokenId: string; // L'ID reçu dans EmailOtpResponseDto
     code: string;
 }
 
-// Réponse de vérification MFA réussie (MfaResult -> contient les tokens) - DÉJÀ AJOUTÉ NORMALEMENT
+// Réponse de vérification MFA réussie (MfaResult -> contient les tokens)
 export interface MfaResultDto {
     accessToken: string;
     refreshToken: string;
@@ -248,3 +254,25 @@ export interface MfaCompleteRequestDto {
 export type LoginResponseDto = TokenResponseDto | MfaRequiredResponseDto;
 // Ou si le résultat de verifyMfa est différent :
 export type VerifyMfaResponseDto = MfaResultDto; // Ou un type spécifique si la structure diffère
+
+// --- Activity DTOs ---
+
+export type ActivityCategory = 'trade' | 'login' | 'broker' | 'setting';
+
+export interface ActivityItemDto {
+    id: string;
+    timestamp: string;
+    type: string;
+    category: ActivityCategory;
+    title: string;
+    description: string;
+    icon: string;
+}
+
+export interface ActivityPageDto {
+    content: ActivityItemDto[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+}

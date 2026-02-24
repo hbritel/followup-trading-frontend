@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import {
@@ -50,82 +51,83 @@ const formatCurrency = (value: number) => {
 };
 
 const Performance = () => {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('3m'); // Default to 3 months
-  
+
   // Summary statistics
   const totalProfit = 3059.23;
   const totalLoss = -1913.27;
   const netProfitLoss = totalProfit + totalLoss;
   const winRate = 72;
   const totalTrades = 101;
-  
+
   return (
-    <DashboardLayout pageTitle="Performance">
+    <DashboardLayout pageTitle={t('pages.performance')}>
       <div className="space-y-6">
         {/* Performance summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Net P&L</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('performance.netPnl')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(netProfitLoss)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Last 3 months
+                {t('performance.lastThreeMonths')}
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('insights.winRate')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {winRate}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {Math.round(winRate * totalTrades / 100)} wins / {totalTrades} trades
+                {t('performance.winsOutOfTrades', { wins: Math.round(winRate * totalTrades / 100), total: totalTrades })}
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Profit Factor</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('insights.profitFactor')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {(totalProfit / Math.abs(totalLoss)).toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Gross profit / Gross loss
+                {t('performance.grossProfitOverLoss')}
               </p>
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Performance charts */}
         <PerformanceChart />
-        
+
         {/* Performance tables */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Performance Analysis</CardTitle>
-                <CardDescription>Detailed breakdown of your trading performance</CardDescription>
+                <CardTitle>{t('insights.performanceAnalysis')}</CardTitle>
+                <CardDescription>{t('performance.detailedBreakdown')}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
                   <Filter className="mr-2 h-4 w-4" />
-                  Filter
+                  {t('common.filter')}
                 </Button>
                 <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
-                  Export
+                  {t('common.export')}
                 </Button>
               </div>
             </div>
@@ -133,22 +135,22 @@ const Performance = () => {
           <CardContent>
             <Tabs defaultValue="monthly">
               <TabsList>
-                <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                <TabsTrigger value="symbols">Symbols</TabsTrigger>
-                <TabsTrigger value="strategies">Strategies</TabsTrigger>
+                <TabsTrigger value="monthly">{t('performance.monthly')}</TabsTrigger>
+                <TabsTrigger value="symbols">{t('performance.symbols')}</TabsTrigger>
+                <TabsTrigger value="strategies">{t('performance.strategies')}</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="monthly" className="mt-4">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">Month</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Profit</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Loss</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Total</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Trades</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Win Rate</th>
+                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.month')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -161,7 +163,7 @@ const Performance = () => {
                           <td className="py-3 px-4 text-sm text-right text-loss">
                             {formatCurrency(item.loss)}
                           </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right", 
+                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
                             item.total >= 0 ? "text-profit" : "text-loss")}>
                             {formatCurrency(item.total)}
                           </td>
@@ -173,18 +175,18 @@ const Performance = () => {
                   </table>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="symbols" className="mt-4">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">Symbol</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Profit</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Loss</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Total</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Trades</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Win Rate</th>
+                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.symbol')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -197,7 +199,7 @@ const Performance = () => {
                           <td className="py-3 px-4 text-sm text-right text-loss">
                             {formatCurrency(item.loss)}
                           </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right", 
+                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
                             item.total >= 0 ? "text-profit" : "text-loss")}>
                             {formatCurrency(item.total)}
                           </td>
@@ -209,18 +211,18 @@ const Performance = () => {
                   </table>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="strategies" className="mt-4">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">Strategy</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Profit</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Loss</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Total</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Trades</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">Win Rate</th>
+                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.strategy')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
+                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -233,7 +235,7 @@ const Performance = () => {
                           <td className="py-3 px-4 text-sm text-right text-loss">
                             {formatCurrency(item.loss)}
                           </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right", 
+                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
                             item.total >= 0 ? "text-profit" : "text-loss")}>
                             {formatCurrency(item.total)}
                           </td>
