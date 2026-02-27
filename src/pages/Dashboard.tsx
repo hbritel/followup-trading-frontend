@@ -12,6 +12,9 @@ import TradingCalendar from '@/components/dashboard/Calendar';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import { DashboardSkeleton } from '@/components/skeletons';
+import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
+import OpenPositionsPanel from '@/components/dashboard/OpenPositionsPanel';
+import DailyPerformanceChart from '@/components/dashboard/DailyPerformanceChart';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -42,6 +45,9 @@ const Dashboard = () => {
     size: 10,
     accountIds: apiAccountId
   });
+  const { data: dashboardSummary } = useDashboardSummary(
+    dateRange.startDate, dateRange.endDate, apiAccountId
+  );
 
   const trades = tradesResponse?.content || [];
   const isLoading = analyticsLoading || tradesLoading;
@@ -81,6 +87,11 @@ const Dashboard = () => {
           <TradeTable trades={trades} />
           <TradingCalendar analytics={analytics} accountId={apiAccountId} />
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <DailyPerformanceChart data={dashboardSummary?.recentDailyPerformance} />
+        <OpenPositionsPanel positions={dashboardSummary?.openPositions} />
       </div>
     </DashboardLayout>
   );
