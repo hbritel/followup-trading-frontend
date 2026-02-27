@@ -1,8 +1,11 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageFilter } from '@/contexts/page-filters-context';
+import { useTradePerformance, useDashboardSummary } from '@/hooks/useAdvancedMetrics';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
+import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
+import AccountSelector from '@/components/dashboard/AccountSelector';
 import {
   Card,
   CardContent,
@@ -12,71 +15,99 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Download, Filter } from 'lucide-react';
+import { Download, Filter, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Sample monthly performance data
-const monthlyData = [
-  { id: 1, month: 'January', year: 2022, profit: 1280.42, loss: -450.18, total: 830.24, trades: 28, winRate: 71 },
-  { id: 2, month: 'February', year: 2022, profit: 1542.36, loss: -680.74, total: 861.62, trades: 32, winRate: 68 },
-  { id: 3, month: 'March', year: 2022, profit: 2150.47, loss: -782.35, total: 1368.12, trades: 41, winRate: 76 },
-];
+function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
-// Sample monthly symbol performance data
-const symbolData = [
-  { id: 1, symbol: 'AAPL', profit: 680.24, loss: -120.50, total: 559.74, trades: 12, winRate: 83 },
-  { id: 2, symbol: 'MSFT', profit: 425.18, loss: -150.30, total: 274.88, trades: 8, winRate: 75 },
-  { id: 3, symbol: 'GOOGL', profit: 380.45, loss: -95.75, total: 284.70, trades: 6, winRate: 83 },
-  { id: 4, symbol: 'AMZN', profit: 290.40, loss: -180.60, total: 109.80, trades: 7, winRate: 57 },
-  { id: 5, symbol: 'NVDA', profit: 374.20, loss: -85.20, total: 289.00, trades: 5, winRate: 80 },
-  { id: 6, symbol: 'META', profit: 0, loss: -150.00, total: -150.00, trades: 3, winRate: 0 },
-];
-
-// Sample strategy performance data
-const strategyData = [
-  { id: 1, strategy: 'Swing', profit: 850.35, loss: -230.45, total: 619.90, trades: 15, winRate: 80 },
-  { id: 2, strategy: 'Breakout', profit: 720.42, loss: -180.30, total: 540.12, trades: 12, winRate: 75 },
-  { id: 3, strategy: 'Reversal', profit: 580.70, loss: -370.60, total: 210.10, trades: 14, winRate: 64 },
-];
-
-// Format currency
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(value);
-};
 
 const Performance = () => {
   const { t } = useTranslation();
-  const [timeRange, setTimeRange] = useState('3m'); // Default to 3 months
 
-  // Summary statistics
-  const totalProfit = 3059.23;
-  const totalLoss = -1913.27;
-  const netProfitLoss = totalProfit + totalLoss;
-  const winRate = 72;
-  const totalTrades = 101;
+  const [selectedAccountId, setSelectedAccountId] = usePageFilter('performance', 'accountId', 'all');
+  const [datePreset, setDatePreset] = usePageFilter('performance', 'datePreset', '3m');
+  const [customStart, setCustomStart] = usePageFilter<Date | null>('performance', 'customStart', null);
+  const [customEnd, setCustomEnd] = usePageFilter<Date | null>('performance', 'customEnd', null);
+
+  const apiAccountId = selectedAccountId === 'all' ? undefined : selectedAccountId;
+  const dateRange = datePreset === 'custom'
+    ? {
+        startDate: customStart ? toISODate(customStart) : undefined,
+        endDate: customEnd ? toISODate(customEnd) : undefined,
+      }
+    : computeDateRange(datePreset);
+
+  const { data: performance, isLoading: perfLoading } = useTradePerformance(
+    dateRange.startDate, dateRange.endDate, apiAccountId
+  );
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary(
+    dateRange.startDate, dateRange.endDate, apiAccountId
+  );
+
+  const isLoading = perfLoading || summaryLoading;
+
+  const symbolEntries = summary?.performanceByAssetType
+    ? Object.entries(summary.performanceByAssetType).map(([symbol, pnl]) => ({
+        symbol,
+        total: pnl,
+      }))
+    : [];
+
+  const directionEntries = summary?.performanceByDirection
+    ? Object.entries(summary.performanceByDirection).map(([direction, pnl]) => ({
+        direction,
+        total: pnl,
+      }))
+    : [];
 
   return (
     <DashboardLayout pageTitle={t('pages.performance')}>
       <div className="space-y-6">
-        {/* Performance summary cards */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <DashboardDateFilter
+            preset={datePreset}
+            onPresetChange={setDatePreset}
+            customStart={customStart}
+            customEnd={customEnd}
+            onCustomStartChange={setCustomStart}
+            onCustomEndChange={setCustomEnd}
+          />
+          <AccountSelector
+            value={selectedAccountId}
+            onChange={setSelectedAccountId}
+            className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">{t('performance.netPnl')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(netProfitLoss)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('performance.lastThreeMonths')}
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className={cn("text-2xl font-bold",
+                    (performance?.totalProfitLoss ?? 0) >= 0 ? "text-profit" : "text-loss"
+                  )}>
+                    {formatCurrency(performance?.totalProfitLoss ?? 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {performance?.totalTrades ?? 0} {t('performance.trades', 'trades')}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -85,12 +116,21 @@ const Performance = () => {
               <CardTitle className="text-sm font-medium">{t('insights.winRate')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {winRate}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('performance.winsOutOfTrades', { wins: Math.round(winRate * totalTrades / 100), total: totalTrades })}
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {(performance?.winRate ?? 0).toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('performance.winsOutOfTrades', {
+                      wins: performance?.winningTrades ?? 0,
+                      total: performance?.totalTrades ?? 0
+                    })}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -99,20 +139,24 @@ const Performance = () => {
               <CardTitle className="text-sm font-medium">{t('insights.profitFactor')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {(totalProfit / Math.abs(totalLoss)).toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('performance.grossProfitOverLoss')}
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {(performance?.profitFactor ?? 0).toFixed(2)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('performance.grossProfitOverLoss')}
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Performance charts */}
         <PerformanceChart />
 
-        {/* Performance tables */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -133,118 +177,75 @@ const Performance = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="monthly">
+            <Tabs defaultValue="symbols">
               <TabsList>
-                <TabsTrigger value="monthly">{t('performance.monthly')}</TabsTrigger>
                 <TabsTrigger value="symbols">{t('performance.symbols')}</TabsTrigger>
-                <TabsTrigger value="strategies">{t('performance.strategies')}</TabsTrigger>
+                <TabsTrigger value="direction">{t('performance.direction', 'Direction')}</TabsTrigger>
               </TabsList>
-
-              <TabsContent value="monthly" className="mt-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.month')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthlyData.map((item) => (
-                        <tr key={item.id} className="border-b">
-                          <td className="py-3 px-4 text-sm">{item.month} {item.year}</td>
-                          <td className="py-3 px-4 text-sm text-right text-profit">
-                            {formatCurrency(item.profit)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-loss">
-                            {formatCurrency(item.loss)}
-                          </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
-                            item.total >= 0 ? "text-profit" : "text-loss")}>
-                            {formatCurrency(item.total)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right">{item.trades}</td>
-                          <td className="py-3 px-4 text-sm text-right">{item.winRate}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </TabsContent>
 
               <TabsContent value="symbols" className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.symbol')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {symbolData.map((item) => (
-                        <tr key={item.id} className="border-b">
-                          <td className="py-3 px-4 text-sm">{item.symbol}</td>
-                          <td className="py-3 px-4 text-sm text-right text-profit">
-                            {formatCurrency(item.profit)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-loss">
-                            {formatCurrency(item.loss)}
-                          </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
-                            item.total >= 0 ? "text-profit" : "text-loss")}>
-                            {formatCurrency(item.total)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right">{item.trades}</td>
-                          <td className="py-3 px-4 text-sm text-right">{item.winRate}%</td>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : symbolEntries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.symbol')}</th>
+                          <th className="text-right py-3 px-4 font-medium text-sm">{t('performance.netPnl')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {symbolEntries
+                          .sort((a, b) => b.total - a.total)
+                          .map((item) => (
+                          <tr key={item.symbol} className="border-b">
+                            <td className="py-3 px-4 text-sm">{item.symbol}</td>
+                            <td className={cn("py-3 px-4 text-sm font-medium text-right",
+                              item.total >= 0 ? "text-profit" : "text-loss")}>
+                              {formatCurrency(item.total)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </TabsContent>
 
-              <TabsContent value="strategies" className="mt-4">
+              <TabsContent value="direction" className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.strategy')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.profit')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.loss')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('common.total')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.trades')}</th>
-                        <th className="text-right py-3 px-4 font-medium text-sm">{t('insights.winRate')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {strategyData.map((item) => (
-                        <tr key={item.id} className="border-b">
-                          <td className="py-3 px-4 text-sm">{item.strategy}</td>
-                          <td className="py-3 px-4 text-sm text-right text-profit">
-                            {formatCurrency(item.profit)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right text-loss">
-                            {formatCurrency(item.loss)}
-                          </td>
-                          <td className={cn("py-3 px-4 text-sm font-medium text-right",
-                            item.total >= 0 ? "text-profit" : "text-loss")}>
-                            {formatCurrency(item.total)}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-right">{item.trades}</td>
-                          <td className="py-3 px-4 text-sm text-right">{item.winRate}%</td>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : directionEntries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-medium text-sm">{t('common.direction', 'Direction')}</th>
+                          <th className="text-right py-3 px-4 font-medium text-sm">{t('performance.netPnl')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {directionEntries.map((item) => (
+                          <tr key={item.direction} className="border-b">
+                            <td className="py-3 px-4 text-sm">{item.direction}</td>
+                            <td className={cn("py-3 px-4 text-sm font-medium text-right",
+                              item.total >= 0 ? "text-profit" : "text-loss")}>
+                              {formatCurrency(item.total)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
