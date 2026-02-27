@@ -1,5 +1,6 @@
 // src/services/metrics.service.ts
 import apiClient from './apiClient';
+import type { DailyPerformanceDto, OpenPositionDto } from '@/types/dto';
 
 // --- TypeScript types matching backend domain models ---
 
@@ -72,6 +73,8 @@ export interface DashboardSummary {
   profitLossThisWeek: number;
   profitLossThisMonth: number;
   profitLossThisYear: number;
+  recentDailyPerformance?: DailyPerformanceDto[];
+  openPositions?: OpenPositionDto[];
 }
 
 /** Matches backend RiskDistribution (core/domain/model/metrics) */

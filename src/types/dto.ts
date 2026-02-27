@@ -276,3 +276,62 @@ export interface ActivityPageDto {
     totalElements: number;
     totalPages: number;
 }
+
+// --- Performance & Dashboard types ---
+
+/** Matches backend DailyPerformanceResponse */
+export interface DailyPerformanceDto {
+  date: string;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  profitLoss: number;
+  equity: number;
+  winRate: number;
+  drawdownPercent: number;
+}
+
+/** Matches backend OpenPositionResponse */
+export interface OpenPositionDto {
+  tradeId: string;
+  symbol: string;
+  entryDate: string;
+  entryPrice: number;
+  currentPrice: number;
+  quantity: number;
+  direction: string;
+  unrealizedPnL: number;
+  unrealizedPnLPercentage: number;
+}
+
+// --- Strategy types (matches backend StrategyDto) ---
+
+export interface StrategyResponseDto {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StrategyRequestDto {
+  name: string;
+  description?: string | null;
+  active?: boolean;
+}
+
+// --- Tag types (matches backend TagDto) ---
+
+export interface TagResponseDto {
+  id: number;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TagRequestDto {
+  name: string;
+  color: string;
+}
