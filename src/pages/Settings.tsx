@@ -45,6 +45,9 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import StrategiesSection from "@/components/settings/StrategiesSection";
+import TagsSection from "@/components/settings/TagsSection";
+
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
     const ua = userAgent?.toLowerCase() || '';
@@ -399,11 +402,13 @@ const Settings = () => {
         <DashboardLayout pageTitle={t('settings.title')}>
             <div className="space-y-6">
                 <Tabs defaultValue="general" className="space-y-6"> {/* Garder General par défaut */}
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
                         <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
                         {/*<TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>*/}
                         <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
+                        <TabsTrigger value="strategies">{t("settings.strategies", "Strategies")}</TabsTrigger>
+                        <TabsTrigger value="tags">{t("settings.tags", "Tags")}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="general" className="space-y-6">
@@ -818,6 +823,14 @@ const Settings = () => {
                                 {/* Pas de bouton Save Changes global pour l'onglet Sécurité */}
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="strategies" className="space-y-6">
+                        <StrategiesSection />
+                    </TabsContent>
+
+                    <TabsContent value="tags" className="space-y-6">
+                        <TagsSection />
                     </TabsContent>
                 </Tabs>
             </div>
