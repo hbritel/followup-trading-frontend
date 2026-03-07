@@ -1,118 +1,134 @@
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Loader2 } from 'lucide-react';
+import { useCreateStrategy, useUpdateStrategy } from '@/hooks/useStrategies';
+import { useToast } from '@/hooks/use-toast';
+import type { StrategyResponseDto, StrategyRequestDto } from '@/types/dto';
 
-const StrategyForm = () => {
+interface StrategyFormProps {
+  editingStrategy?: StrategyResponseDto | null;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+const StrategyForm: React.FC<StrategyFormProps> = ({ editingStrategy, onSuccess, onCancel }) => {
   const { t } = useTranslation();
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+
+  const createMutation = useCreateStrategy();
+  const updateMutation = useUpdateStrategy();
+
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [active, setActive] = useState(true);
+
+  useEffect(() => {
+    if (editingStrategy) {
+      setName(editingStrategy.name);
+      setDescription(editingStrategy.description ?? '');
+      setActive(editingStrategy.active);
+    } else {
+      setName('');
+      setDescription('');
+      setActive(true);
+    }
+  }, [editingStrategy]);
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Strategy submitted');
-    // TODO: Implement form submission
+
+    if (!name.trim()) {
+      toast({
+        title: t('common.error'),
+        description: t('playbook.nameRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const data: StrategyRequestDto = {
+      name: name.trim(),
+      description: description.trim() || null,
+      active,
+    };
+
+    try {
+      if (editingStrategy) {
+        await updateMutation.mutateAsync({ id: editingStrategy.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
+      toast({ title: t('playbook.strategySaved') });
+      onSuccess?.();
+    } catch {
+      toast({
+        title: t('common.error'),
+        description: t('playbook.saveError'),
+        variant: 'destructive',
+      });
+    }
   };
-  
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('playbook.newStrategy')}</CardTitle>
-        <CardDescription>{t('playbook.newStrategyDescription')}</CardDescription>
+        <CardTitle>
+          {editingStrategy ? t('playbook.editStrategy') : t('playbook.newStrategy')}
+        </CardTitle>
+        <CardDescription>
+          {editingStrategy ? t('playbook.editStrategyDescription') : t('playbook.newStrategyDescription')}
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">{t('playbook.strategyName')}</Label>
-            <Input id="name" placeholder={t('playbook.strategyNamePlaceholder')} />
+            <Input
+              id="name"
+              placeholder={t('playbook.strategyNamePlaceholder')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="type">{t('playbook.strategyType')}</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder={t('playbook.selectStrategyType')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="trend-following">{t('playbook.trendFollowing')}</SelectItem>
-                <SelectItem value="mean-reversion">{t('playbook.meanReversion')}</SelectItem>
-                <SelectItem value="breakout">{t('playbook.breakout')}</SelectItem>
-                <SelectItem value="momentum">{t('playbook.momentum')}</SelectItem>
-                <SelectItem value="volatility">{t('playbook.volatility')}</SelectItem>
-                <SelectItem value="other">{t('playbook.other')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="timeframe">{t('playbook.timeframe')}</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder={t('playbook.selectTimeframe')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="scalping">{t('playbook.scalping')}</SelectItem>
-                <SelectItem value="intraday">{t('playbook.intraday')}</SelectItem>
-                <SelectItem value="swing">{t('playbook.swing')}</SelectItem>
-                <SelectItem value="position">{t('playbook.position')}</SelectItem>
-                <SelectItem value="long-term">{t('playbook.longTerm')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">{t('playbook.description')}</Label>
-            <Textarea 
-              id="description" 
-              placeholder={t('playbook.descriptionPlaceholder')} 
+            <Textarea
+              id="description"
+              placeholder={t('playbook.descriptionPlaceholder')}
               className="min-h-32"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="entry-criteria">{t('playbook.entryCriteria')}</Label>
-            <Textarea 
-              id="entry-criteria" 
-              placeholder={t('playbook.entryCriteriaPlaceholder')} 
-              className="min-h-20"
+
+          <div className="flex items-center gap-3">
+            <Switch
+              id="active"
+              checked={active}
+              onCheckedChange={setActive}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="exit-criteria">{t('playbook.exitCriteria')}</Label>
-            <Textarea 
-              id="exit-criteria" 
-              placeholder={t('playbook.exitCriteriaPlaceholder')} 
-              className="min-h-20"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="risk-management">{t('playbook.riskManagement')}</Label>
-            <Textarea 
-              id="risk-management" 
-              placeholder={t('playbook.riskManagementPlaceholder')} 
-              className="min-h-20"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="win-rate">{t('playbook.expectedWinRate')}</Label>
-              <Input id="win-rate" type="number" placeholder="50" min="0" max="100" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="risk-reward">{t('playbook.riskRewardRatio')}</Label>
-              <Input id="risk-reward" type="number" placeholder="2" min="0" step="0.1" />
-            </div>
+            <Label htmlFor="active">{t('playbook.activeStrategy')}</Label>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline">{t('common.cancel')}</Button>
-          <Button type="submit">{t('common.save')}</Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('common.save')}
+          </Button>
         </CardFooter>
       </form>
     </Card>

@@ -839,7 +839,19 @@
     "exitCriteriaPlaceholder": "Saisissez les criteres de sortie",
     "riskManagement": "Gestion du risque",
     "riskManagementPlaceholder": "Saisissez les regles de gestion du risque",
-    "expectedWinRate": "Taux de reussite attendu"
+    "expectedWinRate": "Taux de reussite attendu",
+    "editStrategy": "Modifier la strategie",
+    "editStrategyDescription": "Mettre a jour votre strategie de trading",
+    "noStrategies": "Aucune strategie pour le moment. Creez votre premiere !",
+    "strategySaved": "Strategie enregistree",
+    "strategyDeleted": "Strategie supprimee",
+    "deleteError": "Echec de la suppression de la strategie",
+    "saveError": "Echec de l'enregistrement de la strategie",
+    "nameRequired": "Le nom de la strategie est requis",
+    "status": "Statut",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activeStrategy": "Strategie active"
   },
   "backtesting": {
     "newBacktest": "Nouveau backtest",

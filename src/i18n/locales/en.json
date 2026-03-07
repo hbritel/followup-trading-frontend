@@ -854,7 +854,19 @@
     "exitCriteriaPlaceholder": "Enter exit criteria",
     "riskManagement": "Risk Management",
     "riskManagementPlaceholder": "Enter risk management rules",
-    "expectedWinRate": "Expected Win Rate"
+    "expectedWinRate": "Expected Win Rate",
+    "editStrategy": "Edit Strategy",
+    "editStrategyDescription": "Update your trading strategy",
+    "noStrategies": "No strategies yet. Create your first one!",
+    "strategySaved": "Strategy saved",
+    "strategyDeleted": "Strategy deleted",
+    "deleteError": "Failed to delete strategy",
+    "saveError": "Failed to save strategy",
+    "nameRequired": "Strategy name is required",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activeStrategy": "Active strategy"
   },
   "backtesting": {
     "newBacktest": "New Backtest",
