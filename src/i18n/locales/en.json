@@ -1495,5 +1495,24 @@
     "partialSuccess": "Imported with some errors",
     "importError": "Failed to import trades. Please try again.",
     "totalParsed": "records parsed total"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications yet",
+    "noNotificationsDescription": "You'll see alerts, sync updates, and more here.",
+    "viewAll": "View all",
+    "preferences": "Notification Preferences",
+    "inApp": "In-App",
+    "email": "Email",
+    "eventTypes": {
+      "ALERT_TRIGGERED": "Alert Triggered",
+      "SYNC_COMPLETED": "Sync Completed",
+      "TRADE_IMPORTED": "Trade Imported",
+      "BROKER_DISCONNECTED": "Broker Disconnected",
+      "WEEKLY_DIGEST": "Weekly Digest",
+      "NEW_LOGIN_DETECTED": "New Login Detected",
+      "JOURNAL_REMINDER": "Journal Reminder"
+    }
   }
 }

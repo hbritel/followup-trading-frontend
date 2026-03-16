@@ -573,3 +573,23 @@ export interface TradeImportResultDto {
   errors: number;
   errorDetails: string[];
 }
+
+// --- Notifications ---
+
+export interface NotificationDto {
+  id: string;
+  type: string; // ALERT_TRIGGERED, SYNC_COMPLETED, TRADE_IMPORTED, BROKER_DISCONNECTED, WEEKLY_DIGEST, NEW_LOGIN_DETECTED, JOURNAL_REMINDER
+  title: string;
+  message: string;
+  read: boolean;
+  priority: string; // HIGH, NORMAL, LOW
+  link?: string;
+  createdAt: string;
+}
+
+export interface NotificationPreferenceDto {
+  id: string;
+  eventType: string;
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+}
