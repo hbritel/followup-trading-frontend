@@ -537,3 +537,29 @@ export interface HourOfDayPerformanceDto {
   losses: number;
   totalPnl: number;
 }
+
+// --- AI Trading Coach types ---
+
+export interface AiChatMessageResponseDto {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+export interface AiDigestResponseDto {
+  id: string;
+  content: string;
+  weekStart: string;
+  weekEnd: string;
+  generatedAt: string;
+}
+
+export interface AiAnalysisResponseDto {
+  tradeId: string;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  riskAssessment: string;
+  generatedAt: string;
+}

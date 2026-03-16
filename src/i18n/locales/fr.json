@@ -1449,5 +1449,24 @@
     "avatarUpdatedDescription": "Votre photo de profil a ete mise a jour.",
     "uploadFailed": "Echec du telechargement",
     "uploadFailedDescription": "Impossible de telecharger l'avatar. Veuillez reessayer."
+  },
+  "ai": {
+    "title": "Coach IA de Trading",
+    "placeholder": "Posez une question sur votre trading...",
+    "send": "Envoyer",
+    "clearHistory": "Effacer l'historique",
+    "suggestedQuestions": "Questions suggerees",
+    "streaming": "Reflexion en cours...",
+    "noMessages": "Commencez une conversation avec votre coach IA",
+    "digest": "Resume hebdomadaire",
+    "digestDescription": "Resume genere par IA de votre semaine de trading",
+    "generateDigest": "Generer le resume",
+    "analyzeTrade": "Analyse IA",
+    "noDigest": "Aucun resume disponible",
+    "noDigestDescription": "Generez votre premier resume hebdomadaire pour obtenir des insights IA.",
+    "suggestion1": "Quels sont mes meilleurs patterns de trading ?",
+    "suggestion2": "Analysez mes performances cette semaine",
+    "suggestion3": "Pourquoi je perds le vendredi ?",
+    "suggestion4": "Quelle est ma taille de position optimale ?"
   }
 }
