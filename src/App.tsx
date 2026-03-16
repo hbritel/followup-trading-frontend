@@ -44,6 +44,7 @@ import {
   Pricing,
   PaymentSuccess,
   PaymentCanceled,
+  TaxReporting,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -109,6 +110,7 @@ function App() {
                     <Route path="/risk-metrics" element={<RiskMetrics />} />
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
+                    <Route path="/tax-reporting" element={<TaxReporting />} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
