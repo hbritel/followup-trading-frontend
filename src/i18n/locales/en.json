@@ -1449,5 +1449,24 @@
     "avatarUpdatedDescription": "Your profile picture has been updated.",
     "uploadFailed": "Upload failed",
     "uploadFailedDescription": "Could not upload avatar. Please try again."
+  },
+  "ai": {
+    "title": "AI Trading Coach",
+    "placeholder": "Ask about your trading...",
+    "send": "Send",
+    "clearHistory": "Clear history",
+    "suggestedQuestions": "Suggested questions",
+    "streaming": "Thinking...",
+    "noMessages": "Start a conversation with your AI trading coach",
+    "digest": "Weekly Digest",
+    "digestDescription": "AI-generated summary of your trading week",
+    "generateDigest": "Generate Digest",
+    "analyzeTrade": "AI Analysis",
+    "noDigest": "No digest yet",
+    "noDigestDescription": "Generate your first weekly trading digest to get AI-powered insights.",
+    "suggestion1": "What are my strongest trading patterns?",
+    "suggestion2": "Analyze my performance this week",
+    "suggestion3": "Why do I lose on Fridays?",
+    "suggestion4": "What's my optimal position size?"
   }
 }

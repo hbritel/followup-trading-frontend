@@ -11,8 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3 } from 'lucide-react';
+import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles, RefreshCw } from 'lucide-react';
 import { useInsights, useDismissInsight } from '@/hooks/useInsights';
+import { useWeeklyDigest, useGenerateWeeklyDigest } from '@/hooks/useWeeklyDigest';
 import { useToast } from '@/hooks/use-toast';
 import type { InsightResponseDto, InsightType } from '@/types/dto';
 
@@ -40,6 +41,8 @@ const Insights = () => {
   const { data: insights, isLoading } = useInsights();
   const dismissInsight = useDismissInsight();
   const { toast } = useToast();
+  const { data: digest, isLoading: digestLoading } = useWeeklyDigest();
+  const generateDigest = useGenerateWeeklyDigest();
 
   const handleDismiss = (id: string) => {
     dismissInsight.mutate(id, {
@@ -163,6 +166,10 @@ const Insights = () => {
         <Tabs defaultValue="insights" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="insights">{t('insights.aiInsights')}</TabsTrigger>
+            <TabsTrigger value="ai-coach" className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+              {t('ai.title', 'AI Coach')}
+            </TabsTrigger>
             <TabsTrigger value="metrics">{t('insights.metrics')}</TabsTrigger>
             <TabsTrigger value="patterns">{t('insights.patterns')}</TabsTrigger>
             <TabsTrigger value="market">{t('insights.marketConditions')}</TabsTrigger>
@@ -170,6 +177,83 @@ const Insights = () => {
 
           <TabsContent value="insights" className="space-y-4">
             {renderInsightsContent()}
+          </TabsContent>
+
+          <TabsContent value="ai-coach" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gradient-primary flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-400" />
+                  {t('ai.digest', 'Weekly Digest')}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {t('ai.digestDescription', 'AI-generated summary of your trading week')}
+                </p>
+              </div>
+              <Button
+                onClick={() => generateDigest.mutate()}
+                disabled={generateDigest.isPending}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${generateDigest.isPending ? 'animate-spin' : ''}`} />
+                {t('ai.generateDigest', 'Generate Digest')}
+              </Button>
+            </div>
+
+            {digestLoading ? (
+              <Card className="glass-card rounded-2xl">
+                <CardContent className="p-6 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </CardContent>
+              </Card>
+            ) : digest ? (
+              <Card className="glass-card rounded-2xl">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base text-gradient-primary">
+                      {t('ai.digest', 'Weekly Digest')}
+                    </CardTitle>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
+                      <span>
+                        <span className="label-caps mr-1">Week:</span>
+                        {new Date(digest.weekStart).toLocaleDateString()} &ndash; {new Date(digest.weekEnd).toLocaleDateString()}
+                      </span>
+                      <span>
+                        <span className="label-caps mr-1">Generated:</span>
+                        {new Date(digest.generatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-6">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {digest.content}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-center py-12">
+                <Sparkles className="h-12 w-12 text-amber-400/40 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-1">{t('ai.noDigest', 'No digest yet')}</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  {t('ai.noDigestDescription', 'Generate your first weekly trading digest to get AI-powered insights.')}
+                </p>
+                <Button
+                  onClick={() => generateDigest.mutate()}
+                  disabled={generateDigest.isPending}
+                  className="gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t('ai.generateDigest', 'Generate Digest')}
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="metrics" className="space-y-4">

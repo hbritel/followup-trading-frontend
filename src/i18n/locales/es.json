@@ -1406,5 +1406,24 @@
     "avatarUpdatedDescription": "Su foto de perfil ha sido actualizada.",
     "uploadFailed": "Error de subida",
     "uploadFailedDescription": "No se pudo subir el avatar. Intentelo de nuevo."
+  },
+  "ai": {
+    "title": "Entrenador de Trading IA",
+    "placeholder": "Pregunta sobre tu trading...",
+    "send": "Enviar",
+    "clearHistory": "Borrar historial",
+    "suggestedQuestions": "Preguntas sugeridas",
+    "streaming": "Pensando...",
+    "noMessages": "Comienza una conversacion con tu entrenador de trading IA",
+    "digest": "Resumen semanal",
+    "digestDescription": "Resumen generado por IA de tu semana de trading",
+    "generateDigest": "Generar resumen",
+    "analyzeTrade": "Analisis IA",
+    "noDigest": "Sin resumen aun",
+    "noDigestDescription": "Genera tu primer resumen semanal para obtener insights de IA.",
+    "suggestion1": "Cuales son mis patrones de trading mas fuertes?",
+    "suggestion2": "Analiza mi rendimiento esta semana",
+    "suggestion3": "Por que pierdo los viernes?",
+    "suggestion4": "Cual es mi tamano de posicion optimo?"
   }
 }
