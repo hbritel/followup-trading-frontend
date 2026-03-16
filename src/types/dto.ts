@@ -563,3 +563,13 @@ export interface AiAnalysisResponseDto {
   riskAssessment: string;
   generatedAt: string;
 }
+
+// --- Trade Import ---
+
+export interface TradeImportResultDto {
+  totalParsed: number;
+  imported: number;
+  skippedDuplicates: number;
+  errors: number;
+  errorDetails: string[];
+}

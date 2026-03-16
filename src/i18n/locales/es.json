@@ -1425,5 +1425,32 @@
     "suggestion2": "Analiza mi rendimiento esta semana",
     "suggestion3": "Por que pierdo los viernes?",
     "suggestion4": "Cual es mi tamano de posicion optimo?"
+  },
+  "import": {
+    "title": "Importar trades",
+    "description": "Suba un archivo de exportacion de su broker para importar sus trades.",
+    "resultDescription": "Importacion completada. Revise los resultados a continuacion.",
+    "dropzone": "Suelte su archivo CSV o HTML aqui",
+    "browse": "o haga clic para buscar",
+    "format": "Formato del archivo",
+    "formatAuto": "Deteccion automatica",
+    "formatMt5Csv": "MT5 CSV",
+    "formatMt5Html": "Informe HTML MT5",
+    "formatCtraderCsv": "cTrader CSV",
+    "formatGenericCsv": "CSV generico",
+    "import": "Importar",
+    "importing": "Importando trades...",
+    "imported": "Importados",
+    "skipped": "Omitidos (duplicados)",
+    "errors": "Errores",
+    "errorDetails": "Detalles de errores",
+    "importAnother": "Importar otro",
+    "maxSize": "Tamano maximo: 10 MB",
+    "invalidFile": "Seleccione un archivo CSV o HTML",
+    "fileTooLarge": "El archivo supera el limite de 10 MB",
+    "success": "Trades importados correctamente",
+    "partialSuccess": "Importado con algunos errores",
+    "importError": "Error al importar trades. Intentelo de nuevo.",
+    "totalParsed": "registros analizados en total"
   }
 }
