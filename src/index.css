@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,8 +7,8 @@
 @layer base {
   :root {
     /* Laboratory Light Theme (Crisp, Technical) */
-    --background: 210 40% 98%; /* Slate 50 */
-    --foreground: 222 47% 11%; /* Slate 900 */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 243 75% 59%; /* Indigo 600 */
+    --primary: 258 90% 62%; /* Violet 500 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -25,7 +25,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 38 92% 50%; /* Gold */
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,63 +33,61 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 243 75% 59%;
+    --ring: 258 90% 62%;
 
     --radius: 0.75rem;
 
-    --profit: 151 55% 41%; /* Emerald 600 - Darker for visibility on white */
-    --loss: 0 72% 51%; /* Red 500 */
+    --profit: 151 55% 41%;
+    --loss: 0 72% 51%;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 215 16% 47%;
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-ring: 243 75% 59%;
+    --sidebar-ring: 258 90% 62%;
   }
 
   .dark {
-    /* NEBULA THEME (Deep Space Glass) */
-    --background: 240 10% 3.9%; /* Rich Black #0a0a0b */
-    --foreground: 210 40% 98%;
+    /* OBSIDIAN GOLD — Cinematic Dark Trading Terminal */
+    --background: 240 12% 2%; /* #050506 */
+    --foreground: 240 5% 93%; /* #EDEDEF */
 
-    /* Glass Cards: Very dark blue/black with slight transparency */
-    --card: 240 10% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 5%; /* #0c0c10 */
+    --card-foreground: 240 5% 93%;
 
-    --popover: 240 10% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 5%;
+    --popover-foreground: 240 5% 93%;
 
-    /* Electric Indigo Glow */
-    --primary: 243 100% 69%; /* Indigo 400 - Glowing */
-    --primary-foreground: 210 40% 98%;
+    --primary: 258 90% 66%; /* Violet Electric #8B5CF6 */
+    --primary-foreground: 240 5% 93%;
 
-    --secondary: 240 5% 15%; /* Dark Gray */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 6% 10%;
+    --secondary-foreground: 240 5% 93%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
 
-    --accent: 240 5% 15%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38 92% 50%; /* Gold #F59E0B */
+    --accent-foreground: 240 5% 93%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 240 5% 93%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 243 75% 59%;
+    --border: 240 6% 10%; /* rgba(255,255,255,0.06) equivalent */
+    --input: 240 6% 12%;
+    --ring: 258 90% 66%;
 
-    /* Neon Data Colors */
-    --profit: 151 65% 55%; /* Emerald 400 - Neon */
-    --loss: 0 85% 65%; /* Red 400 - Neon */
+    /* Neon Trading Colors */
+    --profit: 160 84% 39%; /* #10B981 Emerald neon */
+    --loss: 0 91% 71%; /* #F87171 Red neon */
 
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 240 4% 16%;
-    --sidebar-accent: 240 4% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-ring: 243 75% 59%;
+    --sidebar-background: 240 12% 2%;
+    --sidebar-foreground: 240 5% 93%;
+    --sidebar-border: 240 6% 10%;
+    --sidebar-accent: 240 5% 12%;
+    --sidebar-accent-foreground: 240 5% 93%;
+    --sidebar-ring: 258 90% 66%;
   }
 }
 
@@ -98,86 +96,191 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: "Plus Jakarta Sans", sans-serif;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1, "tnum" 1;
   }
 
-  /* Headings use the display font */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: "Outfit", sans-serif;
+  /* Headings: Inter with tight tracking */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Inter", system-ui, sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 600;
   }
+  h1 { letter-spacing: -0.04em; font-weight: 700; }
 
-  /* Code/Numbers use mono */
-  code,
-  pre,
-  .font-mono {
+  /* Monospace for data/code */
+  code, pre, .font-mono {
     font-family: "JetBrains Mono", monospace;
+  }
+
+  /* Tabular numbers for data columns */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Glassmorphism Utilities */
+/* ===== Glassmorphism Utilities ===== */
 @layer utilities {
   .glass-panel {
-    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-xl dark:shadow-none;
+    @apply bg-white/70 dark:bg-white/[0.03] backdrop-blur-xl
+           border border-slate-200/50 dark:border-white/[0.06]
+           shadow-xl dark:shadow-none;
   }
 
   .glass-card {
-    @apply bg-white/60 dark:bg-card/60 backdrop-blur-lg border border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 transition-colors duration-300 shadow-sm dark:shadow-none;
+    @apply bg-white/60 dark:bg-white/[0.03] backdrop-blur-lg
+           border border-slate-200/50 dark:border-white/[0.06]
+           rounded-2xl
+           transition-all duration-300 ease-out
+           shadow-sm dark:shadow-none
+           hover:border-slate-300 dark:hover:border-white/[0.12]
+           dark:hover:shadow-[0_0_30px_rgba(139,92,246,0.08)];
+  }
+
+  .glass-card-gold {
+    @apply glass-card dark:hover:shadow-[0_0_30px_rgba(245,158,11,0.08)];
+  }
+
+  .glass-card-profit {
+    @apply glass-card dark:shadow-[0_0_20px_rgba(16,185,129,0.06)];
+  }
+
+  .glass-card-loss {
+    @apply glass-card dark:shadow-[0_0_20px_rgba(248,113,113,0.06)];
   }
 
   .text-glow {
-    @apply dark:drop-shadow-[0_0_10px_rgba(var(--primary),0.5)];
+    @apply dark:drop-shadow-[0_0_10px_rgba(139,92,246,0.4)];
+  }
+
+  .text-glow-gold {
+    @apply dark:drop-shadow-[0_0_10px_rgba(245,158,11,0.4)];
   }
 
   .border-glow {
-    @apply dark:shadow-[0_0_10px_hsla(var(--primary),0.3)_inset,0_0_5px_hsla(var(--primary),0.3)];
+    @apply dark:shadow-[0_0_15px_rgba(139,92,246,0.15)_inset,0_0_8px_rgba(139,92,246,0.1)];
+  }
+
+  /* Gradient text utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70;
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-200;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-violet-200;
+  }
+
+  /* KPI display text */
+  .kpi-value {
+    font-family: "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  /* Label text (uppercase, tracked) */
+  .label-caps {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 }
 
-/* Animations */
+/* ===== Ambient Background Blobs ===== */
+.ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(120px);
+  will-change: transform;
+}
+
+.ambient-blob-primary {
+  background: hsl(258 90% 66% / 0.06);
+  animation: ambient-drift 12s ease-in-out infinite;
+}
+
+.ambient-blob-gold {
+  background: hsl(38 92% 50% / 0.04);
+  animation: ambient-drift 16s ease-in-out infinite reverse;
+}
+
+.ambient-blob-secondary {
+  background: hsl(240 5% 50% / 0.03);
+  animation: ambient-drift 20s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+@keyframes ambient-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -20px) scale(1.05); }
+  50% { transform: translate(-20px, 15px) scale(0.95); }
+  75% { transform: translate(15px, 25px) scale(1.02); }
+}
+
+/* ===== Page Enter Animation ===== */
+.page-enter {
+  animation: page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Animations ===== */
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
-/* Utility classes for Profit/Loss text */
-.text-profit {
-  color: hsl(var(--profit));
+/* Profit/Loss flash on update */
+@keyframes profit-flash {
+  0% { background-color: hsl(160 84% 39% / 0.15); }
+  100% { background-color: transparent; }
 }
+@keyframes loss-flash {
+  0% { background-color: hsl(0 91% 71% / 0.15); }
+  100% { background-color: transparent; }
+}
+.flash-profit { animation: profit-flash 0.6s ease-out; }
+.flash-loss { animation: loss-flash 0.6s ease-out; }
 
-.text-loss {
-  color: hsl(var(--loss));
-}
-
-.bg-profit {
-  background-color: hsl(var(--profit));
-}
-
-.bg-loss {
-  background-color: hsl(var(--loss));
-}
+/* ===== Semantic Color Utilities ===== */
+.text-profit { color: hsl(var(--profit)); }
+.text-loss { color: hsl(var(--loss)); }
+.bg-profit { background-color: hsl(var(--profit)); }
+.bg-loss { background-color: hsl(var(--loss)); }
 
 /* ===== Accent Color Themes ===== */
-/* Blue is the default (--primary already set in :root / .dark), no override needed */
+body.theme-violet {
+  --primary: 258 90% 62%;
+  --ring: 258 90% 62%;
+  --sidebar-ring: 258 90% 62%;
+}
+.dark body.theme-violet {
+  --primary: 258 90% 66%;
+  --ring: 258 90% 66%;
+  --sidebar-ring: 258 90% 66%;
+}
 
 body.theme-green {
   --primary: 151 55% 41%;
@@ -224,13 +327,15 @@ body.theme-red {
 }
 
 /* ===== Font Size Scaling ===== */
-/* Applied on <html> so all rem-based Tailwind values scale proportionally */
-html.font-size-small {
-  font-size: 14px;
-}
-html.font-size-medium {
-  font-size: 16px; /* browser default */
-}
-html.font-size-large {
-  font-size: 18px;
+html.font-size-small { font-size: 14px; }
+html.font-size-medium { font-size: 16px; }
+html.font-size-large { font-size: 18px; }
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob,
+  .animate-float,
+  .page-enter {
+    animation: none !important;
+  }
 }

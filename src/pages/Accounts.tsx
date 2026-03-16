@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageTransition from '@/components/ui/page-transition';
 import {
   Card,
   CardContent,
@@ -27,14 +28,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { brokerService, type ConnectBrokerRequest } from '@/services/broker.service';
+import { brokerService, type ConnectBrokerRequest, type BrokerConnectionResponse } from '@/services/broker.service';
 import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
 
 // --- Fallback mock data (used when API is unavailable) ---
-const fallbackAccounts = [
+const fallbackAccounts: BrokerConnectionResponse[] = [
   {
     id: '1',
     brokerType: 'INTERACTIVE_BROKERS',
+    brokerCode: 'IBKR',
+    brokerDisplayName: 'Interactive Brokers',
+    accountIdentifier: 'U1234567',
     displayName: 'Trading Account (Main)',
     status: 'ACTIVE',
     syncFrequency: 'DAILY',
@@ -46,6 +50,9 @@ const fallbackAccounts = [
   {
     id: '2',
     brokerType: 'MT5',
+    brokerCode: 'EXNESS',
+    brokerDisplayName: 'Exness',
+    accountIdentifier: '12345678',
     displayName: 'Forex Trading',
     status: 'ACTIVE',
     syncFrequency: 'HOURLY',
@@ -56,7 +63,7 @@ const fallbackAccounts = [
   },
 ];
 
-// --- Helper ---
+// --- Helpers ---
 const formatBrokerName = (brokerType: string): string => {
   const map: Record<string, string> = {
     INTERACTIVE_BROKERS: 'Interactive Brokers',
@@ -66,6 +73,18 @@ const formatBrokerName = (brokerType: string): string => {
   };
   return map[brokerType] || brokerType;
 };
+
+/** Returns the best available display name for an account card title. */
+const getAccountTitle = (account: { displayName?: string | null; brokerDisplayName?: string; accountIdentifier?: string; brokerType?: string }): string => {
+  if (account.displayName) return account.displayName;
+  const broker = account.brokerDisplayName || formatBrokerName(account.brokerType || '');
+  const acctId = account.accountIdentifier && account.accountIdentifier !== 'default' ? account.accountIdentifier : null;
+  return acctId ? `${broker} - ${acctId}` : broker;
+};
+
+/** Returns the broker company name for the subtitle. */
+const getBrokerLabel = (account: { brokerDisplayName?: string; brokerType?: string }): string =>
+  account.brokerDisplayName || formatBrokerName(account.brokerType || '');
 
 const getStatusVariant = (status: string | undefined): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (status) {
@@ -300,7 +319,7 @@ const Accounts = () => {
 
   return (
     <DashboardLayout pageTitle={t('pages.accounts')}>
-      <div className="space-y-6">
+      <PageTransition className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">{t('accounts.tradingAccounts')}</h1>
@@ -346,7 +365,7 @@ const Accounts = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {new Set(accounts.map(a => a.brokerType)).size}
+                    {new Set(accounts.map(a => a.brokerCode || a.brokerType)).size}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     <span>{t('accounts.uniqueBrokersConnected')}</span>
@@ -409,7 +428,7 @@ const Accounts = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4 text-primary" />
-                            <h3 className="font-medium">{account.displayName || formatBrokerName(account.brokerType)}</h3>
+                            <h3 className="font-medium">{getAccountTitle(account)}</h3>
                             <Badge variant={getStatusVariant(account.status)}>
                               {account.status?.toLowerCase() || t('accounts.unknown')}
                             </Badge>
@@ -417,7 +436,7 @@ const Accounts = () => {
                               <Badge variant="secondary">{t('accounts.disabled')}</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{formatBrokerName(account.brokerType)}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{getBrokerLabel(account)}</p>
                         </div>
                         <div className="mt-2 md:mt-0 flex gap-2">
                           <Button
@@ -485,7 +504,7 @@ const Accounts = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </PageTransition>
 
       {/* Link Account Dialog */}
       <Dialog open={linkAccountOpen} onOpenChange={setLinkAccountOpen}>
@@ -584,14 +603,14 @@ const Accounts = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="h-5 w-5 text-primary" />
                   <h3 className="font-medium text-lg">
-                    {selectedAccountData.displayName || formatBrokerName(selectedAccountData.brokerType)}
+                    {getAccountTitle(selectedAccountData)}
                   </h3>
                   <Badge variant={getStatusVariant(selectedAccountData.status)}>
                     {selectedAccountData.status?.toLowerCase() || t('accounts.unknown')}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">
-                  {t('accounts.broker')}: {formatBrokerName(selectedAccountData.brokerType)}
+                  {t('accounts.broker')}: {getBrokerLabel(selectedAccountData)}
                 </p>
               </div>
 
@@ -664,7 +683,7 @@ const Accounts = () => {
             <DialogHeader>
               <DialogTitle>{t('accounts.editAccountSettings')}</DialogTitle>
               <DialogDescription>
-                {t('accounts.editAccountSettingsDescription', { broker: formatBrokerName(selectedAccountData.brokerType) })}
+                {t('accounts.editAccountSettingsDescription', { broker: getBrokerLabel(selectedAccountData) })}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">

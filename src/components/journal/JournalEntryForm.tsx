@@ -11,48 +11,37 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-
-interface JournalEntry {
-  id?: number;
-  date: Date;
-  title: string;
-  marketConditions: string;
-  trades: number;
-  content?: string;
-}
+import type { JournalEntryResponseDto, JournalEntryRequestDto } from '@/types/dto';
 
 interface JournalEntryFormProps {
-  initialValues?: JournalEntry;
-  onSubmit?: () => void;
+  initialValues?: JournalEntryResponseDto;
+  onSubmit?: (data: JournalEntryRequestDto) => void;
+  onCancel?: () => void;
+  isLoading?: boolean;
 }
 
-const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ initialValues, onSubmit }) => {
+const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ initialValues, onSubmit, onCancel, isLoading }) => {
   const { t } = useTranslation();
-  const [date, setDate] = useState<Date | undefined>(initialValues?.date || new Date());
-  const [title, setTitle] = useState(initialValues?.title || '');
-  const [marketConditions, setMarketConditions] = useState(initialValues?.marketConditions || '');
-  const [trades, setTrades] = useState(initialValues?.trades?.toString() || '');
-  const [content, setContent] = useState(initialValues?.content || '');
-  const [lessons, setLessons] = useState('');
-  const [emotions, setEmotions] = useState('');
-  
+  const [date, setDate] = useState<Date | undefined>(
+    initialValues?.date ? new Date(initialValues.date) : new Date()
+  );
+  const [mood, setMood] = useState<number>(initialValues?.mood ?? 3);
+  const [content, setContent] = useState(initialValues?.content ?? '');
+  const [tags, setTags] = useState(initialValues?.tags ?? '');
+  const [linkedTradeIds, setLinkedTradeIds] = useState(initialValues?.linkedTradeIds ?? '');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Journal entry submitted', {
-      date,
-      title,
-      marketConditions,
-      trades: parseInt(trades) || 0,
-      content,
-      lessons,
-      emotions
+    if (!date || !onSubmit) return;
+    onSubmit({
+      date: format(date, 'yyyy-MM-dd'),
+      mood,
+      content: content || null,
+      tags: tags || null,
+      linkedTradeIds: linkedTradeIds || null,
     });
-    
-    if (onSubmit) {
-      onSubmit();
-    }
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -86,72 +75,61 @@ const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ initialValues, onSu
               </PopoverContent>
             </Popover>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="title">{t('journal.title')}</Label>
-            <Input 
-              id="title" 
-              placeholder={t('journal.titlePlaceholder')}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <Label>{t('journal.mood')}</Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={mood === value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMood(value)}
+                >
+                  {value}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              1 = {t('journal.moodVeryBad')}, 5 = {t('journal.moodGreat')}
+            </p>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="market-conditions">{t('journal.marketConditions')}</Label>
-            <Input 
-              id="market-conditions" 
-              placeholder={t('journal.marketConditionsPlaceholder')}
-              value={marketConditions}
-              onChange={(e) => setMarketConditions(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="trades">{t('journal.tradesExecuted')}</Label>
-            <Input 
-              id="trades" 
-              placeholder={t('journal.tradesExecutedPlaceholder')}
-              value={trades}
-              onChange={(e) => setTrades(e.target.value)}
-            />
-          </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="content">{t('journal.content')}</Label>
-            <Textarea 
-              id="content" 
-              placeholder={t('journal.contentPlaceholder')} 
+            <Textarea
+              id="content"
+              placeholder={t('journal.contentPlaceholder')}
               className="min-h-32"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="lessons">{t('journal.lessonsLearned')}</Label>
-            <Textarea 
-              id="lessons" 
-              placeholder={t('journal.lessonsLearnedPlaceholder')} 
-              className="min-h-20"
-              value={lessons}
-              onChange={(e) => setLessons(e.target.value)}
+            <Label htmlFor="tags">{t('journal.tags')}</Label>
+            <Input
+              id="tags"
+              placeholder={t('journal.tagsPlaceholder')}
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
             />
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="emotions">{t('journal.emotions')}</Label>
-            <Input 
-              id="emotions" 
-              placeholder={t('journal.emotionsPlaceholder')}
-              value={emotions}
-              onChange={(e) => setEmotions(e.target.value)}
+            <Label htmlFor="linkedTradeIds">{t('journal.linkedTrades')}</Label>
+            <Input
+              id="linkedTradeIds"
+              placeholder={t('journal.linkedTradesPlaceholder')}
+              value={linkedTradeIds}
+              onChange={(e) => setLinkedTradeIds(e.target.value)}
             />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onSubmit}>{t('common.cancel')}</Button>
-          <Button type="submit">{t('common.save')}</Button>
+          <Button type="button" variant="outline" onClick={onCancel}>{t('common.cancel')}</Button>
+          <Button type="submit" disabled={isLoading}>{t('common.save')}</Button>
         </CardFooter>
       </form>
     </Card>

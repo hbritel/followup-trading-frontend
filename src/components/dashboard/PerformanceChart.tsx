@@ -140,12 +140,12 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="glass-card animate-slide-up">
+      <Card className="glass-card rounded-2xl animate-slide-up">
         <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
           <div className="flex items-center gap-2">
             <div>
               <div className="flex items-center">
-                <CardTitle className="text-lg font-semibold tracking-tight">Performance</CardTitle>
+                <CardTitle className="text-lg font-semibold tracking-tight text-gradient">Performance</CardTitle>
                 <InfoBubble>
                   Shows your cumulative equity curve over time. Each point represents the running total of all realized P&L from closed trades.
                 </InfoBubble>
@@ -209,11 +209,11 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
         </CardContent>
       </Card>
 
-      <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <Card className="glass-card rounded-2xl animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
           <div>
             <div className="flex items-center">
-              <CardTitle className="text-lg font-semibold tracking-tight">Daily P&L</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight text-gradient">Daily P&L</CardTitle>
               <InfoBubble>
                 Displays your daily profit and loss from closed trades. Green bars represent profitable days, red bars represent losing days. Switch to the Volume tab to see the number of trades executed each day.
               </InfoBubble>

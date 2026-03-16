@@ -1,6 +1,7 @@
 
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageTransition from '@/components/ui/page-transition';
 import {
   Card,
   CardContent,
@@ -17,28 +18,9 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { usePageFilter } from '@/contexts/page-filters-context';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
+import { useDayOfWeekPerformance, useHourOfDayPerformance } from '@/hooks/useTimeMetrics';
 
 const COLORS = ['#1E40AF', '#dc2626'];
-
-// Sample data for trade performance by day (no backend endpoint for this yet)
-const tradeDayData = [
-  { day: 'Mon', wins: 15, losses: 6 },
-  { day: 'Tue', wins: 18, losses: 4 },
-  { day: 'Wed', wins: 12, losses: 9 },
-  { day: 'Thu', wins: 16, losses: 7 },
-  { day: 'Fri', wins: 14, losses: 8 },
-];
-
-// Sample data for trade performance by time (no backend endpoint for this yet)
-const tradeTimeData = [
-  { time: '09:30', wins: 12, losses: 3 },
-  { time: '10:30', wins: 18, losses: 5 },
-  { time: '11:30', wins: 14, losses: 7 },
-  { time: '12:30', wins: 10, losses: 8 },
-  { time: '13:30', wins: 8, losses: 9 },
-  { time: '14:30', wins: 15, losses: 6 },
-  { time: '15:30', wins: 20, losses: 4 },
-];
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -70,7 +52,28 @@ const Statistics = () => {
     dateRange.startDate, dateRange.endDate
   );
 
-  const isLoading = analyticsLoading || summaryLoading;
+  // Time-based performance from real API
+  const { data: dayOfWeekData, isLoading: dowLoading } = useDayOfWeekPerformance(
+    dateRange.startDate, dateRange.endDate, apiAccountId
+  );
+  const { data: hourOfDayData, isLoading: hodLoading } = useHourOfDayPerformance(
+    dateRange.startDate, dateRange.endDate, apiAccountId
+  );
+
+  const isLoading = analyticsLoading || summaryLoading || dowLoading || hodLoading;
+
+  // Map API data to chart format
+  const tradeDayData = (dayOfWeekData ?? []).map(d => ({
+    day: d.dayName.substring(0, 3),
+    wins: d.wins,
+    losses: d.losses,
+  }));
+
+  const tradeTimeData = (hourOfDayData ?? []).map(d => ({
+    time: d.timeLabel,
+    wins: d.wins,
+    losses: d.losses,
+  }));
 
   // Use analytics as primary source for trade stats (supports account filter)
   const totalTrades = analytics?.totalTrades ?? 0;
@@ -123,10 +126,10 @@ const Statistics = () => {
 
   return (
     <DashboardLayout pageTitle={t('pages.statistics')}>
-      <div className="space-y-6">
+      <PageTransition className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">{t('statistics.title')}</h1>
+            <h1 className="text-2xl font-bold text-gradient">{t('statistics.title')}</h1>
             <p className="text-muted-foreground">{t('statistics.description')}</p>
           </div>
         </div>
@@ -148,9 +151,9 @@ const Statistics = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t('statistics.tradeCount')}</CardTitle>
+              <CardTitle className="label-caps">{t('statistics.tradeCount')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -160,7 +163,7 @@ const Statistics = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">{totalTrades}</div>
+                  <div className="kpi-value text-2xl tabular-nums">{totalTrades}</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {t('statistics.averageTradesPerMonth', { count: tradesPerMonth.toFixed(1) })}
                   </div>
@@ -169,9 +172,9 @@ const Statistics = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t('insights.winRate')}</CardTitle>
+              <CardTitle className="label-caps">{t('insights.winRate')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -181,7 +184,7 @@ const Statistics = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">{winRate.toFixed(1)}%</div>
+                  <div className="kpi-value text-2xl tabular-nums text-profit">{winRate.toFixed(1)}%</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {t('statistics.winsAndLosses', { wins: winningTrades, losses: losingTrades })}
                   </div>
@@ -190,9 +193,9 @@ const Statistics = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t('insights.profitFactor')}</CardTitle>
+              <CardTitle className="label-caps">{t('insights.profitFactor')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -202,7 +205,7 @@ const Statistics = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">{profitFactor.toFixed(2)}x</div>
+                  <div className="kpi-value text-2xl tabular-nums">{profitFactor.toFixed(2)}x</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {t('statistics.grossProfitLossRatio')}
                   </div>
@@ -211,9 +214,9 @@ const Statistics = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{t('statistics.averageRR')}</CardTitle>
+              <CardTitle className="label-caps">{t('statistics.averageRR')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -223,7 +226,7 @@ const Statistics = () => {
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold">{riskRewardRatio.toFixed(1)}:1</div>
+                  <div className="kpi-value text-2xl tabular-nums">{riskRewardRatio.toFixed(1)}:1</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {t('statistics.averageRiskRewardRatio')}
                   </div>
@@ -234,9 +237,9 @@ const Statistics = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+          <Card className="glass-card rounded-2xl lg:col-span-2">
             <CardHeader>
-              <CardTitle>{t('statistics.keyMetrics')}</CardTitle>
+              <CardTitle className="text-gradient">{t('statistics.keyMetrics')}</CardTitle>
               <CardDescription>{t('statistics.performanceAgainstTarget')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -254,8 +257,8 @@ const Statistics = () => {
                   {metricsData.map((metric) => (
                     <div key={metric.name} className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium">{metric.name}</span>
-                        <span className="text-sm">
+                        <span className="label-caps">{metric.name}</span>
+                        <span className="font-mono tabular-nums text-sm">
                           {formatMetricValue(metric.value, metric.format)}
                           <span className="text-muted-foreground"> / {t('statistics.target')}: </span>
                           {formatMetricValue(metric.target, metric.format)}
@@ -272,9 +275,9 @@ const Statistics = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle>{t('statistics.tradeDistribution')}</CardTitle>
+              <CardTitle className="text-gradient">{t('statistics.tradeDistribution')}</CardTitle>
               <CardDescription>{t('statistics.winVsLossRatio')}</CardDescription>
             </CardHeader>
             <CardContent className="h-64">
@@ -319,9 +322,9 @@ const Statistics = () => {
           </TabsList>
 
           <TabsContent value="by-day" className="space-y-6">
-            <Card>
+            <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle>{t('statistics.tradePerformanceByDay')}</CardTitle>
+                <CardTitle className="text-gradient">{t('statistics.tradePerformanceByDay')}</CardTitle>
                 <CardDescription>{t('statistics.winLossDistributionByDay')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
@@ -349,9 +352,9 @@ const Statistics = () => {
           </TabsContent>
 
           <TabsContent value="by-time" className="space-y-6">
-            <Card>
+            <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle>{t('statistics.tradePerformanceByTime')}</CardTitle>
+                <CardTitle className="text-gradient">{t('statistics.tradePerformanceByTime')}</CardTitle>
                 <CardDescription>{t('statistics.winLossDistributionByTime')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
@@ -380,9 +383,9 @@ const Statistics = () => {
         </Tabs>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle>{t('statistics.bestTradingSessions')}</CardTitle>
+              <CardTitle className="text-gradient">{t('statistics.bestTradingSessions')}</CardTitle>
               <CardDescription>{t('statistics.highestWinRateSessions')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -390,38 +393,38 @@ const Statistics = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.tuesdayMorning')}</div>
-                    <div className="text-xs text-muted-foreground">9:30 AM - 11:30 AM</div>
+                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 11:30 AM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '85' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '85' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.fridayAfternoon')}</div>
-                    <div className="text-xs text-muted-foreground">2:30 PM - 4:00 PM</div>
+                    <div className="text-xs font-mono text-muted-foreground">2:30 PM - 4:00 PM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '82' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '82' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.thursdayMorning')}</div>
-                    <div className="text-xs text-muted-foreground">9:30 AM - 11:30 AM</div>
+                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 11:30 AM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '78' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '78' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.wednesdayAfternoon')}</div>
-                    <div className="text-xs text-muted-foreground">1:30 PM - 3:30 PM</div>
+                    <div className="text-xs font-mono text-muted-foreground">1:30 PM - 3:30 PM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '74' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '74' })}</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle>{t('statistics.worstTradingSessions')}</CardTitle>
+              <CardTitle className="text-gradient">{t('statistics.worstTradingSessions')}</CardTitle>
               <CardDescription>{t('statistics.lowestWinRateSessions')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -429,36 +432,36 @@ const Statistics = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.mondayLunch')}</div>
-                    <div className="text-xs text-muted-foreground">11:30 AM - 1:30 PM</div>
+                    <div className="text-xs font-mono text-muted-foreground">11:30 AM - 1:30 PM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '45' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '45' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.wednesdayMorning')}</div>
-                    <div className="text-xs text-muted-foreground">9:30 AM - 10:30 AM</div>
+                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 10:30 AM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '52' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '52' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.fridayMorning')}</div>
-                    <div className="text-xs text-muted-foreground">9:30 AM - 10:30 AM</div>
+                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 10:30 AM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '56' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '56' })}</div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium">{t('statistics.thursdayLunch')}</div>
-                    <div className="text-xs text-muted-foreground">11:30 AM - 1:30 PM</div>
+                    <div className="text-xs font-mono text-muted-foreground">11:30 AM - 1:30 PM</div>
                   </div>
-                  <div className="text-sm font-semibold">{t('statistics.winRateValue', { value: '58' })}</div>
+                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '58' })}</div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageTransition>
     </DashboardLayout>
   );
 };

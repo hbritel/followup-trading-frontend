@@ -143,7 +143,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <div className="overflow-hidden">
       <div className="overflow-auto">
         <TradesTable
           trades={trades}
@@ -214,6 +214,6 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
           </Pagination>
         </div>
       )}
-    </Card>
+    </div>
   );
 };

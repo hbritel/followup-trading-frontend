@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardSidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
+import CommandPalette from '@/components/dashboard/CommandPalette';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdleLogout } from '@/hooks/useIdleLogout';
@@ -31,6 +32,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                                                          }) => {
   const isMobile = useIsMobile();
   const { t } = useTranslation(); // Hook de traduction
+  const [commandOpen, setCommandOpen] = useState(false);
 
   // --- Appel du hook d'inactivité ---
   // Récupérer les fonctions et états nécessaires
@@ -49,17 +51,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
       <SidebarProvider defaultOpen={!isMobile}>
-        {/* Nebula Background Mesh */}
-        <div className="fixed inset-0 z-[-1] bg-background pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px] animate-pulse-glow" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-accent/5 blur-[120px] animate-pulse-glow" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] rounded-full bg-secondary/5 blur-[100px]" />
+        {/* Cinematic Ambient Background */}
+        <div className="fixed inset-0 z-[-1] bg-background pointer-events-none overflow-hidden">
+          <div className="ambient-blob ambient-blob-primary top-[-15%] left-[-5%] w-[45%] h-[45%]" />
+          <div className="ambient-blob ambient-blob-gold bottom-[-10%] right-[-5%] w-[40%] h-[40%]" />
+          <div className="ambient-blob ambient-blob-secondary top-[35%] left-[50%] w-[30%] h-[30%]" />
         </div>
 
         <div className="flex h-screen w-full bg-transparent overflow-hidden">
           <DashboardSidebar />
           <main className="flex flex-col flex-1 w-full overflow-hidden bg-transparent">
-            <Navbar />
+            <Navbar onOpenCommandPalette={() => setCommandOpen(true)} />
             <div className="flex-1 p-4 pb-6 md:p-6 overflow-auto">
               {/* ... (Titre et contenu) ... */}
               {children}
@@ -67,6 +69,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </main>
           {/* {!isMobile && <SidebarRail />} <- S'assurer qu'il est utilisé si besoin */}
         </div>
+
+        {/* --- Command Palette --- */}
+        <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
 
         {/* --- Dialogue d'avertissement d'inactivité --- */}
         {/* Utiliser onOpenChange pour synchroniser la fermeture si l'utilisateur clique en dehors */}

@@ -1,99 +1,134 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageTransition from '@/components/ui/page-transition';
 import JournalEntryForm from '@/components/journal/JournalEntryForm';
 import JournalEntries from '@/components/journal/JournalEntries';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from '@/hooks/use-toast';
+import { useJournalEntries, useCreateJournalEntry, useUpdateJournalEntry, useDeleteJournalEntry } from '@/hooks/useJournal';
+import type { JournalEntryRequestDto } from '@/types/dto';
 
 const DailyJournal = () => {
   const { t } = useTranslation();
-  const [viewEntryId, setViewEntryId] = useState<number | null>(null);
-  const [editEntryId, setEditEntryId] = useState<number | null>(null);
-  
-  // Mock data for journal entries - in a real app this would come from an API
-  const journalEntries = [
-    { 
-      id: 1, 
-      date: new Date(2023, 10, 15), 
-      title: "Weekly market review", 
-      marketConditions: "Bullish",
-      trades: 3,
-      content: "This week the market showed strong bullish momentum. Tech stocks performed particularly well with NVIDIA leading the rally."
-    },
-    { 
-      id: 2, 
-      date: new Date(2023, 10, 12), 
-      title: "Earnings analysis", 
-      marketConditions: "Mixed",
-      trades: 2,
-      content: "Mixed earnings results today. Some companies beat expectations while others missed. Overall market sentiment remains cautious."
-    },
-    { 
-      id: 3, 
-      date: new Date(2023, 10, 8), 
-      title: "Market reversal strategy", 
-      marketConditions: "Bearish",
-      trades: 1,
-      content: "Developing a strategy for market reversals. Key indicators to watch include volume, price action, and sector rotation."
-    },
-    { 
-      id: 4, 
-      date: new Date(2023, 10, 5), 
-      title: "Breakout pattern study", 
-      marketConditions: "Bullish",
-      trades: 4,
-      content: "Studied several breakout patterns today. Found that cup and handle patterns have been particularly reliable in the current market conditions."
-    },
-  ];
-  
+  const { toast } = useToast();
+  const [viewEntryId, setViewEntryId] = useState<string | null>(null);
+  const [editEntryId, setEditEntryId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('entries');
+
+  const { data: entries, isLoading } = useJournalEntries();
+  const createEntry = useCreateJournalEntry();
+  const updateEntry = useUpdateJournalEntry();
+  const deleteEntry = useDeleteJournalEntry();
+
+  const journalEntries = entries ?? [];
   const currentEntry = journalEntries.find(entry => entry.id === viewEntryId || entry.id === editEntryId);
-  
+
+  const handleCreate = (data: JournalEntryRequestDto) => {
+    createEntry.mutate(data, {
+      onSuccess: () => {
+        toast({ title: t('journal.entryCreated') });
+        setActiveTab('entries');
+      },
+    });
+  };
+
+  const handleUpdate = (data: JournalEntryRequestDto) => {
+    if (!editEntryId) return;
+    updateEntry.mutate({ id: editEntryId, data }, {
+      onSuccess: () => {
+        toast({ title: t('journal.entryUpdated') });
+        setEditEntryId(null);
+      },
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteEntry.mutate(id, {
+      onSuccess: () => {
+        toast({ title: t('journal.entryDeleted') });
+      },
+    });
+  };
+
   return (
     <DashboardLayout pageTitle={t('pages.dailyJournal')}>
-      <Tabs defaultValue="entries" className="w-full">
+      <PageTransition>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="entries">{t('journal.entries')}</TabsTrigger>
           <TabsTrigger value="new">{t('journal.newEntry')}</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="entries" className="space-y-4">
-          <JournalEntries 
-            entries={journalEntries}
-            onView={(id) => setViewEntryId(id)}
-            onEdit={(id) => setEditEntryId(id)}
-            onDelete={(id) => console.log('Delete entry:', id)}
-          />
+          {isLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : (
+            <JournalEntries
+              entries={journalEntries}
+              onView={(id) => setViewEntryId(id)}
+              onEdit={(id) => setEditEntryId(id)}
+              onDelete={handleDelete}
+            />
+          )}
         </TabsContent>
-        
+
         <TabsContent value="new" className="space-y-4">
-          <JournalEntryForm />
+          <div className="glass-card rounded-2xl p-6">
+            <JournalEntryForm
+              onSubmit={handleCreate}
+              onCancel={() => setActiveTab('entries')}
+              isLoading={createEntry.isPending}
+            />
+          </div>
         </TabsContent>
       </Tabs>
-      
+
       {/* View Entry Dialog */}
       <Dialog open={viewEntryId !== null} onOpenChange={() => setViewEntryId(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{currentEntry?.title}</DialogTitle>
-            <DialogDescription>
-              {currentEntry?.date.toLocaleDateString()} - {currentEntry?.marketConditions}
-            </DialogDescription>
+            <DialogTitle className="font-mono text-lg">{currentEntry?.date}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="prose max-w-none">
-              <p>{currentEntry?.content}</p>
+            <div className="flex items-center gap-2">
+              <span className="label-caps">{t('journal.mood')}:</span>
+              <span className={cn(
+                "kpi-value text-2xl px-3 py-1 rounded-lg",
+                currentEntry?.mood === 1 && "bg-red-500/20 text-red-400",
+                currentEntry?.mood === 2 && "bg-orange-500/20 text-orange-400",
+                currentEntry?.mood === 3 && "bg-amber-500/20 text-amber-400",
+                currentEntry?.mood === 4 && "bg-lime-500/20 text-lime-400",
+                currentEntry?.mood === 5 && "bg-emerald-500/20 text-emerald-400",
+              )}>{currentEntry?.mood}/5</span>
             </div>
-            {currentEntry?.trades > 0 && (
-              <div className="text-sm text-muted-foreground">
-                {t('journal.relatedTrades')}: {currentEntry.trades}
+            {currentEntry?.content && (
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <p>{currentEntry.content}</p>
+              </div>
+            )}
+            {currentEntry?.tags && (
+              <div className="flex flex-wrap gap-1 text-sm text-muted-foreground">
+                <span className="label-caps mr-1">{t('journal.tags')}:</span>
+                {currentEntry.tags.split(',').map((tag, i) => (
+                  <span key={i} className="font-mono text-xs border border-border rounded px-1.5 py-0.5 bg-accent/10">
+                    {tag.trim()}
+                  </span>
+                ))}
               </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Entry Dialog */}
       <Dialog open={editEntryId !== null} onOpenChange={() => setEditEntryId(null)}>
         <DialogContent className="sm:max-w-2xl">
@@ -101,13 +136,16 @@ const DailyJournal = () => {
             <DialogTitle>{t('journal.editEntry')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <JournalEntryForm 
-              initialValues={currentEntry} 
-              onSubmit={() => setEditEntryId(null)}
+            <JournalEntryForm
+              initialValues={currentEntry}
+              onSubmit={handleUpdate}
+              onCancel={() => setEditEntryId(null)}
+              isLoading={updateEntry.isPending}
             />
           </div>
         </DialogContent>
       </Dialog>
+      </PageTransition>
     </DashboardLayout>
   );
 };

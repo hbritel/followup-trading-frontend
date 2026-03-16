@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { 
-  Bell, 
-  Settings, 
+import {
+  Bell,
+  Settings,
   User,
   MessageSquare,
-  Menu,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  Search as SearchIcon,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -20,15 +20,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useIsMobile } from "@/hooks/use-mobile";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { useTheme } from "@/components/providers/theme-provider";
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
+import { useTheme } from '@/components/providers/theme-provider';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslation } from 'react-i18next';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  onOpenCommandPalette?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuth();
@@ -48,7 +52,30 @@ const Navbar: React.FC = () => {
     <nav className="flex h-14 items-center border-b px-4 md:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="h-8 w-8" />
+
+        {/* Cmd+K trigger button */}
+        <button
+          type="button"
+          onClick={onOpenCommandPalette}
+          aria-label={t('commandPalette.open', 'Open command palette')}
+          className={[
+            'glass-card hidden md:flex items-center gap-2',
+            'h-8 rounded-lg px-3',
+            'text-sm text-muted-foreground/70',
+            'border border-white/10',
+            'hover:border-white/20 hover:text-muted-foreground',
+            'transition-colors duration-150',
+            'cursor-pointer',
+          ].join(' ')}
+        >
+          <SearchIcon className="w-3.5 h-3.5" />
+          <span className="text-xs">{t('commandPalette.searchPlaceholder', 'Search...')}</span>
+          <kbd className="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-muted-foreground/60">
+            {navigator.platform.toUpperCase().includes('MAC') ? '⌘K' : 'Ctrl+K'}
+          </kbd>
+        </button>
       </div>
+
       <div className="ml-auto flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('navbar.toggleTheme', 'Toggle theme')}>
           {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

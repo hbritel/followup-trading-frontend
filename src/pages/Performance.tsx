@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { usePageFilter } from '@/contexts/page-filters-context';
 import { useTradePerformance, useDashboardSummary } from '@/hooks/useAdvancedMetrics';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageTransition from '@/components/ui/page-transition';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
@@ -71,7 +72,7 @@ const Performance = () => {
 
   return (
     <DashboardLayout pageTitle={t('pages.performance')}>
-      <div className="space-y-6">
+      <PageTransition className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <DashboardDateFilter
             preset={datePreset}
@@ -89,16 +90,16 @@ const Performance = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('performance.netPnl')}</CardTitle>
+              <CardTitle className="label-caps">{t('performance.netPnl')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className={cn("text-2xl font-bold",
+                  <div className={cn("kpi-value tabular-nums",
                     (performance?.totalProfitLoss ?? 0) >= 0 ? "text-profit" : "text-loss"
                   )}>
                     {formatCurrency(performance?.totalProfitLoss ?? 0)}
@@ -111,16 +112,16 @@ const Performance = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('insights.winRate')}</CardTitle>
+              <CardTitle className="label-caps">{t('insights.winRate')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold">
+                  <div className="kpi-value tabular-nums">
                     {(performance?.winRate ?? 0).toFixed(1)}%
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -134,16 +135,16 @@ const Performance = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('insights.profitFactor')}</CardTitle>
+              <CardTitle className="label-caps">{t('insights.profitFactor')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold">
+                  <div className="kpi-value tabular-nums">
                     {(performance?.profitFactor ?? 0).toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -157,11 +158,11 @@ const Performance = () => {
 
         <PerformanceChart />
 
-        <Card>
+        <Card className="glass-card rounded-2xl">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>{t('insights.performanceAnalysis')}</CardTitle>
+                <CardTitle className="text-gradient">{t('insights.performanceAnalysis')}</CardTitle>
                 <CardDescription>{t('performance.detailedBreakdown')}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -195,8 +196,8 @@ const Performance = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4 font-medium text-sm">{t('performance.symbol')}</th>
-                          <th className="text-right py-3 px-4 font-medium text-sm">{t('performance.netPnl')}</th>
+                          <th className="text-left py-3 px-4 label-caps">{t('performance.symbol')}</th>
+                          <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -204,8 +205,8 @@ const Performance = () => {
                           .sort((a, b) => b.total - a.total)
                           .map((item) => (
                           <tr key={item.symbol} className="border-b">
-                            <td className="py-3 px-4 text-sm">{item.symbol}</td>
-                            <td className={cn("py-3 px-4 text-sm font-medium text-right",
+                            <td className="py-3 px-4 text-sm font-mono">{item.symbol}</td>
+                            <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
                               item.total >= 0 ? "text-profit" : "text-loss")}>
                               {formatCurrency(item.total)}
                             </td>
@@ -229,15 +230,15 @@ const Performance = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4 font-medium text-sm">{t('common.direction', 'Direction')}</th>
-                          <th className="text-right py-3 px-4 font-medium text-sm">{t('performance.netPnl')}</th>
+                          <th className="text-left py-3 px-4 label-caps">{t('common.direction', 'Direction')}</th>
+                          <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {directionEntries.map((item) => (
                           <tr key={item.direction} className="border-b">
-                            <td className="py-3 px-4 text-sm">{item.direction}</td>
-                            <td className={cn("py-3 px-4 text-sm font-medium text-right",
+                            <td className="py-3 px-4 text-sm font-mono">{item.direction}</td>
+                            <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
                               item.total >= 0 ? "text-profit" : "text-loss")}>
                               {formatCurrency(item.total)}
                             </td>
@@ -251,7 +252,7 @@ const Performance = () => {
             </Tabs>
           </CardContent>
         </Card>
-      </div>
+      </PageTransition>
     </DashboardLayout>
   );
 };

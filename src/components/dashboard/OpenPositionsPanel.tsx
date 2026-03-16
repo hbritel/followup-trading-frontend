@@ -22,9 +22,9 @@ const OpenPositionsPanel: React.FC<OpenPositionsPanelProps> = ({ positions }) =>
 
   if (!positions || positions.length === 0) {
     return (
-      <Card>
+      <Card className="glass-card rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">{t('dashboard.openPositions', 'Open Positions')}</CardTitle>
+          <CardTitle className="text-sm font-semibold tracking-tight text-gradient">{t('dashboard.openPositions', 'Open Positions')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">{t('dashboard.noOpenPositions', 'No open positions')}</p>
@@ -34,9 +34,9 @@ const OpenPositionsPanel: React.FC<OpenPositionsPanelProps> = ({ positions }) =>
   }
 
   return (
-    <Card>
+    <Card className="glass-card rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="text-sm font-semibold tracking-tight text-gradient">
           {t('dashboard.openPositions', 'Open Positions')} ({positions.length})
         </CardTitle>
       </CardHeader>

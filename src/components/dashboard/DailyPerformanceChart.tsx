@@ -21,9 +21,9 @@ const DailyPerformanceChart: React.FC<DailyPerformanceChartProps> = ({ data }) =
 
   if (!data || data.length === 0) {
     return (
-      <Card>
+      <Card className="glass-card rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">{t('dashboard.recentPerformance', 'Recent Daily Performance')}</CardTitle>
+          <CardTitle className="text-sm font-semibold tracking-tight text-gradient">{t('dashboard.recentPerformance', 'Recent Daily Performance')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">{t('dashboard.noPerformanceData', 'No performance data available')}</p>
@@ -36,9 +36,9 @@ const DailyPerformanceChart: React.FC<DailyPerformanceChartProps> = ({ data }) =
   const maxAbsValue = Math.max(...recentData.map(d => Math.abs(d.profitLoss)), 1);
 
   return (
-    <Card>
+    <Card className="glass-card rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="text-sm font-semibold tracking-tight text-gradient">
           {t('dashboard.recentPerformance', 'Recent Daily Performance')}
         </CardTitle>
       </CardHeader>
