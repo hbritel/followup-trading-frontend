@@ -27,6 +27,7 @@ import { useLivePrices } from '@/hooks/useLivePrices';
 import { useLivePortfolio } from '@/hooks/useLivePortfolio';
 import { useLiveTrades } from '@/hooks/useLiveTrades';
 import { useLiveAlerts } from '@/hooks/useLiveAlerts';
+import XpProgressBar from '@/components/gamification/XpProgressBar';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -128,7 +129,8 @@ const Dashboard = () => {
             onCustomStartChange={setCustomStart}
             onCustomEndChange={setCustomEnd}
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <XpProgressBar />
             <ConnectionIndicator />
             <AccountSelector
               value={selectedAccountId}

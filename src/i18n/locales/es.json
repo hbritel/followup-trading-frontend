@@ -1471,5 +1471,34 @@
       "NEW_LOGIN_DETECTED": "Nuevo inicio de sesion detectado",
       "JOURNAL_REMINDER": "Recordatorio de diario"
     }
+  },
+  "gamification": {
+    "achievements": "Logros",
+    "leaderboard": "Clasificacion",
+    "level": "Nivel",
+    "xp": "XP",
+    "xpToNext": "para el siguiente nivel",
+    "streak": "Racha",
+    "days": "dias",
+    "badges": "Insignias",
+    "unlocked": "Desbloqueado",
+    "locked": "Bloqueado",
+    "trading": "Trading",
+    "discipline": "Disciplina",
+    "performance": "Rendimiento",
+    "all": "Todo",
+    "rank": "#",
+    "publicProfile": "Perfil Publico",
+    "username": "Nombre de usuario",
+    "makePublic": "Hacer perfil publico",
+    "downloadCard": "Descargar tarjeta",
+    "copyLink": "Copiar enlace",
+    "shareOnX": "Compartir en X",
+    "joinCta": "Unirse a FollowUp Trading",
+    "profileNotFound": "Perfil no encontrado",
+    "week": "Esta semana",
+    "month": "Este mes",
+    "allTime": "Todo el tiempo",
+    "yourRank": "Tu rango"
   }
 }

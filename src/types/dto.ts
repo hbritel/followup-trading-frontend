@@ -593,3 +593,52 @@ export interface NotificationPreferenceDto {
   inAppEnabled: boolean;
   emailEnabled: boolean;
 }
+
+// --- Gamification types ---
+
+export interface GamificationProfileDto {
+  xp: number;
+  level: string;
+  levelName: string;
+  currentStreak: number;
+  longestStreak: number;
+  xpToNextLevel: number;
+  xpProgress: number; // 0-100
+  badgeCount: number;
+  publicProfile: boolean;
+  username: string | null;
+}
+
+export interface BadgeDto {
+  badgeType: string;
+  category: string; // TRADING, DISCIPLINE, PERFORMANCE
+  title: string;
+  description: string;
+  iconName: string;
+  unlockedAt: string | null; // null = locked
+}
+
+export interface LeaderboardEntryDto {
+  rank: number;
+  username: string;
+  levelName: string;
+  xp: number;
+  badgeCount: number;
+  winRate: number;
+  sharpeRatio: number;
+}
+
+export interface PublicProfileDto {
+  username: string;
+  levelName: string;
+  xp: number;
+  badges: BadgeDto[];
+  winRate: number;
+  sharpeRatio: number;
+  totalTrades: number;
+}
+
+export interface UpdatePublicProfileRequestDto {
+  publicProfile: boolean;
+  username?: string | null;
+}

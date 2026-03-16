@@ -38,6 +38,9 @@ import {
   Alerts,
   RiskMetrics,
   HomePage,
+  Badges,
+  Leaderboard,
+  PublicProfile,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -101,10 +104,15 @@ function App() {
                     <Route path="/administration" element={<Administration />} />
                     <Route path="/alerts" element={<Alerts />} />
                     <Route path="/risk-metrics" element={<RiskMetrics />} />
+                    <Route path="/badges" element={<Badges />} />
+                    <Route path="/leaderboard" element={<Leaderboard />} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
                   </Route>
+
+                  {/* Public route — no auth required */}
+                  <Route path="/p/:username" element={<PublicProfile />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

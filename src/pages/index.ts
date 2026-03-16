@@ -21,3 +21,6 @@ export { default as Profile } from './Profile';
 export { default as Alerts } from './Alerts';
 export { default as RiskMetrics } from './RiskMetrics';
 export { default as HomePage } from './HomePage';
+export { default as Badges } from './Badges';
+export { default as Leaderboard } from './Leaderboard';
+export { default as PublicProfile } from './PublicProfile';
