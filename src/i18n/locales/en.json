@@ -1514,5 +1514,34 @@
       "NEW_LOGIN_DETECTED": "New Login Detected",
       "JOURNAL_REMINDER": "Journal Reminder"
     }
+  },
+  "gamification": {
+    "achievements": "Achievements",
+    "leaderboard": "Leaderboard",
+    "level": "Level",
+    "xp": "XP",
+    "xpToNext": "to next level",
+    "streak": "Streak",
+    "days": "days",
+    "badges": "Badges",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "trading": "Trading",
+    "discipline": "Discipline",
+    "performance": "Performance",
+    "all": "All",
+    "rank": "#",
+    "publicProfile": "Public Profile",
+    "username": "Username",
+    "makePublic": "Make profile public",
+    "downloadCard": "Download Card",
+    "copyLink": "Copy Link",
+    "shareOnX": "Share on X",
+    "joinCta": "Join FollowUp Trading",
+    "profileNotFound": "Profile not found",
+    "week": "This Week",
+    "month": "This Month",
+    "allTime": "All Time",
+    "yourRank": "Your Rank"
   }
 }

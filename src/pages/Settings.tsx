@@ -48,6 +48,7 @@ import {
 import StrategiesSection from "@/components/settings/StrategiesSection";
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
+import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -410,6 +411,7 @@ const Settings = () => {
                         <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
                         <TabsTrigger value="strategies">{t("settings.strategies", "Strategies")}</TabsTrigger>
                         <TabsTrigger value="tags">{t("settings.tags", "Tags")}</TabsTrigger>
+                        <TabsTrigger value="public-profile">{t("gamification.publicProfile", "Public Profile")}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="general" className="space-y-6">
@@ -685,6 +687,20 @@ const Settings = () => {
 
                     <TabsContent value="tags" className="space-y-6">
                         <TagsSection />
+                    </TabsContent>
+
+                    <TabsContent value="public-profile" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t("gamification.publicProfile", "Public Profile")}</CardTitle>
+                                <CardDescription>
+                                    Share your trading stats and achievements with the community
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <PublicProfileSettings />
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </Tabs>
             </div>

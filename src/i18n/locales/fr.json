@@ -1514,5 +1514,34 @@
       "NEW_LOGIN_DETECTED": "Nouvelle connexion detectee",
       "JOURNAL_REMINDER": "Rappel de journal"
     }
+  },
+  "gamification": {
+    "achievements": "Succes",
+    "leaderboard": "Classement",
+    "level": "Niveau",
+    "xp": "XP",
+    "xpToNext": "pour le niveau suivant",
+    "streak": "Serie",
+    "days": "jours",
+    "badges": "Badges",
+    "unlocked": "Debloque",
+    "locked": "Verrouille",
+    "trading": "Trading",
+    "discipline": "Discipline",
+    "performance": "Performance",
+    "all": "Tous",
+    "rank": "#",
+    "publicProfile": "Profil Public",
+    "username": "Nom d'utilisateur",
+    "makePublic": "Rendre le profil public",
+    "downloadCard": "Telecharger la carte",
+    "copyLink": "Copier le lien",
+    "shareOnX": "Partager sur X",
+    "joinCta": "Rejoindre FollowUp Trading",
+    "profileNotFound": "Profil introuvable",
+    "week": "Cette semaine",
+    "month": "Ce mois",
+    "allTime": "Tout le temps",
+    "yourRank": "Votre rang"
   }
 }

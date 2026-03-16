@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity as ActivityIcon,
+  Award as AwardIcon,
   BarChart2 as BarChart2Icon,
   BookOpen as BookOpenIcon,
   BookText as BookTextIcon,
@@ -18,6 +19,7 @@ import {
   Rewind as RewindIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
+  Trophy as TrophyIcon,
   Wallet as WalletIcon,
   BellRing as BellRingIcon,
   AlertTriangle as AlertTriangleIcon,
@@ -63,6 +65,8 @@ const DashboardSidebar = () => {
         { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon },
         { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon },
         { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon },
+        { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
+        { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
       ],
     },
     {
