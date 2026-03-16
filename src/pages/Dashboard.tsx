@@ -22,6 +22,11 @@ import OpenPositionsPanel from '@/components/dashboard/OpenPositionsPanel';
 import DailyPerformanceChart from '@/components/dashboard/DailyPerformanceChart';
 import KpiCard from '@/components/dashboard/KpiCard';
 import PageTransition from '@/components/ui/page-transition';
+import ConnectionIndicator from '@/components/ui/connection-indicator';
+import { useLivePrices } from '@/hooks/useLivePrices';
+import { useLivePortfolio } from '@/hooks/useLivePortfolio';
+import { useLiveTrades } from '@/hooks/useLiveTrades';
+import { useLiveAlerts } from '@/hooks/useLiveAlerts';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -43,6 +48,12 @@ const Dashboard = () => {
         endDate: customEnd ? toISODate(customEnd) : undefined,
       }
     : computeDateRange(datePreset);
+
+  // Live WebSocket subscriptions — gracefully degrade when WS is offline
+  useLivePrices();
+  useLivePortfolio();
+  useLiveTrades();
+  useLiveAlerts();
 
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(
     apiAccountId, dateRange.startDate, dateRange.endDate
@@ -117,11 +128,14 @@ const Dashboard = () => {
             onCustomStartChange={setCustomStart}
             onCustomEndChange={setCustomEnd}
           />
-          <AccountSelector
-            value={selectedAccountId}
-            onChange={setSelectedAccountId}
-            className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          />
+          <div className="flex items-center gap-3">
+            <ConnectionIndicator />
+            <AccountSelector
+              value={selectedAccountId}
+              onChange={setSelectedAccountId}
+              className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            />
+          </div>
         </div>
 
         {/* Row 1: KPI cards */}
