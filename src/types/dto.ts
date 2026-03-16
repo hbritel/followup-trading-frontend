@@ -642,3 +642,39 @@ export interface UpdatePublicProfileRequestDto {
   publicProfile: boolean;
   username?: string | null;
 }
+
+// --- Subscription / Billing types ---
+
+export interface UsageDto {
+  connections: { current: number; max: number };
+  trades: { current: number; max: number };
+  aiMessages: { today: number; max: number };
+  alerts: { current: number; max: number };
+  reports: { thisMonth: number; max: number };
+}
+
+export interface SubscriptionDto {
+  plan: 'FREE' | 'PRO' | 'ENTERPRISE';
+  status: 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'TRIALING';
+  billingInterval: 'MONTHLY' | 'ANNUAL' | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  usage: UsageDto;
+}
+
+export interface PlanDto {
+  name: string;
+  displayName: string;
+  monthlyPrice: number;
+  annualPrice: number;
+  features: string[];
+  limits: Record<string, number>;
+}
+
+export interface CheckoutResponseDto {
+  checkoutUrl: string;
+}
+
+export interface PortalResponseDto {
+  portalUrl: string;
+}

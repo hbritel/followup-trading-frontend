@@ -41,6 +41,9 @@ import {
   Badges,
   Leaderboard,
   PublicProfile,
+  Pricing,
+  PaymentSuccess,
+  PaymentCanceled,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -111,7 +114,12 @@ function App() {
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
                   </Route>
 
-                  {/* Public route — no auth required */}
+                    <Route path="/payment/success" element={<PaymentSuccess />} />
+                    <Route path="/payment/canceled" element={<PaymentCanceled />} />
+                  </Route>
+
+                  {/* Public routes — no auth required */}
+                  <Route path="/pricing" element={<Pricing />} />
                   <Route path="/p/:username" element={<PublicProfile />} />
 
                   <Route path="*" element={<NotFound />} />

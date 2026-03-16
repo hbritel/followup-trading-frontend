@@ -49,6 +49,7 @@ import StrategiesSection from "@/components/settings/StrategiesSection";
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
+import UsageDashboard from "@/components/subscription/UsageDashboard";
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -404,7 +405,7 @@ const Settings = () => {
         <DashboardLayout pageTitle={t('settings.title')}>
             <div className="space-y-6">
                 <Tabs defaultValue="general" className="space-y-6"> {/* Garder General par défaut */}
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
                         <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
                         {/*<TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>*/}
@@ -412,6 +413,7 @@ const Settings = () => {
                         <TabsTrigger value="strategies">{t("settings.strategies", "Strategies")}</TabsTrigger>
                         <TabsTrigger value="tags">{t("settings.tags", "Tags")}</TabsTrigger>
                         <TabsTrigger value="public-profile">{t("gamification.publicProfile", "Public Profile")}</TabsTrigger>
+                        <TabsTrigger value="billing">{t("subscription.manageBilling", "Billing")}</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="general" className="space-y-6">
@@ -701,6 +703,10 @@ const Settings = () => {
                                 <PublicProfileSettings />
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="billing" className="space-y-6">
+                        <UsageDashboard />
                     </TabsContent>
                 </Tabs>
             </div>
