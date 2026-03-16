@@ -262,12 +262,12 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6 page-enter">
+      <Card className="glass-card rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Risk Metrics Dashboard</CardTitle>
+              <CardTitle className="text-2xl text-gradient">Risk Metrics Dashboard</CardTitle>
               <CardDescription>In-depth risk analysis of your trading portfolio</CardDescription>
             </div>
             <AlertTriangle className="h-6 w-6 text-amber-500" />
@@ -287,9 +287,9 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
             <TabsContent value="overview">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Radar chart */}
-                <Card>
+                <Card className="glass-card rounded-2xl">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center">
+                    <CardTitle className="text-lg flex items-center text-gradient">
                       Risk Profile
                       <InfoBubble text="A radar view of your key risk metrics normalized to a 0-100 scale. Higher values are generally better (except VaR where lower is better). Helps you see strengths and weaknesses at a glance." />
                     </CardTitle>
@@ -317,9 +317,9 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                 </Card>
 
                 {/* Downside risk metrics */}
-                <Card className="col-span-1 md:col-span-2">
+                <Card className="glass-card rounded-2xl col-span-1 md:col-span-2">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center">
+                    <CardTitle className="text-lg flex items-center text-gradient">
                       Key Risk Metrics
                       <InfoBubble text="Core risk and performance ratios computed from your actual closed trades. These are the numbers professional traders and fund managers use to evaluate performance quality." />
                     </CardTitle>
@@ -340,10 +340,16 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                           <div key={index} className="space-y-1">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center">
-                                <span className="font-medium">{metric.metric}</span>
+                                <span className="label-caps">{metric.metric}</span>
                                 <InfoBubble text={metric.description} />
                               </div>
-                              <span className="font-bold text-lg">
+                              <span className={`kpi-value text-lg tabular-nums ${
+                                metric.metric.includes('Drawdown') || metric.metric.includes('VaR')
+                                  ? 'text-amber-400'
+                                  : metric.value >= 1
+                                    ? 'text-profit'
+                                    : 'text-muted-foreground'
+                              }`}>
                                 {metric.value.toFixed(2)}{metric.unit}
                               </span>
                             </div>
@@ -359,42 +365,42 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                 </Card>
 
                 {/* Quick stats cards */}
-                <Card className="md:col-span-3">
+                <Card className="glass-card rounded-2xl md:col-span-3">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center">
+                    <CardTitle className="text-lg flex items-center text-gradient">
                       Risk Summary
                       <InfoBubble text="Quick snapshot of your risk distribution metrics from closed trade history. Standard deviation measures overall volatility, downside deviation only measures negative volatility." />
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-accent/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground flex items-center justify-center">
+                      <div className="text-center p-3 bg-accent/10 rounded-xl border border-border/40">
+                        <div className="label-caps flex items-center justify-center mb-1">
                           Std Deviation
                           <InfoBubble text="Standard deviation of your trade returns. Measures overall volatility of your trading results. Lower means more predictable outcomes." />
                         </div>
-                        <div className="text-xl font-bold">{(stdDev * 100).toFixed(2)}%</div>
+                        <div className="kpi-value text-xl tabular-nums text-amber-400">{(stdDev * 100).toFixed(2)}%</div>
                       </div>
-                      <div className="text-center p-3 bg-accent/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground flex items-center justify-center">
+                      <div className="text-center p-3 bg-accent/10 rounded-xl border border-border/40">
+                        <div className="label-caps flex items-center justify-center mb-1">
                           Downside Dev
                           <InfoBubble text="Downside deviation: volatility of only the negative returns. Used in Sortino ratio. Lower is better as it means smaller losses." />
                         </div>
-                        <div className="text-xl font-bold">{(downside * 100).toFixed(2)}%</div>
+                        <div className="kpi-value text-xl tabular-nums text-loss">{(downside * 100).toFixed(2)}%</div>
                       </div>
-                      <div className="text-center p-3 bg-accent/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground flex items-center justify-center">
+                      <div className="text-center p-3 bg-accent/10 rounded-xl border border-border/40">
+                        <div className="label-caps flex items-center justify-center mb-1">
                           Time in Market
                           <InfoBubble text="Percentage of time you had open positions during the analysis period. Shows how actively you trade vs staying on the sidelines." />
                         </div>
-                        <div className="text-xl font-bold">{realTimeInMarket.toFixed(1)}%</div>
+                        <div className="kpi-value text-xl tabular-nums">{realTimeInMarket.toFixed(1)}%</div>
                       </div>
-                      <div className="text-center p-3 bg-accent/10 rounded-lg">
-                        <div className="text-sm text-muted-foreground flex items-center justify-center">
+                      <div className="text-center p-3 bg-accent/10 rounded-xl border border-border/40">
+                        <div className="label-caps flex items-center justify-center mb-1">
                           Diversity Score
                           <InfoBubble text="Portfolio diversification score (0-100) based on the Herfindahl-Hirschman Index. Higher means your exposure is spread across more symbols. Low score means concentrated risk." />
                         </div>
-                        <div className="text-xl font-bold">{realDiversityScore.toFixed(0)}/100</div>
+                        <div className="kpi-value text-xl tabular-nums text-profit">{realDiversityScore.toFixed(0)}/100</div>
                       </div>
                     </div>
                   </CardContent>
@@ -419,15 +425,15 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                     ))
                   ) : (
                     varCards.map((item, index) => (
-                      <Card key={index} className="bg-accent/5">
+                      <Card key={index} className="glass-card rounded-2xl bg-accent/5">
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-lg flex items-center">
+                          <CardTitle className="label-caps flex items-center">
                             {item.label}
                             <InfoBubble text={item.description} />
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-3xl font-bold">
+                          <div className="kpi-value text-3xl tabular-nums text-amber-400">
                             {item.value > 0 ? `$${item.value.toFixed(2)}` : '$0.00'}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
@@ -442,9 +448,9 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                 </div>
 
                 {/* P&L Distribution histogram */}
-                <Card>
+                <Card className="glass-card rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center">
+                    <CardTitle className="text-lg flex items-center text-gradient">
                       P&L Distribution
                       <InfoBubble text="Histogram showing how your trade P&L values are distributed across ranges. A bell-shaped curve centered above zero indicates consistent profitability. Heavy left tail means occasional large losses." />
                     </CardTitle>

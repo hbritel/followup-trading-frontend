@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
 import { Plus, Columns, Search, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -233,7 +234,7 @@ const Trades = () => {
 
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
-      <div className="flex flex-col space-y-4 max-w-full">
+      <PageTransition className="flex flex-col space-y-4 max-w-full">
         <FiltersSection
           accountFilter={accountFilter}
           onAccountChange={handleAccountChange}
@@ -263,7 +264,7 @@ const Trades = () => {
         />
 
         {showColumnFilter && (
-          <Card className="p-4 w-auto">
+          <Card className="glass-card rounded-2xl p-4 w-auto">
             <TradeColumnFilter
               visibleColumns={visibleColumns}
               onChange={handleColumnVisibilityChange}
@@ -280,7 +281,7 @@ const Trades = () => {
 
         {/* Error state */}
         {isError && !isLoading && (
-          <Card className="p-8 flex flex-col items-center justify-center gap-3 border-destructive/50">
+          <Card className="glass-card rounded-2xl p-8 flex flex-col items-center justify-center gap-3 border-destructive/50">
             <AlertTriangle className="h-8 w-8 text-destructive" />
             <p className="text-destructive font-medium">Failed to load trades</p>
             <p className="text-muted-foreground text-sm text-center max-w-md">
@@ -298,7 +299,7 @@ const Trades = () => {
 
         {/* Empty state - no trades at all */}
         {!isLoading && !isError && totalElements === 0 && !hasActiveFilters && (
-          <Card className="p-12 flex flex-col items-center justify-center gap-3">
+          <Card className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center gap-3">
             <p className="text-muted-foreground font-medium">No trades yet</p>
             <p className="text-muted-foreground text-sm text-center max-w-md">
               Connect a broker account and sync your trades, or add a trade manually.
@@ -312,7 +313,7 @@ const Trades = () => {
 
         {/* Empty state - no results for current filters */}
         {!isLoading && !isError && totalElements === 0 && hasActiveFilters && (
-          <Card className="p-12 flex flex-col items-center justify-center gap-3">
+          <Card className="glass-card rounded-2xl p-12 flex flex-col items-center justify-center gap-3">
             <Search className="h-8 w-8 text-muted-foreground" />
             <p className="text-muted-foreground font-medium">{t('trades.noResults', 'No trades match your filters')}</p>
             <p className="text-muted-foreground text-sm text-center max-w-md">
@@ -323,7 +324,7 @@ const Trades = () => {
 
         {/* Trades table */}
         {!isLoading && !isError && totalElements > 0 && (
-          <div className="w-full">
+          <div className="glass-card rounded-2xl w-full overflow-hidden">
             <TradesTableWrapper
               trades={trades}
               visibleColumns={visibleColumns}
@@ -341,7 +342,7 @@ const Trades = () => {
             />
           </div>
         )}
-      </div>
+      </PageTransition>
 
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
     </DashboardLayout>

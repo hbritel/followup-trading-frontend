@@ -2,42 +2,33 @@
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import WatchlistHeader from './WatchlistHeader';
-import StockTable, { StockData } from './StockTable';
+import StockTable from './StockTable';
+import type { WatchlistItemResponseDto } from '@/types/dto';
 
 interface WatchlistContentProps {
   title: string;
   description: string;
-  stocks: StockData[];
+  items: WatchlistItemResponseDto[];
   searchQuery: string;
-  showFavorites: boolean;
   onEditClick: () => void;
   onAddSymbolClick: () => void;
   onSearchChange: (query: string) => void;
-  onToggleFavorites: (value: string) => void;
-  onToggleStarred: (symbol: string) => void;
-  onRemoveSymbol: (symbol: string) => void;
+  onRemoveItem: (itemId: string) => void;
 }
 
 const WatchlistContent: React.FC<WatchlistContentProps> = ({
   title,
   description,
-  stocks,
+  items,
   searchQuery,
-  showFavorites,
   onEditClick,
   onAddSymbolClick,
   onSearchChange,
-  onToggleFavorites,
-  onToggleStarred,
-  onRemoveSymbol
+  onRemoveItem
 }) => {
-  // Filter stocks based on search query and favorites filter
-  const filteredStocks = stocks.filter(stock => {
-    const matchesSearch = stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        stock.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return showFavorites ? (matchesSearch && stock.starred) : matchesSearch;
-  });
+  const filteredItems = items.filter(item =>
+    item.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Card className="lg:col-span-3">
@@ -50,14 +41,11 @@ const WatchlistContent: React.FC<WatchlistContentProps> = ({
         />
       </CardHeader>
       <CardContent>
-        <StockTable 
-          stocks={filteredStocks}
+        <StockTable
+          items={filteredItems}
           searchQuery={searchQuery}
-          showFavorites={showFavorites}
           onSearchChange={onSearchChange}
-          onToggleFavorites={onToggleFavorites}
-          onToggleStarred={onToggleStarred}
-          onRemoveSymbol={onRemoveSymbol}
+          onRemoveItem={onRemoveItem}
         />
       </CardContent>
     </Card>

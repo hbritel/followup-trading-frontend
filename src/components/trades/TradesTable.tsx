@@ -81,66 +81,66 @@ export const TradesTable: React.FC<TradesTableProps> = ({
         <TableHeader>
           <TableRow>
             {visibleColumns.symbol && (
-              <TableHead>{t('trades.symbol')}</TableHead>
+              <TableHead className="label-caps">{t('trades.symbol')}</TableHead>
             )}
             {visibleColumns.type && (
-              <TableHead>{t('trades.type')}</TableHead>
+              <TableHead className="label-caps">{t('trades.type')}</TableHead>
             )}
             {visibleColumns.status && (
-              <TableHead>{t('trades.status')}</TableHead>
+              <TableHead className="label-caps">{t('trades.status')}</TableHead>
             )}
             {visibleColumns.entryDate && (
-              <TableHead>{t('trades.entryDate')}</TableHead>
+              <TableHead className="label-caps">{t('trades.entryDate')}</TableHead>
             )}
             {visibleColumns.exitDate && (
-              <TableHead>{t('trades.exitDate')}</TableHead>
+              <TableHead className="label-caps">{t('trades.exitDate')}</TableHead>
             )}
             {visibleColumns.entryPrice && (
-              <TableHead className="text-right">{t('trades.entryPrice')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.entryPrice')}</TableHead>
             )}
             {visibleColumns.exitPrice && (
-              <TableHead className="text-right">{t('trades.exitPrice')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.exitPrice')}</TableHead>
             )}
             {visibleColumns.stopLoss && (
-              <TableHead className="text-right">{t('trades.stopLoss')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.stopLoss')}</TableHead>
             )}
             {visibleColumns.takeProfit && (
-              <TableHead className="text-right">{t('trades.takeProfit')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.takeProfit')}</TableHead>
             )}
             {visibleColumns.quantity && (
-              <TableHead className="text-right">{t('trades.quantity')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.quantity')}</TableHead>
             )}
             {visibleColumns.balance && (
-              <TableHead className="text-right">Balance</TableHead>
+              <TableHead className="label-caps text-right">Balance</TableHead>
             )}
             {visibleColumns.profit && (
-              <TableHead className="text-right">{t('trades.profit')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.profit')}</TableHead>
             )}
             {visibleColumns.profitPercentage && (
-              <TableHead className="text-right">{t('trades.profitPercentage')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.profitPercentage')}</TableHead>
             )}
             {visibleColumns.fees && (
-              <TableHead className="text-right">{t('trades.fees')}</TableHead>
+              <TableHead className="label-caps text-right">{t('trades.fees')}</TableHead>
             )}
             {visibleColumns.currency && (
-              <TableHead>Currency</TableHead>
+              <TableHead className="label-caps">Currency</TableHead>
             )}
             {visibleColumns.strategy && (
-              <TableHead>{t('trades.strategy')}</TableHead>
+              <TableHead className="label-caps">{t('trades.strategy')}</TableHead>
             )}
             {visibleColumns.notes && (
-              <TableHead>{t('trades.notes')}</TableHead>
+              <TableHead className="label-caps">{t('trades.notes')}</TableHead>
             )}
             {visibleColumns.tags && (
-              <TableHead>{t('trades.tags')}</TableHead>
+              <TableHead className="label-caps">{t('trades.tags')}</TableHead>
             )}
             {visibleColumns.createdAt && (
-              <TableHead>{t('trades.createdAt')}</TableHead>
+              <TableHead className="label-caps">{t('trades.createdAt')}</TableHead>
             )}
             {visibleColumns.updatedAt && (
-              <TableHead>{t('trades.updatedAt')}</TableHead>
+              <TableHead className="label-caps">{t('trades.updatedAt')}</TableHead>
             )}
-            <TableHead className="text-right">{t('common.actions')}</TableHead>
+            <TableHead className="label-caps text-right">{t('common.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -148,7 +148,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             filteredTrades.map((trade) => (
               <TableRow key={trade.id}>
                 {visibleColumns.symbol && (
-                  <TableCell className="font-medium">{trade.symbol}</TableCell>
+                  <TableCell className="font-mono font-semibold">{trade.symbol}</TableCell>
                 )}
                 {visibleColumns.type && (
                   <TableCell>
@@ -165,31 +165,31 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   </TableCell>
                 )}
                 {visibleColumns.entryDate && (
-                  <TableCell>{formatDate(trade.entryDate)}</TableCell>
+                  <TableCell className="font-mono tabular-nums text-sm">{formatDate(trade.entryDate)}</TableCell>
                 )}
                 {visibleColumns.exitDate && (
-                  <TableCell>{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
+                  <TableCell className="font-mono tabular-nums text-sm">{trade.exitDate ? formatDate(trade.exitDate) : '-'}</TableCell>
                 )}
                 {visibleColumns.entryPrice && (
-                  <TableCell className="text-right">{formatCurrency(trade.entryPrice, trade.currency)}</TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">{formatCurrency(trade.entryPrice, trade.currency)}</TableCell>
                 )}
                 {visibleColumns.exitPrice && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums">
                     {trade.exitPrice !== undefined ? formatCurrency(trade.exitPrice, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.stopLoss && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums">
                     {trade.stopLoss !== undefined ? formatCurrency(trade.stopLoss, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.takeProfit && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums">
                     {trade.takeProfit !== undefined ? formatCurrency(trade.takeProfit, trade.currency) : '-'}
                   </TableCell>
                 )}
                 {visibleColumns.quantity && (
-                  <TableCell className="text-right">{trade.quantity}</TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">{trade.quantity}</TableCell>
                 )}
                 {visibleColumns.balance && (
                   <TableCell className="text-right font-medium">
@@ -203,9 +203,9 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   </TableCell>
                 )}
                 {visibleColumns.profit && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums font-semibold">
                     {trade.profit !== undefined ? (
-                      <span className={trade.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      <span className={trade.profit >= 0 ? 'text-profit' : 'text-loss'}>
                         {formatCurrency(trade.profit, trade.currency)}
                       </span>
                     ) : (
@@ -214,13 +214,9 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   </TableCell>
                 )}
                 {visibleColumns.profitPercentage && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums font-semibold">
                     {trade.profitPercentage !== undefined ? (
-                      <span
-                        className={
-                          trade.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'
-                        }
-                      >
+                      <span className={trade.profitPercentage >= 0 ? 'text-profit' : 'text-loss'}>
                         {formatPercentage(trade.profitPercentage)}
                       </span>
                     ) : (
@@ -229,7 +225,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   </TableCell>
                 )}
                 {visibleColumns.fees && (
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono tabular-nums">
                     {trade.fees !== undefined ? formatCurrency(trade.fees, trade.currency) : '-'}
                   </TableCell>
                 )}

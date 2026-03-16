@@ -1,5 +1,6 @@
 // src/services/metrics.service.ts
 import apiClient from './apiClient';
+import type { DailyPerformanceDto, OpenPositionDto, DayOfWeekPerformanceDto, HourOfDayPerformanceDto } from '@/types/dto';
 
 // --- TypeScript types matching backend domain models ---
 
@@ -72,6 +73,8 @@ export interface DashboardSummary {
   profitLossThisWeek: number;
   profitLossThisMonth: number;
   profitLossThisYear: number;
+  recentDailyPerformance?: DailyPerformanceDto[];
+  openPositions?: OpenPositionDto[];
 }
 
 /** Matches backend RiskDistribution (core/domain/model/metrics) */
@@ -166,6 +169,28 @@ export const metricsService = {
     if (endDate) params.endDate = endDate;
     if (accountIds) params.accountIds = accountIds;
     const response = await apiClient.get<RiskDistribution>('/metrics/risk/distribution', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getPerformanceByDayOfWeek: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DayOfWeekPerformanceDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
+    const response = await apiClient.get<DayOfWeekPerformanceDto[]>('/metrics/time/by-day-of-week', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getPerformanceByHourOfDay: async (startDate?: string, endDate?: string, accountIds?: string): Promise<HourOfDayPerformanceDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = accountIds;
+    const response = await apiClient.get<HourOfDayPerformanceDto[]>('/metrics/time/by-hour-of-day', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;

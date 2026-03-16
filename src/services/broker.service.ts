@@ -8,7 +8,8 @@ export interface BrokerConnectionResponse {
     brokerCode?: string;
     protocol?: string;
     brokerDisplayName?: string;
-    displayName: string;
+    accountIdentifier?: string;
+    displayName: string | null;
     status: string;
     syncFrequency: string;
     enabled: boolean;

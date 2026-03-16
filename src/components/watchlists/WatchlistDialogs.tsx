@@ -6,8 +6,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
 } from "@/components/ui/dialog";
+import { useTranslation } from 'react-i18next';
 import WatchlistForm, { WatchlistFormValues } from './WatchlistForm';
 import SymbolForm, { SymbolFormValues } from './SymbolForm';
 import DeleteWatchlistDialog from './DeleteWatchlistDialog';
@@ -17,7 +17,7 @@ interface WatchlistDialogsProps {
   editWatchlistOpen: boolean;
   addSymbolOpen: boolean;
   deleteWatchlistOpen: boolean;
-  editingWatchlist: { id: number; name: string; description: string } | null;
+  editingWatchlist: { id: string; name: string; description: string } | null;
   onNewWatchlistOpenChange: (open: boolean) => void;
   onEditWatchlistOpenChange: (open: boolean) => void;
   onAddSymbolOpenChange: (open: boolean) => void;
@@ -45,56 +45,58 @@ const WatchlistDialogs: React.FC<WatchlistDialogsProps> = ({
   onCancelDelete,
   onConfirmDelete
 }) => {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* New Watchlist Dialog */}
       <Dialog open={newWatchlistOpen} onOpenChange={onNewWatchlistOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Watchlist</DialogTitle>
+            <DialogTitle>{t('watchlists.createNewWatchlist')}</DialogTitle>
             <DialogDescription>
-              Add a new watchlist to organize your securities
+              {t('watchlists.createNewWatchlistDescription')}
             </DialogDescription>
           </DialogHeader>
           <WatchlistForm onSubmit={onCreateWatchlist} />
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Watchlist Dialog */}
       <Dialog open={editWatchlistOpen} onOpenChange={onEditWatchlistOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Watchlist</DialogTitle>
+            <DialogTitle>{t('watchlists.editWatchlist')}</DialogTitle>
             <DialogDescription>
-              Update your watchlist details
+              {t('watchlists.editWatchlistDescription')}
             </DialogDescription>
           </DialogHeader>
           {editingWatchlist && (
-            <WatchlistForm 
-              defaultValues={editingWatchlist} 
-              onSubmit={onEditWatchlist} 
+            <WatchlistForm
+              defaultValues={editingWatchlist}
+              onSubmit={onEditWatchlist}
             />
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Add Symbol Dialog */}
       <Dialog open={addSymbolOpen} onOpenChange={onAddSymbolOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Stock Symbol</DialogTitle>
+            <DialogTitle>{t('watchlists.addSymbolTitle')}</DialogTitle>
             <DialogDescription>
-              Add a new security to your watchlist
+              {t('watchlists.addSymbolDescription')}
             </DialogDescription>
           </DialogHeader>
           <SymbolForm onSubmit={onAddSymbol} />
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Watchlist Dialog */}
       <Dialog open={deleteWatchlistOpen} onOpenChange={onDeleteWatchlistOpenChange}>
-        <DeleteWatchlistDialog 
-          onCancel={onCancelDelete} 
+        <DeleteWatchlistDialog
+          onCancel={onCancelDelete}
           onConfirm={onConfirmDelete}
         />
       </Dialog>

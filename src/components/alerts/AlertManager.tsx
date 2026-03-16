@@ -1,54 +1,52 @@
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BellRing, 
-  Plus, 
-  X, 
-  Edit2, 
-  BarChart, 
-  TrendingUp, 
+import {
+  BellRing,
+  Plus,
+  X,
+  Edit2,
+  BarChart,
+  TrendingUp,
   Activity,
   ArrowUpDown,
   DollarSign,
   Clock,
-  AlertCircle,
   BellOff,
   Mail,
   MessageSquare,
-  Smartphone,
   ChevronDown,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  Loader2
 } from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -58,278 +56,92 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-
-// Interfaces
-interface AlertItem {
-  id: string;
-  name: string;
-  symbol: string;
-  type: 'price' | 'technical' | 'volatility' | 'news' | 'custom';
-  condition: string;
-  value: string;
-  active: boolean;
-  createdAt: string;
-  triggers: number;
-  lastTriggered?: string;
-  description?: string;
-  notifications: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-  };
-}
-
-interface AlertCondition {
-  id: string;
-  name: string;
-  description: string;
-  parameters: {
-    type: 'number' | 'select' | 'multiSelect';
-    options?: string[];
-    placeholder?: string;
-    suffix?: string;
-  };
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAlerts, useCreateAlert, useUpdateAlert, useDeleteAlert } from '@/hooks/useAlerts';
+import type {
+  AlertResponseDto,
+  AlertRequestDto,
+  AlertType,
+  AlertCondition as AlertConditionType,
+  AlertStatus
+} from '@/types/dto';
 
 const AlertManager = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('active');
   const [showNewAlertDialog, setShowNewAlertDialog] = useState(false);
-  const [alertType, setAlertType] = useState<string>('price');
-  const [alertCondition, setAlertCondition] = useState<string>('');
+  const [alertType, setAlertType] = useState<AlertType>('PRICE');
+  const [alertCondition, setAlertCondition] = useState<AlertConditionType | ''>('');
   const [alertSymbol, setAlertSymbol] = useState<string>('');
-  const [alertValue, setAlertValue] = useState<string>('');
+  const [alertThreshold, setAlertThreshold] = useState<string>('');
   const [alertName, setAlertName] = useState<string>('');
-  const [alertDescription, setAlertDescription] = useState<string>('');
   const [notifications, setNotifications] = useState({
     email: true,
-    push: true,
-    sms: false
+    push: true
   });
-  
-  // Mock data for alerts
-  const [alerts, setAlerts] = useState<AlertItem[]>([
-    {
-      id: '1',
-      name: 'AAPL Price Alert',
-      symbol: 'AAPL',
-      type: 'price',
-      condition: 'above',
-      value: '180',
-      active: true,
-      createdAt: '2023-06-01',
-      triggers: 2,
-      lastTriggered: '2023-06-10',
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-      },
-    },
-    {
-      id: '2',
-      name: 'MSFT RSI Alert',
-      symbol: 'MSFT',
-      type: 'technical',
-      condition: 'rsi_above',
-      value: '70',
-      active: true,
-      createdAt: '2023-05-28',
-      triggers: 0,
-      notifications: {
-        email: true,
-        push: false,
-        sms: false,
-      },
-    },
-    {
-      id: '3',
-      name: 'SPY Volume Alert',
-      symbol: 'SPY',
-      type: 'technical',
-      condition: 'volume_above',
-      value: '1.5x avg',
-      active: false,
-      createdAt: '2023-05-15',
-      triggers: 3,
-      lastTriggered: '2023-06-05',
-      notifications: {
-        email: true,
-        push: true,
-        sms: true,
-      },
-    },
-    {
-      id: '4',
-      name: 'TSLA News Alert',
-      symbol: 'TSLA',
-      type: 'news',
-      condition: 'contains',
-      value: 'earnings',
-      active: true,
-      createdAt: '2023-06-02',
-      triggers: 1,
-      lastTriggered: '2023-06-12',
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-      },
-    },
-    {
-      id: '5',
-      name: 'AMZN Volatility Alert',
-      symbol: 'AMZN',
-      type: 'volatility',
-      condition: 'implied_volatility_above',
-      value: '35',
-      active: true,
-      createdAt: '2023-05-20',
-      triggers: 0,
-      notifications: {
-        email: false,
-        push: true,
-        sms: false,
-      },
-    },
-  ]);
-  
-  // Alert conditions based on type
-  const alertConditions: Record<string, AlertCondition[]> = {
-    price: [
-      { 
-        id: 'above', 
-        name: t('alerts.priceAbove'), 
-        description: t('alerts.priceAboveDescription'), 
-        parameters: { type: 'number', placeholder: '0.00', suffix: '$' } 
-      },
-      { 
-        id: 'below', 
-        name: t('alerts.priceBelow'), 
-        description: t('alerts.priceBelowDescription'), 
-        parameters: { type: 'number', placeholder: '0.00', suffix: '$' } 
-      },
-      { 
-        id: 'percent_change', 
-        name: t('alerts.percentChange'), 
-        description: t('alerts.percentChangeDescription'), 
-        parameters: { type: 'number', placeholder: '0.00', suffix: '%' } 
-      },
-    ],
-    technical: [
-      { 
-        id: 'rsi_above', 
-        name: t('alerts.rsiAbove'), 
-        description: t('alerts.rsiAboveDescription'), 
-        parameters: { type: 'number', placeholder: '70', suffix: '' } 
-      },
-      { 
-        id: 'rsi_below', 
-        name: t('alerts.rsiBelow'), 
-        description: t('alerts.rsiBelowDescription'), 
-        parameters: { type: 'number', placeholder: '30', suffix: '' } 
-      },
-      { 
-        id: 'ma_cross', 
-        name: t('alerts.maCross'), 
-        description: t('alerts.maCrossDescription'), 
-        parameters: { 
-          type: 'select', 
-          options: ['20/50', '50/200', '10/20', '20/200'] 
-        } 
-      },
-      { 
-        id: 'volume_above', 
-        name: t('alerts.volumeAbove'), 
-        description: t('alerts.volumeAboveDescription'), 
-        parameters: { 
-          type: 'select', 
-          options: ['1.5x avg', '2x avg', '3x avg', '5x avg'] 
-        } 
-      },
-    ],
-    volatility: [
-      { 
-        id: 'implied_volatility_above', 
-        name: t('alerts.ivAbove'), 
-        description: t('alerts.ivAboveDescription'), 
-        parameters: { type: 'number', placeholder: '30', suffix: '%' } 
-      },
-      { 
-        id: 'implied_volatility_below', 
-        name: t('alerts.ivBelow'), 
-        description: t('alerts.ivBelowDescription'), 
-        parameters: { type: 'number', placeholder: '20', suffix: '%' } 
-      },
-      { 
-        id: 'volatility_change', 
-        name: t('alerts.volChange'), 
-        description: t('alerts.volChangeDescription'), 
-        parameters: { type: 'number', placeholder: '20', suffix: '%' } 
-      },
-    ],
-    news: [
-      { 
-        id: 'contains', 
-        name: t('alerts.newsContains'), 
-        description: t('alerts.newsContainsDescription'), 
-        parameters: { type: 'multiSelect', options: ['earnings', 'upgrade', 'downgrade', 'merger', 'acquisition'] } 
-      },
-      { 
-        id: 'source', 
-        name: t('alerts.newsSource'), 
-        description: t('alerts.newsSourceDescription'), 
-        parameters: { 
-          type: 'select', 
-          options: ['Bloomberg', 'Reuters', 'CNBC', 'Wall Street Journal', 'SEC Filing'] 
-        } 
-      },
-    ],
-    custom: [
-      { 
-        id: 'custom_condition', 
-        name: t('alerts.customCondition'), 
-        description: t('alerts.customConditionDescription'), 
-        parameters: { type: 'number', placeholder: '0', suffix: '' } 
-      },
-    ],
+
+  // API hooks
+  const { data: alerts = [], isLoading } = useAlerts();
+  const createAlert = useCreateAlert();
+  const updateAlert = useUpdateAlert();
+  const deleteAlertMutation = useDeleteAlert();
+
+  // Toggle alert active/disabled via API
+  const toggleAlertActive = (alert: AlertResponseDto) => {
+    const newStatus: AlertStatus = alert.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
+    const requestData: AlertRequestDto = {
+      name: alert.name,
+      type: alert.type,
+      symbol: alert.symbol,
+      condition: alert.condition,
+      threshold: alert.threshold,
+      status: newStatus,
+      notifyEmail: alert.notifyEmail,
+      notifyPush: alert.notifyPush,
+    };
+
+    updateAlert.mutate(
+      { id: alert.id, data: requestData },
+      {
+        onSuccess: () => {
+          toast({
+            title: newStatus === 'ACTIVE' ? t('alerts.alertEnabled') : t('alerts.alertDisabled'),
+            description: `${alert.name} ${newStatus === 'ACTIVE' ? t('alerts.hasBeenEnabled') : t('alerts.hasBeenDisabled')}`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: t('alerts.updateFailed'),
+            description: t('alerts.updateFailedDescription'),
+            variant: 'destructive',
+          });
+        },
+      }
+    );
   };
-  
-  // Popular stocks for quick selection
-  const popularStocks = [
-    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA'
-  ];
-  
-  // Toggle alert activation
-  const toggleAlertActive = (id: string) => {
-    setAlerts(alerts.map(alert => 
-      alert.id === id ? { ...alert, active: !alert.active } : alert
-    ));
-    
-    const alert = alerts.find(a => a.id === id);
-    if (alert) {
-      toast({
-        title: alert.active ? t('alerts.alertDisabled') : t('alerts.alertEnabled'),
-        description: `${alert.name} ${alert.active ? t('alerts.hasBeenDisabled') : t('alerts.hasBeenEnabled')}`,
-      });
-    }
-  };
-  
-  // Delete alert
-  const deleteAlert = (id: string) => {
-    const alertToDelete = alerts.find(a => a.id === id);
-    setAlerts(alerts.filter(alert => alert.id !== id));
-    
-    toast({
-      title: t('alerts.alertDeleted'),
-      description: `${alertToDelete?.name} ${t('alerts.hasBeenDeleted')}`,
+
+  // Delete alert via API
+  const handleDeleteAlert = (alert: AlertResponseDto) => {
+    deleteAlertMutation.mutate(alert.id, {
+      onSuccess: () => {
+        toast({
+          title: t('alerts.alertDeleted'),
+          description: `${alert.name} ${t('alerts.hasBeenDeleted')}`,
+        });
+      },
+      onError: () => {
+        toast({
+          title: t('alerts.deleteFailed'),
+          description: t('alerts.deleteFailedDescription'),
+          variant: 'destructive',
+        });
+      },
     });
   };
-  
+
   // Handle create new alert
   const handleCreateAlert = () => {
-    if (!alertSymbol || !alertCondition || !alertValue) {
+    if (!alertName || !alertCondition || !alertThreshold) {
       toast({
         title: t('alerts.missingFields'),
         description: t('alerts.pleaseCompleteAllFields'),
@@ -337,72 +149,236 @@ const AlertManager = () => {
       });
       return;
     }
-    
-    const newAlert: AlertItem = {
-      id: (alerts.length + 1).toString(),
-      name: alertName || `${alertSymbol} ${alertConditions[alertType].find(c => c.id === alertCondition)?.name} ${alertValue}`,
-      symbol: alertSymbol,
-      type: alertType as 'price' | 'technical' | 'volatility' | 'news' | 'custom',
+
+    const thresholdNum = Number.parseFloat(alertThreshold);
+    if (Number.isNaN(thresholdNum)) {
+      toast({
+        title: t('alerts.missingFields'),
+        description: t('alerts.invalidThreshold'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const requestData: AlertRequestDto = {
+      name: alertName,
+      type: alertType,
+      symbol: alertSymbol || null,
       condition: alertCondition,
-      value: alertValue,
-      active: true,
-      createdAt: new Date().toISOString().split('T')[0],
-      triggers: 0,
-      description: alertDescription,
-      notifications,
+      threshold: thresholdNum,
+      notifyEmail: notifications.email,
+      notifyPush: notifications.push,
     };
-    
-    setAlerts([...alerts, newAlert]);
-    setShowNewAlertDialog(false);
-    
-    // Reset form
-    setAlertType('price');
-    setAlertCondition('');
-    setAlertSymbol('');
-    setAlertValue('');
-    setAlertName('');
-    setAlertDescription('');
-    setNotifications({
-      email: true,
-      push: true,
-      sms: false
-    });
-    
-    toast({
-      title: t('alerts.alertCreated'),
-      description: `${newAlert.name} ${t('alerts.hasBeenCreated')}`,
+
+    createAlert.mutate(requestData, {
+      onSuccess: () => {
+        setShowNewAlertDialog(false);
+        resetForm();
+        toast({
+          title: t('alerts.alertCreated'),
+          description: `${alertName} ${t('alerts.hasBeenCreated')}`,
+        });
+      },
+      onError: () => {
+        toast({
+          title: t('alerts.createFailed'),
+          description: t('alerts.createFailedDescription'),
+          variant: 'destructive',
+        });
+      },
     });
   };
-  
-  // Get alert icon based on type
-  const getAlertIcon = (type: string) => {
-    switch(type) {
-      case 'price':
+
+  const resetForm = () => {
+    setAlertType('PRICE');
+    setAlertCondition('');
+    setAlertSymbol('');
+    setAlertThreshold('');
+    setAlertName('');
+    setNotifications({ email: true, push: true });
+  };
+
+  // Get alert icon based on backend AlertType
+  const getAlertIcon = (type: AlertType) => {
+    switch (type) {
+      case 'PRICE':
         return <DollarSign className="h-4 w-4" />;
-      case 'technical':
-        return <BarChart className="h-4 w-4" />;
-      case 'volatility':
+      case 'DRAWDOWN':
         return <Activity className="h-4 w-4" />;
-      case 'news':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'custom':
-        return <TrendingUp className="h-4 w-4" />;
+      case 'PROFIT_TARGET':
+        return <ArrowUp className="h-4 w-4" />;
+      case 'WIN_RATE':
+        return <BarChart className="h-4 w-4" />;
+      case 'CUSTOM':
+        return <BellRing className="h-4 w-4" />;
       default:
         return <BellRing className="h-4 w-4" />;
     }
   };
-  
+
+  // Color scheme per alert type
+  const getTypeColor = (type: AlertType) => {
+    switch (type) {
+      case 'PRICE':
+        return { bar: 'bg-blue-500', bg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' };
+      case 'DRAWDOWN':
+        return { bar: 'bg-red-500', bg: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' };
+      case 'PROFIT_TARGET':
+        return { bar: 'bg-emerald-500', bg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
+      case 'WIN_RATE':
+        return { bar: 'bg-purple-500', bg: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' };
+      case 'CUSTOM':
+        return { bar: 'bg-slate-500', bg: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400' };
+      default:
+        return { bar: 'bg-slate-500', bg: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400' };
+    }
+  };
+
+  // Condition direction icon
+  const getConditionIcon = (condition: AlertConditionType) => {
+    switch (condition) {
+      case 'ABOVE':
+        return <ArrowUp className="h-4 w-4 mr-1 text-green-500" />;
+      case 'BELOW':
+        return <ArrowDown className="h-4 w-4 mr-1 text-red-500" />;
+      case 'CROSSES':
+        return <ArrowUpDown className="h-4 w-4 mr-1 text-amber-500" />;
+      case 'PERCENT_CHANGE':
+        return <TrendingUp className="h-4 w-4 mr-1 text-blue-500" />;
+      default:
+        return <ArrowUpDown className="h-4 w-4 mr-1" />;
+    }
+  };
+
   // Get notification icons
-  const getNotificationIcons = (notifications: {email: boolean, push: boolean, sms: boolean}) => {
+  const getNotificationIcons = (alert: AlertResponseDto) => {
     return (
       <div className="flex items-center space-x-1">
-        {notifications.email && <Mail className="h-3 w-3 text-muted-foreground" />}
-        {notifications.push && <MessageSquare className="h-3 w-3 text-muted-foreground" />}
-        {notifications.sms && <Smartphone className="h-3 w-3 text-muted-foreground" />}
+        {alert.notifyEmail && <Mail className="h-3 w-3 text-muted-foreground" />}
+        {alert.notifyPush && <MessageSquare className="h-3 w-3 text-muted-foreground" />}
       </div>
     );
   };
-  
+
+  // Status badge
+  const getStatusBadge = (status: AlertStatus) => {
+    switch (status) {
+      case 'ACTIVE':
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">{t('alerts.statusActive')}</Badge>;
+      case 'TRIGGERED':
+        return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">{t('alerts.statusTriggered')}</Badge>;
+      case 'EXPIRED':
+        return <Badge variant="secondary">{t('alerts.statusExpired')}</Badge>;
+      case 'DISABLED':
+        return <Badge variant="outline">{t('alerts.statusDisabled')}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // Format condition label for display
+  const getConditionLabel = (condition: AlertConditionType): string => {
+    switch (condition) {
+      case 'ABOVE':
+        return t('alerts.conditionAbove');
+      case 'BELOW':
+        return t('alerts.conditionBelow');
+      case 'CROSSES':
+        return t('alerts.conditionCrosses');
+      case 'PERCENT_CHANGE':
+        return t('alerts.conditionPercentChange');
+      default:
+        return condition;
+    }
+  };
+
+  // Format alert type label
+  const getTypeLabel = (type: AlertType): string => {
+    switch (type) {
+      case 'PRICE':
+        return t('alerts.typePrice');
+      case 'DRAWDOWN':
+        return t('alerts.typeDrawdown');
+      case 'PROFIT_TARGET':
+        return t('alerts.typeProfitTarget');
+      case 'WIN_RATE':
+        return t('alerts.typeWinRate');
+      case 'CUSTOM':
+        return t('alerts.typeCustom');
+      default:
+        return type;
+    }
+  };
+
+  // Empty state heading based on active tab
+  const getEmptyHeading = (): string => {
+    if (activeTab === 'active') return t('alerts.noActiveAlerts');
+    if (activeTab === 'triggered') return t('alerts.noTriggeredAlerts');
+    return t('alerts.noAlerts');
+  };
+
+  // Filter alerts by tab
+  const getFilteredAlerts = (): AlertResponseDto[] => {
+    switch (activeTab) {
+      case 'active':
+        return alerts.filter(a => a.status === 'ACTIVE');
+      case 'triggered':
+        return alerts.filter(a => a.status === 'TRIGGERED');
+      case 'all':
+      default:
+        return alerts;
+    }
+  };
+
+  const filteredAlerts = getFilteredAlerts();
+  const activeCount = alerts.filter(a => a.status === 'ACTIVE').length;
+  const triggeredCount = alerts.filter(a => a.status === 'TRIGGERED').length;
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-72" />
+              </div>
+              <Skeleton className="h-10 w-36 mt-2 sm:mt-0" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-80 mb-4" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-1 w-full" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-10" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-48 mt-3" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -413,7 +389,10 @@ const AlertManager = () => {
               <CardDescription>{t('alerts.alertManagementDescription')}</CardDescription>
             </div>
             <div className="mt-2 sm:mt-0">
-              <Dialog open={showNewAlertDialog} onOpenChange={setShowNewAlertDialog}>
+              <Dialog open={showNewAlertDialog} onOpenChange={(open) => {
+                setShowNewAlertDialog(open);
+                if (!open) resetForm();
+              }}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -427,173 +406,116 @@ const AlertManager = () => {
                       {t('alerts.createAlertDescription')}
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="grid gap-4 py-4">
+                    {/* Name */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">{t('alerts.name')}</Label>
+                      <Input
+                        className="col-span-3"
+                        value={alertName}
+                        onChange={(e) => setAlertName(e.target.value)}
+                        placeholder={t('alerts.alertNamePlaceholder')}
+                      />
+                    </div>
+
+                    {/* Symbol (optional) */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">{t('alerts.symbol')}</Label>
-                      <div className="col-span-3">
-                        <Input 
-                          value={alertSymbol} 
-                          onChange={(e) => setAlertSymbol(e.target.value.toUpperCase())} 
-                          placeholder="AAPL" 
-                        />
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {popularStocks.map(stock => (
-                            <Badge 
-                              key={stock} 
-                              variant="outline" 
-                              className="cursor-pointer hover:bg-accent"
-                              onClick={() => setAlertSymbol(stock)}
-                            >
-                              {stock}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                      <Input
+                        className="col-span-3"
+                        value={alertSymbol}
+                        onChange={(e) => setAlertSymbol(e.target.value.toUpperCase())}
+                        placeholder={t('alerts.symbolPlaceholder')}
+                      />
                     </div>
-                    
+
+                    {/* Type */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">{t('alerts.alertType')}</Label>
-                      <Select value={alertType} onValueChange={setAlertType}>
+                      <Select value={alertType} onValueChange={(v) => setAlertType(v as AlertType)}>
                         <SelectTrigger className="col-span-3">
                           <SelectValue placeholder={t('alerts.selectAlertType')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="price">
+                          <SelectItem value="PRICE">
                             <div className="flex items-center">
                               <DollarSign className="mr-2 h-4 w-4" />
-                              {t('alerts.priceAlert')}
+                              {t('alerts.typePrice')}
                             </div>
                           </SelectItem>
-                          <SelectItem value="technical">
-                            <div className="flex items-center">
-                              <BarChart className="mr-2 h-4 w-4" />
-                              {t('alerts.technicalAlert')}
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="volatility">
+                          <SelectItem value="DRAWDOWN">
                             <div className="flex items-center">
                               <Activity className="mr-2 h-4 w-4" />
-                              {t('alerts.volatilityAlert')}
+                              {t('alerts.typeDrawdown')}
                             </div>
                           </SelectItem>
-                          <SelectItem value="news">
+                          <SelectItem value="PROFIT_TARGET">
                             <div className="flex items-center">
-                              <AlertCircle className="mr-2 h-4 w-4" />
-                              {t('alerts.newsAlert')}
+                              <ArrowUp className="mr-2 h-4 w-4" />
+                              {t('alerts.typeProfitTarget')}
                             </div>
                           </SelectItem>
-                          <SelectItem value="custom">
+                          <SelectItem value="WIN_RATE">
                             <div className="flex items-center">
-                              <TrendingUp className="mr-2 h-4 w-4" />
-                              {t('alerts.customAlert')}
+                              <BarChart className="mr-2 h-4 w-4" />
+                              {t('alerts.typeWinRate')}
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="CUSTOM">
+                            <div className="flex items-center">
+                              <BellRing className="mr-2 h-4 w-4" />
+                              {t('alerts.typeCustom')}
                             </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
+                    {/* Condition */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">{t('alerts.condition')}</Label>
-                      <Select value={alertCondition} onValueChange={setAlertCondition}>
+                      <Select value={alertCondition} onValueChange={(v) => setAlertCondition(v as AlertConditionType)}>
                         <SelectTrigger className="col-span-3">
                           <SelectValue placeholder={t('alerts.selectCondition')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {alertConditions[alertType]?.map((condition) => (
-                            <SelectItem key={condition.id} value={condition.id}>
-                              {condition.name}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="ABOVE">{t('alerts.conditionAbove')}</SelectItem>
+                          <SelectItem value="BELOW">{t('alerts.conditionBelow')}</SelectItem>
+                          <SelectItem value="CROSSES">{t('alerts.conditionCrosses')}</SelectItem>
+                          <SelectItem value="PERCENT_CHANGE">{t('alerts.conditionPercentChange')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
-                    {alertCondition && (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">{t('alerts.value')}</Label>
-                        {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.type === 'number' && (
-                          <div className="col-span-3 relative">
-                            <Input 
-                              value={alertValue} 
-                              onChange={(e) => setAlertValue(e.target.value)} 
-                              placeholder={alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.placeholder} 
-                            />
-                            {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.suffix && (
-                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                                {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.suffix}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        
-                        {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.type === 'select' && (
-                          <Select value={alertValue} onValueChange={setAlertValue}>
-                            <SelectTrigger className="col-span-3">
-                              <SelectValue placeholder={t('alerts.selectValue')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.options?.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        
-                        {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.type === 'multiSelect' && (
-                          <div className="col-span-3">
-                            <Input 
-                              value={alertValue} 
-                              onChange={(e) => setAlertValue(e.target.value)} 
-                              placeholder={t('alerts.enterKeywords')} 
-                            />
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {alertConditions[alertType]?.find(c => c.id === alertCondition)?.parameters.options?.map((option) => (
-                                <Badge 
-                                  key={option} 
-                                  variant="outline" 
-                                  className="cursor-pointer hover:bg-accent"
-                                  onClick={() => setAlertValue(option)}
-                                >
-                                  {option}
-                                </Badge>
-                              ))}
-                            </div>
+
+                    {/* Threshold */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">{t('alerts.threshold')}</Label>
+                      <div className="col-span-3 relative">
+                        <Input
+                          type="number"
+                          step="any"
+                          value={alertThreshold}
+                          onChange={(e) => setAlertThreshold(e.target.value)}
+                          placeholder={t('alerts.thresholdPlaceholder')}
+                        />
+                        {alertCondition === 'PERCENT_CHANGE' && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                            %
                           </div>
                         )}
                       </div>
-                    )}
-                    
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">{t('alerts.name')}</Label>
-                      <Input 
-                        className="col-span-3"
-                        value={alertName} 
-                        onChange={(e) => setAlertName(e.target.value)} 
-                        placeholder={t('alerts.optionalCustomName')} 
-                      />
                     </div>
-                    
-                    <div className="grid grid-cols-4 items-start gap-4">
-                      <Label className="text-right">{t('alerts.description')}</Label>
-                      <Textarea 
-                        className="col-span-3 min-h-[80px]"
-                        value={alertDescription} 
-                        onChange={(e) => setAlertDescription(e.target.value)} 
-                        placeholder={t('alerts.optionalDescription')} 
-                      />
-                    </div>
-                    
+
+                    {/* Notifications */}
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label className="text-right">{t('alerts.notifications')}</Label>
                       <div className="col-span-3 space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="notify-email" 
-                            checked={notifications.email} 
-                            onCheckedChange={(checked) => setNotifications({...notifications, email: !!checked})}
+                          <Checkbox
+                            id="notify-email"
+                            checked={notifications.email}
+                            onCheckedChange={(checked) => setNotifications({ ...notifications, email: !!checked })}
                           />
                           <Label htmlFor="notify-email" className="font-normal">
                             <Mail className="inline-block mr-2 h-4 w-4" />
@@ -601,36 +523,29 @@ const AlertManager = () => {
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="notify-push" 
-                            checked={notifications.push} 
-                            onCheckedChange={(checked) => setNotifications({...notifications, push: !!checked})}
+                          <Checkbox
+                            id="notify-push"
+                            checked={notifications.push}
+                            onCheckedChange={(checked) => setNotifications({ ...notifications, push: !!checked })}
                           />
                           <Label htmlFor="notify-push" className="font-normal">
                             <MessageSquare className="inline-block mr-2 h-4 w-4" />
                             {t('alerts.pushNotification')}
                           </Label>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="notify-sms" 
-                            checked={notifications.sms} 
-                            onCheckedChange={(checked) => setNotifications({...notifications, sms: !!checked})}
-                          />
-                          <Label htmlFor="notify-sms" className="font-normal">
-                            <Smartphone className="inline-block mr-2 h-4 w-4" />
-                            {t('alerts.smsNotification')}
-                          </Label>
-                        </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowNewAlertDialog(false)}>
+                    <Button variant="outline" onClick={() => {
+                      setShowNewAlertDialog(false);
+                      resetForm();
+                    }}>
                       {t('common.cancel')}
                     </Button>
-                    <Button onClick={handleCreateAlert}>
+                    <Button onClick={handleCreateAlert} disabled={createAlert.isPending}>
+                      {createAlert.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {t('alerts.createAlert')}
                     </Button>
                   </DialogFooter>
@@ -643,115 +558,110 @@ const AlertManager = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="active">
-                {t('alerts.activeAlerts')} ({alerts.filter(a => a.active).length})
+                {t('alerts.activeAlerts')} ({activeCount})
               </TabsTrigger>
-              <TabsTrigger value="inactive">
-                {t('alerts.inactiveAlerts')} ({alerts.filter(a => !a.active).length})
+              <TabsTrigger value="triggered">
+                {t('alerts.triggeredAlerts')} ({triggeredCount})
               </TabsTrigger>
               <TabsTrigger value="all">
                 {t('alerts.allAlerts')} ({alerts.length})
               </TabsTrigger>
             </TabsList>
-            
+
             <div className="space-y-4">
-              {(activeTab === 'active' ? alerts.filter(a => a.active) :
-                activeTab === 'inactive' ? alerts.filter(a => !a.active) : alerts).map((alert) => (
-                <Card key={alert.id} className="overflow-hidden">
-                  <div className={`h-1 ${
-                    alert.type === 'price' ? 'bg-blue-500' :
-                    alert.type === 'technical' ? 'bg-purple-500' :
-                    alert.type === 'volatility' ? 'bg-amber-500' :
-                    alert.type === 'news' ? 'bg-emerald-500' : 'bg-slate-500'
-                  }`}></div>
-                  <div className="p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
-                      <div className="flex items-center space-x-2">
-                        <div className={`p-2 rounded-full ${
-                          alert.type === 'price' ? 'bg-blue-100 text-blue-700' :
-                          alert.type === 'technical' ? 'bg-purple-100 text-purple-700' :
-                          alert.type === 'volatility' ? 'bg-amber-100 text-amber-700' :
-                          alert.type === 'news' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
-                        }`}>
-                          {getAlertIcon(alert.type)}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{alert.name}</h3>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Badge variant="outline" className="mr-2">{alert.symbol}</Badge>
-                            {alert.lastTriggered && (
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {t('alerts.lastTriggered')}: {alert.lastTriggered}
-                              </span>
-                            )}
+              {filteredAlerts.map((alert) => {
+                const typeColor = getTypeColor(alert.type);
+                const isToggleable = alert.status === 'ACTIVE' || alert.status === 'DISABLED';
+
+                return (
+                  <Card key={alert.id} className="overflow-hidden">
+                    <div className={`h-1 ${typeColor.bar}`}></div>
+                    <div className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+                        <div className="flex items-center space-x-2">
+                          <div className={`p-2 rounded-full ${typeColor.bg}`}>
+                            {getAlertIcon(alert.type)}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{alert.name}</h3>
+                            <div className="flex items-center flex-wrap gap-1 text-xs text-muted-foreground">
+                              {alert.symbol && (
+                                <Badge variant="outline" className="mr-1">{alert.symbol}</Badge>
+                              )}
+                              <Badge variant="outline" className="mr-1">{getTypeLabel(alert.type)}</Badge>
+                              {getStatusBadge(alert.status)}
+                              {alert.triggeredAt && (
+                                <span className="flex items-center ml-1">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {t('alerts.lastTriggered')}: {new Date(alert.triggeredAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          {getNotificationIcons(alert)}
+                          {isToggleable && (
+                            <Switch
+                              checked={alert.status === 'ACTIVE'}
+                              onCheckedChange={() => toggleAlertActive(alert)}
+                              disabled={updateAlert.isPending}
+                            />
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                toast({
+                                  title: t('alerts.editAlert'),
+                                  description: t('alerts.editAlertFeatureComingSoon'),
+                                });
+                              }}>
+                                <Edit2 className="mr-2 h-4 w-4" />
+                                {t('common.edit')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteAlert(alert)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                {t('common.delete')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {getNotificationIcons(alert.notifications)}
-                        <Switch
-                          checked={alert.active}
-                          onCheckedChange={() => toggleAlertActive(alert.id)}
-                        />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              // Edit alert logic here
-                              toast({
-                                title: t('alerts.editAlert'),
-                                description: t('alerts.editAlertFeatureComingSoon'),
-                              });
-                            }}>
-                              <Edit2 className="mr-2 h-4 w-4" />
-                              {t('common.edit')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => deleteAlert(alert.id)}>
-                              <X className="mr-2 h-4 w-4" />
-                              {t('common.delete')}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    {alert.description && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {alert.description}
-                      </div>
-                    )}
-                    <div className="mt-3 text-sm font-medium">
-                      <span className="inline-flex items-center">
-                        {alert.condition === 'above' || alert.condition === 'rsi_above' || alert.condition === 'implied_volatility_above' ? (
-                          <ArrowUp className="h-4 w-4 mr-1 text-green-500" />
-                        ) : alert.condition === 'below' || alert.condition === 'rsi_below' || alert.condition === 'implied_volatility_below' ? (
-                          <ArrowDown className="h-4 w-4 mr-1 text-red-500" />
-                        ) : (
-                          <ArrowUpDown className="h-4 w-4 mr-1" />
+                      <div className="mt-3 flex items-center justify-between text-sm">
+                        <span className="inline-flex items-center font-medium">
+                          {getConditionIcon(alert.condition)}
+                          {getConditionLabel(alert.condition)}: {alert.threshold}
+                          {alert.condition === 'PERCENT_CHANGE' ? '%' : ''}
+                        </span>
+                        {alert.currentValue !== null && (
+                          <span className="text-muted-foreground text-xs">
+                            {t('alerts.currentValue')}: {alert.currentValue}
+                          </span>
                         )}
-                        {alertConditions[alert.type]?.find(c => c.id === alert.condition)?.name}: {alert.value}
-                        {alert.condition === 'percent_change' || 
-                          alert.condition === 'implied_volatility_above' || 
-                          alert.condition === 'implied_volatility_below' || 
-                          alert.condition === 'volatility_change' ? '%' : ''}
-                      </span>
+                      </div>
+                      {alert.message && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {alert.message}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Card>
-              ))}
-              
-              {((activeTab === 'active' && !alerts.some(a => a.active)) ||
-                (activeTab === 'inactive' && !alerts.some(a => !a.active)) ||
-                (activeTab === 'all' && alerts.length === 0)) && (
+                  </Card>
+                );
+              })}
+
+              {filteredAlerts.length === 0 && (
                 <div className="text-center py-10">
                   <BellOff className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
                   <h3 className="mt-4 text-lg font-medium">
-                    {activeTab === 'active' ? t('alerts.noActiveAlerts') : 
-                     activeTab === 'inactive' ? t('alerts.noInactiveAlerts') : 
-                     t('alerts.noAlerts')}
+                    {getEmptyHeading()}
                   </h3>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {t('alerts.createAlertToGetStarted')}

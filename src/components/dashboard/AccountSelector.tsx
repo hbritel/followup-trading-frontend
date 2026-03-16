@@ -42,11 +42,16 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
               {t('trades.allAccounts', 'All Accounts')}
             </SelectItem>
             {connectedAccounts.map(account => {
-              const label = account.brokerDisplayName
-                ? account.displayName
-                  ? `${account.brokerDisplayName} - ${account.displayName}`
-                  : account.brokerDisplayName
-                : account.displayName || account.id;
+              const broker = account.brokerDisplayName || account.brokerCode || account.id;
+              const acctId = account.accountIdentifier && account.accountIdentifier !== 'default'
+                ? account.accountIdentifier
+                : null;
+              const custom = account.displayName;
+              const label = custom
+                ? `${broker} - ${custom}`
+                : acctId
+                  ? `${broker} - ${acctId}`
+                  : broker;
 
               return (
                 <SelectItem key={account.id} value={account.id}>
