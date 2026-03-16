@@ -1495,5 +1495,24 @@
     "partialSuccess": "Importe avec quelques erreurs",
     "importError": "Echec de l'importation. Veuillez reessayer.",
     "totalParsed": "enregistrements analyses au total"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "noNotifications": "Aucune notification",
+    "noNotificationsDescription": "Vous verrez ici vos alertes, mises a jour de sync, et plus.",
+    "viewAll": "Voir tout",
+    "preferences": "Preferences de notifications",
+    "inApp": "In-App",
+    "email": "Email",
+    "eventTypes": {
+      "ALERT_TRIGGERED": "Alerte declenchee",
+      "SYNC_COMPLETED": "Synchronisation terminee",
+      "TRADE_IMPORTED": "Trade importe",
+      "BROKER_DISCONNECTED": "Courtier deconnecte",
+      "WEEKLY_DIGEST": "Resume hebdomadaire",
+      "NEW_LOGIN_DETECTED": "Nouvelle connexion detectee",
+      "JOURNAL_REMINDER": "Rappel de journal"
+    }
   }
 }

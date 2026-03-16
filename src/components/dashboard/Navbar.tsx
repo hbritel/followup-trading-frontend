@@ -1,8 +1,6 @@
 
 import React, { useState } from 'react';
 import {
-  Bell,
-  Settings,
   User,
   MessageSquare,
   Sun,
@@ -29,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslation } from 'react-i18next';
 import ChatPanel from '@/components/ai/ChatPanel';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 interface NavbarProps {
   onOpenCommandPalette?: () => void;
@@ -97,9 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           <LanguageSwitcher />
-          <Button variant="ghost" size="icon" aria-label={t('navbar.notifications', 'Notifications')}>
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationCenter />
           <Button variant="ghost" size="icon" aria-label={t('navbar.messages', 'Messages')}>
             <MessageSquare className="h-5 w-5" />
           </Button>

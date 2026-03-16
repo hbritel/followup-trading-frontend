@@ -1452,5 +1452,24 @@
     "partialSuccess": "Importado con algunos errores",
     "importError": "Error al importar trades. Intentelo de nuevo.",
     "totalParsed": "registros analizados en total"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leido",
+    "noNotifications": "Sin notificaciones",
+    "noNotificationsDescription": "Aqui veras alertas, actualizaciones de sync y mas.",
+    "viewAll": "Ver todo",
+    "preferences": "Preferencias de notificaciones",
+    "inApp": "En App",
+    "email": "Email",
+    "eventTypes": {
+      "ALERT_TRIGGERED": "Alerta activada",
+      "SYNC_COMPLETED": "Sincronizacion completada",
+      "TRADE_IMPORTED": "Trade importado",
+      "BROKER_DISCONNECTED": "Broker desconectado",
+      "WEEKLY_DIGEST": "Resumen semanal",
+      "NEW_LOGIN_DETECTED": "Nuevo inicio de sesion detectado",
+      "JOURNAL_REMINDER": "Recordatorio de diario"
+    }
   }
 }
