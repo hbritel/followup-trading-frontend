@@ -686,3 +686,45 @@ export interface OnboardingStatusDto {
   currentStep: string;
   completed: boolean;
 }
+
+// --- Tax Reporting types ---
+
+export type TaxJurisdiction = 'US' | 'UK' | 'DE' | 'FR' | 'CA' | 'AU' | 'OTHER';
+export type HoldingPeriod = 'SHORT_TERM' | 'LONG_TERM';
+
+export interface TaxLotDto {
+  tradeId: string;
+  symbol: string;
+  acquiredDate: string;
+  soldDate: string;
+  proceeds: number;
+  costBasis: number;
+  gain: number;
+  holdingPeriod: HoldingPeriod;
+  isWashSale: boolean;
+  washSaleAdjustment: number;
+}
+
+export interface WashSaleDto {
+  originalTradeId: string;
+  replacementTradeId: string;
+  symbol: string;
+  lossAmount: number;
+  adjustmentAmount: number;
+  washSaleDate: string;
+}
+
+export interface TaxReportDto {
+  jurisdiction: TaxJurisdiction;
+  year: number;
+  totalProceeds: number;
+  totalCostBasis: number;
+  totalGain: number;
+  totalShortTermGain: number;
+  totalLongTermGain: number;
+  washSaleCount: number;
+  washSaleAdjustment: number;
+  estimatedTax: number;
+  lots: TaxLotDto[];
+  generatedAt: string;
+}
