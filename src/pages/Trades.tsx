@@ -3,7 +3,7 @@ import { usePageFilter } from '@/contexts/page-filters-context';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
+import { Plus, Columns, Search, Calendar as CalendarIcon, AlertTriangle, Upload } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TradesTableWrapper, Trade } from '@/components/trades/TradesTableWrapper';
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
+import ImportDialog from '@/components/trades/ImportDialog';
 import DateRangeFilter from '@/components/trades/DateRangeFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { Card } from '@/components/ui/card';
@@ -109,6 +110,7 @@ const Trades = () => {
   });
 
   // --- UI state ---
+  const [importOpen, setImportOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     symbol: true,
     type: true,
@@ -247,6 +249,7 @@ const Trades = () => {
           onToggleColumnFilter={() => setShowColumnFilter(!showColumnFilter)}
           onToggleDateFilter={() => setShowDateFilter(!showDateFilter)}
           onImport={handleImportTrades}
+          onOpenImportDialog={() => setImportOpen(true)}
           trades={trades}
           visibleColumns={visibleColumns}
           totalElements={totalElements}
@@ -344,6 +347,7 @@ const Trades = () => {
         )}
       </PageTransition>
 
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
     </DashboardLayout>
   );
@@ -361,6 +365,7 @@ interface FiltersSectionProps {
   onToggleColumnFilter: () => void;
   onToggleDateFilter: () => void;
   onImport: (trades: Trade[]) => void;
+  onOpenImportDialog: () => void;
   trades: Trade[];
   visibleColumns: Record<string, boolean>;
   totalElements: number;
@@ -379,6 +384,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   onToggleColumnFilter,
   onToggleDateFilter,
   onImport,
+  onOpenImportDialog,
   trades,
   visibleColumns,
   totalElements,
@@ -440,6 +446,10 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
             accountFilter={accountFilter}
             totalElements={totalElements}
           />
+        <Button variant="outline" onClick={onOpenImportDialog}>
+          <Upload className="mr-2 h-4 w-4" />
+          {t('common.import', 'Import')}
+        </Button>
         <Button onClick={onNewTrade}>
           <Plus className="mr-2 h-4 w-4" />
           {t('trades.newTrade')}

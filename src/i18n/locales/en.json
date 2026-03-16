@@ -1449,5 +1449,32 @@
     "avatarUpdatedDescription": "Your profile picture has been updated.",
     "uploadFailed": "Upload failed",
     "uploadFailedDescription": "Could not upload avatar. Please try again."
+  },
+  "import": {
+    "title": "Import Trades",
+    "description": "Upload a broker export file to import your trades.",
+    "resultDescription": "Import complete. Review the results below.",
+    "dropzone": "Drop your CSV or HTML file here",
+    "browse": "or click to browse",
+    "format": "File Format",
+    "formatAuto": "Auto-detect",
+    "formatMt5Csv": "MT5 CSV",
+    "formatMt5Html": "MT5 HTML Report",
+    "formatCtraderCsv": "cTrader CSV",
+    "formatGenericCsv": "Generic CSV",
+    "import": "Import",
+    "importing": "Importing trades...",
+    "imported": "Imported",
+    "skipped": "Skipped (duplicates)",
+    "errors": "Errors",
+    "errorDetails": "Error details",
+    "importAnother": "Import Another",
+    "maxSize": "Maximum file size: 10MB",
+    "invalidFile": "Please select a CSV or HTML file",
+    "fileTooLarge": "File exceeds 10MB limit",
+    "success": "Trades imported successfully",
+    "partialSuccess": "Imported with some errors",
+    "importError": "Failed to import trades. Please try again.",
+    "totalParsed": "records parsed total"
   }
 }

@@ -537,3 +537,13 @@ export interface HourOfDayPerformanceDto {
   losses: number;
   totalPnl: number;
 }
+
+// --- Trade Import ---
+
+export interface TradeImportResultDto {
+  totalParsed: number;
+  imported: number;
+  skippedDuplicates: number;
+  errors: number;
+  errorDetails: string[];
+}
