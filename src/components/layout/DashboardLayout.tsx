@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import DashboardSidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
 import CommandPalette from '@/components/dashboard/CommandPalette';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdleLogout } from '@/hooks/useIdleLogout';
+import { useOnboardingStatus } from '@/hooks/useOnboarding';
+import { OnboardingWizard } from '@/components/onboarding';
 
 // Importer les composants nécessaires pour le dialogue d'avertissement
 import {
@@ -33,6 +35,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const isMobile = useIsMobile();
   const { t } = useTranslation(); // Hook de traduction
   const [commandOpen, setCommandOpen] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+
+  // Fetch onboarding status — only after auth. Errors are silently ignored (backend
+  // may not have this endpoint yet; we never block the user).
+  const { data: onboardingStatus, isError: onboardingError } = useOnboardingStatus();
+  const showOnboarding =
+    !onboardingDismissed &&
+    !onboardingError &&
+    onboardingStatus != null &&
+    !onboardingStatus.completed;
+
+  const handleOnboardingComplete = useCallback(() => {
+    setOnboardingDismissed(true);
+  }, []);
 
   // --- Appel du hook d'inactivité ---
   // Récupérer les fonctions et états nécessaires
@@ -50,6 +66,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   return (
+    <>
       <SidebarProvider defaultOpen={!isMobile}>
         {/* Cinematic Ambient Background */}
         <div className="fixed inset-0 z-[-1] bg-background pointer-events-none overflow-hidden">
@@ -100,6 +117,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         {/* --- Fin Dialogue --- */}
 
       </SidebarProvider>
+
+      {/* --- Onboarding Wizard --- */}
+      {showOnboarding && (
+        <OnboardingWizard onComplete={handleOnboardingComplete} />
+      )}
+    </>
   );
 };
 

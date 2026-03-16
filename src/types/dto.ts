@@ -678,3 +678,11 @@ export interface CheckoutResponseDto {
 export interface PortalResponseDto {
   portalUrl: string;
 }
+
+// --- Onboarding DTOs ---
+
+export interface OnboardingStatusDto {
+  completedSteps: string[];
+  currentStep: string;
+  completed: boolean;
+}
