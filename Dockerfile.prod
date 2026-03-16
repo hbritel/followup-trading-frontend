@@ -1,0 +1,37 @@
+# Multi-stage production build for FollowUp Trading frontend
+#
+# Stage 1 — builder: installs deps and runs `npm run build` (Vite).
+# Stage 2 — alpine:  minimal image that holds /app/dist static assets.
+#
+# Usage patterns:
+#   a) docker-compose: mount /app/dist as a named volume shared with nginx.
+#   b) Inline nginx: add a third stage `FROM nginx:alpine` + COPY --from=builder.
+
+# ---------------------------------------------------------------------------
+# Stage 1 — Builder
+# ---------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies first (layer cache — only re-runs when lockfile changes)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Build for production (outputs to /app/dist)
+RUN npm run build
+
+# ---------------------------------------------------------------------------
+# Stage 2 — Static asset image
+# ---------------------------------------------------------------------------
+FROM alpine:3.19
+
+# Copy only the built artefacts
+COPY --from=builder /app/dist /app/dist
+
+# Keep container running so a shared Docker volume stays available when this
+# image is used as a sidecar/init container alongside nginx.
+CMD ["sleep", "infinity"]
