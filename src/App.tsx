@@ -45,6 +45,9 @@ import {
   PaymentSuccess,
   PaymentCanceled,
   TaxReporting,
+  SocialFeed,
+  StrategyMarketplace,
+  TradersDirectory,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -111,6 +114,9 @@ function App() {
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/tax-reporting" element={<TaxReporting />} />
+                    <Route path="/social/feed" element={<SocialFeed />} />
+                    <Route path="/social/marketplace" element={<StrategyMarketplace />} />
+                    <Route path="/social/traders" element={<TradersDirectory />} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
