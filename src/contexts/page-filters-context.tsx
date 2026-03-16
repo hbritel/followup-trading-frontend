@@ -1,5 +1,6 @@
 // src/contexts/page-filters-context.tsx
-import React, { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useAuth } from './auth-context';
 
 type FilterMap = Record<string, unknown>;
 
@@ -15,6 +16,12 @@ export const PageFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Use ref for storage to avoid re-rendering every consumer on any filter change.
   // Individual pages trigger their own re-renders via local state.
   const store = useRef<Record<string, FilterMap>>({});
+  const { user } = useAuth();
+
+  // Clear all page filters when the user changes (logout → login as different user)
+  useEffect(() => {
+    store.current = {};
+  }, [user?.id]);
 
   const getFilter = useCallback(<T,>(pageKey: string, filterKey: string, defaultValue: T): T => {
     const pageFilters = store.current[pageKey];

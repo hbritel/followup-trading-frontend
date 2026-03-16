@@ -1,6 +1,7 @@
 // src/contexts/auth-context.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode'; // Importer jwt-decode
 import { authService } from '@/services/auth.service'; // Importer notre service auth
 import { userService } from '@/services/user.service'; // Importer notre service user
@@ -72,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Stocke les infos temporaires si MFA est requis après le login initial
   const [mfaVerificationData, setMfaVerificationData] = useState<MfaVerificationData | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,13 +126,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setMfaVerificationData(null);
 
+    // CRITICAL: Clear ALL React Query cached data to prevent cross-user data leakage
+    queryClient.clear();
+
+    // Clear sessionStorage (newDeviceDetected, etc.)
+    sessionStorage.clear();
+
+    // Clear module-level MFA token in auth service
+    authService.clearMfaState();
+
     // Appeler l'API de déconnexion (best effort)
     if (refreshToken && userId) {
       await authService.logoutUser(refreshToken, userId);
     } else {
       console.warn("Could not call logout API: missing refresh token or user ID.");
     }
-  }, [user?.id]); // Dépend de user.id pour l'appel API
+  }, [user?.id, queryClient]); // Dépend de user.id pour l'appel API
 
   // Vérification initiale au chargement de l'application
   useEffect(() => {

@@ -275,6 +275,11 @@ const addTrustedDevice = async (data: TrustedDeviceRequestDto, fingerprint: stri
 }
 
 
+/** Clear module-level MFA state. Called on logout to prevent cross-user leakage. */
+const clearMfaState = (): void => {
+    currentMfaToken = null;
+};
+
 export const authService = {
     loginUser,
     registerUser,
@@ -286,9 +291,10 @@ export const authService = {
     verifyEmailOtp,
     // setupMfa,
     initMfaSetup,
-    completeMfaSetup, 
+    completeMfaSetup,
     disableMfa,
     sendEmailOtp,
     addTrustedDevice,
+    clearMfaState,
     getErrorMessage // Exporter la fonction utilitaire d'erreur
 };
