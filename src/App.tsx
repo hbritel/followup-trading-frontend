@@ -45,6 +45,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useFingerprint } from '@/hooks/useFingerprint';
 import { PreferencesProvider } from '@/contexts/preferences-context';
 import { PageFiltersProvider } from '@/contexts/page-filters-context';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
 
 function App() {
   useFingerprint();
@@ -69,8 +70,17 @@ function App() {
                   <Route path="/auth/mfa-setup" element={<MFASetup />} />
                   <Route path="/auth/trusted-devices" element={<TrustedDevices />} />
 
-                  {/* Protected routes */}
-                  <Route path="/" element={<ProtectedRoute />}>
+                  {/* Protected routes — WebSocket is only initialised here, inside
+                      AuthProvider, so the STOMP client is created only when the
+                      user is authenticated and torn down on logout. */}
+                  <Route
+                    path="/"
+                    element={
+                      <WebSocketProvider>
+                        <ProtectedRoute />
+                      </WebSocketProvider>
+                    }
+                  >
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/trades" element={<Trades />} />
                     <Route path="/daily-journal" element={<DailyJournal />} />
