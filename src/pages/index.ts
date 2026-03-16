@@ -28,3 +28,6 @@ export { default as Pricing } from './Pricing';
 export { default as PaymentSuccess } from './PaymentSuccess';
 export { default as PaymentCanceled } from './PaymentCanceled';
 export { default as TaxReporting } from './TaxReporting';
+export { default as SocialFeed } from './SocialFeed';
+export { default as StrategyMarketplace } from './StrategyMarketplace';
+export { default as TradersDirectory } from './TradersDirectory';

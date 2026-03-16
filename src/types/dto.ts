@@ -687,6 +687,48 @@ export interface OnboardingStatusDto {
   completed: boolean;
 }
 
+// --- Social Trading types ---
+
+export interface UserFollowDto {
+  id: string;
+  username: string;
+  level: string;
+  badgeCount: number;
+  followerCount: number;
+  isFollowing: boolean;
+}
+
+export interface SharedStrategyDto {
+  id: string;
+  userId: string;
+  username: string;
+  level: string;
+  title: string;
+  description: string;
+  strategyData: Record<string, unknown>;
+  likes: number;
+  copies: number;
+  isLiked: boolean;
+  createdAt: string;
+}
+
+export interface FeedItemDto {
+  id: string;
+  userId: string;
+  username: string;
+  level: string;
+  type: 'STRATEGY_SHARED' | 'BADGE_EARNED' | 'MILESTONE';
+  content: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ShareStrategyRequestDto {
+  title: string;
+  description: string;
+  strategyId: string;
+}
+
 // --- Tax Reporting types ---
 
 export type TaxJurisdiction = 'US' | 'UK' | 'DE' | 'FR' | 'CA' | 'AU' | 'OTHER';
