@@ -111,6 +111,12 @@ export interface UserPreferencesDto {
     // --- NOUVEAUX CHAMPS POUR LE PROFIL TRADING ---
     experienceLevel?: string | null;
     yearsTrading?: string | null;
+
+    // --- TRADE TABLE COLUMN DEFAULTS ---
+    tradeColumnDefaults?: string | null; // JSON string of Record<string, boolean>
+
+    // --- NOTIFICATION BADGE ---
+    showNotificationBadge: boolean;
 }
 
 export interface TotpVerifyRequestDto {
@@ -257,7 +263,7 @@ export type VerifyMfaResponseDto = MfaResultDto; // Ou un type spécifique si la
 
 // --- Activity DTOs ---
 
-export type ActivityCategory = 'trade' | 'login' | 'broker' | 'setting';
+export type ActivityCategory = 'trade' | 'login' | 'broker' | 'setting' | 'sync' | 'journal';
 
 export interface ActivityItemDto {
     id: string;
@@ -267,6 +273,7 @@ export interface ActivityItemDto {
     title: string;
     description: string;
     icon: string;
+    metadata?: Record<string, unknown>;
 }
 
 export interface ActivityPageDto {
@@ -275,6 +282,14 @@ export interface ActivityPageDto {
     size: number;
     totalElements: number;
     totalPages: number;
+}
+
+export interface ActivitySummaryDto {
+    trades: number;
+    syncs: number;
+    logins: number;
+    journal: number;
+    tradePnl: number;
 }
 
 // --- Performance & Dashboard types ---
@@ -306,19 +321,62 @@ export interface OpenPositionDto {
 
 // --- Strategy types (matches backend StrategyDto) ---
 
+export type StrategyRuleCategory = 'ENTRY' | 'EXIT' | 'RISK_MANAGEMENT';
+
+export interface StrategyRuleRequestDto {
+  id?: string;
+  category: StrategyRuleCategory;
+  text: string;
+  sortOrder: number;
+}
+
+export interface StrategyRuleResponseDto {
+  id: string;
+  category: StrategyRuleCategory;
+  text: string;
+  sortOrder: number;
+}
+
 export interface StrategyResponseDto {
   id: string;
   name: string;
   description: string | null;
+  icon: string | null;
   active: boolean;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
+  rules: StrategyRuleResponseDto[];
 }
 
 export interface StrategyRequestDto {
   name: string;
   description?: string | null;
+  icon?: string | null;
   active?: boolean;
+  isDefault?: boolean;
+  rules?: StrategyRuleRequestDto[];
+}
+
+export interface StrategyStatsDto {
+  strategyId: string;
+  strategyName: string;
+  description: string | null;
+  icon: string | null;
+  active: boolean;
+  isDefault: boolean;
+  tradeCount: number;
+  winCount: number;
+  lossCount: number;
+  winRate: number;
+  netPnl: number;
+  profitFactor: number;
+  expectancy: number;
+  averageWin: number;
+  averageLoss: number;
+  bestTrade: number;
+  worstTrade: number;
+  rules: StrategyRuleResponseDto[];
 }
 
 // --- Tag types (matches backend TagDto) ---
@@ -338,12 +396,16 @@ export interface TagRequestDto {
 
 // --- Journal types (matches backend JournalDto) ---
 
+export type JournalSessionLabel = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'REVIEW';
+
 export interface JournalEntryRequestDto {
   date: string;
   mood: number;
   content?: string | null;
   tags?: string | null;
   linkedTradeIds?: string | null;
+  brokerConnectionId?: string | null;
+  sessionLabel?: JournalSessionLabel | null;
 }
 
 export interface JournalEntryResponseDto {
@@ -355,6 +417,8 @@ export interface JournalEntryResponseDto {
   linkedTradeIds: string | null;
   createdAt: string;
   updatedAt: string;
+  brokerConnectionId?: string | null;
+  sessionLabel?: JournalSessionLabel | null;
 }
 
 // --- Watchlist types (matches backend WatchlistDto) ---
@@ -769,4 +833,70 @@ export interface TaxReportDto {
   estimatedTax: number;
   lots: TaxLotDto[];
   generatedAt: string;
+}
+
+// ── Economic Calendar ──────────────────────────────────────
+export type EconomicEventImpact = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface EconomicEvent {
+  id: string;
+  title: string;
+  country: string;       // ISO 3166-1 alpha-2: "US", "EU", "GB", "JP", "CA", "AU", "CH", "NZ", "CN"
+  currency: string;      // "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "NZD", "CNY"
+  date: string;          // ISO date "2026-03-24"
+  time: string;          // "HH:mm" or "All Day"
+  impact: EconomicEventImpact;
+  previous: string | null;  // e.g. "3.2%", "256K"
+  forecast: string | null;
+  actual: string | null;
+  description?: string;
+}
+
+export interface EconomicCalendarFilters {
+  dateRange: 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'custom';
+  startDate?: string;
+  endDate?: string;
+  currencies: string[];
+  impacts: EconomicEventImpact[];
+}
+
+// === Compliance ===
+
+export type ComplianceStatus = 'FOLLOWED' | 'NOT_FOLLOWED' | 'NOT_APPLICABLE';
+
+export interface RuleComplianceRequest {
+  strategyRuleId: string;
+  status: ComplianceStatus;
+  note?: string;
+}
+
+export interface RuleComplianceResponse {
+  id: string;
+  strategyRuleId: string;
+  status: ComplianceStatus;
+  note?: string;
+  filledAt?: string;
+}
+
+export interface StrategyComplianceStatsDto {
+  strategyId: string;
+  strategyName: string;
+  totalTrades: number;
+  tradesWithComplianceData: number;
+  overallAdherence: number;
+  adherentWinRate: number;
+  nonAdherentWinRate: number;
+  perRuleStats: RuleComplianceStatDto[];
+}
+
+export interface RuleComplianceStatDto {
+  ruleId: string;
+  ruleText: string;
+  category: string;
+  followedCount: number;
+  notFollowedCount: number;
+  naCount: number;
+  followRate: number;
+  avgPnlWhenFollowed?: number;
+  avgPnlWhenNotFollowed?: number;
 }

@@ -41,6 +41,7 @@ export interface TradeApiResponse {
     createdAt: string;
     updatedAt: string;
     balance?: number;
+    accountId?: string;
 }
 
 export interface PageDto<T> {
@@ -55,7 +56,7 @@ export interface PageDto<T> {
 export interface TradeListParams {
     page?: number;
     size?: number;
-    accountIds?: string;
+    accountIds?: string | string[];
     direction?: string;
     status?: string;
     searchText?: string;
@@ -75,7 +76,8 @@ export interface AnalyticsDashboard {
     bestTrade: number;
     worstTrade: number;
     priorEquity: number;
-    equityCurve: { date: string; dailyProfit: number; dailyVolume: number }[];
+    winLossRatio: number;
+    equityCurve: { date: string; dailyProfit: number; cumulativeEquity: number; dailyVolume: number }[];
 }
 
 /**
@@ -96,6 +98,8 @@ export interface CreateTradeRequest {
     notes?: string | null;
     status?: string;
     assetType?: string | null;
+    accountId?: string | null;
+    strategyIds?: string[];
 }
 
 // --- Mapping: Backend DTO -> Frontend Trade type ---
@@ -117,16 +121,18 @@ export const mapApiResponseToTrade = (r: TradeApiResponse): Trade => ({
     quantity: r.quantity,
     stopLoss: r.stopLoss ?? undefined,
     takeProfit: r.takeProfit ?? undefined,
-    profit: r.profitLoss ?? undefined,                        // renamed
-    profitPercentage: r.profitLossPercentage ?? undefined,    // renamed
+    profit: r.profitLoss ?? undefined,
+    profitPercentage: r.profitLossPercentage ?? undefined,
     fees: r.fees ?? undefined,
     notes: r.notes ?? undefined,
     tags: r.tags?.map(t => t.name) ?? [],
     strategy: r.strategies?.[0]?.name ?? undefined,
+    strategies: r.strategies?.map(s => ({ id: s.id, name: s.name })) ?? [],
     currency: 'USD',   // backend doesn't send currency yet
     balance: r.balance !== undefined && r.balance !== null ? r.balance : undefined, // Check for running balance
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
+    accountId: r.accountId ?? undefined,
 });
 
 // --- Helpers ---
@@ -169,7 +175,11 @@ export const tradeService = {
             page: params?.page || 0,
             size: params?.size || 50,
         };
-        if (params?.accountIds) searchBody.accountIds = [params.accountIds];
+        if (params?.accountIds) {
+            searchBody.accountIds = Array.isArray(params.accountIds)
+                ? params.accountIds
+                : [params.accountIds];
+        }
         if (params?.direction) searchBody.direction = params.direction.toUpperCase();
         if (params?.status) searchBody.status = params.status.toUpperCase();
         if (params?.searchText) searchBody.searchText = params.searchText;
@@ -193,9 +203,9 @@ export const tradeService = {
     /**
      * Get Dashboard Analytics from the new aggregated SQL endpoint.
      */
-    getAnalytics: async (accountIds?: string, startDate?: string, endDate?: string): Promise<AnalyticsDashboard> => {
+    getAnalytics: async (accountIds?: string | string[], startDate?: string, endDate?: string): Promise<AnalyticsDashboard> => {
         const params: Record<string, string> = {};
-        if (accountIds) params.accountIds = accountIds;
+        if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
         const response = await apiClient.get<AnalyticsDashboard>('/analytics/dashboard', {
@@ -213,6 +223,37 @@ export const tradeService = {
     },
 
     /**
+     * Partially update a trade's annotations (stop loss, take profit, notes)
+     * via PATCH /trades/{id}/annotations.
+     */
+    updateTradeAnnotations: async (tradeId: string, updates: { stopLoss?: number | null; takeProfit?: number | null; notes?: string | null }): Promise<Trade> => {
+        const body: Record<string, unknown> = {};
+        if ('stopLoss' in updates) body.stopLoss = updates.stopLoss;
+        if ('takeProfit' in updates) body.takeProfit = updates.takeProfit;
+        if ('notes' in updates) body.notes = updates.notes;
+        const response = await apiClient.patch<TradeApiResponse>(`/trades/${tradeId}/annotations`, body);
+        return mapApiResponseToTrade(response.data);
+    },
+
+    /**
+     * Full update of a trade via PUT /trades/{id}.
+     * Sends all trade fields (not just annotations).
+     */
+    updateTrade: async (tradeId: string, data: CreateTradeRequest): Promise<Trade> => {
+        const response = await apiClient.put<TradeApiResponse>(`/trades/${tradeId}`, data);
+        return mapApiResponseToTrade(response.data);
+    },
+
+    /**
+     * Get trades linked to a specific strategy.
+     * Uses GET /api/v1/trades/by-strategy/{strategyId}.
+     */
+    getTradesByStrategy: async (strategyId: string): Promise<Trade[]> => {
+        const response = await apiClient.get<TradeApiResponse[]>(`/trades/by-strategy/${strategyId}`);
+        return (response.data || []).map(mapApiResponseToTrade);
+    },
+
+    /**
      * Delete a trade.
      */
     deleteTrade: async (tradeId: string): Promise<void> => {
@@ -223,11 +264,13 @@ export const tradeService = {
      * Fetch all trades (unpaginated) for export.
      * Sends a large page size to get everything in one request.
      */
-    getAllTrades: async (accountIds?: string): Promise<Trade[]> => {
+    getAllTrades: async (accountIds?: string | string[]): Promise<Trade[]> => {
         const searchBody = {
             page: 0,
             size: 10000,
-            accountIds: accountIds ? [accountIds] : undefined
+            accountIds: accountIds
+                ? (Array.isArray(accountIds) ? accountIds : [accountIds])
+                : undefined
         };
         const response = await apiClient.post<any>('/trades/search', searchBody);
         return (response.data.trades || []).map(mapApiResponseToTrade);
