@@ -11,7 +11,7 @@ function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  captionLayout = "dropdown",
+  captionLayout = "dropdown-buttons",
   fromYear = 2015,
   toYear = new Date().getFullYear() + 1,
   ...props
@@ -27,10 +27,10 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center gap-1",
-        caption_label: "hidden",
-        caption_dropdowns: "flex items-center gap-1.5",
+        caption_label: "sr-only",
+        caption_dropdowns: "flex items-center gap-1",
         dropdown:
-          "appearance-none bg-transparent border border-border rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+          "appearance-none bg-transparent border border-border rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring",
         dropdown_month: "",
         dropdown_year: "",
         vhidden: "sr-only",

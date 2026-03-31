@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,28 +34,32 @@ interface ClosedTrade {
   accountId?: string;
 }
 
-interface TradeReplaySelectorProps {
-  onSelectTrade: (tradeId: string) => void;
+export interface TradeReplayFilters {
+  search: string;
+  page: number;
+  pageSize: number;
+  datePreset: string;
+  customStart: Date | null;
+  customEnd: Date | null;
+  selectedAccountId: string;
+  direction: string;
 }
 
-const DEFAULT_PAGE_SIZE = 20;
+interface TradeReplaySelectorProps {
+  onSelectTrade: (tradeId: string) => void;
+  filters: TradeReplayFilters;
+  onFiltersChange: (filters: TradeReplayFilters) => void;
+}
 
-const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade }) => {
+const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade, filters, onFiltersChange }) => {
   const { t } = useTranslation();
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1); // 1-based to match Trades page
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-  // Date range presets (same as Dashboard)
-  const [datePreset, setDatePreset] = useState('all');
-  const [customStart, setCustomStart] = useState<Date | null>(null);
-  const [customEnd, setCustomEnd] = useState<Date | null>(null);
+  const { search, page, pageSize, datePreset, customStart, customEnd, selectedAccountId, direction } = filters;
 
-  // Account filter
-  const [selectedAccountId, setSelectedAccountId] = useState('all');
+  const update = (partial: Partial<TradeReplayFilters>) =>
+    onFiltersChange({ ...filters, ...partial });
 
-  // Direction filter
-  const [direction, setDirection] = useState('all');
+  const resetPage = () => update({ page: 1 });
 
   // Compute date range from preset or custom
   const dateRange = useMemo(() => {
@@ -108,8 +112,6 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
   const totalPages = data?.totalPages ?? 0;
   const totalCount = data?.totalCount ?? 0;
 
-  const resetPage = () => setPage(1);
-
   // Pagination rendering (same pattern as TradesTableWrapper)
   const renderPaginationItems = () => {
     const items = [];
@@ -124,7 +126,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
     if (startPage > 1) {
       items.push(
         <PaginationItem key="first">
-          <PaginationLink onClick={() => setPage(1)}>1</PaginationLink>
+          <PaginationLink onClick={() => update({ page: 1 })}>1</PaginationLink>
         </PaginationItem>
       );
       if (startPage > 2) {
@@ -139,7 +141,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <PaginationItem key={i}>
-          <PaginationLink onClick={() => setPage(i)} isActive={page === i}>
+          <PaginationLink onClick={() => update({ page: i })} isActive={page === i}>
             {i}
           </PaginationLink>
         </PaginationItem>
@@ -156,7 +158,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
       }
       items.push(
         <PaginationItem key="last">
-          <PaginationLink onClick={() => setPage(totalPages)}>
+          <PaginationLink onClick={() => update({ page: totalPages })}>
             {totalPages}
           </PaginationLink>
         </PaginationItem>
@@ -172,22 +174,32 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
       <div className="flex flex-col gap-3">
         <DashboardDateFilter
           preset={datePreset}
-          onPresetChange={(p) => { setDatePreset(p); resetPage(); }}
+          onPresetChange={(p) => {
+            // Only reset dates when choosing a non-custom preset.
+            // When p === 'custom', the date callbacks handle the full update.
+            if (p !== 'custom') {
+              onFiltersChange({ ...filters, datePreset: p, customStart: null, customEnd: null, page: 1 });
+            }
+          }}
           customStart={customStart}
           customEnd={customEnd}
-          onCustomStartChange={(d) => { setCustomStart(d); resetPage(); }}
-          onCustomEndChange={(d) => { setCustomEnd(d); resetPage(); }}
+          onCustomStartChange={(d) => {
+            onFiltersChange({ ...filters, customStart: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 });
+          }}
+          onCustomEndChange={(d) => {
+            onFiltersChange({ ...filters, customEnd: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 });
+          }}
         />
 
         {/* Account selector + Search */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <AccountSelector
             value={selectedAccountId}
-            onChange={(v) => { setSelectedAccountId(v); resetPage(); }}
+            onChange={(v) => { update({ selectedAccountId: v, page: 1 }); }}
             className="w-full sm:w-[220px]"
           />
 
-          <Select value={direction} onValueChange={(v) => { setDirection(v); resetPage(); }}>
+          <Select value={direction} onValueChange={(v) => { update({ direction: v, page: 1 }); }}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue />
             </SelectTrigger>
@@ -215,7 +227,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
               placeholder={t('tradeReplay.searchTrades')}
               className="pl-8 rounded-xl"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+              onChange={(e) => { update({ search: e.target.value, page: 1 }); }}
             />
           </div>
 
@@ -300,7 +312,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
               <span>{t('trades.rowsPerPage', 'Rows per page')}</span>
               <Select
                 value={pageSize.toString()}
-                onValueChange={(v) => { setPageSize(Number(v)); resetPage(); }}
+                onValueChange={(v) => { update({ pageSize: Number(v), page: 1 }); }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
                   <SelectValue placeholder={pageSize.toString()} />
@@ -321,7 +333,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => setPage(Math.max(1, page - 1))}
+                    onClick={() => update({ page: Math.max(1, page - 1) })}
                     aria-disabled={page === 1}
                     className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                   />
@@ -331,7 +343,7 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    onClick={() => update({ page: Math.min(totalPages, page + 1) })}
                     aria-disabled={page === totalPages}
                     className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                   />

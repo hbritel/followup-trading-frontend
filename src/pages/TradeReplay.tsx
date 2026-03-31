@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BacktestChart, { type StaticPriceLine, type StaticMarker } from '@/components/backtesting/BacktestChart';
-import TradeReplaySelector from '@/components/tradereplay/TradeReplaySelector';
+import TradeReplaySelector, { type TradeReplayFilters } from '@/components/tradereplay/TradeReplaySelector';
 import { useTradeReplay } from '@/hooks/useTradeReplay';
 import { useMarketHistory } from '@/hooks/useMarketHistory';
 
@@ -33,6 +33,18 @@ const TradeReplay = () => {
   const initialTradeId = searchParams.get('tradeId');
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(initialTradeId);
   const { data: replayData, isLoading, isError } = useTradeReplay(selectedTradeId);
+
+  // Filter state lifted from TradeReplaySelector so it persists across trade views
+  const [filters, setFilters] = useState<TradeReplayFilters>({
+    search: '',
+    page: 1,
+    pageSize: 20,
+    datePreset: 'all',
+    customStart: null,
+    customEnd: null,
+    selectedAccountId: 'all',
+    direction: 'all',
+  });
 
   // Timeframe selector — default from backend, user can override
   const [customTimeframe, setCustomTimeframe] = useState<string | null>(null);
@@ -246,7 +258,7 @@ const TradeReplay = () => {
               </Card>
             )}
 
-            {!isLoading && <TradeReplaySelector onSelectTrade={setSelectedTradeId} />}
+            {!isLoading && <TradeReplaySelector onSelectTrade={setSelectedTradeId} filters={filters} onFiltersChange={setFilters} />}
           </>
         )}
       </PageTransition>
