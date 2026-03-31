@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   DialogContent,
@@ -15,26 +16,22 @@ interface DeleteWatchlistDialogProps {
 }
 
 const DeleteWatchlistDialog: React.FC<DeleteWatchlistDialogProps> = ({ onCancel, onConfirm }) => {
+  const { t } = useTranslation();
+
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Delete Watchlist</DialogTitle>
+        <DialogTitle>{t('watchlists.deleteWatchlistTitle')}</DialogTitle>
         <DialogDescription>
-          Are you sure you want to delete this watchlist? This action cannot be undone.
+          {t('watchlists.deleteWatchlistConfirm')}
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancel
+        <Button variant="outline" onClick={onCancel}>
+          {t('common.cancel')}
         </Button>
-        <Button
-          variant="destructive"
-          onClick={onConfirm}
-        >
-          Delete
+        <Button variant="destructive" onClick={onConfirm}>
+          {t('common.delete')}
         </Button>
       </DialogFooter>
     </DialogContent>

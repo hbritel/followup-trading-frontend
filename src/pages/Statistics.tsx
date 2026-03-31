@@ -1,4 +1,5 @@
 
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
@@ -12,13 +13,17 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { usePageFilter } from '@/contexts/page-filters-context';
+import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
 import { useDayOfWeekPerformance, useHourOfDayPerformance } from '@/hooks/useTimeMetrics';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const COLORS = ['#1E40AF', '#dc2626'];
 
@@ -29,11 +34,11 @@ function toISODate(d: Date): string {
 const Statistics = () => {
   const { t } = useTranslation();
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('statistics', 'accountId', 'all');
-  const [datePreset, setDatePreset] = usePageFilter('statistics', 'datePreset', 'all');
+  const [datePreset, setDatePreset] = useDefaultDatePreset('statistics');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('statistics', 'customStart', null);
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('statistics', 'customEnd', null);
 
-  const apiAccountId = selectedAccountId === 'all' ? undefined : selectedAccountId;
+  const { accountIds } = useAccountFilter(selectedAccountId);
 
   // Compute date range from preset or custom dates
   const dateRange = datePreset === 'custom'
@@ -45,19 +50,19 @@ const Statistics = () => {
 
   // Primary: useAnalytics for trade counts/win rates (supports account filtering)
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(
-    apiAccountId, dateRange.startDate, dateRange.endDate
+    accountIds, dateRange.startDate, dateRange.endDate
   );
   // Secondary: useDashboardSummary for risk metrics (sharpe, sortino, drawdown)
   const { data: summary, isLoading: summaryLoading } = useDashboardSummary(
-    dateRange.startDate, dateRange.endDate
+    dateRange.startDate, dateRange.endDate, accountIds
   );
 
   // Time-based performance from real API
   const { data: dayOfWeekData, isLoading: dowLoading } = useDayOfWeekPerformance(
-    dateRange.startDate, dateRange.endDate, apiAccountId
+    dateRange.startDate, dateRange.endDate, accountIds
   );
   const { data: hourOfDayData, isLoading: hodLoading } = useHourOfDayPerformance(
-    dateRange.startDate, dateRange.endDate, apiAccountId
+    dateRange.startDate, dateRange.endDate, accountIds
   );
 
   const isLoading = analyticsLoading || summaryLoading || dowLoading || hodLoading;
@@ -74,6 +79,31 @@ const Statistics = () => {
     wins: d.wins,
     losses: d.losses,
   }));
+
+  // Compute best & worst trading sessions from real API data
+  const { bestSessions, worstSessions } = useMemo(() => {
+    type Session = { label: string; winRate: number; totalTrades: number };
+    const sessions: Session[] = [];
+
+    for (const d of dayOfWeekData ?? []) {
+      const total = d.wins + d.losses;
+      if (total > 0) {
+        sessions.push({ label: d.dayName, winRate: (d.wins / total) * 100, totalTrades: total });
+      }
+    }
+    for (const h of hourOfDayData ?? []) {
+      const total = h.wins + h.losses;
+      if (total > 0) {
+        sessions.push({ label: h.timeLabel, winRate: (h.wins / total) * 100, totalTrades: total });
+      }
+    }
+
+    const sorted = [...sessions].sort((a, b) => b.winRate - a.winRate);
+    return {
+      bestSessions: sorted.slice(0, 4),
+      worstSessions: [...sessions].sort((a, b) => a.winRate - b.winRate).slice(0, 4),
+    };
+  }, [dayOfWeekData, hourOfDayData]);
 
   // Use analytics as primary source for trade stats (supports account filter)
   const totalTrades = analytics?.totalTrades ?? 0;
@@ -124,6 +154,17 @@ const Statistics = () => {
     return `${value.toFixed(1)}${format}`;
   };
 
+  const InfoTip = ({ text }: { text: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[220px] text-xs">{text}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   return (
     <DashboardLayout pageTitle={t('pages.statistics')}>
       <PageTransition className="space-y-6">
@@ -153,7 +194,7 @@ const Statistics = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="label-caps">{t('statistics.tradeCount')}</CardTitle>
+              <CardTitle className="label-caps flex items-center gap-1.5">{t('statistics.tradeCount')}<InfoTip text={t('statistics.tradeCountTooltip')} /></CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -174,7 +215,7 @@ const Statistics = () => {
 
           <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="label-caps">{t('insights.winRate')}</CardTitle>
+              <CardTitle className="label-caps flex items-center gap-1.5">{t('insights.winRate')}<InfoTip text={t('statistics.winRateTooltip')} /></CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -195,7 +236,7 @@ const Statistics = () => {
 
           <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="label-caps">{t('insights.profitFactor')}</CardTitle>
+              <CardTitle className="label-caps flex items-center gap-1.5">{t('insights.profitFactor')}<InfoTip text={t('statistics.profitFactorTooltip')} /></CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -216,7 +257,7 @@ const Statistics = () => {
 
           <Card className="glass-card rounded-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="label-caps">{t('statistics.averageRR')}</CardTitle>
+              <CardTitle className="label-caps flex items-center gap-1.5">{t('statistics.averageRR')}<InfoTip text={t('statistics.averageRRTooltip')} /></CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -239,7 +280,7 @@ const Statistics = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="glass-card rounded-2xl lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-gradient">{t('statistics.keyMetrics')}</CardTitle>
+              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.keyMetrics')}<InfoTip text={t('statistics.keyMetricsTooltip')} /></CardTitle>
               <CardDescription>{t('statistics.performanceAgainstTarget')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -277,7 +318,7 @@ const Statistics = () => {
 
           <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-gradient">{t('statistics.tradeDistribution')}</CardTitle>
+              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradeDistribution')}<InfoTip text={t('statistics.tradeDistributionTooltip')} /></CardTitle>
               <CardDescription>{t('statistics.winVsLossRatio')}</CardDescription>
             </CardHeader>
             <CardContent className="h-64">
@@ -307,7 +348,7 @@ const Statistics = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <RechartsTooltip />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -324,7 +365,7 @@ const Statistics = () => {
           <TabsContent value="by-day" className="space-y-6">
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient">{t('statistics.tradePerformanceByDay')}</CardTitle>
+                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByDay')}<InfoTip text={t('statistics.performanceByDayTooltip')} /></CardTitle>
                 <CardDescription>{t('statistics.winLossDistributionByDay')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
@@ -341,7 +382,7 @@ const Statistics = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                     <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
                     <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
@@ -354,7 +395,7 @@ const Statistics = () => {
           <TabsContent value="by-time" className="space-y-6">
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient">{t('statistics.tradePerformanceByTime')}</CardTitle>
+                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByTime')}<InfoTip text={t('statistics.performanceByTimeTooltip')} /></CardTitle>
                 <CardDescription>{t('statistics.winLossDistributionByTime')}</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
@@ -371,7 +412,7 @@ const Statistics = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
                     <YAxis />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                     <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
                     <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
@@ -385,79 +426,65 @@ const Statistics = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-gradient">{t('statistics.bestTradingSessions')}</CardTitle>
+              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.bestTradingSessions')}<InfoTip text={t('statistics.bestSessionsTooltip')} /></CardTitle>
               <CardDescription>{t('statistics.highestWinRateSessions')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.tuesdayMorning')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 11:30 AM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '85' })}</div>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.fridayAfternoon')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">2:30 PM - 4:00 PM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '82' })}</div>
+              ) : bestSessions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+              ) : (
+                <div className="space-y-4">
+                  {bestSessions.map((s) => (
+                    <div key={s.label} className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">{s.label}</div>
+                        <div className="text-xs font-mono text-muted-foreground">
+                          {t('statistics.tradesCount', { count: s.totalTrades })}
+                        </div>
+                      </div>
+                      <div className="font-mono tabular-nums text-sm font-semibold text-profit">
+                        {s.winRate.toFixed(1)}%
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.thursdayMorning')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 11:30 AM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '78' })}</div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.wednesdayAfternoon')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">1:30 PM - 3:30 PM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-profit">{t('statistics.winRateValue', { value: '74' })}</div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
           <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-gradient">{t('statistics.worstTradingSessions')}</CardTitle>
+              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.worstTradingSessions')}<InfoTip text={t('statistics.worstSessionsTooltip')} /></CardTitle>
               <CardDescription>{t('statistics.lowestWinRateSessions')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.mondayLunch')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">11:30 AM - 1:30 PM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '45' })}</div>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.wednesdayMorning')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 10:30 AM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '52' })}</div>
+              ) : worstSessions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+              ) : (
+                <div className="space-y-4">
+                  {worstSessions.map((s) => (
+                    <div key={s.label} className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">{s.label}</div>
+                        <div className="text-xs font-mono text-muted-foreground">
+                          {t('statistics.tradesCount', { count: s.totalTrades })}
+                        </div>
+                      </div>
+                      <div className="font-mono tabular-nums text-sm font-semibold text-loss">
+                        {s.winRate.toFixed(1)}%
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.fridayMorning')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">9:30 AM - 10:30 AM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '56' })}</div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{t('statistics.thursdayLunch')}</div>
-                    <div className="text-xs font-mono text-muted-foreground">11:30 AM - 1:30 PM</div>
-                  </div>
-                  <div className="font-mono tabular-nums text-sm font-semibold text-loss">{t('statistics.winRateValue', { value: '58' })}</div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

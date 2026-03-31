@@ -192,7 +192,7 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
                         "capitalize font-mono text-xs border backdrop-blur-sm",
                         trade.direction === 'long' || trade.direction === 'buy'
                           ? "border-primary/30 text-primary bg-primary/10"
-                          : "border-accent/30 text-foreground dark:text-white bg-accent/20"
+                          : "border-destructive/30 text-destructive bg-destructive/10"
                       )}
                     >
                       {trade.direction === 'buy' ? 'long' : trade.direction === 'sell' ? 'short' : trade.direction}

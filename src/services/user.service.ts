@@ -1,6 +1,6 @@
 // src/services/user.service.ts
 import apiClient from './apiClient';
-import type { UserProfileDto, UserPreferencesDto, ChangePasswordRequestDto, ActivityPageDto } from '@/types/dto';
+import type { UserProfileDto, UserPreferencesDto, ChangePasswordRequestDto } from '@/types/dto';
 import { authService } from './auth.service';
 
 interface UpdateProfileRequest {
@@ -71,13 +71,6 @@ const deleteAvatar = async (): Promise<UserProfileDto> => {
     return response.data;
 };
 
-const getActivity = async (page = 0, size = 20, type = 'all'): Promise<ActivityPageDto> => {
-    const response = await apiClient.get<ActivityPageDto>('/users/me/activity', {
-        params: { page, size, type },
-    });
-    return response.data;
-};
-
 export const userService = {
     getUserProfile,
     getUserPreferences,
@@ -86,6 +79,5 @@ export const userService = {
     updateProfile,
     uploadAvatar,
     deleteAvatar,
-    getActivity,
     getErrorMessage: authService.getErrorMessage,
 };

@@ -11,8 +11,16 @@ import type { PageResponse } from '@/services/notification.service';
 // Query keys
 // ---------------------------------------------------------------------------
 
-const NOTIFICATIONS_KEY = ['notifications'] as const;
+const NOTIFICATIONS_LIST_KEY = ['notifications', 'list'] as const;
 const UNREAD_COUNT_KEY = ['notifications', 'unread-count'] as const;
+const ALL_NOTIFICATIONS_KEY = ['notifications'] as const;
+
+// ---------------------------------------------------------------------------
+// Helper — guards setQueriesData callbacks against non-page shaped data
+// ---------------------------------------------------------------------------
+
+const isPageResponse = (data: unknown): data is PageResponse<NotificationDto> =>
+  !!data && typeof data === 'object' && Array.isArray((data as any).content);
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -20,7 +28,7 @@ const UNREAD_COUNT_KEY = ['notifications', 'unread-count'] as const;
 
 export const useNotifications = (page = 0, size = 20) => {
   return useQuery({
-    queryKey: [...NOTIFICATIONS_KEY, page, size],
+    queryKey: [...NOTIFICATIONS_LIST_KEY, page, size],
     queryFn: () => notificationService.getNotifications(page, size),
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000,
@@ -49,16 +57,16 @@ export const useMarkAsRead = () => {
     mutationFn: (id: string) => notificationService.markAsRead(id),
     // Optimistic update — flip the `read` flag immediately
     onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: NOTIFICATIONS_KEY });
+      await queryClient.cancelQueries({ queryKey: NOTIFICATIONS_LIST_KEY });
 
       const previousData = queryClient.getQueriesData<PageResponse<NotificationDto>>({
-        queryKey: NOTIFICATIONS_KEY,
+        queryKey: NOTIFICATIONS_LIST_KEY,
       });
 
       queryClient.setQueriesData<PageResponse<NotificationDto>>(
-        { queryKey: NOTIFICATIONS_KEY },
+        { queryKey: NOTIFICATIONS_LIST_KEY },
         (old) => {
-          if (!old) return old;
+          if (!isPageResponse(old)) return old;
           return {
             ...old,
             content: old.content.map((n) =>
@@ -97,12 +105,17 @@ export const useMarkAllAsRead = () => {
   return useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: NOTIFICATIONS_KEY });
+      await queryClient.cancelQueries({ queryKey: NOTIFICATIONS_LIST_KEY });
+
+      const previousNotifications = queryClient.getQueriesData<PageResponse<NotificationDto>>({
+        queryKey: NOTIFICATIONS_LIST_KEY,
+      });
+      const previousCount = queryClient.getQueryData<{ count: number }>(UNREAD_COUNT_KEY);
 
       queryClient.setQueriesData<PageResponse<NotificationDto>>(
-        { queryKey: NOTIFICATIONS_KEY },
+        { queryKey: NOTIFICATIONS_LIST_KEY },
         (old) => {
-          if (!old) return old;
+          if (!isPageResponse(old)) return old;
           return {
             ...old,
             content: old.content.map((n) => ({ ...n, read: true })),
@@ -111,9 +124,27 @@ export const useMarkAllAsRead = () => {
       );
 
       queryClient.setQueryData<{ count: number }>(UNREAD_COUNT_KEY, { count: 0 });
+
+      return { previousNotifications, previousCount };
+    },
+    onSuccess: () => {
+      toast.success('All notifications marked as read');
+    },
+    onError: (err, _vars, context) => {
+      console.error('[useMarkAllAsRead] Error:', err);
+      // Rollback on failure
+      if (context?.previousNotifications) {
+        context.previousNotifications.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousCount) {
+        queryClient.setQueryData(UNREAD_COUNT_KEY, context.previousCount);
+      }
+      toast.error('Failed to mark notifications as read');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_LIST_KEY });
       queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_KEY });
     },
   });
@@ -143,7 +174,7 @@ export const useLiveNotifications = (): void => {
         const payload = JSON.parse(message.body) as NotificationDto;
 
         // Invalidate list so new notification appears at top
-        queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
+        queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_LIST_KEY });
 
         // Increment unread count in cache immediately
         queryClient.setQueryData<{ count: number }>(UNREAD_COUNT_KEY, (old) => ({

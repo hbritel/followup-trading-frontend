@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Check, ChevronsUpDown, Info, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,9 +33,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useCreateTrade } from '@/hooks/useCreateTrade';
 import type { CreateTradeRequest } from '@/services/trade.service';
+import { brokerService } from '@/services/broker.service';
+import { useSymbolSpecifications } from '@/hooks/useSymbolSpecifications';
+import { useStrategies } from '@/hooks/useStrategies';
 
 // Define the form schema with Zod -- matches TradeDto.Request on the backend
 const formSchema = z.object({
@@ -101,11 +126,28 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = React.useState(false);
+  const [accountId, setAccountId] = React.useState<string>('none');
+  const [selectedStrategyId, setSelectedStrategyId] = React.useState<string>('none');
   const createTrade = useCreateTrade();
+  const { data: symbolSpecs } = useSymbolSpecifications();
+  const { data: strategies } = useStrategies();
+  const [symbolPopoverOpen, setSymbolPopoverOpen] = React.useState(false);
+
+  const activeStrategies = React.useMemo(
+    () => (strategies ?? []).filter((s) => s.active),
+    [strategies],
+  );
 
   // Use external state if provided, otherwise use internal state
   const isOpen = open !== undefined ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
+
+  // Fetch broker connections for the account selector
+  const { data: connections } = useQuery({
+    queryKey: ['broker-connections'],
+    queryFn: brokerService.getConnections,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -140,6 +182,8 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
       fees: data.fees ? Number(data.fees) : null,
       notes: data.notes?.trim() || null,
       status: data.exitDate && data.exitPrice ? 'CLOSED' : 'OPEN',
+      accountId: accountId && accountId !== 'none' ? accountId : undefined,
+      strategyIds: selectedStrategyId !== 'none' ? [selectedStrategyId] : [],
     };
 
     createTrade.mutate(request, {
@@ -147,6 +191,8 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
         toast.success(t('trades.tradeCreatedSuccess', 'Trade created successfully'));
         setIsOpen(false);
         form.reset();
+        setAccountId('none');
+        setSelectedStrategyId('none');
       },
       onError: (error: Error) => {
         const message = error.message || t('trades.tradeCreatedError', 'Failed to create trade. Please try again.');
@@ -180,23 +226,153 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Symbol */}
+          <form onSubmit={form.handleSubmit(onSubmit, () => {
+            // Scroll to the first error field when validation fails
+            setTimeout(() => {
+              const firstError = document.querySelector('[aria-invalid="true"]');
+              firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              (firstError as HTMLElement)?.focus();
+            }, 0);
+          })} className="space-y-4">
+            {/* Account Selector */}
+            <div className="space-y-2">
+              <Label>{t('trades.account')}</Label>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('trades.selectAccount')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('trades.noAccount')}</SelectItem>
+                  {connections?.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.displayName || c.brokerDisplayName || c.brokerCode}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Strategy Selector */}
+            <div className="space-y-2">
+              <Label>{t('trades.strategy', 'Strategy')}</Label>
+              <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('trades.selectStrategy', 'Select a strategy (optional)')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('trades.noStrategy', 'No strategy')}</SelectItem>
+                  {activeStrategies.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedStrategyId !== 'none' && (
+                <p className="text-xs text-muted-foreground/50">
+                  Rule compliance checklist will be available after the trade is created.
+                </p>
+              )}
+            </div>
+
+            {/* Symbol — Combobox with autocomplete + info tooltip + contract size badge */}
             <FormField
               control={form.control}
               name="symbol"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('trades.symbol')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="AAPL" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    {t('trades.symbolDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const normalizedSymbol = field.value?.toUpperCase().trim();
+                const matchedSpec = symbolSpecs?.find(s => s.symbol === normalizedSymbol);
+                return (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>{t('trades.symbol')}</FormLabel>
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[260px]">
+                            <p className="text-xs">
+                              {matchedSpec
+                                ? t('symbols.tooltipKnown', { contractSize: matchedSpec.contractSize.toLocaleString() })
+                                : t('symbols.tooltipUnknown')}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Popover open={symbolPopoverOpen} onOpenChange={setSymbolPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={symbolPopoverOpen}
+                            className={cn(
+                              "w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value
+                              ? (matchedSpec ? `${field.value.toUpperCase()} — ${matchedSpec.displayName}` : field.value.toUpperCase())
+                              : t('symbols.searchSymbol')}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder={t('symbols.searchSymbol')}
+                            onValueChange={(search) => {
+                              // Allow typing a custom symbol directly
+                              if (search) field.onChange(search.toUpperCase().trim());
+                            }}
+                          />
+                          <CommandList>
+                            <CommandEmpty>{t('symbols.noResults')}</CommandEmpty>
+                            <CommandGroup>
+                              {symbolSpecs?.map((spec) => (
+                                <CommandItem
+                                  key={spec.symbol}
+                                  value={spec.symbol}
+                                  onSelect={() => {
+                                    field.onChange(spec.symbol);
+                                    setSymbolPopoverOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn(
+                                    "mr-2 h-4 w-4",
+                                    normalizedSymbol === spec.symbol ? "opacity-100" : "opacity-0"
+                                  )} />
+                                  <span className="font-medium">{spec.symbol}</span>
+                                  <span className="ml-2 text-muted-foreground text-xs">{spec.displayName}</span>
+                                  <span className="ml-auto text-muted-foreground text-xs font-mono">{spec.assetType}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {/* Contract size badge — appears after symbol selection */}
+                    {normalizedSymbol && (
+                      <div className="flex items-center gap-1.5">
+                        {matchedSpec ? (
+                          <Badge variant="secondary" className="text-xs font-mono">
+                            {t('symbols.knownSymbol')} — {t('symbols.contractSize')}: {matchedSpec.contractSize.toLocaleString()}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            {t('symbols.unknownSymbol')} — {t('symbols.contractSize')}: 1
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             {/* Direction */}

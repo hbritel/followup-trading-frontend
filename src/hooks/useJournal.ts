@@ -8,10 +8,6 @@ export const useJournalEntries = () => {
   return useQuery({
     queryKey: JOURNAL_KEY,
     queryFn: () => journalService.getEntries(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
   });
 };
@@ -21,9 +17,14 @@ export const useJournalEntryByDate = (date: string) => {
     queryKey: [...JOURNAL_KEY, 'date', date],
     queryFn: () => journalService.getEntryByDate(date),
     enabled: !!date,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
+  });
+};
+
+export const useEntriesByDate = (date: string) => {
+  return useQuery({
+    queryKey: [...JOURNAL_KEY, 'by-date', date],
+    queryFn: () => journalService.getEntriesByDate(date),
+    enabled: !!date,
   });
 };
 

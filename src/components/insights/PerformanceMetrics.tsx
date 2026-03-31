@@ -1,320 +1,177 @@
-
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  BarChart, 
-  LineChart, 
-  ResponsiveContainer, 
-  Bar, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  Cell,
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
   AreaChart,
   Area,
-  ComposedChart,
-  Scatter
-} from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Cell,
+} from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMonthlyPerformance } from '@/hooks/useTimeMetrics';
+import { useStrategyStats } from '@/hooks/useStrategies';
 
-const PerformanceMetrics = () => {
+// ---- Chart theme constants ----
+const CHART_COLORS = {
+  profit: '#22c55e',
+  loss: '#ef4444',
+  primary: '#3b82f6',
+  secondary: '#8b5cf6',
+  tertiary: '#f59e0b',
+  grid: 'rgba(255,255,255,0.06)',
+  axis: '#94a3b8',
+  tooltipBg: '#1e293b',
+};
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const CustomTooltipStyle = {
+  backgroundColor: CHART_COLORS.tooltipBg,
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '8px',
+  color: '#f1f5f9',
+  fontSize: '12px',
+};
+
+interface PerformanceMetricsProps {
+  startDate?: string;
+  endDate?: string;
+  accountIds?: string[];
+}
+
+const ChartSkeleton = () => (
+  <div className="h-[300px] flex items-center justify-center">
+    <Skeleton className="w-full h-full rounded-xl" />
+  </div>
+);
+
+const NoData: React.FC<{ message: string }> = ({ message }) => (
+  <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">
+    {message}
+  </div>
+);
+
+const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ startDate, endDate, accountIds }) => {
   const { t } = useTranslation();
-  const [timeframe, setTimeframe] = useState('6m');
-  
-  // Mock data for metrics (enhanced)
-  const monthlyPerformance = [
-    { month: 'Jan', profit: 1200, loss: -500, trades: 24, winRate: 65, drawdown: -2.3, ror: 3.2, kelly: 12.4 },
-    { month: 'Feb', profit: 0, loss: -800, trades: 18, winRate: 45, drawdown: -4.1, ror: -2.1, kelly: -5.3 },
-    { month: 'Mar', profit: 2300, loss: -420, trades: 32, winRate: 72, drawdown: -1.8, ror: 4.5, kelly: 18.2 },
-    { month: 'Apr', profit: 1500, loss: -380, trades: 28, winRate: 68, drawdown: -2.5, ror: 3.1, kelly: 14.6 },
-    { month: 'May', profit: 0, loss: -400, trades: 16, winRate: 42, drawdown: -3.2, ror: -1.1, kelly: -2.8 },
-    { month: 'Jun', profit: 3200, loss: -650, trades: 35, winRate: 74, drawdown: -2.1, ror: 4.9, kelly: 22.1 },
-  ];
-  
-  const strategyPerformance = [
-    { name: 'Breakout', winRate: 56, profitFactor: 1.8, expectancy: 0.7, avgHoldTime: 4.2, var: -2.5, payoffRatio: 2.1 },
-    { name: 'Trend', winRate: 48, profitFactor: 2.5, expectancy: 0.9, avgHoldTime: 12.6, var: -3.1, payoffRatio: 3.2 },
-    { name: 'Reversal', winRate: 52, profitFactor: 2.2, expectancy: 0.8, avgHoldTime: 2.8, var: -2.8, payoffRatio: 2.4 },
-    { name: 'Momentum', winRate: 62, profitFactor: 1.5, expectancy: 0.6, avgHoldTime: 1.4, var: -1.9, payoffRatio: 1.8 },
-  ];
-  
-  // New data for sectors and market alignment
-  const sectorExposure = [
-    { name: 'Technology', value: 35 },
-    { name: 'Finance', value: 22 },
-    { name: 'Healthcare', value: 18 },
-    { name: 'Consumer', value: 14 },
-    { name: 'Energy', value: 8 },
-    { name: 'Utilities', value: 3 },
-  ];
-  
-  const marketAlignment = [
-    { date: '2023-01-15', aligned: 85, misaligned: 15 },
-    { date: '2023-02-15', aligned: 72, misaligned: 28 },
-    { date: '2023-03-15', aligned: 93, misaligned: 7 },
-    { date: '2023-04-15', aligned: 65, misaligned: 35 },
-    { date: '2023-05-15', aligned: 78, misaligned: 22 },
-    { date: '2023-06-15', aligned: 88, misaligned: 12 },
-  ];
-  
-  // Risk-reward distribution
-  const riskRewardData = [
-    { r: 1, pnl: 250, winRate: 72, trades: 15 },
-    { r: 1.5, pnl: 420, winRate: 65, trades: 22 },
-    { r: 2, pnl: 850, winRate: 58, trades: 31 },
-    { r: 2.5, pnl: 920, winRate: 52, trades: 18 },
-    { r: 3, pnl: 670, winRate: 48, trades: 12 },
-    { r: 3.5, pnl: 420, winRate: 42, trades: 8 },
-    { r: 4, pnl: 180, winRate: 38, trades: 5 },
-  ];
-  
-  // Custom function to get bar fill color based on profit
-  const getBarFill = (entry: any) => {
-    return entry.profit >= 0 ? "#10b981" : "#ef4444";
-  };
-  
+
+  const { data: monthly, isLoading: monthlyLoading } = useMonthlyPerformance(startDate, endDate, accountIds);
+  const { data: strategyStats, isLoading: strategyLoading } = useStrategyStats();
+
+  const noDataMsg = t('insights.noData', 'No data for selected period');
+
+  const monthlyChartData = useMemo(() => {
+    if (!monthly) return [];
+    return monthly.map((m) => ({
+      label: `${MONTH_NAMES[m.month - 1]} ${m.year !== new Date().getFullYear() ? m.year : ''}`.trim(),
+      pnl: Number(m.profitLoss.toFixed(2)),
+      winRate: Number((m.winRate * 100).toFixed(1)),
+      trades: m.totalTrades,
+    }));
+  }, [monthly]);
+
+  const strategyChartData = useMemo(() => {
+    if (!strategyStats) return [];
+    return strategyStats
+      .filter((s) => s.tradeCount > 0)
+      .map((s) => ({
+        name: s.strategyName.length > 12 ? s.strategyName.slice(0, 12) + '\u2026' : s.strategyName,
+        winRate: Number((s.winRate * 100).toFixed(1)),
+        profitFactor: Number(s.profitFactor.toFixed(2)),
+        expectancy: Number(s.expectancy.toFixed(2)),
+        trades: s.tradeCount,
+      }));
+  }, [strategyStats]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <h2 className="text-2xl font-bold">{t('insights.performanceAnalysis')}</h2>
-        <Select value={timeframe} onValueChange={setTimeframe}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('insights.selectTimeframe')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1m">1 {t('insights.month')}</SelectItem>
-            <SelectItem value="3m">3 {t('insights.months')}</SelectItem>
-            <SelectItem value="6m">6 {t('insights.months')}</SelectItem>
-            <SelectItem value="1y">1 {t('insights.year')}</SelectItem>
-            <SelectItem value="all">{t('insights.allTime')}</SelectItem>
-          </SelectContent>
-        </Select>
+        <h2 className="text-xl font-bold">{t('insights.performanceAnalysis', 'Performance Analysis')}</h2>
       </div>
-    
-      <Card>
+
+      {/* Monthly P&L */}
+      <Card className="glass-card rounded-2xl">
         <CardHeader>
-          <CardTitle>{t('insights.monthlyPerformance')}</CardTitle>
-          <CardDescription>{t('insights.monthlyPerformanceDescription')}</CardDescription>
+          <CardTitle>{t('insights.monthlyPerformance', 'Monthly P&L')}</CardTitle>
+          <CardDescription>{t('insights.monthlyPerformanceDescription', 'Net profit/loss per calendar month')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="profit">
-            <TabsList className="mb-4">
-              <TabsTrigger value="profit">{t('insights.profitLoss')}</TabsTrigger>
-              <TabsTrigger value="metrics">{t('insights.keyMetrics')}</TabsTrigger>
-              <TabsTrigger value="cumulative">{t('insights.cumulative')}</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="profit">
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={monthlyPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="profit" 
-                    name={t('insights.profit')} 
-                    fill="#10b981"
-                    radius={[4, 4, 0, 0]}
-                  >
-                    {monthlyPerformance.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getBarFill(entry)} />
-                    ))}
-                  </Bar>
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="loss" 
-                    name={t('insights.loss')} 
-                    fill="#ef4444"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="trades" 
-                    name={t('insights.trades')} 
-                    stroke="#8884d8"
-                    yAxisId="right"
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </TabsContent>
-            
-            <TabsContent value="metrics">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="winRate" 
-                    name={t('insights.winRate')} 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ror" 
-                    name={t('insights.returnOnRisk')} 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="kelly" 
-                    name={t('insights.kellyPercentage')} 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="drawdown" 
-                    name={t('insights.drawdown')} 
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </TabsContent>
-            
-            <TabsContent value="cumulative">
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={monthlyPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <defs>
-                    <linearGradient id="colorPnL" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <Area 
-                    type="monotone" 
-                    dataKey="profit" 
-                    name={t('insights.cumulativeProfit')} 
-                    stroke="#10b981" 
-                    fillOpacity={1} 
-                    fill="url(#colorPnL)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </TabsContent>
-          </Tabs>
+          {monthlyLoading ? <ChartSkeleton /> : monthlyChartData.length === 0 ? <NoData message={noDataMsg} /> : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlyChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="label" tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} />
+                <YAxis tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} width={60} tickFormatter={(v) => `$${v}`} />
+                <RechartsTooltip contentStyle={CustomTooltipStyle} formatter={(value: number) => [`$${value.toFixed(2)}`, t('insights.pnl', 'P&L')]} />
+                <Bar dataKey="pnl" radius={[4, 4, 0, 0]} name={t('insights.pnl', 'P&L')}>
+                  {monthlyChartData.map((entry, index) => (
+                    <Cell key={`pnl-${index}`} fill={entry.pnl >= 0 ? CHART_COLORS.profit : CHART_COLORS.loss} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('insights.strategyPerformance')}</CardTitle>
-            <CardDescription>{t('insights.strategyPerformanceDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={strategyPerformance} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={80} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="winRate" name={t('insights.winRate')} fill="#8884d8" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="profitFactor" name={t('insights.profitFactor')} fill="#82ca9d" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="expectancy" name={t('insights.expectancy')} fill="#ffc658" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="payoffRatio" name={t('insights.payoffRatio')} fill="#ff7300" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('insights.riskRewardAnalysis')}</CardTitle>
-            <CardDescription>{t('insights.riskRewardDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={riskRewardData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="r" label={{ value: 'Risk:Reward Ratio', position: 'insideBottom', offset: -5 }} />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Legend />
-                <Bar yAxisId="left" dataKey="pnl" name={t('insights.pnl')} fill="#8884d8" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="right" type="monotone" dataKey="winRate" name={t('insights.winRate')} stroke="#ff7300" />
-                <Scatter yAxisId="right" dataKey="trades" name={t('insights.tradeCount')} fill="#82ca9d" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('insights.sectorExposure')}</CardTitle>
-            <CardDescription>{t('insights.sectorExposureDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={sectorExposure}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="value" name={t('insights.exposure')} fill="#8884d8" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('insights.marketDirectionAlignment')}</CardTitle>
-            <CardDescription>{t('insights.marketDirectionDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={marketAlignment}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="aligned" 
-                  stackId="1"
-                  name={t('insights.aligned')} 
-                  stroke="#10b981" 
-                  fill="#10b981" />
-                <Area 
-                  type="monotone" 
-                  dataKey="misaligned" 
-                  stackId="1"
-                  name={t('insights.misaligned')} 
-                  stroke="#ef4444" 
-                  fill="#ef4444" />
+
+      {/* Win Rate Trend */}
+      <Card className="glass-card rounded-2xl">
+        <CardHeader>
+          <CardTitle>{t('insights.winRateTrend', 'Win Rate Trend')}</CardTitle>
+          <CardDescription>{t('insights.winRateTrendDescription', 'Win rate (%) per month over the selected period')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlyLoading ? <ChartSkeleton /> : monthlyChartData.length === 0 ? <NoData message={noDataMsg} /> : (
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={monthlyChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="winRateGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="label" tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} />
+                <YAxis tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                <RechartsTooltip contentStyle={CustomTooltipStyle} formatter={(value: number) => [`${value.toFixed(1)}%`, t('insights.winRate', 'Win Rate')]} />
+                <Area type="monotone" dataKey="winRate" stroke={CHART_COLORS.primary} strokeWidth={2} fill="url(#winRateGradient)" name={t('insights.winRate', 'Win Rate')} />
               </AreaChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Strategy Comparison */}
+      <Card className="glass-card rounded-2xl">
+        <CardHeader>
+          <CardTitle>{t('insights.strategyPerformance', 'Strategy Comparison')}</CardTitle>
+          <CardDescription>{t('insights.strategyPerformanceDescription', 'Win rate, profit factor, and expectancy by strategy')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {strategyLoading ? <ChartSkeleton /> : strategyChartData.length === 0 ? (
+            <NoData message={t('insights.noStrategies', 'No strategy data available')} />
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={strategyChartData} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis type="number" tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" width={90} tick={{ fill: CHART_COLORS.axis, fontSize: 11 }} />
+                <RechartsTooltip contentStyle={CustomTooltipStyle} />
+                <Legend wrapperStyle={{ color: CHART_COLORS.axis, fontSize: 11 }} />
+                <Bar dataKey="winRate" name={t('insights.winRate', 'Win Rate %')} fill={CHART_COLORS.primary} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="profitFactor" name={t('insights.profitFactor', 'Profit Factor')} fill={CHART_COLORS.secondary} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="expectancy" name={t('insights.expectancy', 'Expectancy')} fill={CHART_COLORS.tertiary} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

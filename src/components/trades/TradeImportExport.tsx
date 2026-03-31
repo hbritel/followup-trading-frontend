@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Trade } from '@/components/trades/TradesTableWrapper';
 import { tradeService } from '@/services/trade.service';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
 
-/** Column key → human-readable header */
+/** Column key -> human-readable header */
 const COLUMN_HEADERS: Record<string, string> = {
   symbol: 'Symbol',
   type: 'Direction',
   status: 'Status',
+  accountType: 'Account Type',
   entryDate: 'Entry Date',
   exitDate: 'Exit Date',
   entryPrice: 'Entry Price',
@@ -91,6 +93,7 @@ const TradeImportExport: React.FC<TradeImportExportProps> = ({
   accountFilter,
   totalElements,
 }) => {
+  const { accountIds: resolvedAccountIds } = useAccountFilter(accountFilter ?? 'all');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'excel'>('csv');
@@ -112,9 +115,7 @@ const TradeImportExport: React.FC<TradeImportExportProps> = ({
       // Determine which trades to export
       let tradesToExport: Trade[];
       if (exportScope === 'all') {
-        tradesToExport = await tradeService.getAllTrades(
-          accountFilter && accountFilter !== 'all' ? accountFilter : undefined
-        );
+        tradesToExport = await tradeService.getAllTrades(resolvedAccountIds);
       } else {
         tradesToExport = filteredTrades;
       }

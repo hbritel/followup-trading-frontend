@@ -6,6 +6,7 @@ import {
   type CredentialSchemaResponse,
   type ConnectBrokerRequest,
 } from '@/services/broker.service';
+import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 
 /**
  * Fetch the broker catalog (all available brokers).
@@ -17,8 +18,6 @@ export const useBrokers = () => {
     queryFn: brokerService.getBrokers,
     staleTime: 30 * 60 * 1000,   // Broker catalog rarely changes
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
   });
 };
@@ -31,10 +30,6 @@ export const useBrokerConnections = () => {
   return useQuery<BrokerConnectionResponse[]>({
     queryKey: ['broker-connections'],
     queryFn: brokerService.getConnections,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
   });
 };
@@ -50,7 +45,6 @@ export const useCredentialSchema = (brokerCode: string | null, protocol?: string
     enabled: !!brokerCode,
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 };
 
@@ -81,6 +75,8 @@ export const useDisconnectBroker = () => {
     mutationFn: (connectionId: string) => brokerService.disconnectBroker(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      invalidateDashboardData(queryClient);
     },
   });
 };
@@ -96,6 +92,8 @@ export const useSyncConnection = () => {
     mutationFn: (connectionId: string) => brokerService.syncConnection(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      invalidateDashboardData(queryClient);
     },
   });
 };

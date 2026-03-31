@@ -7,19 +7,22 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { usePageFilter } from '@/contexts/page-filters-context';
+import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTrades } from '@/hooks/useTrades';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TradeTable from '@/components/dashboard/TradeTable';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
-import AccountSummary from '@/components/dashboard/AccountSummary';
+import AccountSummary, { TradeStatistics } from '@/components/dashboard/AccountSummary';
+import AccountFundingCard from '@/components/dashboard/AccountFundingCard';
 import TradingCalendar from '@/components/dashboard/Calendar';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import { DashboardSkeleton } from '@/components/skeletons';
 import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
-import OpenPositionsPanel from '@/components/dashboard/OpenPositionsPanel';
-import DailyPerformanceChart from '@/components/dashboard/DailyPerformanceChart';
+// TODO: re-enable once real-time positions are ready
+// import OpenPositionsPanel from '@/components/dashboard/OpenPositionsPanel';
+
 import KpiCard from '@/components/dashboard/KpiCard';
 import PageTransition from '@/components/ui/page-transition';
 import ConnectionIndicator from '@/components/ui/connection-indicator';
@@ -28,6 +31,7 @@ import { useLivePortfolio } from '@/hooks/useLivePortfolio';
 import { useLiveTrades } from '@/hooks/useLiveTrades';
 import { useLiveAlerts } from '@/hooks/useLiveAlerts';
 import XpProgressBar from '@/components/gamification/XpProgressBar';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -36,11 +40,11 @@ function toISODate(d: Date): string {
 const Dashboard = () => {
   const { t } = useTranslation();
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('dashboard', 'accountId', 'all');
-  const [datePreset, setDatePreset] = usePageFilter('dashboard', 'datePreset', 'all');
+  const [datePreset, setDatePreset] = useDefaultDatePreset('dashboard');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('dashboard', 'customStart', null);
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('dashboard', 'customEnd', null);
 
-  const apiAccountId = selectedAccountId === 'all' ? undefined : selectedAccountId;
+  const { accountIds, accountId: apiAccountId } = useAccountFilter(selectedAccountId);
 
   // Compute date range from preset or custom dates
   const dateRange = datePreset === 'custom'
@@ -57,28 +61,24 @@ const Dashboard = () => {
   useLiveAlerts();
 
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(
-    apiAccountId, dateRange.startDate, dateRange.endDate
+    accountIds, dateRange.startDate, dateRange.endDate
   );
   const { data: tradesResponse, isLoading: tradesLoading } = useTrades({
     page: 0,
     size: 10,
-    accountIds: apiAccountId
+    accountIds: accountIds
   });
   const { data: dashboardSummary } = useDashboardSummary(
-    dateRange.startDate, dateRange.endDate, apiAccountId
+    dateRange.startDate, dateRange.endDate, accountIds
   );
 
   const trades = tradesResponse?.content || [];
   const isLoading = analyticsLoading || tradesLoading;
 
-  // Build sparkline from equity curve daily profits
+  // Build sparkline from backend-computed cumulative equity
   const equitySparkline: number[] = React.useMemo(() => {
     if (!analytics?.equityCurve || analytics.equityCurve.length === 0) return [];
-    let cum = analytics.priorEquity ?? 0;
-    return analytics.equityCurve.map(p => {
-      cum += p.dailyProfit;
-      return cum;
-    });
+    return analytics.equityCurve.map(p => p.cumulativeEquity);
   }, [analytics]);
 
   const pnlSparkline: number[] = React.useMemo(() => {
@@ -177,32 +177,22 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Row 2: Equity curve (2/3) + Daily performance bar chart (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <PerformanceChart analytics={analytics} />
-          </div>
-          <DailyPerformanceChart data={dashboardSummary?.recentDailyPerformance} />
+        {/* Row 2: Performance + Daily P&L + Trade Statistics (3 x 1/3) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <PerformanceChart analytics={analytics} />
+          <TradeStatistics analytics={analytics} />
         </div>
 
-        {/* Row 3: Trade history table (2/3) + Calendar heatmap (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
+        {/* Row 3: Account Funding (deposits, withdrawals, real P&L) */}
+        <AccountFundingCard dashboardSummary={dashboardSummary} isLoading={!dashboardSummary} />
+
+        {/* Row 4: Trade history + Account summary (3/4) | Calendar heatmap (1/4) */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3 flex flex-col gap-4">
             <TradeTable trades={trades} />
+            <AccountSummary analytics={analytics} dashboardSummary={dashboardSummary} metricsLoading={!dashboardSummary} />
           </div>
-          <div>
-            <TradingCalendar analytics={analytics} accountId={apiAccountId} />
-          </div>
-        </div>
-
-        {/* Row 4: Account summary full-width */}
-        <AccountSummary analytics={analytics} />
-
-        {/* Row 5: Open positions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <OpenPositionsPanel positions={dashboardSummary?.openPositions} />
-          {/* Spacer to keep open positions from stretching awkwardly on large screens */}
-          <div className="hidden lg:block" />
+          <TradingCalendar accountId={accountIds} />
         </div>
 
       </PageTransition>

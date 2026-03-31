@@ -2,7 +2,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TradesTable } from '@/components/trades/TradesTable';
-import { Card } from '@/components/ui/card';
 import {
   Pagination,
   PaginationContent,
@@ -40,11 +39,14 @@ export interface Trade {
   swap?: number;
   currency?: string;
   strategy?: string;
+  strategies?: { id: string; name: string }[];
   notes?: string;
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
   balance?: number;
+  accountId?: string;
+  accountType?: string;
 }
 
 export interface TradesTableWrapperProps {
@@ -62,6 +64,7 @@ export interface TradesTableWrapperProps {
   onEdit?: (tradeId: string) => void;
   onDelete?: (tradeId: string) => void;
   onView?: (tradeId: string) => void;
+  highlightTradeId?: string | null;
 }
 
 export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
@@ -78,21 +81,22 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
   totalTrades,
   onEdit,
   onDelete,
-  onView
+  onView,
+  highlightTradeId,
 }) => {
   const { t } = useTranslation();
   const totalPages = Math.ceil(totalTrades / itemsPerPage);
-  
+
   const renderPaginationItems = () => {
     const items = [];
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
+
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    
+
     if (startPage > 1) {
       items.push(
         <PaginationItem key="first">
@@ -101,7 +105,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
           </PaginationLink>
         </PaginationItem>
       );
-      
+
       if (startPage > 2) {
         items.push(
           <PaginationItem key="ellipsis-start">
@@ -110,7 +114,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
         );
       }
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <PaginationItem key={i}>
@@ -120,7 +124,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
         </PaginationItem>
       );
     }
-    
+
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         items.push(
@@ -129,7 +133,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
           </PaginationItem>
         );
       }
-      
+
       items.push(
         <PaginationItem key="last">
           <PaginationLink onClick={() => onPageChange(totalPages)}>
@@ -138,7 +142,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
         </PaginationItem>
       );
     }
-    
+
     return items;
   };
 
@@ -155,9 +159,10 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           onView={onView}
+          highlightTradeId={highlightTradeId}
         />
       </div>
-      
+
       {totalTrades > 0 && (
         <div className="border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -168,7 +173,7 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
                 total: totalTrades
               })}
             </div>
-            
+
             {onItemsPerPageChange && (
               <div className="flex items-center gap-2">
                 <span>{t('trades.rowsPerPage', 'Rows per page')}</span>
@@ -190,21 +195,21 @@ export const TradesTableWrapper: React.FC<TradesTableWrapperProps> = ({
               </div>
             )}
           </div>
-          
+
           <Pagination className="mx-0 w-auto">
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                   aria-disabled={currentPage === 1}
                   className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
-              
+
               {renderPaginationItems()}
-              
+
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                   aria-disabled={currentPage === totalPages || totalPages === 0}
                   className={(currentPage === totalPages || totalPages === 0) ? "pointer-events-none opacity-50" : "cursor-pointer"}

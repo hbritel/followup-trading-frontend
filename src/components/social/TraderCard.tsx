@@ -28,14 +28,14 @@ const TraderCard: React.FC<TraderCardProps> = ({ trader, onFollow, onUnfollow, i
       {/* Avatar + info */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Avatar placeholder */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/40 to-violet-700/40 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-300 select-none">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/40 to-primary/20 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary select-none">
           {trader.username.charAt(0).toUpperCase()}
         </div>
 
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-white truncate">{trader.username}</span>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-violet-500/30 text-violet-400">
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
               {trader.level}
             </Badge>
           </div>

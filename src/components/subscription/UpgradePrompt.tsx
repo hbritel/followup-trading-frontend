@@ -33,7 +33,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         'glass-card rounded-2xl p-6 flex flex-col items-center text-center gap-4',
         isEnterprise
           ? 'border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.08)]'
-          : 'border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.08)]',
+          : 'border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.08)]',
         className,
       )}
     >

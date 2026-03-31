@@ -53,7 +53,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
                   !startDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-foreground" />
                 {startDate ? format(startDate, "PPP") : <span>{t('trades.pickStartDate')}</span>}
               </Button>
             </PopoverTrigger>
@@ -82,7 +82,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
                   !endDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-foreground" />
                 {endDate ? format(endDate, "PPP") : <span>{t('trades.pickEndDate')}</span>}
               </Button>
             </PopoverTrigger>

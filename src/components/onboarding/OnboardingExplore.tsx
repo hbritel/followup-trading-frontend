@@ -48,7 +48,7 @@ const OnboardingExplore: React.FC<OnboardingExploreProps> = ({ onComplete }) => 
       titleKey: 'onboarding.featureDashboard',
       descKey: 'onboarding.featureDashboardDesc',
       href: '/dashboard',
-      color: 'text-violet-400 bg-violet-500/10',
+      color: 'text-primary bg-primary/10',
     },
     {
       icon: <Sparkles className="w-5 h-5" />,
@@ -104,7 +104,7 @@ const OnboardingExplore: React.FC<OnboardingExploreProps> = ({ onComplete }) => 
           <button
             key={feature.href}
             onClick={() => handleNavigate(feature.href)}
-            className="glass-card rounded-2xl p-4 flex flex-col gap-3 text-left transition-all duration-200 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(139,92,246,0.1)] cursor-pointer"
+            className="glass-card rounded-2xl p-4 flex flex-col gap-3 text-left transition-all duration-200 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)] cursor-pointer"
           >
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${feature.color}`}>
               {feature.icon}

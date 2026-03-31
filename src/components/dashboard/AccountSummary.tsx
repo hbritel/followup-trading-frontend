@@ -17,8 +17,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Trade } from '@/components/trades/TradesTableWrapper';
-import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
+import type { DashboardSummary } from '@/services/metrics.service';
 
 const MetricCard = ({
   title,
@@ -96,9 +95,13 @@ const StatItem = ({
 
 import { AnalyticsDashboard } from '@/services/trade.service';
 
-const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
-  // Fetch real metrics from the backend dashboard summary endpoint
-  const { data: dashboardSummary, isLoading: metricsLoading } = useDashboardSummary();
+interface AccountSummaryProps {
+  analytics?: AnalyticsDashboard;
+  dashboardSummary?: DashboardSummary;
+  metricsLoading?: boolean;
+}
+
+const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }: AccountSummaryProps) => {
 
   if (!analytics) return null;
 
@@ -106,22 +109,13 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
     totalProfitLoss,
     totalTrades,
     winRate,
-    winningTrades,
-    losingTrades,
-    bestTrade,
-    worstTrade,
-    longProfitLoss,
-    shortProfitLoss,
-    totalFees
   } = analytics;
 
-  // Win/Loss Ratio
-  const winLossRatio = losingTrades > 0 ? (winningTrades / losingTrades) : (winningTrades > 0 ? winningTrades : 0);
+  const winLossRatio = analytics.winLossRatio ?? 0;
 
   // Extract real metrics from backend (with fallbacks)
   const sharpeRatio = dashboardSummary?.sharpeRatio;
   const maxDrawdownPercent = dashboardSummary?.drawdownMetrics?.maxDrawdownPercent;
-  const marginUtilization = dashboardSummary?.marginUtilization;
 
   // Format Sharpe Ratio display
   const sharpeDisplay = sharpeRatio != null ? sharpeRatio.toFixed(2) : '-';
@@ -134,9 +128,10 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
   const drawdownTrend: 'up' | 'down' | 'neutral' | undefined =
     maxDrawdownPercent != null ? (maxDrawdownPercent <= 10 ? 'up' : maxDrawdownPercent <= 20 ? 'neutral' : 'down') : undefined;
 
-  // Portfolio risk level derived from real margin utilization
-  const riskLevel = marginUtilization != null ? marginUtilization : 0;
-  const riskLabel = riskLevel <= 30 ? 'Low Risk' : riskLevel <= 60 ? 'Medium Risk' : 'High Risk';
+  // Portfolio risk level derived from max drawdown (date-filtered)
+  // Drawdown 0% = no risk, 50%+ = max risk on the scale
+  const riskLevel = maxDrawdownPercent != null ? Math.min(Math.abs(maxDrawdownPercent), 100) : 0;
+  const riskLabel = riskLevel <= 10 ? 'Low Risk' : riskLevel <= 25 ? 'Medium Risk' : 'High Risk';
 
   // Performance label derived from Sharpe ratio
   const perfLabel = sharpeRatio != null
@@ -171,8 +166,7 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-      <Card className="lg:col-span-2 glass-card animate-slide-up">
+      <Card className="glass-card animate-slide-up">
         <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200/50 dark:border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -250,76 +244,93 @@ const AccountSummary = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
           </div>
         </CardContent>
       </Card>
+  );
+};
 
-      <Card className="lg:row-span-1 glass-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200/50 dark:border-white/5">
-          <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Trade Statistics</CardTitle>
-          <CardDescription className="text-muted-foreground">Key performance indicators</CardDescription>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6 py-4 sm:py-6 pb-6 sm:pb-8">
-          <div className="space-y-5 sm:space-y-6">
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Winning Trades</span>
-                <span className="text-sm font-bold text-profit dark:text-glow">{winRate.toFixed(1)}% ({winningTrades})</span>
-              </div>
-              <Progress value={winRate} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-profit/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--profit),0.5)]" />
+export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
+  if (!analytics) return null;
+
+  const {
+    winRate,
+    winningTrades,
+    bestTrade,
+    worstTrade,
+    longProfitLoss,
+    shortProfitLoss,
+    totalFees
+  } = analytics;
+
+  const winLossRatio = analytics.winLossRatio ?? 0;
+
+  return (
+    <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200/50 dark:border-white/5">
+        <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Trade Statistics</CardTitle>
+        <CardDescription className="text-muted-foreground">Key performance indicators</CardDescription>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-6 py-4 sm:py-6 pb-6 sm:pb-8">
+        <div className="space-y-5 sm:space-y-6">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Winning Trades</span>
+              <span className="text-sm font-bold text-profit dark:text-glow">{winRate.toFixed(1)}% ({winningTrades})</span>
             </div>
+            <Progress value={winRate} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-profit/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--profit),0.5)]" />
+          </div>
 
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Win/Loss Ratio</span>
-                <span className="text-sm font-bold text-foreground dark:text-white">{winLossRatio.toFixed(2)}:1</span>
-              </div>
-              <Progress value={Math.min(100, (winLossRatio / 5) * 100)} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-primary/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Win/Loss Ratio</span>
+              <span className="text-sm font-bold text-foreground dark:text-white">{winLossRatio.toFixed(2)}:1</span>
             </div>
+            <Progress value={Math.min(100, (winLossRatio / 5) * 100)} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-primary/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+          </div>
 
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Long P&L</span>
-                <span className={cn("text-sm font-bold font-mono", longProfitLoss >= 0 ? "text-profit" : "text-loss")}>
-                  ${longProfitLoss.toFixed(2)}
-                </span>
-              </div>
-              <Progress value={longProfitLoss > 0 ? 100 : 0} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName={longProfitLoss >= 0 ? "bg-profit/80" : "bg-loss/80"} />
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Long P&L</span>
+              <span className={cn("text-sm font-bold font-mono", longProfitLoss >= 0 ? "text-profit" : "text-loss")}>
+                ${longProfitLoss.toFixed(2)}
+              </span>
             </div>
+            <Progress value={longProfitLoss > 0 ? 100 : 0} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName={longProfitLoss >= 0 ? "bg-profit/80" : "bg-loss/80"} />
+          </div>
 
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">Short P&L</span>
-                <span className={cn("text-sm font-bold font-mono", shortProfitLoss >= 0 ? "text-profit" : "text-loss")}>
-                  ${shortProfitLoss.toFixed(2)}
-                </span>
-              </div>
-              <Progress value={shortProfitLoss > 0 ? 100 : 0} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName={shortProfitLoss >= 0 ? "bg-profit/80" : "bg-loss/80"} />
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Short P&L</span>
+              <span className={cn("text-sm font-bold font-mono", shortProfitLoss >= 0 ? "text-profit" : "text-loss")}>
+                ${shortProfitLoss.toFixed(2)}
+              </span>
             </div>
+            <Progress value={shortProfitLoss > 0 ? 100 : 0} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName={shortProfitLoss >= 0 ? "bg-profit/80" : "bg-loss/80"} />
+          </div>
 
-            <div className="pt-4 flex justify-between border-t border-slate-200/50 dark:border-white/10 mt-2">
-              <StatItem
-                label="Best Trade"
-                value={`$${bestTrade.toFixed(2)}`}
-                trend={bestTrade >= 0 ? "up" : "down"}
-              />
-              <StatItem
-                label="Worst Trade"
-                value={`$${worstTrade.toFixed(2)}`}
-                trend={worstTrade >= 0 ? "up" : "down"}
-                className="items-end text-right"
-              />
-            </div>
+          <div className="pt-4 flex justify-between border-t border-slate-200/50 dark:border-white/10 mt-2">
+            <StatItem
+              label="Best Trade"
+              value={`$${bestTrade.toFixed(2)}`}
+              trend={bestTrade >= 0 ? "up" : "down"}
+            />
+            <StatItem
+              label="Worst Trade"
+              value={`$${worstTrade.toFixed(2)}`}
+              trend={worstTrade >= 0 ? "up" : "down"}
+              className="items-end text-right"
+            />
+          </div>
 
-            <div className="pt-4 border-t border-slate-200/50 dark:border-white/10 mt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Fees Paid</span>
-                <span className="text-sm font-mono tracking-tight text-loss">
-                  ${totalFees.toFixed(2)}
-                </span>
-              </div>
+          <div className="pt-4 border-t border-slate-200/50 dark:border-white/10 mt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Fees Paid</span>
+              <span className="text-sm font-mono tracking-tight text-loss">
+                ${totalFees.toFixed(2)}
+              </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

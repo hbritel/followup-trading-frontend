@@ -10,6 +10,7 @@ export interface BrokerConnectionResponse {
     brokerDisplayName?: string;
     accountIdentifier?: string;
     displayName: string | null;
+    accountType?: string;
     status: string;
     syncFrequency: string;
     enabled: boolean;
@@ -34,6 +35,7 @@ export interface ConnectBrokerRequest {
     brokerCode?: string; // New flow
     protocol?: string;   // New flow
     displayName?: string;
+    accountType?: string;
     credentials: string; // Must be a JSON string for the backend
     syncFrequency?: string;
 }
@@ -105,6 +107,25 @@ export const brokerService = {
     },
 
     /**
+     * Create a manual account (no broker integration).
+     * Delegates to connectBroker with MANUAL broker code and protocol.
+     */
+    createManualAccount: async (params: {
+        displayName: string;
+        accountType: string;
+        currency?: string;
+    }): Promise<BrokerConnectionResponse> => {
+        return brokerService.connectBroker({
+            brokerCode: 'MANUAL',
+            protocol: 'MANUAL',
+            credentials: JSON.stringify({ currency: params.currency || 'USD' }),
+            displayName: params.displayName,
+            accountType: params.accountType,
+            syncFrequency: 'MANUAL',
+        });
+    },
+
+    /**
      * Disconnect (delete) a broker connection.
      */
     disconnectBroker: async (connectionId: string): Promise<void> => {
@@ -114,7 +135,7 @@ export const brokerService = {
     /**
      * Update broker connection settings.
      */
-    updateSettings: async (connectionId: string, request: { syncFrequency?: string; enabled?: boolean; displayName?: string }): Promise<BrokerConnectionResponse> => {
+    updateSettings: async (connectionId: string, request: { syncFrequency?: string; enabled?: boolean; displayName?: string; accountType?: string }): Promise<BrokerConnectionResponse> => {
         const response = await apiClient.put<BrokerConnectionResponse>(`/broker-connections/${connectionId}/settings`, request);
         return response.data;
     },

@@ -3,12 +3,12 @@ import type { OnboardingStatusDto } from '@/types/dto';
 
 export const onboardingService = {
   getStatus: async (): Promise<OnboardingStatusDto> => {
-    const response = await apiClient.get<OnboardingStatusDto>('/onboarding/status');
+    const response = await apiClient.get<OnboardingStatusDto>('/onboarding');
     return response.data;
   },
 
   completeStep: async (step: string): Promise<OnboardingStatusDto> => {
-    const response = await apiClient.post<OnboardingStatusDto>(`/onboarding/steps/${step}/complete`);
+    const response = await apiClient.post<OnboardingStatusDto>(`/onboarding/step/${step}`);
     return response.data;
   },
 

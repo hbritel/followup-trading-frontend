@@ -18,7 +18,7 @@ const Leaderboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Award className="w-6 h-6 text-violet-400" />
+              <Award className="w-6 h-6 text-primary" />
               {t('gamification.leaderboard', 'Leaderboard')}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -31,7 +31,7 @@ const Leaderboard: React.FC = () => {
             <div className="glass-card rounded-xl px-4 py-2.5 flex items-center gap-3">
               <div>
                 <p className="text-xs text-muted-foreground">{t('gamification.yourRank', 'Your Rank')}</p>
-                <p className="text-sm font-semibold text-violet-400">
+                <p className="text-sm font-semibold text-primary">
                   {profile.levelName}
                 </p>
               </div>

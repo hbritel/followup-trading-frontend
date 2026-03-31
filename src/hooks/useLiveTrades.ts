@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useWebSocket } from '@/providers/WebSocketProvider';
 import { useAuth } from '@/contexts/auth-context';
+import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,6 +54,7 @@ export const useLiveTrades = (): LiveTradesResult => {
 
         // Always invalidate so the trades table picks up the new data
         queryClient.invalidateQueries({ queryKey: ['trades'] });
+        invalidateDashboardData(queryClient);
 
         if (payload.type === 'SYNC_COMPLETE') {
           toast.success(

@@ -23,6 +23,13 @@ export const journalService = {
     return response.data;
   },
 
+  getEntriesByDate: async (date: string): Promise<JournalEntryResponseDto[]> => {
+    const response = await apiClient.get<JournalEntryResponseDto[]>('/journal/by-date', {
+      params: { date },
+    });
+    return response.data;
+  },
+
   createEntry: async (data: JournalEntryRequestDto): Promise<JournalEntryResponseDto> => {
     const response = await apiClient.post<JournalEntryResponseDto>('/journal', data);
     return response.data;

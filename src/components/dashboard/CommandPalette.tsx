@@ -12,7 +12,6 @@ import {
   BookText as BookTextIcon,
   Calendar as CalendarIcon,
   CircleDollarSign as CircleDollarSignIcon,
-  Clock as ClockIcon,
   FileText as FileTextIcon,
   LineChart as LineChartIcon,
   List as ListIcon,
@@ -110,12 +109,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
           label: t('sidebar.calendar', 'Calendar'),
           icon: CalendarIcon,
           action: () => go('/calendar'),
-        },
-        {
-          id: 'nav-activity',
-          label: t('sidebar.activity', 'Activity'),
-          icon: ClockIcon,
-          action: () => go('/activity'),
         },
         {
           id: 'nav-playbook',
@@ -272,7 +265,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
               className={[
                 'flex-1 bg-transparent outline-none',
                 'text-sm text-white placeholder:text-muted-foreground/60',
-                'caret-violet-400',
+                'caret-primary',
               ].join(' ')}
               autoFocus
             />
@@ -310,16 +303,16 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
                       'group flex items-center gap-3 px-4 py-2.5 mx-1 rounded-xl',
                       'text-sm text-white/80 cursor-pointer',
                       'transition-colors duration-150',
-                      'data-[selected=true]:bg-violet-500/15 data-[selected=true]:text-white',
-                      'data-[selected=true]:shadow-[inset_0_0_0_1px_rgba(139,92,246,0.2)]',
+                      'data-[selected=true]:bg-primary/15 data-[selected=true]:text-white',
+                      'data-[selected=true]:shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.2)]',
                     ].join(' ')}
                   >
                     {/* Icon */}
-                    <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 group-data-[selected=true]:bg-violet-500/20 transition-colors duration-150">
+                    <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 group-data-[selected=true]:bg-primary/20 transition-colors duration-150">
                       <item.icon
                         className={[
                           'w-3.5 h-3.5 text-muted-foreground',
-                          'group-data-[selected=true]:text-violet-400',
+                          'group-data-[selected=true]:text-primary',
                           item.id === 'action-sync' && isSyncing ? 'animate-spin' : '',
                         ].join(' ')}
                       />
@@ -330,7 +323,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
 
                     {/* Keyboard shortcut badge */}
                     {item.shortcut && (
-                      <kbd className="ml-auto hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-muted-foreground group-data-[selected=true]:border-violet-500/30 group-data-[selected=true]:text-violet-400 transition-colors duration-150">
+                      <kbd className="ml-auto hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-muted-foreground group-data-[selected=true]:border-primary/30 group-data-[selected=true]:text-primary transition-colors duration-150">
                         {item.shortcut}
                       </kbd>
                     )}

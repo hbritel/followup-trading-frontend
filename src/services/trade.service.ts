@@ -62,6 +62,7 @@ export interface TradeListParams {
     searchText?: string;
     entryDateFrom?: string;
     entryDateTo?: string;
+    strategyIds?: string[];
 }
 
 export interface AnalyticsDashboard {
@@ -185,6 +186,7 @@ export const tradeService = {
         if (params?.searchText) searchBody.searchText = params.searchText;
         if (params?.entryDateFrom) searchBody.entryDateFrom = params.entryDateFrom;
         if (params?.entryDateTo) searchBody.entryDateTo = params.entryDateTo;
+        if (params?.strategyIds?.length) searchBody.strategyIds = params.strategyIds;
 
         const response = await apiClient.post<any>('/trades/search', searchBody);
 

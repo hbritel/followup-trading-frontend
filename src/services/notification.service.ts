@@ -28,7 +28,7 @@ export const notificationService = {
   },
 
   markAllAsRead: async (): Promise<void> => {
-    await apiClient.patch('/notifications/read-all');
+    await apiClient.patch('/notifications/read-all', {});
   },
 
   getPreferences: async (): Promise<NotificationPreferenceDto[]> => {

@@ -17,7 +17,7 @@ interface WatchlistDialogsProps {
   editWatchlistOpen: boolean;
   addSymbolOpen: boolean;
   deleteWatchlistOpen: boolean;
-  editingWatchlist: { id: string; name: string; description: string } | null;
+  editingWatchlist: { id: string; name: string; description: string; icon: string } | null;
   onNewWatchlistOpenChange: (open: boolean) => void;
   onEditWatchlistOpenChange: (open: boolean) => void;
   onAddSymbolOpenChange: (open: boolean) => void;

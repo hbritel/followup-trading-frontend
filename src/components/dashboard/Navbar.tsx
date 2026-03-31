@@ -8,6 +8,8 @@ import {
   LogOut,
   Search as SearchIcon,
   Sparkles,
+  MoreVertical,
+  Globe,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -38,7 +43,7 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const { theme, setTheme } = useTheme();
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [chatOpen, setChatOpen] = useState(false);
 
   const toggleTheme = () => {
@@ -50,13 +55,19 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
     navigate('/');
   };
 
+  const languages = [
+    { code: 'en', label: 'English' },
+    { code: 'fr', label: 'Français' },
+    { code: 'es', label: 'Español' },
+  ];
+
   return (
     <>
       <nav className="flex h-14 items-center border-b px-4 md:px-6">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="h-8 w-8" />
 
-          {/* Cmd+K trigger button */}
+          {/* Cmd+K trigger button — hidden on mobile */}
           <button
             type="button"
             onClick={onOpenCommandPalette}
@@ -79,8 +90,8 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          {/* AI Trading Coach trigger */}
+        <div className="ml-auto flex items-center gap-1 md:gap-2">
+          {/* AI Trading Coach — always visible */}
           <Button
             variant="ghost"
             size="icon"
@@ -92,14 +103,71 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             <Sparkles className="h-5 w-5" />
           </Button>
 
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('navbar.toggleTheme', 'Toggle theme')}>
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-          <LanguageSwitcher />
+          {/* Notifications — always visible */}
           <NotificationCenter />
-          <Button variant="ghost" size="icon" aria-label={t('navbar.messages', 'Messages')}>
-            <MessageSquare className="h-5 w-5" />
-          </Button>
+
+          {/* Desktop-only: show all actions individually */}
+          <div className="hidden md:flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('navbar.toggleTheme', 'Toggle theme')}>
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <LanguageSwitcher />
+            <Button variant="ghost" size="icon" aria-label={t('navbar.messages', 'Messages')}>
+              <MessageSquare className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Mobile-only: overflow menu for secondary actions */}
+          <div className="flex md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={t('navbar.more', 'More options')}>
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={toggleTheme}>
+                  <div className="flex items-center w-full">
+                    {theme === 'dark' ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                    {theme === 'dark' ? t('navbar.lightMode', 'Light mode') : t('navbar.darkMode', 'Dark mode')}
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/messages')}>
+                  <div className="flex items-center w-full">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {t('navbar.messages', 'Messages')}
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Globe className="h-4 w-4 mr-2" />
+                    {t('navbar.language', 'Language')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {languages.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => i18n.changeLanguage(lang.code)}
+                        className={i18n.language === lang.code ? 'bg-accent font-medium' : ''}
+                      >
+                        {lang.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onOpenCommandPalette}>
+                  <div className="flex items-center w-full">
+                    <SearchIcon className="h-4 w-4 mr-2" />
+                    {t('commandPalette.searchPlaceholder', 'Search...')}
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* User menu — always visible */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" aria-label={t('navbar.userMenu', 'User menu')}>

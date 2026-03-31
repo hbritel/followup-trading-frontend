@@ -24,8 +24,15 @@ import { Info } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { AnalyticsDashboard } from '@/services/trade.service';
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string, isSingleDay = false) => {
   const date = new Date(dateStr);
+  if (isSingleDay) {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  }
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
@@ -35,6 +42,7 @@ const formatDate = (dateStr: string) => {
 const formatDateFull = (dateStr: string) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', {
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -110,36 +118,33 @@ interface PerformanceChartProps {
 }
 
 const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
+  const isSingleDay = (analytics?.equityCurve?.length ?? 0) <= 1;
+  const tickFormat = (d: string) => formatDate(d, isSingleDay);
+
   const { performanceData, volumeData } = React.useMemo(() => {
     if (!analytics || !analytics.equityCurve || analytics.equityCurve.length === 0) {
       return { performanceData: [], volumeData: [] };
     }
 
-    let cumulativeEquity = analytics.priorEquity ?? 0;
-
-    const performanceLine = analytics.equityCurve.map(point => {
-      cumulativeEquity += point.dailyProfit;
-
-      return {
-        date: point.date,
-        pnl: point.dailyProfit,
-        equity: cumulativeEquity
-      };
-    });
+    const performanceLine = analytics.equityCurve.map(point => ({
+      date: point.date,
+      pnl: point.dailyProfit,
+      equity: point.cumulativeEquity,
+    }));
 
     const volumeLine = analytics.equityCurve.map(point => ({
       date: point.date,
-      volume: point.dailyVolume || 0
+      volume: point.dailyVolume || 0,
     }));
 
     return {
       performanceData: performanceLine,
-      volumeData: volumeLine
+      volumeData: volumeLine,
     };
   }, [analytics]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <>
       <Card className="glass-card rounded-2xl animate-slide-up">
         <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
           <div className="flex items-center gap-2">
@@ -174,7 +179,7 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
                 </defs>
                 <XAxis
                   dataKey="date"
-                  tickFormatter={formatDate}
+                  tickFormatter={tickFormat}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -232,11 +237,11 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
 
             <TabsContent value="pnl" className="h-[270px] mt-0 px-2 pb-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={performanceData} barSize={12}>
+                <BarChart data={performanceData} barSize={isSingleDay ? 48 : 12}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.4} />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={formatDate}
+                    tickFormatter={tickFormat}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -269,11 +274,11 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
 
             <TabsContent value="volume" className="h-[270px] mt-0 px-2 pb-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={volumeData} barSize={12}>
+                <BarChart data={volumeData} barSize={isSingleDay ? 48 : 12}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.4} />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={formatDate}
+                    tickFormatter={tickFormat}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -301,7 +306,7 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 };
 

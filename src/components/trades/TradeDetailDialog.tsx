@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Pencil, Save, X, Loader2 } from 'lucide-react';
+import { Pencil, Save, X, Loader2, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategies } from '@/hooks/useStrategies';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
@@ -124,6 +125,7 @@ const initFormFromTrade = (trade: Trade): EditFormState => ({
 const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOpenChange, initialEditMode = false, onTradeUpdated }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: allStrategies } = useStrategies();
@@ -220,9 +222,21 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               </Badge>
             </DialogTitle>
             {!editing && (
-              <Button variant="ghost" size="icon" onClick={() => setEditing(true)} title={t('trades.editTrade', 'Edit Trade')}>
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                {status === 'CLOSED' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { onOpenChange(false); navigate(`/trade-replay?tradeId=${trade.id}`); }}
+                    title={t('trades.replayTrade', 'Replay Trade')}
+                  >
+                    <Play className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => setEditing(true)} title={t('trades.editTrade', 'Edit Trade')}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
         </DialogHeader>

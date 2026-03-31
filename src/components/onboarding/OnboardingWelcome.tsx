@@ -16,7 +16,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onNext, onSkip })
       {/* Animated logo */}
       <div className="relative flex items-center justify-center">
         <div className="absolute inset-0 rounded-full bg-primary/20 blur-2xl animate-pulse" />
-        <div className="relative w-20 h-20 rounded-2xl glass-card flex items-center justify-center border border-primary/30 shadow-[0_0_40px_rgba(139,92,246,0.25)]">
+        <div className="relative w-20 h-20 rounded-2xl glass-card flex items-center justify-center border border-primary/30 shadow-[0_0_40px_hsl(var(--primary)/0.25)]">
           <TrendingUp className="w-10 h-10 text-primary" strokeWidth={1.5} />
         </div>
       </div>

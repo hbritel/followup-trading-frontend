@@ -16,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 258 90% 62%; /* Violet 500 */
+    --primary: 217 91% 60%; /* Blue 500 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -25,7 +25,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 38 92% 50%; /* Gold */
+    --accent: 210 40% 96.1%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84.2% 60.2%;
@@ -33,7 +33,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 258 90% 62%;
+    --ring: 217 91% 60%;
 
     --radius: 0.75rem;
 
@@ -45,10 +45,11 @@
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-accent: 210 40% 96.1%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-ring: 258 90% 62%;
+    --sidebar-ring: 217 91% 60%;
   }
 
   .dark {
+    color-scheme: dark;
     /* OBSIDIAN GOLD — Cinematic Dark Trading Terminal */
     --background: 240 12% 2%; /* #050506 */
     --foreground: 240 5% 93%; /* #EDEDEF */
@@ -59,7 +60,7 @@
     --popover: 240 10% 5%;
     --popover-foreground: 240 5% 93%;
 
-    --primary: 258 90% 66%; /* Violet Electric #8B5CF6 */
+    --primary: 217 91% 65%; /* Blue Electric #3B82F6 */
     --primary-foreground: 240 5% 93%;
 
     --secondary: 240 6% 10%;
@@ -68,7 +69,7 @@
     --muted: 240 5% 12%;
     --muted-foreground: 220 9% 46%; /* #6B7280 */
 
-    --accent: 38 92% 50%; /* Gold #F59E0B */
+    --accent: 240 5% 15%;
     --accent-foreground: 240 5% 93%;
 
     --destructive: 0 63% 31%;
@@ -76,7 +77,7 @@
 
     --border: 240 6% 10%; /* rgba(255,255,255,0.06) equivalent */
     --input: 240 6% 12%;
-    --ring: 258 90% 66%;
+    --ring: 217 91% 65%;
 
     /* Neon Trading Colors */
     --profit: 160 84% 39%; /* #10B981 Emerald neon */
@@ -87,7 +88,7 @@
     --sidebar-border: 240 6% 10%;
     --sidebar-accent: 240 5% 12%;
     --sidebar-accent-foreground: 240 5% 93%;
-    --sidebar-ring: 258 90% 66%;
+    --sidebar-ring: 217 91% 65%;
   }
 }
 
@@ -135,7 +136,7 @@
            transition-all duration-300 ease-out
            shadow-sm dark:shadow-none
            hover:border-slate-300 dark:hover:border-white/[0.12]
-           dark:hover:shadow-[0_0_30px_rgba(139,92,246,0.08)];
+           dark:hover:shadow-[0_0_30px_rgba(59,130,246,0.08)];
   }
 
   .glass-card-gold {
@@ -151,7 +152,7 @@
   }
 
   .text-glow {
-    @apply dark:drop-shadow-[0_0_10px_rgba(139,92,246,0.4)];
+    @apply dark:drop-shadow-[0_0_10px_rgba(59,130,246,0.4)];
   }
 
   .text-glow-gold {
@@ -159,7 +160,7 @@
   }
 
   .border-glow {
-    @apply dark:shadow-[0_0_15px_rgba(139,92,246,0.15)_inset,0_0_8px_rgba(139,92,246,0.1)];
+    @apply dark:shadow-[0_0_15px_rgba(59,130,246,0.15)_inset,0_0_8px_rgba(59,130,246,0.1)];
   }
 
   /* Gradient text utility */
@@ -172,7 +173,7 @@
   }
 
   .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-violet-200;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200;
   }
 
   /* KPI display text */
@@ -204,7 +205,7 @@
 }
 
 .ambient-blob-primary {
-  background: hsl(258 90% 66% / 0.06);
+  background: hsl(217 91% 65% / 0.06);
   animation: ambient-drift 12s ease-in-out infinite;
 }
 
@@ -271,6 +272,17 @@
 .bg-loss { background-color: hsl(var(--loss)); }
 
 /* ===== Accent Color Themes ===== */
+body.theme-blue {
+  --primary: 217 91% 60%;
+  --ring: 217 91% 60%;
+  --sidebar-ring: 217 91% 60%;
+}
+.dark body.theme-blue {
+  --primary: 217 91% 65%;
+  --ring: 217 91% 65%;
+  --sidebar-ring: 217 91% 65%;
+}
+
 body.theme-violet {
   --primary: 258 90% 62%;
   --ring: 258 90% 62%;

@@ -8,7 +8,7 @@ interface FeedItemProps {
 }
 
 const TYPE_CONFIG = {
-  STRATEGY_SHARED: { icon: BookOpen, color: 'text-violet-400', bg: 'bg-violet-500/10' },
+  STRATEGY_SHARED: { icon: BookOpen, color: 'text-primary', bg: 'bg-primary/10' },
   BADGE_EARNED: { icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
   MILESTONE: { icon: Star, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
 } as const;
@@ -31,7 +31,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ item }) => {
   return (
     <div className="glass-card rounded-2xl p-4 flex items-start gap-4">
       {/* Avatar */}
-      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/30 to-violet-700/30 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-300 select-none">
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/30 to-primary/15 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary select-none">
         {item.username.charAt(0).toUpperCase()}
       </div>
 
@@ -41,7 +41,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ item }) => {
           <span className="font-semibold text-white text-sm">{item.username}</span>
           <Badge
             variant="outline"
-            className="text-[10px] px-1.5 py-0 border-violet-500/30 text-violet-400"
+            className="text-[10px] px-1.5 py-0 border-primary/30 text-primary"
           >
             {item.level}
           </Badge>

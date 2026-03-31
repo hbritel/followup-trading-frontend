@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,13 +24,18 @@ import {
 } from "recharts";
 import { useDashboardSummary, useAdvancedRiskMetrics } from '@/hooks/useAdvancedMetrics';
 
-const RiskMetrics = () => {
+interface RiskMetricsProps {
+  startDate?: string;
+  endDate?: string;
+}
+
+const RiskMetrics: React.FC<RiskMetricsProps> = ({ startDate, endDate }) => {
   const { t } = useTranslation();
   const [selectedMetric, setSelectedMetric] = useState('var');
 
   // Fetch real data from backend
-  const { data: dashboardSummary, isLoading: summaryLoading } = useDashboardSummary();
-  const { data: advancedRisk, isLoading: riskLoading } = useAdvancedRiskMetrics();
+  const { data: dashboardSummary, isLoading: summaryLoading } = useDashboardSummary(startDate, endDate);
+  const { data: advancedRisk, isLoading: riskLoading } = useAdvancedRiskMetrics(startDate, endDate);
 
   const isLoading = summaryLoading || riskLoading;
 
@@ -57,7 +61,7 @@ const RiskMetrics = () => {
   const realExposure = advancedRisk?.exposurePerSector ?? dashboardSummary?.exposurePerSector ?? {};
   const exposureTotal = Object.values(realExposure).reduce((sum, v) => sum + v, 0);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
   const portfolioDiversity = Object.entries(realExposure).length > 0
     ? Object.entries(realExposure).map(([name, value]) => ({
         name,
@@ -118,7 +122,8 @@ const RiskMetrics = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="col-span-1 md:col-span-3">
+        <Tabs value={selectedMetric} onValueChange={setSelectedMetric} className="col-span-1 md:col-span-3">
+        <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -126,7 +131,6 @@ const RiskMetrics = () => {
                 <CardDescription>{t('insights.riskMetricsDescription')}</CardDescription>
               </div>
               <div className="mt-2 sm:mt-0">
-                <Tabs value={selectedMetric} onValueChange={setSelectedMetric}>
                   <TabsList>
                     <TabsTrigger value="var">VaR</TabsTrigger>
                     <TabsTrigger value="diversity">{t('insights.diversity')}</TabsTrigger>
@@ -134,7 +138,6 @@ const RiskMetrics = () => {
                     <TabsTrigger value="holding">{t('insights.holding')}</TabsTrigger>
                     <TabsTrigger value="kelly">Kelly %</TabsTrigger>
                   </TabsList>
-                </Tabs>
               </div>
             </div>
           </CardHeader>
@@ -193,7 +196,7 @@ const RiskMetrics = () => {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="utilization" name="VaR" stroke="#8884d8" />
+                      <Line type="monotone" dataKey="utilization" name="VaR" stroke="#3b82f6" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -294,7 +297,7 @@ const RiskMetrics = () => {
                         type="monotone"
                         dataKey="utilization"
                         name={t('insights.marginUtilization')}
-                        stroke="#8884d8"
+                        stroke="#3b82f6"
                         strokeWidth={2}
                       />
                       <Line
@@ -346,7 +349,7 @@ const RiskMetrics = () => {
                         type="monotone"
                         dataKey="count"
                         name={t('insights.tradeCount')}
-                        stroke="#8884d8"
+                        stroke="#3b82f6"
                       />
                       <Line
                         yAxisId="right"
@@ -413,8 +416,8 @@ const RiskMetrics = () => {
                           <PolarGrid />
                           <PolarAngleAxis dataKey="subject" />
                           <PolarRadiusAxis />
-                          <Radar name={t('insights.yourProfile')} dataKey="A" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                          <Radar name={t('insights.benchmark')} dataKey="B" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                          <Radar name={t('insights.yourProfile')} dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                          <Radar name={t('insights.benchmark')} dataKey="B" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
                           <Legend />
                           <Tooltip />
                         </RadarChart>
@@ -426,6 +429,7 @@ const RiskMetrics = () => {
             </TabsContent>
           </CardContent>
         </Card>
+        </Tabs>
       </div>
     </div>
   );

@@ -8,10 +8,6 @@ export const useTags = () => {
   return useQuery({
     queryKey: TAGS_KEY,
     queryFn: () => tagService.getTags(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
   });
 };

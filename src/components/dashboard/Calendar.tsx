@@ -19,8 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { DayContentProps } from "react-day-picker";
-import { AnalyticsDashboard } from '@/services/trade.service';
 import { useTrades } from '@/hooks/useTrades';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -35,20 +35,24 @@ const toLocalDateStr = (d: Date): string => {
 const TRADES_PER_PAGE = 10;
 
 interface TradingCalendarProps {
-  analytics?: AnalyticsDashboard;
-  accountId?: string;
+  accountId?: string | string[];
 }
 
-const TradingCalendar = ({ analytics, accountId }: TradingCalendarProps) => {
+const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
   const [date, setDate] = React.useState<Date>(new Date());
   const [month, setMonth] = React.useState<Date>(new Date());
   const [tradePage, setTradePage] = React.useState(0);
 
+  // Fetch analytics for the displayed month only (independent of dashboard time filter)
+  const monthStart = toLocalDateStr(new Date(month.getFullYear(), month.getMonth(), 1));
+  const monthEnd = toLocalDateStr(new Date(month.getFullYear(), month.getMonth() + 1, 0));
+  const { data: calendarAnalytics } = useAnalytics(accountId, monthStart, monthEnd);
+
   const tradeData = React.useMemo(() => {
     const data: Record<string, { result: 'win' | 'loss', amount: number, tradesCount: number }> = {};
 
-    if (analytics?.equityCurve) {
-      analytics.equityCurve.forEach(point => {
+    if (calendarAnalytics?.equityCurve) {
+      calendarAnalytics.equityCurve.forEach(point => {
         data[point.date] = {
           result: point.dailyProfit >= 0 ? 'win' : 'loss',
           amount: point.dailyProfit,
@@ -58,7 +62,7 @@ const TradingCalendar = ({ analytics, accountId }: TradingCalendarProps) => {
     }
 
     return data;
-  }, [analytics]);
+  }, [calendarAnalytics]);
 
   const selectedDateStr = toLocalDateStr(date);
   const selectedDateTrade = tradeData[selectedDateStr];
@@ -125,15 +129,15 @@ const TradingCalendar = ({ analytics, accountId }: TradingCalendarProps) => {
       </CardHeader>
       <CardContent className="p-0 flex flex-col flex-1 min-h-0">
         {/* Calendar + Day summary side by side */}
-        <div className="flex flex-col lg:flex-row px-1 pt-2 pb-4 flex-shrink-0">
-          <div className="flex-1">
+        <div className="flex flex-col px-6 pt-2 pb-4 flex-shrink-0 gap-4">
+          <div className="flex justify-center">
             <Calendar
               mode="single"
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
               month={month}
               onMonthChange={setMonth}
-              className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4 w-full"
+              className="rounded-xl border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 p-4"
               components={{
                 DayContent: renderDay
               }}
@@ -141,7 +145,7 @@ const TradingCalendar = ({ analytics, accountId }: TradingCalendarProps) => {
             />
           </div>
 
-          <div className="lg:w-72 mt-6 lg:mt-0 lg:ml-6 lg:border-l border-slate-200/50 dark:border-white/10 lg:pl-6 px-6 lg:px-0">
+          <div className="border-t border-slate-200/50 dark:border-white/10 pt-4">
             <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
               Selected: {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </h3>

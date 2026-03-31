@@ -272,13 +272,12 @@ function RecentTradesSection({ strategyId, onClose }: { strategyId: string; onCl
 
   const handleViewAll = () => {
     onClose();
-    // Navigate to trades page — strategy column will show which trades belong
-    navigate('/trades');
+    navigate(`/trades?strategyId=${strategyId}`);
   };
 
   const handleClickTrade = (tradeId: string) => {
     onClose();
-    navigate('/trades');
+    navigate('/trades', { state: { highlightTradeId: tradeId } });
   };
 
   if (isLoading) {

@@ -2,10 +2,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePageFilter } from '@/contexts/page-filters-context';
+import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
 import RiskMetricsBoard from '@/components/risk/RiskMetricsBoard';
 
 function toISODate(d: Date): string {
@@ -14,12 +16,12 @@ function toISODate(d: Date): string {
 
 const RiskMetrics = () => {
   const { t } = useTranslation();
-  const [datePreset, setDatePreset] = usePageFilter('risk-metrics', 'datePreset', 'all');
+  const [datePreset, setDatePreset] = useDefaultDatePreset('risk-metrics');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('risk-metrics', 'customStart', null);
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('risk-metrics', 'customEnd', null);
   const [accountId, setAccountId] = usePageFilter('risk-metrics', 'accountId', 'all');
 
-  const effectiveAccountId = accountId === 'all' ? undefined : accountId;
+  const { accountIds: effectiveAccountId } = useAccountFilter(accountId);
 
   const dateRange = datePreset === 'custom'
     ? {

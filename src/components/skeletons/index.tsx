@@ -221,30 +221,31 @@ export function CalendarSkeleton() {
 // ---------------------------------------------------------------------------
 export function AccountCardSkeleton() {
   return (
-    <div className="mb-4 last:mb-0 border rounded-lg overflow-hidden">
-      <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between border-b">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-5 w-16 rounded-full" />
+    <div className="rounded-lg border bg-card p-4">
+      {/* Header: icon + title + badges */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <div>
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-20 mt-1.5" />
           </div>
-          <Skeleton className="h-3 w-24 mt-2" />
         </div>
-        <div className="mt-2 md:mt-0 flex gap-2">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-16" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-12 rounded-full" />
         </div>
       </div>
-      <div className="bg-muted/40 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i}>
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-4 w-24 mt-1" />
-            </div>
-          ))}
-        </div>
+      {/* Metadata row */}
+      <div className="mt-3 flex items-center gap-4 text-sm">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      {/* Action buttons */}
+      <div className="mt-3 flex items-center gap-2">
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="h-8 w-14" />
+        <Skeleton className="h-8 w-14" />
       </div>
     </div>
   );

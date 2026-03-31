@@ -1,26 +1,47 @@
 // src/pages/Settings.tsx
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react'; // Ajout React et useCallback
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {usePreferences} from '@/contexts/preferences-context';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {Switch} from '@/components/ui/switch';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
-import {Separator} from '@/components/ui/separator';
 import {useToast} from '@/hooks/use-toast';
 import ChangePasswordDialog from '@/components/dialogs/ChangePasswordDialog';
-import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog'; // Gardé pour l'instant
+import ConfirmLogoutDialog from '@/components/dialogs/ConfirmLogoutDialog';
 import type {Theme} from '@/components/providers/theme-provider';
 import {useTheme} from '@/components/providers/theme-provider';
-import {useTranslation} from 'react-i18next'; // Ajouter i18n
-// Imports nécessaires pour MFA
+import {useTranslation} from 'react-i18next';
 import {useAuth} from '@/contexts/auth-context';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Laptop, Loader2, Monitor, ShieldCheck, Smartphone} from 'lucide-react';
+import {
+    Activity,
+    BarChart3,
+    Bell,
+    BellRing,
+    CreditCard,
+    Globe,
+    Laptop,
+    Loader2,
+    Mail,
+    Monitor,
+    Newspaper,
+    Palette,
+    Shield,
+    ShieldCheck,
+    Smartphone,
+    Tag,
+    Target,
+    Timer,
+    TrendingUp,
+    User,
+    Settings as SettingsIcon,
+    KeyRound,
+    Lock,
+} from 'lucide-react';
 import {authService} from '@/services/auth.service';
 import {
     Dialog,
@@ -45,7 +66,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import StrategiesSection from "@/components/settings/StrategiesSection";
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
@@ -61,18 +81,18 @@ const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
         return <Laptop className="h-5 w-5 mr-2 text-muted-foreground"/>;
     }
     if (ua.includes('windows') || ua.includes('linux')) {
-        return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>; // Ou Laptop ?
+        return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>;
     }
-    return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>; // Défaut
+    return <Monitor className="h-5 w-5 mr-2 text-muted-foreground"/>;
 };
 
 // Helper pour formater la date de manière lisible
 const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     try {
-        return format(new Date(dateString), "PPpp"); // Ex: Sep 21, 2023, 4:15:30 PM
+        return format(new Date(dateString), "PPpp");
     } catch {
-        return dateString; // Fallback si format invalide
+        return dateString;
     }
 }
 
@@ -95,20 +115,15 @@ const Settings = () => {
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [showDisableConfirm, setShowDisableConfirm] = useState(false);
     const [isDisabling, setIsDisabling] = useState(false);
-    // Initialiser à 'loading' pour attendre la fin du chargement user
     const [mfaStatus, setMfaStatus] = useState<'loading' | 'disabled' | 'setup_qr' | 'setup_verify' | 'enabled'>('loading');
 
-    // État pour TOUTES les préférences utilisateur modifiables
-    // --- Utilisation du contexte Preferences ---
     const {preferences, isLoadingPrefs, setPreference, savePreferences} = usePreferences();
 
     // --- États pour Device Management ---
     const [sessions, setSessions] = useState<SessionDto[]>([]);
     const [isLoadingSessions, setIsLoadingSessions] = useState(false);
     const [errorSessions, setErrorSessions] = useState<string | null>(null);
-    // --- Fin États Device Management ---
 
-    // --- Charger les sessions au montage ou quand l'utilisateur change ---
     useEffect(() => {
         const fetchSessions = async () => {
             setIsLoadingSessions(true);
@@ -124,17 +139,15 @@ const Settings = () => {
             }
         };
 
-        if (user) { // Charger seulement si l'utilisateur est connecté
+        if (user) {
             fetchSessions();
         } else {
-            setSessions([]); // Vider si l'utilisateur se déconnecte
+            setSessions([]);
         }
-    }, [user]); // Recharger si l'utilisateur change
+    }, [user]);
 
-    // --- State pour le dialog de confirmation de révocation ---
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
 
-    // --- Handler pour révoquer une session ---
     const handleRevokeSession = async (sessionId: string) => {
         try {
             await sessionService.revokeSession(sessionId);
@@ -150,101 +163,78 @@ const Settings = () => {
         }
     };
 
-    // --- Handler pour mettre à jour une préférence spécifique ---
-    // Utilisation d'un type générique pour le rendre réutilisable
     const handlePreferenceChange = <K extends keyof UserPreferencesDto>(
         key: K,
-        // L'entrée peut toujours être une chaîne (du Select) ou le type correct (du Switch)
         value: UserPreferencesDto[K] | string
     ) => {
-        // Déclarer la variable qui contiendra la valeur finale correctement typée
         let finalValue: UserPreferencesDto[K] | null;
 
         if (key === 'inactivityTimeoutMinutes') {
-            // Ici, nous savons que 'value' vient du Select et est une string
-            // ou potentiellement le type UserPreferencesDto[K] si l'état initial était chargé
-            const numValue = parseInt(value as string, 10); // Convertir en nombre
-
-            // Calculer la valeur finale (number ou null)
+            const numValue = parseInt(value as string, 10);
             const timeoutValue = (!isNaN(numValue) && numValue > 0) ? numValue : null;
-
-            // Assigner à finalValue. TypeScript a besoin d'aide ici car il ne relie pas dynamiquement
-            // key === '...' à UserPreferencesDto[K]. Nous affirmons que timeoutValue (number | null)
-            // est un type valide pour UserPreferencesDto['inactivityTimeoutMinutes'].
             finalValue = timeoutValue as UserPreferencesDto[K];
-
-        } else if (key === 'theme') { // Gérer le thème via le contexte de thème ET le contexte de prefs
+        } else if (key === 'theme') {
             const validTheme = ['light', 'dark', 'system'].includes(value as string) ? value as Theme : 'system';
-            setTheme(validTheme); // Met à jour le ThemeProvider
-            finalValue = validTheme as UserPreferencesDto[K]; // Met à jour l'état des préférences
+            setTheme(validTheme);
+            finalValue = validTheme as UserPreferencesDto[K];
         } else {
-            // Conversion pour les booléens venant de Switch si nécessaire
             if (typeof value === 'boolean' && (key === 'showChartVolume' || key === 'showExtendedHours')) {
                 finalValue = value as UserPreferencesDto[K];
-            }
-            // Gérer autres types si besoin (ex: string pour selects)
-            else if (typeof value === 'string') {
+            } else if (typeof value === 'string') {
                 finalValue = value as UserPreferencesDto[K];
             } else {
                 console.warn(`Unhandled type for key ${String(key)} in handlePreferenceChange`);
-                return; // Ne pas mettre à jour si type inconnu
+                return;
             }
         }
 
-        // Mettre à jour l'état. 'finalValue' a maintenant le type UserPreferencesDto[K] | null,
-        // ce qui est compatible avec Partial<UserPreferencesDto>.
-        console.log(`Updating preference ${String(key)} to`, finalValue); // Log
-        setPreference(key, finalValue); // Met à jour le contexte
+        console.log(`Updating preference ${String(key)} to`, finalValue);
+        setPreference(key, finalValue);
     };
 
     const handleGenericPreferenceChange = useCallback(<K extends keyof UserPreferencesDto>(
         key: K,
         value: UserPreferencesDto[K]
     ) => {
-        setPreference(key, value); // Appelle la fonction du contexte PreferencesProvider
+        setPreference(key, value);
     }, [setPreference]);
 
-    // --- Fonctions MFA (intégrées ici) ---
-    // Mettre à jour mfaStatus SEULEMENT quand user/isAuthLoading changent
-    // ET que nous ne sommes PAS déjà dans un processus de setup
+    // --- Fonctions MFA ---
     useEffect(() => {
         console.log(`useEffect[user, isAuthLoading] fired. isAuthLoading: ${isAuthLoading}, user?.mfaEnabled: ${user?.mfaEnabled}, current mfaStatus: ${mfaStatus}`);
         if (isAuthLoading) {
             setMfaStatus('loading');
-        } else if (user && mfaStatus !== 'setup_qr' && mfaStatus !== 'setup_verify') { // <- NE PAS écraser si en cours de setup
+        } else if (user && mfaStatus !== 'setup_qr' && mfaStatus !== 'setup_verify') {
             setMfaStatus(user.mfaEnabled ? 'enabled' : 'disabled');
             if (user.mfaEnabled) {
                 setQrCodeUrl('');
                 setSecret('');
-                setVerificationCode(''); // Cleanup si activé
+                setVerificationCode('');
             }
         } else if (!user && !isAuthLoading) {
-            setMfaStatus('disabled'); // Ou un état d'erreur si l'utilisateur devrait être là
+            setMfaStatus('disabled');
         }
-    }, [user, isAuthLoading]); // Retirer mfaStatus des dépendances ici pour éviter boucle infinie potentielle
+    }, [user, isAuthLoading]);
 
     const handleStartSetup = useCallback(async () => {
         if (mfaStatus !== 'disabled' || !user) return;
-        console.log("handleStartSetup called");
         setIsLoadingSetup(true);
         setQrCodeUrl('');
-        setSecret(''); // Reset
+        setSecret('');
         try {
-            // Appel DIRECT au service pour initialiser, SANS changer l'état global
             const response = await authService.initMfaSetup(user.id);
-            console.log("initMfaSetup service response:", response);
             setQrCodeUrl(response.qrCodeUri);
             setSecret(response.secret);
-            setMfaStatus('setup_qr'); // Mise à jour de l'état LOCAL uniquement
+            setMfaStatus('setup_qr');
         } catch (error) {
             console.error("Error in handleStartSetup:", error);
             const errorMessage = authService.getErrorMessage(error);
             toast({title: t('error.error'), description: errorMessage, variant: 'destructive'});
-            setMfaStatus('disabled'); // Revenir si erreur
+            setMfaStatus('disabled');
         } finally {
             setIsLoadingSetup(false);
         }
-    }, [mfaStatus, toast, t, user]); // user est une dépendance maintenant
+    }, [mfaStatus, toast, t, user]);
 
     const handleCancelSetup = useCallback(() => {
         setMfaStatus('disabled');
@@ -253,46 +243,31 @@ const Settings = () => {
         setVerificationCode('');
     }, []);
 
-
-    // Utilise maintenant la fonction du contexte pour confirmer
     const handleVerifySetupCode = useCallback(async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!user || mfaStatus !== 'setup_verify') return;
-        console.log("handleVerifySetupCode called with code:", verificationCode);
 
         setIsVerifying(true);
         try {
-            // Appel à la fonction du CONTEXTE qui gère l'API ET le refresh du user global
             await confirmMfaSetup(user.id, verificationCode);
-            console.log("confirmMfaSetup (context) successful.");
-            // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
-            // Forcer ici par sécurité pour l'UI immédiate:
             setMfaStatus('enabled');
             toast({title: t('success.success'), description: t('auth.mfaSetupVerified')});
-            setVerificationCode(''); // Reset field
+            setVerificationCode('');
         } catch (error) {
             console.error("Error in handleVerifySetupCode:", error);
             const errorMessage = authService.getErrorMessage(error);
             toast({title: t('auth.verificationFailedTitle'), description: errorMessage, variant: 'destructive'});
-            // Rester sur 'setup_verify'
         } finally {
             setIsVerifying(false);
         }
-    }, [user, verificationCode, mfaStatus, toast, t, confirmMfaSetup]); // Ajouter confirmMfaSetup
+    }, [user, verificationCode, mfaStatus, toast, t, confirmMfaSetup]);
 
-
-    // Utilise maintenant la fonction du contexte pour désactiver
     const handleConfirmDisable = useCallback(async () => {
         if (mfaStatus !== 'enabled' || !passwordConfirm || !user) return;
-        console.log("handleConfirmDisable called");
 
         setIsDisabling(true);
         try {
-            // Appel à la fonction du CONTEXTE
             await disableMfa(passwordConfirm);
-            console.log("disableMfa (context) successful.");
-            // Le useEffect mettra à jour mfaStatus car 'user' aura changé dans le contexte
-            // Forcer ici par sécurité pour l'UI immédiate:
             setMfaStatus('disabled');
             toast({title: t('success.success'), description: t('auth.mfaDisabledSuccess')});
             setShowDisableConfirm(false);
@@ -304,32 +279,23 @@ const Settings = () => {
         } finally {
             setIsDisabling(false);
         }
-    }, [passwordConfirm, mfaStatus, toast, t, user, disableMfa]); // Ajouter disableMfa
-    // --- Fin Fonctions MFA ---
+    }, [passwordConfirm, mfaStatus, toast, t, user, disableMfa]);
 
-
-    const toggleDarkMode = (checked: boolean) => {
-        handlePreferenceChange('theme', checked ? 'dark' : 'light');
-        toast({title: checked ? "Dark mode enabled" : "Light mode enabled"});
-    };
-
-    // --- Handler Sauvegarde (modifié pour utiliser l'état 'preferences') ---
-    const handleSaveChanges = async (section: string) => { // Rendre async
+    const handleSaveChanges = async (section: string) => {
         try {
-            await savePreferences(); // Appelle la fonction de sauvegarde du contexte
+            await savePreferences();
             toast({
                 title: `${section} settings saved`,
                 description: "Your changes have been saved successfully.",
             });
         } catch (error) {
-            const errorMessage = authService.getErrorMessage(error); // Utiliser un getErrorMessage ici
+            const errorMessage = authService.getErrorMessage(error);
             toast({title: "Error Saving Settings", description: errorMessage, variant: "destructive"});
         }
     };
 
-    // --- Memoisation pour le rendu MFA (évite recalculs inutiles) ---
+    // --- Memoisation pour le rendu MFA ---
     const mfaSectionContent = useMemo(() => {
-        console.log("Rendering MFA section with status:", mfaStatus); // Log de rendu
         switch (mfaStatus) {
             case 'enabled':
                 return (
@@ -341,11 +307,11 @@ const Settings = () => {
                 );
             case 'setup_qr':
                 return (
-                    <div className="space-y-4 rounded-md border p-4">
+                    <div className="space-y-4 rounded-xl border border-border/50 p-4 bg-muted/30">
                         <h4 className="font-medium">{t('auth.twoFactorAuthSetup')} - Step 1/2</h4>
                         <p className="text-sm text-muted-foreground">{t('auth.scanInstruction')}</p>
                         <div
-                            className="flex justify-center items-center p-4 bg-white rounded-md border max-w-xs mx-auto min-h-[212px]">
+                            className="flex justify-center items-center p-4 bg-white rounded-lg border max-w-xs mx-auto min-h-[212px]">
                             {isLoadingSetup ? (
                                 <Loader2 className="h-10 w-10 animate-spin text-primary"/>
                             ) : qrCodeUrl ? (
@@ -369,7 +335,7 @@ const Settings = () => {
                 );
             case 'setup_verify':
                 return (
-                    <form onSubmit={handleVerifySetupCode} className="space-y-4 rounded-md border p-4">
+                    <form onSubmit={handleVerifySetupCode} className="space-y-4 rounded-xl border border-border/50 p-4 bg-muted/30">
                         <h4 className="font-medium">{t('auth.twoFactorAuthSetup')} - Step 2/2</h4>
                         <p className="text-sm text-muted-foreground">{t('auth.enterCodeToVerify')}</p>
                         <div className="space-y-2">
@@ -395,316 +361,549 @@ const Settings = () => {
                 );
             case 'loading':
                 return <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin"/></div>;
-            case 'disabled': // Pas besoin d'afficher quoi que ce soit ici car le switch est "off"
+            case 'disabled':
             default:
-                return null; // Masquer la section si disabled ou état inconnu
+                return null;
         }
-    }, [mfaStatus, isLoadingSetup, qrCodeUrl, secret, verificationCode, isVerifying, t, handleCancelSetup, handleVerifySetupCode]); // Dépendances pour useMemo
+    }, [mfaStatus, isLoadingSetup, qrCodeUrl, secret, verificationCode, isVerifying, t, handleCancelSetup, handleVerifySetupCode]);
 
     return (
         <DashboardLayout pageTitle={t('settings.title')}>
             <div className="space-y-6">
-                <Tabs defaultValue="general" className="space-y-6"> {/* Garder General par défaut */}
-                    <TabsList className="grid w-full grid-cols-6">
-                        <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
-                        <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
-                        {/*<TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>*/}
-                        <TabsTrigger value="security">{t('settings.security')}</TabsTrigger>
-                        <TabsTrigger value="strategies">{t("settings.strategies", "Strategies")}</TabsTrigger>
-                        <TabsTrigger value="tags">{t("settings.tags", "Tags")}</TabsTrigger>
-                        <TabsTrigger value="public-profile">{t("gamification.publicProfile", "Public Profile")}</TabsTrigger>
-                        <TabsTrigger value="billing">{t("subscription.manageBilling", "Billing")}</TabsTrigger>
+                <Tabs defaultValue="general" className="space-y-6">
+                    <TabsList className="inline-flex h-auto flex-wrap gap-1 bg-muted/50 p-1 rounded-xl">
+                        <TabsTrigger value="general" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <SettingsIcon className="h-4 w-4" />
+                            {t('settings.general')}
+                        </TabsTrigger>
+                        <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <Bell className="h-4 w-4" />
+                            {t('settings.notifications')}
+                        </TabsTrigger>
+                        <TabsTrigger value="security" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <Shield className="h-4 w-4" />
+                            {t('settings.security')}
+                        </TabsTrigger>
+                        <TabsTrigger value="tags" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <Tag className="h-4 w-4" />
+                            {t("settings.tags", "Tags")}
+                        </TabsTrigger>
+                        <TabsTrigger value="public-profile" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <User className="h-4 w-4" />
+                            {t("gamification.publicProfile", "Public Profile")}
+                        </TabsTrigger>
+                        <TabsTrigger value="billing" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <CreditCard className="h-4 w-4" />
+                            {t("subscription.manageBilling", "Billing")}
+                        </TabsTrigger>
                     </TabsList>
 
+                    {/* ========== GENERAL TAB ========== */}
                     <TabsContent value="general" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>General Settings</CardTitle>
-                                <CardDescription>Manage your general application preferences</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {isLoadingPrefs && (
-                                    <div className="flex justify-center items-center py-8">
-                                        <Loader2 className="h-8 w-8 animate-spin" />
-                                    </div>
-                                )}
+                        {isLoadingPrefs && (
+                            <div className="flex justify-center items-center py-16">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        )}
 
-                                {!isLoadingPrefs && preferences && (
-                                    <>
-                                        <div className="space-y-4">
-                                            <h3 className="text-lg font-medium">Time & Region</h3>
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="timezone">Timezone</Label>
-                                                    <Select
-                                                        value={preferences?.timezone || 'America/New_York'}
-                                                        onValueChange={(value) => handleGenericPreferenceChange('timezone', value)}
-                                                        disabled={isLoadingPrefs}
-                                                    >
-                                                        <SelectTrigger id="timezone">
-                                                            <SelectValue placeholder="Select timezone"/>
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                                                            <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                                                            <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                                                            <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                                                            <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                                                            <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
-                                                            <SelectItem value="Europe/Berlin">Berlin (CET)</SelectItem>
-                                                            <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                                                            <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
-                                                            <SelectItem value="Asia/Kolkata">Kolkata (IST)</SelectItem>
-                                                            <SelectItem value="Australia/Sydney">Sydney (AEST)</SelectItem>
-                                                            <SelectItem value="Pacific/Auckland">Auckland (NZST)</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="date-format">Date Format</Label>
-                                                    <Select
-                                                        value={preferences?.dateFormat || 'MM/dd/yyyy'}
-                                                        onValueChange={(value) => handleGenericPreferenceChange('dateFormat', value)}
-                                                        disabled={isLoadingPrefs}
-                                                    >
-                                                        <SelectTrigger id="date-format">
-                                                            <SelectValue placeholder="Select date format"/>
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
-                                                            <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
-                                                            <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="currency">Currency</Label>
-                                                    <Select
-                                                        value={preferences?.defaultCurrency || 'USD'}
-                                                        onValueChange={(value) => handleGenericPreferenceChange('defaultCurrency', value)}
-                                                        disabled={isLoadingPrefs}
-                                                    >
-                                                        <SelectTrigger id="currency">
-                                                            <SelectValue placeholder="Select currency"/>
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="USD">USD ($)</SelectItem>
-                                                            <SelectItem value="EUR">EUR</SelectItem>
-                                                            <SelectItem value="GBP">GBP</SelectItem>
-                                                            <SelectItem value="JPY">JPY</SelectItem>
-                                                            <SelectItem value="CAD">CAD (C$)</SelectItem>
-                                                            <SelectItem value="CHF">CHF</SelectItem>
-                                                            <SelectItem value="AUD">AUD (A$)</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="number-format">Number Format</Label>
-                                                    <Select
-                                                        value={preferences?.numberFormat || '1,234.56'}
-                                                        onValueChange={(value) => handleGenericPreferenceChange('numberFormat', value)}
-                                                        disabled={isLoadingPrefs}
-                                                    >
-                                                        <SelectTrigger id="number-format">
-                                                            <SelectValue placeholder="Select number format"/>
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="1,234.56">1,234.56</SelectItem>
-                                                            <SelectItem value="1.234,56">1.234,56</SelectItem>
-                                                            <SelectItem value="1 234,56">1 234,56</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
+                        {!isLoadingPrefs && preferences && (
+                            <>
+                                {/* Time & Region */}
+                                <div className="glass-card rounded-2xl p-6 space-y-5">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                            <Globe className="h-4.5 w-4.5 text-primary" />
                                         </div>
-
-                                        <Separator/>
-
-                                        <div className="space-y-4">
-                                            <h3 className="text-lg font-medium">Default View Settings</h3>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="default-period">Default Time Period</Label>
-                                                <Select
-                                                    value={preferences?.defaultDateRange || '1m'}
-                                                    onValueChange={(value) => handleGenericPreferenceChange('defaultDateRange', value)}
-                                                    disabled={isLoadingPrefs}
-                                                >
-                                                    <SelectTrigger id="default-period">
-                                                        <SelectValue placeholder="Select default period"/>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="1d">1 Day</SelectItem>
-                                                        <SelectItem value="1w">1 Week</SelectItem>
-                                                        <SelectItem value="1m">1 Month</SelectItem>
-                                                        <SelectItem value="3m">3 Months</SelectItem>
-                                                        <SelectItem value="1y">1 Year</SelectItem>
-                                                        <SelectItem value="all">All Time</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                        <div>
+                                            <h3 className="text-base font-semibold">{t('settings.timeRegion', 'Time & Region')}</h3>
+                                            <p className="text-sm text-muted-foreground">{t('settings.timeRegionDesc', 'Configure timezone, date format, and currency for your trading data')}</p>
                                         </div>
-
-                                        <div className="flex justify-end">
-                                            <Button onClick={() => handleSaveChanges('General')} disabled={isLoadingPrefs}>
-                                                {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                                {t('common.saveChanges')}
-                                            </Button>
-                                        </div>
-                                    </>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="notifications" className="space-y-6">
-                        <NotificationPreferences />
-                    </TabsContent>
-
-                    <TabsContent value="security" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('settings.securityTitle')}</CardTitle>
-                                <CardDescription>{t('settings.securityDesc')}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* Section Authentification */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">{t('settings.authentication')}</h3>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">{t('common.emailAddress')}</Label>
-                                        <Input id="email" value={user?.email || ''} readOnly disabled/>
                                     </div>
 
-                                    {/* --- Section MFA Intégrée --- */}
-                                    <div className="flex items-center justify-between pt-4">
-                                        <div className="space-y-0.5">
-                                            <Label
-                                                htmlFor="two-factor-auth-switch">{t('settings.twoFactorAuth')}</Label>
-                                            <p className="text-sm text-muted-foreground">{t('settings.twoFactorAuthDesc')}</p>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="timezone">{t('settings.timezone', 'Timezone')}</Label>
+                                            <Select
+                                                value={preferences?.timezone || 'America/New_York'}
+                                                onValueChange={(value) => handleGenericPreferenceChange('timezone', value)}
+                                                disabled={isLoadingPrefs}
+                                            >
+                                                <SelectTrigger id="timezone">
+                                                    <SelectValue placeholder="Select timezone"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                                                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                                                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                                                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                                                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                                                    <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                                                    <SelectItem value="Europe/Berlin">Berlin (CET)</SelectItem>
+                                                    <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                                                    <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                                                    <SelectItem value="Asia/Kolkata">Kolkata (IST)</SelectItem>
+                                                    <SelectItem value="Australia/Sydney">Sydney (AEST)</SelectItem>
+                                                    <SelectItem value="Pacific/Auckland">Auckland (NZST)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        {mfaStatus === 'loading' ? (<Loader2 className="h-5 w-5 animate-spin"/>)
-                                            : (
-                                                <Switch
-                                                    id="two-factor-auth-switch"
-                                                    checked={mfaStatus === 'enabled' || mfaStatus === 'setup_qr' || mfaStatus === 'setup_verify'}
-                                                    onCheckedChange={(checked) => {
-                                                        console.log(`Switch changed to ${checked}, current status: ${mfaStatus}`);
-                                                        if (checked && mfaStatus === 'disabled') {
-                                                            handleStartSetup(); // Appel correct
-                                                        } else if (!checked && mfaStatus === 'enabled') {
-                                                            setShowDisableConfirm(true); // Appel correct
-                                                        } else if (!checked && (mfaStatus === 'setup_qr' || mfaStatus === 'setup_verify')) {
-                                                            handleCancelSetup(); // Appel correct
-                                                        }
-                                                    }}
-                                                    disabled={isAuthLoading || isLoadingSetup || isDisabling}
-                                                    aria-label={t('settings.twoFactorAuth')}
-                                                />
-                                            )}
-                                    </div>
 
-                                    {/* Affichage conditionnel rendu par useMemo */}
-                                    <div
-                                        className={`pl-2 mt-4 space-y-4 ${mfaStatus !== 'disabled' && mfaStatus !== 'loading' ? 'border-l-2 border-border ml-1' : ''}`}>
-                                        {mfaSectionContent} {/* Utilisation du contenu mémorisé */}
-                                    </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="date-format">{t('settings.dateFormat', 'Date Format')}</Label>
+                                            <Select
+                                                value={preferences?.dateFormat || 'MM/dd/yyyy'}
+                                                onValueChange={(value) => handleGenericPreferenceChange('dateFormat', value)}
+                                                disabled={isLoadingPrefs}
+                                            >
+                                                <SelectTrigger id="date-format">
+                                                    <SelectValue placeholder="Select date format"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                                                    <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                                                    <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
+                                        <div className="space-y-2">
+                                            <Label htmlFor="currency">{t('settings.currency', 'Currency')}</Label>
+                                            <Select
+                                                value={preferences?.defaultCurrency || 'USD'}
+                                                onValueChange={(value) => handleGenericPreferenceChange('defaultCurrency', value)}
+                                                disabled={isLoadingPrefs}
+                                            >
+                                                <SelectTrigger id="currency">
+                                                    <SelectValue placeholder="Select currency"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="USD">USD ($)</SelectItem>
+                                                    <SelectItem value="EUR">EUR (&euro;)</SelectItem>
+                                                    <SelectItem value="GBP">GBP (&pound;)</SelectItem>
+                                                    <SelectItem value="JPY">JPY (&yen;)</SelectItem>
+                                                    <SelectItem value="CAD">CAD (C$)</SelectItem>
+                                                    <SelectItem value="CHF">CHF</SelectItem>
+                                                    <SelectItem value="AUD">AUD (A$)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
-                                    {/* Fin Section MFA Intégrée --- */}
-
-                                    {/* Bouton Changer Mot de Passe (conservé) */}
-                                    <div className="pt-4">
-                                        <Button variant="outline" className="w-full sm:w-auto"
-                                                onClick={() => setChangePasswordOpen(true)} disabled={isAuthLoading}>
-                                            {t('settings.changePassword')}
-                                        </Button>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="number-format">{t('settings.numberFormat', 'Number Format')}</Label>
+                                            <Select
+                                                value={preferences?.numberFormat || '1,234.56'}
+                                                onValueChange={(value) => handleGenericPreferenceChange('numberFormat', value)}
+                                                disabled={isLoadingPrefs}
+                                            >
+                                                <SelectTrigger id="number-format">
+                                                    <SelectValue placeholder="Select number format"/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1,234.56">1,234.56</SelectItem>
+                                                    <SelectItem value="1.234,56">1.234,56</SelectItem>
+                                                    <SelectItem value="1 234,56">1 234,56</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <Separator/>
-
-                                {/* Section Session Security (conservée) */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-medium">Session Security</h3>
-
-                                    {/* Auto Logout (Switch lié à la logique d'idle timer, pas directement à une pref) */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Auto Logout</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                {preferences?.inactivityTimeoutMinutes && preferences.inactivityTimeoutMinutes > 0
-                                                    ? `Enabled (${preferences.inactivityTimeoutMinutes} minutes)`
-                                                    : "Disabled"}
-                                            </p>
+                                {/* Default View Settings */}
+                                <div className="glass-card rounded-2xl p-6 space-y-5">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="h-9 w-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                            <Palette className="h-4.5 w-4.5 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-semibold">{t('settings.defaultViews', 'Default Views')}</h3>
+                                            <p className="text-sm text-muted-foreground">{t('settings.defaultViewsDesc', 'Set default time period and display options across the dashboard')}</p>
                                         </div>
                                     </div>
 
-                                    {/* Inactivity Timeout (Connecté à l'état 'preferences') */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="timeout">Inactivity Timeout</Label>
+                                        <Label htmlFor="default-period">{t('settings.defaultTimePeriod', 'Default Time Period')}</Label>
                                         <Select
-                                            value={preferences?.inactivityTimeoutMinutes?.toString() ?? '0'} // Utiliser '0' pour "Disabled"
-                                            onValueChange={(value) => handlePreferenceChange('inactivityTimeoutMinutes', value)}
+                                            value={preferences?.defaultDateRange || '1m'}
+                                            onValueChange={(value) => handleGenericPreferenceChange('defaultDateRange', value)}
                                             disabled={isLoadingPrefs}
                                         >
-                                            <SelectTrigger id="timeout">
-                                                <SelectValue placeholder="Select timeout period"/>
+                                            <SelectTrigger id="default-period" className="sm:max-w-xs">
+                                                <SelectValue placeholder="Select default period"/>
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="0">Disabled</SelectItem> {/* Option Désactivé */}
-                                                <SelectItem value="5">5 minutes</SelectItem>
-                                                <SelectItem value="15">15 minutes</SelectItem>
-                                                <SelectItem value="30">30 minutes</SelectItem>
-                                                <SelectItem value="60">1 hour</SelectItem>
-                                                <SelectItem value="120">2 hours</SelectItem>
+                                                <SelectItem value="1d">1 Day</SelectItem>
+                                                <SelectItem value="1w">1 Week</SelectItem>
+                                                <SelectItem value="1m">1 Month</SelectItem>
+                                                <SelectItem value="3m">3 Months</SelectItem>
+                                                <SelectItem value="1y">1 Year</SelectItem>
+                                                <SelectItem value="all">All Time</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                </div>
 
-                                    {/* Bouton de sauvegarde spécifique à cette section */}
-                                    <div className="flex justify-end pt-4">
-                                        <Button onClick={() => handleSaveChanges('Session')} disabled={isLoadingPrefs}>
-                                            {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                            Save Session Settings
-                                        </Button>
+                                {/* Save button */}
+                                <div className="flex justify-end">
+                                    <Button onClick={() => handleSaveChanges('General')} disabled={isLoadingPrefs}>
+                                        {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                        {t('common.saveChanges')}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </TabsContent>
+
+                    {/* ========== NOTIFICATIONS TAB ========== */}
+                    <TabsContent value="notifications" className="space-y-6">
+                        {isLoadingPrefs && (
+                            <div className="flex justify-center items-center py-16">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        )}
+
+                        {!isLoadingPrefs && preferences && (
+                            <>
+                                {/* Notification Channels */}
+                                <div className="glass-card rounded-2xl p-6 space-y-5">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                            <BellRing className="h-4.5 w-4.5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-semibold">{t('settings.notificationChannels', 'Notification Channels')}</h3>
+                                            <p className="text-sm text-muted-foreground">{t('settings.notificationChannelsDesc', 'Choose how you want to receive notifications')}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Bell className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.showNotificationBadge', 'Show Notification Badge')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.showNotificationBadgeDesc', 'Display unread count on the notification bell icon')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.showNotificationBadge !== false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('showNotificationBadge', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.emailNotifications', 'Email Notifications')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.emailNotificationsDesc', 'Receive updates and alerts via email')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.emailNotificationsEnabled ?? true}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('emailNotificationsEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.mobilePush', 'Mobile Push Notifications')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.mobilePushDesc', 'Get push notifications on your mobile device')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.mobilePushNotificationsEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('mobilePushNotificationsEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Monitor className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.browserPush', 'Browser Push Notifications')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.browserPushDesc', 'Show desktop notifications in your browser')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.browserPushNotificationsEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('browserPushNotificationsEnabled', checked)}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <Separator/>
+                                {/* Notification Categories */}
+                                <div className="glass-card rounded-2xl p-6 space-y-5">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                            <Bell className="h-4.5 w-4.5 text-amber-500" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-semibold">{t('settings.notificationCategories', 'Notification Categories')}</h3>
+                                            <p className="text-sm text-muted-foreground">{t('settings.notificationCategoriesDesc', 'Enable or disable specific types of notifications')}</p>
+                                        </div>
+                                    </div>
 
-                                {/* --- Section des appareils (maintenant via TrustedDevicesManager) --- */}
-                                <TrustedDevicesManager/>
+                                    {/* Trading */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">{t('settings.trading', 'Trading')}</p>
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.priceAlerts', 'Price Alerts')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.priceAlertsDesc', 'Get notified when prices hit your target levels')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.priceAlertsEnabled ?? true}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('priceAlertsEnabled', checked)}
+                                            />
+                                        </div>
 
-                                {/* Pas de bouton Save Changes global pour l'onglet Sécurité */}
-                            </CardContent>
-                        </Card>
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Target className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.tradeConfirmations', 'Trade Confirmations')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.tradeConfirmationsDesc', 'Confirm when trades are imported or executed')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.tradeConfirmationsEnabled ?? true}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('tradeConfirmationsEnabled', checked)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Market */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">{t('settings.market', 'Market')}</p>
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Newspaper className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.newsAlerts', 'News Alerts')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.newsAlertsDesc', 'Breaking news and market updates')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.newsAlertsEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('newsAlertsEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.earningsAnnouncements', 'Earnings Announcements')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.earningsAnnouncementsDesc', 'Alerts for earnings reports and economic events')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.earningsAnnouncementsEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('earningsAnnouncementsEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Activity className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.accountActivity', 'Account Activity')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.accountActivityDesc', 'Login alerts, security events, and account changes')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.accountActivityNotificationsEnabled ?? true}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('accountActivityNotificationsEnabled', checked)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </>
+                        )}
+
+                        {/* Per-event granular preferences */}
+                        <NotificationPreferences />
+
+                        {/* Save button — after all notification sections */}
+                        <div className="flex justify-end">
+                            <Button onClick={() => handleSaveChanges('Notification')} disabled={isLoadingPrefs}>
+                                {isLoadingPrefs && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {t('common.saveChanges')}
+                            </Button>
+                        </div>
                     </TabsContent>
 
-                    <TabsContent value="strategies" className="space-y-6">
-                        <StrategiesSection />
+                    {/* ========== SECURITY TAB ========== */}
+                    <TabsContent value="security" className="space-y-6">
+                        {/* Authentication */}
+                        <div className="glass-card rounded-2xl p-6 space-y-5">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <KeyRound className="h-4.5 w-4.5 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold">{t('settings.authentication')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('settings.authenticationDesc', 'Manage your email and password credentials')}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="email">{t('common.emailAddress')}</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="email"
+                                        value={user?.email || ''}
+                                        readOnly
+                                        className="bg-muted/50 cursor-default focus-visible:ring-0 pr-10"
+                                    />
+                                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                                </div>
+                            </div>
+
+                            <Button variant="outline" onClick={() => setChangePasswordOpen(true)} disabled={isAuthLoading}>
+                                {t('settings.changePassword')}
+                            </Button>
+                        </div>
+
+                        {/* Two-Factor Authentication */}
+                        <div className="glass-card rounded-2xl p-6 space-y-5">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                    <ShieldCheck className="h-4.5 w-4.5 text-emerald-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold">{t('settings.twoFactorAuth')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('settings.twoFactorAuthDesc')}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                <div className="space-y-0.5">
+                                    <span className="text-sm font-medium">
+                                        {mfaStatus === 'enabled' ? t('settings.mfaEnabled', 'Enabled') : t('settings.mfaDisabled', 'Disabled')}
+                                    </span>
+                                    <p className="text-xs text-muted-foreground">
+                                        {mfaStatus === 'enabled'
+                                            ? t('settings.mfaEnabledHint', 'Your account is protected with two-factor authentication')
+                                            : t('settings.mfaDisabledHint', 'Enable to add an extra layer of security')}
+                                    </p>
+                                </div>
+                                {mfaStatus === 'loading' ? (
+                                    <Loader2 className="h-5 w-5 animate-spin"/>
+                                ) : (
+                                    <Switch
+                                        id="two-factor-auth-switch"
+                                        checked={mfaStatus === 'enabled' || mfaStatus === 'setup_qr' || mfaStatus === 'setup_verify'}
+                                        onCheckedChange={(checked) => {
+                                            if (checked && mfaStatus === 'disabled') {
+                                                handleStartSetup();
+                                            } else if (!checked && mfaStatus === 'enabled') {
+                                                setShowDisableConfirm(true);
+                                            } else if (!checked && (mfaStatus === 'setup_qr' || mfaStatus === 'setup_verify')) {
+                                                handleCancelSetup();
+                                            }
+                                        }}
+                                        disabled={isAuthLoading || isLoadingSetup || isDisabling}
+                                        aria-label={t('settings.twoFactorAuth')}
+                                    />
+                                )}
+                            </div>
+
+                            {/* MFA setup flow */}
+                            {mfaSectionContent && (
+                                <div className="mt-2">
+                                    {mfaSectionContent}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Session Security */}
+                        <div className="glass-card rounded-2xl p-6 space-y-5">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                    <Timer className="h-4.5 w-4.5 text-amber-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold">{t('settings.sessionSecurity', 'Session Security')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('settings.sessionSecurityDesc', 'Control auto-logout and session timeout behavior')}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                <div className="space-y-0.5">
+                                    <span className="text-sm font-medium">{t('settings.autoLogout', 'Auto Logout')}</span>
+                                    <p className="text-xs text-muted-foreground">
+                                        {preferences?.inactivityTimeoutMinutes && preferences.inactivityTimeoutMinutes > 0
+                                            ? `${t('settings.enabledTimeout', 'Enabled')} (${preferences.inactivityTimeoutMinutes} ${t('settings.minutes', 'minutes')})`
+                                            : t('settings.disabled', 'Disabled')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="timeout">{t('settings.inactivityTimeout', 'Inactivity Timeout')}</Label>
+                                <Select
+                                    value={preferences?.inactivityTimeoutMinutes?.toString() ?? '0'}
+                                    onValueChange={(value) => handlePreferenceChange('inactivityTimeoutMinutes', value)}
+                                    disabled={isLoadingPrefs}
+                                >
+                                    <SelectTrigger id="timeout" className="sm:max-w-xs">
+                                        <SelectValue placeholder="Select timeout period"/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="0">{t('settings.disabled', 'Disabled')}</SelectItem>
+                                        <SelectItem value="5">5 {t('settings.minutes', 'minutes')}</SelectItem>
+                                        <SelectItem value="15">15 {t('settings.minutes', 'minutes')}</SelectItem>
+                                        <SelectItem value="30">30 {t('settings.minutes', 'minutes')}</SelectItem>
+                                        <SelectItem value="60">1 {t('settings.hour', 'hour')}</SelectItem>
+                                        <SelectItem value="120">2 {t('settings.hours', 'hours')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex justify-end pt-2">
+                                <Button onClick={() => handleSaveChanges('Session')} disabled={isLoadingPrefs} size="sm">
+                                    {isLoadingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    {t('settings.saveSessionSettings', 'Save Session Settings')}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Trusted Devices */}
+                        <div className="glass-card rounded-2xl p-6">
+                            <TrustedDevicesManager/>
+                        </div>
                     </TabsContent>
 
+                    {/* ========== TAGS TAB ========== */}
                     <TabsContent value="tags" className="space-y-6">
                         <TagsSection />
                     </TabsContent>
 
+                    {/* ========== PUBLIC PROFILE TAB ========== */}
                     <TabsContent value="public-profile" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t("gamification.publicProfile", "Public Profile")}</CardTitle>
-                                <CardDescription>
-                                    Share your trading stats and achievements with the community
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <PublicProfileSettings />
-                            </CardContent>
-                        </Card>
+                        <div className="glass-card rounded-2xl p-6 space-y-5">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="h-9 w-9 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                                    <User className="h-4.5 w-4.5 text-violet-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-semibold">{t("gamification.publicProfile", "Public Profile")}</h3>
+                                    <p className="text-sm text-muted-foreground">{t("gamification.publicProfileDesc", "Share your trading stats and achievements with the community")}</p>
+                                </div>
+                            </div>
+                            <PublicProfileSettings />
+                        </div>
                     </TabsContent>
 
+                    {/* ========== BILLING TAB ========== */}
                     <TabsContent value="billing" className="space-y-6">
                         <UsageDashboard />
                     </TabsContent>
@@ -716,13 +915,12 @@ const Settings = () => {
                 onOpenChange={setChangePasswordOpen}
             />
 
-            {/* Dialogue de confirmation pour déconnecter les autres appareils (conservé) */}
             <ConfirmLogoutDialog
                 open={logoutAllDevicesOpen}
                 onOpenChange={setLogoutAllDevicesOpen}
             />
 
-            {/* Dialogue de confirmation pour désactiver MFA (ajouté ici) */}
+            {/* Disable MFA confirmation dialog */}
             <Dialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>
                 <DialogContent>
                     <DialogHeader>
@@ -738,7 +936,7 @@ const Settings = () => {
                             type="password"
                             value={passwordConfirm}
                             onChange={(e) => setPasswordConfirm(e.target.value)}
-                            placeholder={t('settings.enterPasswordPlaceholder')} // Traduire
+                            placeholder={t('settings.enterPasswordPlaceholder')}
                             required
                         />
                     </div>
@@ -756,7 +954,7 @@ const Settings = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* AlertDialog for session revocation confirmation */}
+            {/* Session revocation confirmation */}
             <AlertDialog open={revokeSessionId !== null} onOpenChange={(open) => { if (!open) setRevokeSessionId(null); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

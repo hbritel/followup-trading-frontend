@@ -55,11 +55,11 @@ const StrategyCard: React.FC<StrategyCardProps> = ({
 
         {/* Author */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500/40 to-violet-700/40 border border-violet-500/20 flex items-center justify-center text-xs font-bold text-violet-300 flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/40 to-primary/20 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
             {strategy.username.charAt(0).toUpperCase()}
           </div>
           <span className="truncate">{strategy.username}</span>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-violet-500/30 text-violet-400 flex-shrink-0">
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary flex-shrink-0">
             {strategy.level}
           </Badge>
         </div>

@@ -10,10 +10,6 @@ export const useTrades = (params?: TradeListParams, options?: { enabled?: boolea
   return useQuery({
     queryKey: ['trades', params],
     queryFn: () => tradeService.getTrades(params),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
     enabled: options?.enabled ?? true,
   });

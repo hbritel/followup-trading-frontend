@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { usePageFilter } from '@/contexts/page-filters-context';
+import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, Calendar as CalendarIcon, AlertTriangle, Upload } from 'lucide-react';
+import { Plus, Columns, Search, AlertTriangle, BookOpen, X } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
@@ -13,40 +15,119 @@ import { TradesTableWrapper, Trade } from '@/components/trades/TradesTableWrappe
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
 import ImportDialog from '@/components/trades/ImportDialog';
-import DateRangeFilter from '@/components/trades/DateRangeFilter';
+import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
+import { useBrokerConnections } from '@/hooks/useBrokers';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import NewTradeDialog from '@/components/dialogs/NewTradeDialog';
+import TradeDetailDialog from '@/components/trades/TradeDetailDialog';
 import { tradeService } from '@/services/trade.service';
+import { userService } from '@/services/user.service';
 import { TradeTableSkeleton } from '@/components/skeletons';
 
-/** Format a Date to ISO date string (YYYY-MM-DDT00:00:00+0000) for the backend */
-const toBackendDate = (d: Date | null, endOfDay = false): string | undefined => {
-  if (!d) return undefined;
+/** Format a Date to YYYY-MM-DD */
+const toISODate = (d: Date): string => {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  const time = endOfDay ? '23:59:59' : '00:00:00';
-  return `${year}-${month}-${day}T${time}+0000`;
+  return `${year}-${month}-${day}`;
 };
+
+const COLUMN_DEFAULTS_KEY = 'ft_trade_column_defaults';
+
+const FACTORY_COLUMNS: Record<string, boolean> = {
+  symbol: true,
+  type: true,
+  status: true,
+  accountType: false,
+  entryDate: true,
+  exitDate: true,
+  entryPrice: true,
+  exitPrice: true,
+  quantity: true,
+  profit: true,
+  profitPercentage: false,
+  stopLoss: false,
+  takeProfit: false,
+  balance: true,
+  notes: false,
+  tags: false,
+  fees: false,
+  currency: false,
+  strategy: false,
+  createdAt: false,
+  updatedAt: false,
+};
+
+function loadColumnDefaults(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(COLUMN_DEFAULTS_KEY);
+    if (raw) return { ...FACTORY_COLUMNS, ...JSON.parse(raw) };
+  } catch { /* corrupted data — ignore */ }
+  return { ...FACTORY_COLUMNS };
+}
+
+function saveColumnDefaultsToLocalStorage(columns: Record<string, boolean>) {
+  localStorage.setItem(COLUMN_DEFAULTS_KEY, JSON.stringify(columns));
+}
 
 const Trades = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  // Strategy filter from URL (e.g. /trades?strategyId=xxx)
+  const strategyIdParam = searchParams.get('strategyId');
+
+  // Highlight trade from navigation state (e.g. from StrategyDetail click)
+  const highlightTradeId = (location.state as { highlightTradeId?: string } | null)?.highlightTradeId ?? null;
+
+  // Insight drill-down: filter to specific trade IDs (from Insights page)
+  const insightTradeIds = (location.state as { filterTradeIds?: string[] } | null)?.filterTradeIds ?? null;
+  const [activeInsightFilter, setActiveInsightFilter] = useState<string[] | null>(null);
+
+  // Seed insight filter from navigation state on mount
+  useEffect(() => {
+    if (insightTradeIds && insightTradeIds.length > 0) {
+      setActiveInsightFilter(insightTradeIds);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear navigation state after reading (so refreshing doesn't re-filter)
+  useEffect(() => {
+    if (highlightTradeId || insightTradeIds) {
+      window.history.replaceState({}, '');
+    }
+  }, [highlightTradeId, insightTradeIds]);
 
   const [accountFilter, setAccountFilter] = usePageFilter('trades', 'accountId', 'all');
+  const { accountIds: resolvedAccountIds } = useAccountFilter(accountFilter);
   const [currentPage, setCurrentPage] = usePageFilter('trades', 'currentPage', 1);
   const [itemsPerPage, setItemsPerPage] = usePageFilter('trades', 'itemsPerPage', 10);
 
-  // --- Filter state ---
+  // --- Date filter state (preset-based, same as Dashboard/Performance/etc.) ---
+  const [datePreset, setDatePreset] = useDefaultDatePreset('trades');
+  const [customStart, setCustomStart] = usePageFilter<Date | null>('trades', 'customStart', null);
+  const [customEnd, setCustomEnd] = usePageFilter<Date | null>('trades', 'customEnd', null);
+
+  const dateRange = datePreset === 'custom'
+    ? {
+        startDate: customStart ? toISODate(customStart) : undefined,
+        endDate: customEnd ? toISODate(customEnd) : undefined,
+      }
+    : computeDateRange(datePreset);
+
+  // --- Other filter state ---
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = usePageFilter<string>('trades', 'searchQuery', '');
   const [statusFilter, setStatusFilter] = usePageFilter('trades', 'statusFilter', 'all');
   const [directionFilter, setDirectionFilter] = usePageFilter('trades', 'directionFilter', 'all');
-  const [startDate, setStartDate] = usePageFilter<Date | null>('trades', 'startDate', null);
-  const [endDate, setEndDate] = usePageFilter<Date | null>('trades', 'endDate', null);
 
   // Debounce search input (400ms)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -71,12 +152,13 @@ const Trades = () => {
   const tradeParams = {
     page: currentPage - 1, // backend is 0-indexed
     size: itemsPerPage,
-    accountIds: accountFilter === 'all' ? undefined : accountFilter,
+    accountIds: resolvedAccountIds,
     direction: directionFilter === 'all' ? undefined : directionFilter,
     status: statusFilter === 'all' ? undefined : statusFilter,
     searchText: debouncedSearch || undefined,
-    entryDateFrom: toBackendDate(startDate),
-    entryDateTo: toBackendDate(endDate, true),
+    entryDateFrom: dateRange.startDate ? `${dateRange.startDate}T00:00:00+0000` : undefined,
+    entryDateTo: dateRange.endDate ? `${dateRange.endDate}T23:59:59+0000` : undefined,
+    strategyIds: strategyIdParam ? [strategyIdParam] : undefined,
   };
 
   // --- Fetch trades from backend (server-side filtering + pagination) ---
@@ -89,6 +171,24 @@ const Trades = () => {
 
   const trades = tradesResponse?.content || [];
   const totalElements = tradesResponse?.totalElements || 0;
+
+  // --- Enrich trades with accountType from broker connections ---
+  const { data: connections } = useBrokerConnections();
+  const accountTypeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    connections?.forEach(c => { map[c.id] = c.accountType || 'REAL'; });
+    return map;
+  }, [connections]);
+
+  const enrichedTrades = useMemo(() => {
+    const mapped = trades.map(t => ({ ...t, accountType: t.accountId ? accountTypeMap[t.accountId] : undefined }));
+    // When insight filter is active, show only the related trades
+    if (activeInsightFilter && activeInsightFilter.length > 0) {
+      const idSet = new Set(activeInsightFilter);
+      return mapped.filter(t => idSet.has(t.id));
+    }
+    return mapped;
+  }, [trades, accountTypeMap, activeInsightFilter]);
 
   // --- Delete mutation ---
   const deleteMutation = useMutation({
@@ -109,52 +209,47 @@ const Trades = () => {
     },
   });
 
+  // --- Load column defaults from server (overrides localStorage) ---
+  useEffect(() => {
+    userService.getUserPreferences()
+      .then((prefs) => {
+        if (prefs.tradeColumnDefaults) {
+          try {
+            const serverColumns = JSON.parse(prefs.tradeColumnDefaults) as Record<string, boolean>;
+            const merged = { ...FACTORY_COLUMNS, ...serverColumns };
+            setVisibleColumns(merged);
+            saveColumnDefaultsToLocalStorage(merged);
+          } catch { /* invalid JSON — ignore */ }
+        }
+      })
+      .catch(() => { /* offline / unauthenticated — use localStorage fallback */ });
+  }, []);
+
   // --- UI state ---
   const [importOpen, setImportOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState({
-    symbol: true,
-    type: true,
-    status: true,
-    entryDate: true,
-    exitDate: true,
-    entryPrice: true,
-    exitPrice: true,
-    quantity: true,
-    profit: true,
-    profitPercentage: false,
-    stopLoss: false,
-    takeProfit: false,
-    balance: true,
-    notes: false,
-    tags: false,
-    fees: false,
-    currency: false,
-    strategy: false,
-    createdAt: false,
-    updatedAt: false,
-  });
+  const [visibleColumns, setVisibleColumns] = useState(loadColumnDefaults);
   const [showColumnFilter, setShowColumnFilter] = useState(false);
-  const [showDateFilter, setShowDateFilter] = useState(false);
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
+  const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
 
   // --- Handlers ---
   const handleNewTrade = () => {
     setShowNewTradeDialog(true);
   };
+  const [editMode, setEditMode] = useState(false);
   const handleEditTrade = (tradeId: string) => {
-    toast({
-      title: t('trades.editTrade'),
-      description: `${t('trades.editingTrade')} ${tradeId}`,
-    });
+    const trade = enrichedTrades.find(t => t.id === tradeId);
+    if (trade) {
+      setEditMode(true);
+      setViewingTrade(trade);
+    }
   };
   const handleDeleteTrade = (tradeId: string) => {
     deleteMutation.mutate(tradeId);
   };
   const handleViewTrade = (tradeId: string) => {
-    toast({
-      title: t('trades.viewTrade'),
-      description: `${t('trades.viewingTrade')} ${tradeId}`,
-    });
+    const trade = enrichedTrades.find(t => t.id === tradeId);
+    if (trade) setViewingTrade(trade);
   };
   const handleImportTrades = (importedTrades: Trade[]) => {
     queryClient.invalidateQueries({ queryKey: ['trades'] });
@@ -170,27 +265,17 @@ const Trades = () => {
     });
   };
   const handleResetColumnVisibility = () => {
-    setVisibleColumns({
-      symbol: true,
-      type: true,
-      status: true,
-      entryDate: true,
-      exitDate: true,
-      entryPrice: true,
-      exitPrice: true,
-      quantity: true,
-      profit: true,
-      profitPercentage: false,
-      stopLoss: false,
-      takeProfit: false,
-      balance: true,
-      notes: false,
-      tags: false,
-      fees: false,
-      currency: false,
-      strategy: false,
-      createdAt: false,
-      updatedAt: false,
+    setVisibleColumns(loadColumnDefaults());
+  };
+  const handleSaveColumnDefaults = () => {
+    const json = JSON.stringify(visibleColumns);
+    saveColumnDefaultsToLocalStorage(visibleColumns);
+    userService.updateUserPreferences({ tradeColumnDefaults: json }).catch(() => {
+      /* server save failed — localStorage still has it */
+    });
+    toast({
+      title: t('trades.columnDefaultsSaved', 'Column defaults saved'),
+      description: t('trades.columnDefaultsSavedDesc', 'Your column preferences will be remembered.'),
     });
   };
   const handlePageChange = (pageNumber: number) => {
@@ -200,36 +285,9 @@ const Trades = () => {
     setItemsPerPage(size);
     setCurrentPage(1);
   };
-  const handleDateFilterApply = () => {
-    setShowDateFilter(false);
-    setCurrentPage(1);
-    if (startDate || endDate) {
-      let desc = '';
-      if (startDate && endDate) {
-        desc = `${t('trades.filteringTradesBetween')} ${startDate.toLocaleDateString()} ${t('common.and')} ${endDate.toLocaleDateString()}`;
-      } else if (startDate) {
-        desc = `${t('trades.filteringTradesFrom')} ${startDate.toLocaleDateString()}`;
-      } else if (endDate) {
-        desc = `${t('trades.filteringTradesUntil')} ${endDate.toLocaleDateString()}`;
-      }
-      toast({
-        title: t('trades.dateFilterApplied'),
-        description: desc,
-      });
-    }
-  };
-  const handleDateFilterReset = () => {
-    setStartDate(null);
-    setEndDate(null);
-    setCurrentPage(1);
-    toast({
-      title: t('trades.dateFilterReset'),
-      description: t('trades.showingAllTrades'),
-    });
-  };
 
   // Determine empty state: differentiate "no trades at all" from "no results for filters"
-  const hasActiveFilters = directionFilter !== 'all' || statusFilter !== 'all' || !!debouncedSearch || !!startDate || !!endDate;
+  const hasActiveFilters = directionFilter !== 'all' || statusFilter !== 'all' || !!debouncedSearch || datePreset !== 'all' || !!strategyIdParam;
 
   // Count visible columns for the skeleton
   const visibleColumnCount = Object.values(visibleColumns).filter(Boolean).length + 1; // +1 for actions column
@@ -237,7 +295,33 @@ const Trades = () => {
   return (
     <DashboardLayout pageTitle={t('trades.title')}>
       <PageTransition className="flex flex-col space-y-4 max-w-full">
+        {activeInsightFilter && activeInsightFilter.length > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+              <span className="text-amber-700 dark:text-amber-300">
+                {t('insights.filteringByInsight', `Showing ${enrichedTrades.length} trades related to insight`, { count: enrichedTrades.length })}
+              </span>
+              <Badge variant="secondary" className="text-xs">{activeInsightFilter.length} IDs</Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setActiveInsightFilter(null)}
+              className="h-7 px-2 text-xs text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+            >
+              <X className="h-3 w-3 mr-1" />
+              {t('common.clearFilter', 'Clear filter')}
+            </Button>
+          </div>
+        )}
         <FiltersSection
+          datePreset={datePreset}
+          onDatePresetChange={(v) => { setDatePreset(v); setCurrentPage(1); }}
+          customStart={customStart}
+          customEnd={customEnd}
+          onCustomStartChange={setCustomStart}
+          onCustomEndChange={setCustomEnd}
           accountFilter={accountFilter}
           onAccountChange={handleAccountChange}
           searchQuery={searchInput}
@@ -247,23 +331,12 @@ const Trades = () => {
           directionFilter={directionFilter}
           onDirectionChange={handleDirectionChange}
           onToggleColumnFilter={() => setShowColumnFilter(!showColumnFilter)}
-          onToggleDateFilter={() => setShowDateFilter(!showDateFilter)}
           onImport={handleImportTrades}
           onOpenImportDialog={() => setImportOpen(true)}
-          trades={trades}
+          trades={enrichedTrades}
           visibleColumns={visibleColumns}
           totalElements={totalElements}
           onNewTrade={handleNewTrade}
-        />
-
-        <DateRangeFilter
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          onApply={handleDateFilterApply}
-          onReset={handleDateFilterReset}
-          isOpen={showDateFilter}
         />
 
         {showColumnFilter && (
@@ -273,8 +346,26 @@ const Trades = () => {
               onChange={handleColumnVisibilityChange}
               onApply={() => setShowColumnFilter(false)}
               onReset={handleResetColumnVisibility}
+              onSaveDefault={handleSaveColumnDefaults}
             />
           </Card>
+        )}
+
+        {/* Strategy filter badge */}
+        {strategyIdParam && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
+              <BookOpen className="h-3.5 w-3.5" />
+              {t('trades.filteredByStrategy', 'Filtered by strategy')}
+              <button
+                type="button"
+                onClick={() => setSearchParams({})}
+                className="ml-1 rounded-full hover:bg-white/10 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          </div>
         )}
 
         {/* Loading state - skeleton table */}
@@ -329,7 +420,7 @@ const Trades = () => {
         {!isLoading && !isError && totalElements > 0 && (
           <div className="glass-card rounded-2xl w-full overflow-hidden">
             <TradesTableWrapper
-              trades={trades}
+              trades={enrichedTrades}
               visibleColumns={visibleColumns}
               searchQuery={debouncedSearch}
               statusFilter={statusFilter}
@@ -342,6 +433,7 @@ const Trades = () => {
               onEdit={handleEditTrade}
               onDelete={handleDeleteTrade}
               onView={handleViewTrade}
+              highlightTradeId={highlightTradeId}
             />
           </div>
         )}
@@ -349,11 +441,24 @@ const Trades = () => {
 
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
+      <TradeDetailDialog
+        trade={viewingTrade}
+        open={!!viewingTrade}
+        onOpenChange={(o) => { if (!o) { setViewingTrade(null); setEditMode(false); } }}
+        initialEditMode={editMode}
+        onTradeUpdated={(updated) => setViewingTrade(updated)}
+      />
     </DashboardLayout>
   );
 };
 
 interface FiltersSectionProps {
+  datePreset: string;
+  onDatePresetChange: (value: string) => void;
+  customStart: Date | null;
+  customEnd: Date | null;
+  onCustomStartChange: (date: Date | null) => void;
+  onCustomEndChange: (date: Date | null) => void;
   accountFilter: string;
   onAccountChange: (value: string) => void;
   searchQuery: string;
@@ -363,7 +468,6 @@ interface FiltersSectionProps {
   directionFilter: string;
   onDirectionChange: (value: string) => void;
   onToggleColumnFilter: () => void;
-  onToggleDateFilter: () => void;
   onImport: (trades: Trade[]) => void;
   onOpenImportDialog: () => void;
   trades: Trade[];
@@ -373,6 +477,12 @@ interface FiltersSectionProps {
 }
 
 const FiltersSection: React.FC<FiltersSectionProps> = ({
+  datePreset,
+  onDatePresetChange,
+  customStart,
+  customEnd,
+  onCustomStartChange,
+  onCustomEndChange,
   accountFilter,
   onAccountChange,
   searchQuery,
@@ -382,7 +492,6 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   directionFilter,
   onDirectionChange,
   onToggleColumnFilter,
-  onToggleDateFilter,
   onImport,
   onOpenImportDialog,
   trades,
@@ -392,7 +501,32 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col md:flex-row justify-between gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <DashboardDateFilter
+            preset={datePreset}
+            onPresetChange={onDatePresetChange}
+            customStart={customStart}
+            customEnd={customEnd}
+            onCustomStartChange={onCustomStartChange}
+            onCustomEndChange={onCustomEndChange}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <TradeImportExport
+              onImport={onImport}
+              filteredTrades={trades}
+              visibleColumns={visibleColumns}
+              accountFilter={accountFilter}
+              totalElements={totalElements}
+            />
+          <Button onClick={onNewTrade}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('trades.newTrade')}
+          </Button>
+        </div>
+      </div>
       <div className="flex items-center gap-2 flex-wrap">
         <AccountSelector
           value={accountFilter}
@@ -431,29 +565,18 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
             <SelectItem value="short">{t('trades.short')}</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="icon" onClick={onToggleColumnFilter}>
-          <Columns className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="icon" onClick={onToggleDateFilter} className="relative">
-          <CalendarIcon className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <TradeImportExport
-            onImport={onImport}
-            filteredTrades={trades}
-            visibleColumns={visibleColumns}
-            accountFilter={accountFilter}
-            totalElements={totalElements}
-          />
-        <Button variant="outline" onClick={onOpenImportDialog}>
-          <Upload className="mr-2 h-4 w-4" />
-          {t('common.import', 'Import')}
-        </Button>
-        <Button onClick={onNewTrade}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('trades.newTrade')}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={onToggleColumnFilter}>
+                <Columns className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('trades.columnVisibility', 'Column Visibility')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

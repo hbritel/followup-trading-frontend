@@ -1,9 +1,14 @@
 import apiClient from './apiClient';
-import type { StrategyResponseDto, StrategyRequestDto } from '@/types/dto';
+import type { StrategyResponseDto, StrategyRequestDto, StrategyStatsDto } from '@/types/dto';
 
 export const strategyService = {
   getStrategies: async (): Promise<StrategyResponseDto[]> => {
     const response = await apiClient.get<StrategyResponseDto[]>('/strategies');
+    return response.data;
+  },
+
+  getStrategyStats: async (): Promise<StrategyStatsDto[]> => {
+    const response = await apiClient.get<StrategyStatsDto[]>('/strategies/with-stats');
     return response.data;
   },
 

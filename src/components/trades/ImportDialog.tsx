@@ -187,7 +187,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ open, onOpenChange }) => {
                   'relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center',
                   'transition-all duration-200 outline-none',
                   dragOver
-                    ? 'border-primary/50 bg-primary/5 dark:shadow-[0_0_20px_rgba(139,92,246,0.15)]'
+                    ? 'border-primary/50 bg-primary/5 dark:shadow-[0_0_20px_hsl(var(--primary)/0.15)]'
                     : file
                     ? 'border-primary/30 bg-primary/[0.03]'
                     : 'border-muted-foreground/30 bg-muted/20 hover:border-muted-foreground/50 hover:bg-muted/30',

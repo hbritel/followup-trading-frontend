@@ -34,4 +34,9 @@ export const watchlistService = {
   removeItem: async (watchlistId: string, itemId: string): Promise<void> => {
     await apiClient.delete(`/watchlists/${watchlistId}/items/${itemId}`);
   },
+
+  createAlertFromItem: async (watchlistId: string, itemId: string): Promise<{ alertId: string }> => {
+    const response = await apiClient.post<{ alertId: string }>(`/watchlists/${watchlistId}/items/${itemId}/create-alert`);
+    return response.data;
+  },
 };

@@ -73,9 +73,9 @@ const OnboardingConnectBroker: React.FC<OnboardingConnectBrokerProps> = ({ onNex
             className={cn(
               'glass-card rounded-2xl p-4 sm:p-5 flex items-start gap-4 text-left',
               'transition-all duration-200 cursor-pointer w-full',
-              'hover:border-primary/30 hover:shadow-[0_0_20px_rgba(139,92,246,0.12)]',
+              'hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.12)]',
               option.highlighted &&
-                'border border-primary/20 shadow-[0_0_15px_rgba(139,92,246,0.08)]'
+                'border border-primary/20 shadow-[0_0_15px_hsl(var(--primary)/0.08)]'
             )}
           >
             <div

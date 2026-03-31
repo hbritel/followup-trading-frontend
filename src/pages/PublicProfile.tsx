@@ -12,12 +12,12 @@ const LEVEL_COLORS: Record<string, string> = {
   APPRENTICE: 'bg-blue-600',
   TRADER: 'bg-green-600',
   SKILLED: 'bg-amber-500',
-  ADVANCED: 'bg-violet-600',
+  ADVANCED: 'bg-primary',
   EXPERT: 'bg-rose-500',
   MASTER: 'bg-indigo-600',
   ELITE: 'bg-amber-400',
-  LEGEND: 'bg-gradient-to-r from-amber-400 to-violet-500',
-  GOAT: 'bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400',
+  LEGEND: 'bg-gradient-to-r from-amber-400 to-primary',
+  GOAT: 'bg-gradient-to-r from-pink-500 via-primary to-cyan-400',
 };
 
 const PublicProfile: React.FC = () => {
@@ -31,7 +31,7 @@ const PublicProfile: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#050506] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -61,7 +61,7 @@ const PublicProfile: React.FC = () => {
     <div className="min-h-screen bg-[#050506] py-12 px-4">
       {/* Ambient blobs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[-5%] w-[45%] h-[45%] rounded-full bg-violet-600/10 blur-[100px]" />
+        <div className="absolute top-[-15%] left-[-5%] w-[45%] h-[45%] rounded-full bg-primary/10 blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-amber-500/8 blur-[100px]" />
       </div>
 
@@ -83,7 +83,7 @@ const PublicProfile: React.FC = () => {
 
           <div>
             <h1 className="text-3xl font-bold text-white">@{profile.username}</h1>
-            <p className="text-violet-400 font-medium mt-1">{profile.levelName}</p>
+            <p className="text-primary font-medium mt-1">{profile.levelName}</p>
             <p className="text-muted-foreground text-sm mt-0.5">
               {profile.xp.toLocaleString()} {t('gamification.xp', 'XP')}
             </p>
@@ -131,7 +131,7 @@ const PublicProfile: React.FC = () => {
           <p className="text-muted-foreground text-sm">
             Track your own trading performance and compete with others
           </p>
-          <Button asChild className="bg-violet-600 hover:bg-violet-500">
+          <Button asChild className="bg-primary hover:bg-primary/90">
             <Link to="/auth/signup">
               {t('gamification.joinCta', 'Join FollowUp Trading')}
             </Link>

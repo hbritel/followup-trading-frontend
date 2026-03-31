@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -6,6 +6,7 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PRESETS = [
+  { label: '1D', value: '1d' },
   { label: '1W', value: '1w' },
   { label: '1M', value: '1m' },
   { label: '3M', value: '3m' },
@@ -28,6 +29,9 @@ export function computeDateRange(preset: string): { startDate?: string; endDate?
   let start: Date;
 
   switch (preset) {
+    case '1d':
+      start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      break;
     case '1w':
       start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 7));
       break;
@@ -69,6 +73,14 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
 }) => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const isCustom = preset === 'custom';
+
+  // Controlled month for end date calendar — follows start date selection
+  const [endMonth, setEndMonth] = useState<Date>(customStart ?? new Date());
+
+  // When start date changes, navigate end calendar to that month
+  useEffect(() => {
+    if (customStart) setEndMonth(customStart);
+  }, [customStart]);
 
   const handlePresetClick = (value: string) => {
     onPresetChange(value);
@@ -117,7 +129,7 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
                   : 'text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'
               )}
             >
-              <CalendarIcon className="h-3 w-3" />
+              <CalendarIcon className="h-3 w-3 text-foreground" />
               {customLabel}
             </Button>
           </PopoverTrigger>
@@ -141,6 +153,8 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
                 <Calendar
                   mode="single"
                   selected={customEnd ?? undefined}
+                  month={endMonth}
+                  onMonthChange={setEndMonth}
                   onSelect={(date) => {
                     onCustomEndChange(date ?? null);
                     onPresetChange('custom');

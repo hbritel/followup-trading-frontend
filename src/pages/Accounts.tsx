@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -12,9 +12,23 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, CreditCard, RefreshCw, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
+import {
+  PlusCircle,
+  RefreshCw,
+  Loader2,
+  AlertTriangle,
+  Settings2,
+  Trash2,
+  Clock,
+  CalendarDays,
+  Activity,
+  Wallet,
+  Eye,
+  Plug,
+  Inbox,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -24,44 +38,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { brokerService, type ConnectBrokerRequest, type BrokerConnectionResponse } from '@/services/broker.service';
+import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
-
-// --- Fallback mock data (used when API is unavailable) ---
-const fallbackAccounts: BrokerConnectionResponse[] = [
-  {
-    id: '1',
-    brokerType: 'INTERACTIVE_BROKERS',
-    brokerCode: 'IBKR',
-    brokerDisplayName: 'Interactive Brokers',
-    accountIdentifier: 'U1234567',
-    displayName: 'Trading Account (Main)',
-    status: 'ACTIVE',
-    syncFrequency: 'DAILY',
-    enabled: true,
-    lastSyncTime: '2023-06-15T10:30:00Z',
-    createdAt: '2023-01-05T00:00:00Z',
-    updatedAt: '2023-06-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    brokerType: 'MT5',
-    brokerCode: 'EXNESS',
-    brokerDisplayName: 'Exness',
-    accountIdentifier: '12345678',
-    displayName: 'Forex Trading',
-    status: 'ACTIVE',
-    syncFrequency: 'HOURLY',
-    enabled: true,
-    lastSyncTime: '2023-06-15T09:00:00Z',
-    createdAt: '2023-02-10T00:00:00Z',
-    updatedAt: '2023-06-15T09:00:00Z',
-  },
-];
 
 // --- Helpers ---
 const formatBrokerName = (brokerType: string): string => {
@@ -74,7 +74,6 @@ const formatBrokerName = (brokerType: string): string => {
   return map[brokerType] || brokerType;
 };
 
-/** Returns the best available display name for an account card title. */
 const getAccountTitle = (account: { displayName?: string | null; brokerDisplayName?: string; accountIdentifier?: string; brokerType?: string }): string => {
   if (account.displayName) return account.displayName;
   const broker = account.brokerDisplayName || formatBrokerName(account.brokerType || '');
@@ -82,43 +81,255 @@ const getAccountTitle = (account: { displayName?: string | null; brokerDisplayNa
   return acctId ? `${broker} - ${acctId}` : broker;
 };
 
-/** Returns the broker company name for the subtitle. */
 const getBrokerLabel = (account: { brokerDisplayName?: string; brokerType?: string }): string =>
   account.brokerDisplayName || formatBrokerName(account.brokerType || '');
 
-const getStatusVariant = (status: string | undefined): 'default' | 'secondary' | 'destructive' | 'outline' => {
+const STATUS_I18N_MAP: Record<string, string> = {
+  'CONNECTED': 'accounts.statusConnected',
+  'ACTIVE': 'accounts.statusActive',
+  'PENDING': 'accounts.statusPending',
+  'DISCONNECTED': 'accounts.statusDisconnected',
+  'ERROR': 'accounts.statusError',
+};
+
+const getStatusLabel = (status: string | undefined, t: (key: string) => string, enabled = true): string => {
+  if (!enabled) return t('accounts.statusPaused');
+  const key = STATUS_I18N_MAP[status ?? ''];
+  return key ? t(key) : (status?.toLowerCase() || t('accounts.unknown'));
+};
+
+const getStatusConfigForAccount = (account: { status?: string; enabled?: boolean }) => {
+  if (!account.enabled) {
+    return { variant: 'outline' as const, dotClass: 'bg-amber-500' };
+  }
+  return getStatusConfig(account.status);
+};
+
+const getStatusConfig = (status: string | undefined) => {
   switch (status) {
-    case 'CONNECTED': return 'default';
-    case 'PENDING': return 'outline';
-    case 'DISCONNECTED': return 'secondary';
-    case 'ERROR': return 'destructive';
-    default: return 'secondary';
+    case 'CONNECTED':
+    case 'ACTIVE':
+      return { variant: 'default' as const, dotClass: 'bg-emerald-500' };
+    case 'PENDING':
+      return { variant: 'outline' as const, dotClass: 'bg-amber-500' };
+    case 'DISCONNECTED':
+      return { variant: 'secondary' as const, dotClass: 'bg-muted-foreground' };
+    case 'ERROR':
+      return { variant: 'destructive' as const, dotClass: 'bg-destructive' };
+    default:
+      return { variant: 'secondary' as const, dotClass: 'bg-muted-foreground' };
   }
 };
 
+// ---------------------------------------------------------------------------
+// Account Detail Sheet — replaces the old Dialog for a richer detail view
+// ---------------------------------------------------------------------------
+function AccountDetailSheet({
+  account,
+  open,
+  onOpenChange,
+  onSync,
+  onEdit,
+  onDisconnect,
+  isSyncing,
+  isDisconnecting,
+  getSyncFrequencyLabel,
+}: {
+  account: BrokerConnectionResponse;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSync: () => void;
+  onEdit: () => void;
+  onDisconnect: () => void;
+  isSyncing: boolean;
+  isDisconnecting: boolean;
+  getSyncFrequencyLabel: (freq: string) => string;
+}) {
+  const { t } = useTranslation();
+  const statusConfig = getStatusConfigForAccount(account);
+  const isManual = account.protocol === 'MANUAL';
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-lg w-full overflow-y-auto">
+        <SheetHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Wallet className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <SheetTitle className="truncate">{getAccountTitle(account)}</SheetTitle>
+              <SheetDescription className="truncate">{getBrokerLabel(account)}</SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        {/* Status + Type badges */}
+        <div className="flex items-center gap-2 pb-4">
+          <Badge variant={statusConfig.variant} className="gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${statusConfig.dotClass}`} />
+            {getStatusLabel(account.status, t, account.enabled)}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={account.accountType === 'DEMO'
+              ? 'border-amber-500/30 text-amber-500'
+              : 'border-emerald-500/30 text-emerald-500'}
+          >
+            {account.accountType === 'DEMO' ? t('accounts.demo') : t('accounts.real')}
+          </Badge>
+        </div>
+
+        <Separator />
+
+        {/* Metadata grid */}
+        <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <RefreshCw className="h-3 w-3" />
+              {t('accounts.syncFrequency')}
+            </div>
+            <p className="text-sm font-medium">{getSyncFrequencyLabel(account.syncFrequency)}</p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {t('accounts.lastSynced')}
+            </div>
+            <p className="text-sm font-medium">
+              {account.lastSyncTime
+                ? new Date(account.lastSyncTime).toLocaleString()
+                : t('accounts.never')}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CalendarDays className="h-3 w-3" />
+              {t('accounts.connectedSince')}
+            </div>
+            <p className="text-sm font-medium">
+              {new Date(account.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+
+          {account.accountIdentifier && account.accountIdentifier !== 'default' && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Plug className="h-3 w-3" />
+                {t('accounts.accountId')}
+              </div>
+              <p className="text-sm font-medium font-mono">{account.accountIdentifier}</p>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Actions */}
+        <div className="space-y-3 pt-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {t('accounts.accountActions')}
+          </p>
+
+          {!isManual && (
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={onSync}
+              disabled={isSyncing || !account.enabled || (account.status !== 'CONNECTED' && account.status !== 'ACTIVE' && account.status !== 'PENDING')}
+            >
+              {isSyncing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {isSyncing ? t('accounts.syncing') : t('accounts.syncNow')}
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={onEdit}
+          >
+            <Settings2 className="h-4 w-4" />
+            {t('accounts.editSettings')}
+          </Button>
+
+          <Separator />
+
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={onDisconnect}
+            disabled={isDisconnecting}
+          >
+            {isDisconnecting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {t('accounts.disconnect')}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
 const Accounts = () => {
   const { t } = useTranslation();
+
+  const getSyncFrequencyLabel = (freq: string) => {
+    const key = {
+      'EVERY_5_MINUTES': 'accounts.every5Minutes',
+      'EVERY_15_MINUTES': 'accounts.every15Minutes',
+      'EVERY_30_MINUTES': 'accounts.every30Minutes',
+      'HOURLY': 'accounts.hourly',
+      'DAILY': 'accounts.daily',
+      'WEEKLY': 'accounts.weekly',
+      'MONTHLY': 'accounts.monthly',
+      'MANUAL': 'accounts.manual',
+    }[freq];
+    return key ? t(key) : freq;
+  };
+
   const queryClient = useQueryClient();
   const [linkAccountOpen, setLinkAccountOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [viewAccountOpen, setViewAccountOpen] = useState(false);
   const [editAccountOpen, setEditAccountOpen] = useState(false);
+  const [confirmDisconnectOpen, setConfirmDisconnectOpen] = useState(false);
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
+  const batchSyncIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // --- Manual account dialog state ---
+  const [manualAccountOpen, setManualAccountOpen] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualAccountType, setManualAccountType] = useState<string>('REAL');
 
   // --- Form state for linking ---
   const [newBrokerType, setNewBrokerType] = useState('');
+  const [selectedProtocol, setSelectedProtocol] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
+  const [newAccountType, setNewAccountType] = useState<string>('REAL');
   const [credentials, setCredentials] = useState<Record<string, string>>({});
 
   // --- Form state for editing ---
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editSyncFrequency, setEditSyncFrequency] = useState('');
   const [editEnabled, setEditEnabled] = useState(true);
+  const [editAccountType, setEditAccountType] = useState<string>('REAL');
 
   // --- Queries ---
   const {
-    data: accounts = fallbackAccounts,
+    data: accounts = [],
     isLoading,
     isError,
     error,
@@ -133,12 +344,20 @@ const Accounts = () => {
     queryFn: brokerService.getBrokers
   });
 
+  const selectedBroker = availableBrokers?.find(b => b.code === newBrokerType);
+  const supportedProtocols = selectedBroker?.supportedProtocols ?? [];
+  const hasMultipleProtocols = supportedProtocols.length > 1;
+  const effectiveProtocol = selectedProtocol || selectedBroker?.defaultProtocol;
+
   const { data: credentialSchema, isLoading: schemaLoading } = useQuery({
-    queryKey: ['credential-schema', newBrokerType],
-    queryFn: () => brokerService.getCredentialSchema(newBrokerType),
-    enabled: !!newBrokerType,
+    queryKey: ['credential-schema', newBrokerType, effectiveProtocol],
+    queryFn: () => brokerService.getCredentialSchema(newBrokerType, effectiveProtocol),
+    enabled: !!newBrokerType && !!effectiveProtocol,
     retry: 1,
   });
+
+  const realAccounts = accounts.filter(a => a.accountType !== 'DEMO');
+  const demoAccounts = accounts.filter(a => a.accountType === 'DEMO');
 
   // --- Mutations ---
   const connectMutation = useMutation({
@@ -151,7 +370,6 @@ const Accounts = () => {
         title: t('accounts.accountLinked'),
         description: t('accounts.accountLinkedDescription'),
       });
-      // Auto-trigger sync
       if (data && data.id) {
         setSyncingIds(prev => new Set(prev).add(data.id));
         syncMutation.mutate({ connectionId: data.id, idempotencyKey: crypto.randomUUID() });
@@ -173,15 +391,22 @@ const Accounts = () => {
       brokerService.syncConnection(connectionId, idempotencyKey),
     onSuccess: (_data, variables) => {
       setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
+      const isBatch = batchSyncIdsRef.current.delete(variables.connectionId);
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
       queryClient.invalidateQueries({ queryKey: ['trades'] });
-      toast({
-        title: t('accounts.syncComplete'),
-        description: t('accounts.syncCompleteDescription', { count: _data.tradesImported ?? 0 }),
-      });
+      invalidateDashboardData(queryClient);
+      if (!isBatch) {
+        toast({
+          title: t('accounts.syncComplete'),
+          description: t('accounts.syncCompleteDescription', { count: _data.tradesImported ?? 0 }),
+        });
+      }
     },
     onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean; retryAfterSeconds?: number }, variables) => {
       setSyncingIds(prev => { const n = new Set(prev); n.delete(variables.connectionId); return n; });
+      const isBatch = batchSyncIdsRef.current.delete(variables.connectionId);
+      // Suppress individual error toasts during batch sync
+      if (isBatch) return;
       if (err.isRateLimited) {
         toast({
           title: t('accounts.syncRateLimited'),
@@ -209,23 +434,30 @@ const Accounts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
       queryClient.invalidateQueries({ queryKey: ['trades'] });
+      invalidateDashboardData(queryClient);
       setViewAccountOpen(false);
+      setConfirmDisconnectOpen(false);
       toast({ title: t('accounts.accountDisconnected'), description: t('accounts.accountDisconnectedDescription') });
     },
     onError: () => {
+      setConfirmDisconnectOpen(false);
       toast({ title: t('accounts.disconnectFailed'), description: t('accounts.disconnectFailedDescription'), variant: 'destructive' });
     },
   });
 
   const editMutation = useMutation({
-    mutationFn: (req: { connectionId: string; syncFrequency?: string; enabled?: boolean; displayName?: string }) =>
+    mutationFn: (req: { connectionId: string; syncFrequency?: string; enabled?: boolean; displayName?: string; accountType?: string }) =>
       brokerService.updateSettings(req.connectionId, {
         syncFrequency: req.syncFrequency,
         enabled: req.enabled,
-        displayName: req.displayName
+        displayName: req.displayName,
+        accountType: req.accountType
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setEditAccountOpen(false);
       setViewAccountOpen(false);
       toast({
@@ -238,10 +470,36 @@ const Accounts = () => {
     },
   });
 
+  const createManualMutation = useMutation({
+    mutationFn: () => brokerService.createManualAccount({
+      displayName: manualName,
+      accountType: manualAccountType,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+      setManualAccountOpen(false);
+      setManualName('');
+      setManualAccountType('REAL');
+      toast({
+        title: t('accounts.manualAccountCreated'),
+        description: t('accounts.manualAccountCreatedDescription'),
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: t('common.error'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // --- Handlers ---
   const resetLinkForm = () => {
     setNewBrokerType('');
+    setSelectedProtocol('');
     setNewDisplayName('');
+    setNewAccountType('REAL');
     setCredentials({});
   };
 
@@ -251,7 +509,6 @@ const Accounts = () => {
       return;
     }
 
-    // Check required fields
     if (credentialSchema?.fields) {
       const missingFields = credentialSchema.fields
         .filter(f => f.required && !credentials[f.name])
@@ -269,9 +526,10 @@ const Accounts = () => {
 
     connectMutation.mutate({
       brokerCode: newBrokerType,
-      protocol: credentialSchema?.protocol,
+      protocol: effectiveProtocol,
       credentials: JSON.stringify(credentials),
       displayName: newDisplayName || undefined,
+      accountType: newAccountType,
     });
   };
 
@@ -285,6 +543,7 @@ const Accounts = () => {
       setEditDisplayName(selectedAccountData.displayName || '');
       setEditSyncFrequency(selectedAccountData.syncFrequency || 'HOURLY');
       setEditEnabled(selectedAccountData.enabled);
+      setEditAccountType(selectedAccountData.accountType || 'REAL');
       setEditAccountOpen(true);
     }
   };
@@ -296,6 +555,7 @@ const Accounts = () => {
         displayName: editDisplayName || undefined,
         syncFrequency: editSyncFrequency,
         enabled: editEnabled,
+        accountType: editAccountType,
       });
     }
   };
@@ -307,30 +567,178 @@ const Accounts = () => {
   };
 
   const handleSyncAll = () => {
-    accounts.forEach(account => {
-      if ((account.status === 'CONNECTED' || account.status === 'PENDING') && account.enabled) {
-        handleSync(account.id);
-      }
+    const syncable = accounts.filter(a =>
+      (a.status === 'CONNECTED' || a.status === 'ACTIVE' || a.status === 'PENDING') && a.enabled
+    );
+    if (syncable.length === 0) return;
+    // Register all IDs as batch so individual toasts are suppressed
+    batchSyncIdsRef.current = new Set(syncable.map(a => a.id));
+    const totalCount = syncable.length;
+    let settled = 0;
+    let successCount = 0;
+
+    syncable.forEach(account => {
+      const idempotencyKey = crypto.randomUUID();
+      setSyncingIds(prev => new Set(prev).add(account.id));
+      brokerService.syncConnection(account.id, idempotencyKey)
+        .then((data) => {
+          successCount++;
+          setSyncingIds(prev => { const n = new Set(prev); n.delete(account.id); return n; });
+          batchSyncIdsRef.current.delete(account.id);
+          queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
+          queryClient.invalidateQueries({ queryKey: ['trades'] });
+          invalidateDashboardData(queryClient);
+        })
+        .catch(() => {
+          setSyncingIds(prev => { const n = new Set(prev); n.delete(account.id); return n; });
+          batchSyncIdsRef.current.delete(account.id);
+        })
+        .finally(() => {
+          settled++;
+          if (settled === totalCount) {
+            const failedCount = totalCount - successCount;
+            if (failedCount === 0) {
+              toast({ title: t('accounts.syncAllComplete'), description: t('accounts.syncAllCompleteDescription', { count: totalCount }) });
+            } else {
+              toast({ title: t('accounts.syncAllPartial'), description: t('accounts.syncAllPartialDescription', { success: successCount, failed: failedCount }) });
+            }
+          }
+        });
     });
   };
 
   const selectedAccountData = accounts.find(a => a.id === selectedAccount);
-  const activeCount = accounts.filter(a => a.status === 'CONNECTED' || a.status === 'PENDING').length;
+
+  // --- Render account card (redesigned) ---
+  const renderAccountCard = (account: BrokerConnectionResponse) => {
+    const isSyncing = syncingIds.has(account.id);
+    const isManualProtocol = account.protocol === 'MANUAL';
+    const statusConfig = getStatusConfigForAccount(account);
+
+    return (
+      <div
+        key={account.id}
+        className="group relative rounded-lg border bg-card transition-colors hover:border-primary/20"
+      >
+        <div className="p-4">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Wallet className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-medium truncate leading-tight">{getAccountTitle(account)}</h3>
+                <p className="text-sm text-muted-foreground truncate">{getBrokerLabel(account)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge variant={statusConfig.variant} className="gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${statusConfig.dotClass}`} />
+                {getStatusLabel(account.status, t, account.enabled)}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={account.accountType === 'DEMO'
+                  ? 'border-amber-500/30 text-amber-500'
+                  : 'border-emerald-500/30 text-emerald-500'}
+              >
+                {account.accountType === 'DEMO' ? t('accounts.demo') : t('accounts.real')}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Metadata row */}
+          <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <RefreshCw className="h-3 w-3" />
+              {getSyncFrequencyLabel(account.syncFrequency)}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {account.lastSyncTime
+                ? new Date(account.lastSyncTime).toLocaleString()
+                : t('accounts.never')}
+            </span>
+          </div>
+
+          {/* Action row */}
+          <div className="mt-3 flex items-center gap-2 pt-3 border-t">
+            {!isManualProtocol && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => handleSync(account.id)}
+                disabled={isSyncing || !account.enabled || (account.status !== 'CONNECTED' && account.status !== 'ACTIVE' && account.status !== 'PENDING')}
+              >
+                {isSyncing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                {isSyncing ? t('accounts.syncing') : t('accounts.sync')}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => handleViewAccount(account.id)}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {t('common.view')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Empty state ---
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
+        <Inbox className="h-7 w-7 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-medium mb-1">{t('accounts.noAccounts')}</h3>
+      <p className="text-sm text-muted-foreground max-w-sm mb-6">
+        {t('accounts.noAccountsDescription')}
+      </p>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => setManualAccountOpen(true)}>
+          <PlusCircle className="h-4 w-4 mr-2" />
+          {t('accounts.createManualAccount')}
+        </Button>
+        <Button onClick={() => setLinkAccountOpen(true)}>
+          <PlusCircle className="h-4 w-4 mr-2" />
+          {t('accounts.linkAccount')}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <DashboardLayout pageTitle={t('pages.accounts')}>
       <PageTransition className="space-y-6">
+        {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">{t('accounts.tradingAccounts')}</h1>
             <p className="text-muted-foreground">{t('accounts.tradingAccountsDescription')}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSyncAll} disabled={syncMutation.isPending}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-              {t('accounts.syncAll')}
+            {accounts.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncMutation.isPending}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+                {t('accounts.syncAll')}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setManualAccountOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              {t('accounts.createManualAccount')}
             </Button>
-            <Button onClick={() => setLinkAccountOpen(true)}>
+            <Button size="sm" onClick={() => setLinkAccountOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               {t('accounts.linkAccount')}
             </Button>
@@ -338,7 +746,7 @@ const Accounts = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {isLoading ? (
             <>
               <SummaryCardSkeleton />
@@ -348,45 +756,53 @@ const Accounts = () => {
           ) : (
             <>
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('accounts.connectedAccounts')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{accounts.length}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    <span>{t('accounts.activeCount', { count: activeCount })}</span>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Wallet className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold tabular-nums">{accounts.length}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('accounts.realCount', { count: realAccounts.length })} / {t('accounts.demoCount', { count: demoAccounts.length })}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('accounts.brokerTypes')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {new Set(accounts.map(a => a.brokerCode || a.brokerType)).size}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    <span>{t('accounts.uniqueBrokersConnected')}</span>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10">
+                      <Activity className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {new Set(accounts.map(a => a.brokerCode || a.brokerType)).size}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{t('accounts.uniqueBrokersConnected')}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{t('accounts.lastSync')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {accounts.some(a => a.lastSyncTime)
-                      ? new Date(
-                          Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
-                        ).toLocaleTimeString()
-                      : t('accounts.never')}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {t('accounts.mostRecentSync')}
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <Clock className="h-5 w-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {accounts.some(a => a.lastSyncTime)
+                          ? new Date(
+                              Math.max(...accounts.filter(a => a.lastSyncTime).map(a => new Date(a.lastSyncTime!).getTime()))
+                            ).toLocaleTimeString()
+                          : t('accounts.never')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{t('accounts.mostRecentSync')}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -399,7 +815,7 @@ const Accounts = () => {
           <Card className="border-destructive">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertTriangle className="h-5 w-5 shrink-0" />
                 <span>{t('accounts.failedToLoadAccounts', { error: (error as Error)?.message || t('accounts.unknownError') })}</span>
               </div>
             </CardContent>
@@ -415,93 +831,47 @@ const Accounts = () => {
           <CardContent>
             {isLoading ? (
               <AccountsListSkeleton count={3} />
+            ) : accounts.length === 0 ? (
+              renderEmptyState()
             ) : (
-              <>
-                {accounts.map((account) => {
-                  const isSyncing = syncingIds.has(account.id);
-                  return (
-                    <div
-                      key={account.id}
-                      className="mb-4 last:mb-0 border rounded-lg overflow-hidden"
-                    >
-                      <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between border-b">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-primary" />
-                            <h3 className="font-medium">{getAccountTitle(account)}</h3>
-                            <Badge variant={getStatusVariant(account.status)}>
-                              {account.status?.toLowerCase() || t('accounts.unknown')}
-                            </Badge>
-                            {!account.enabled && (
-                              <Badge variant="secondary">{t('accounts.disabled')}</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">{getBrokerLabel(account)}</p>
-                        </div>
-                        <div className="mt-2 md:mt-0 flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSync(account.id)}
-                            disabled={isSyncing || !account.enabled || (account.status !== 'CONNECTED' && account.status !== 'PENDING')}
-                          >
-                            {isSyncing ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                            )}
-                            {isSyncing ? t('accounts.syncing') : t('accounts.sync')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewAccount(account.id)}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            {t('common.view')}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="bg-muted/40 p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                          <div>
-                            <div className="text-sm text-muted-foreground">{t('accounts.syncFrequency')}</div>
-                            <div className="font-medium">{account.syncFrequency}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">{t('accounts.lastSynced')}</div>
-                            <div className="font-medium">
-                              {account.lastSyncTime
-                                ? new Date(account.lastSyncTime).toLocaleString()
-                                : t('accounts.never')}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">{t('accounts.connectedSince')}</div>
-                            <div className="font-medium">
-                              {new Date(account.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">{t('common.status')}</div>
-                            <div className="font-medium capitalize">{account.status?.toLowerCase() || t('accounts.unknown')}</div>
-                          </div>
-                        </div>
-                      </div>
+              <div className="space-y-6">
+                {/* Real Accounts Section */}
+                {realAccounts.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t('accounts.realAccounts')}</h4>
+                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-500">{realAccounts.length}</Badge>
                     </div>
-                  );
-                })}
-              </>
-            )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {realAccounts.map(renderAccountCard)}
+                    </div>
+                  </div>
+                )}
 
-            <Button
-              variant="outline"
-              className="w-full mt-4"
-              onClick={() => setLinkAccountOpen(true)}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              {t('accounts.connectNewAccount')}
-            </Button>
+                {/* Demo Accounts Section */}
+                {demoAccounts.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t('accounts.demoAccounts')}</h4>
+                      <Badge variant="outline" className="border-amber-500/30 text-amber-500">{demoAccounts.length}</Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {demoAccounts.map(renderAccountCard)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add account CTA */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setLinkAccountOpen(true)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  {t('accounts.connectNewAccount')}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </PageTransition>
@@ -518,7 +888,11 @@ const Accounts = () => {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="broker">{t('accounts.selectBrokerLabel')}</Label>
-              <Select value={newBrokerType} onValueChange={setNewBrokerType}>
+              <Select value={newBrokerType} onValueChange={(value) => {
+                setNewBrokerType(value);
+                setSelectedProtocol('');
+                setCredentials({});
+              }}>
                 <SelectTrigger id="broker">
                   <SelectValue placeholder={t('accounts.selectBrokerPlaceholder')} />
                 </SelectTrigger>
@@ -532,6 +906,43 @@ const Accounts = () => {
                       </SelectItem>
                     ))
                   )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newBrokerType && hasMultipleProtocols && (
+              <div className="space-y-2">
+                <Label htmlFor="protocol">{t('accounts.connectionProtocol')}</Label>
+                <Select
+                  value={selectedProtocol || selectedBroker?.defaultProtocol || ''}
+                  onValueChange={(value) => {
+                    setSelectedProtocol(value);
+                    setCredentials({});
+                  }}
+                >
+                  <SelectTrigger id="protocol">
+                    <SelectValue placeholder={t('accounts.selectProtocolPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedProtocols.map(p => (
+                      <SelectItem key={p.protocol} value={p.protocol}>
+                        {p.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="account-type">{t('accounts.accountType')}</Label>
+              <Select value={newAccountType} onValueChange={setNewAccountType}>
+                <SelectTrigger id="account-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="REAL">{t('accounts.realAccount')}</SelectItem>
+                  <SelectItem value="DEMO">{t('accounts.demoAccount')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -588,93 +999,48 @@ const Accounts = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Account Dialog */}
+      {/* View Account Sheet (slide-in panel) */}
       {selectedAccountData && (
-        <Dialog open={viewAccountOpen} onOpenChange={setViewAccountOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>{t('accounts.accountDetails')}</DialogTitle>
-              <DialogDescription>
-                {t('accounts.accountDetailsDescription')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="p-4 border rounded-md">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium text-lg">
-                    {getAccountTitle(selectedAccountData)}
-                  </h3>
-                  <Badge variant={getStatusVariant(selectedAccountData.status)}>
-                    {selectedAccountData.status?.toLowerCase() || t('accounts.unknown')}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground">
-                  {t('accounts.broker')}: {getBrokerLabel(selectedAccountData)}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">{t('accounts.syncFrequency')}</div>
-                  <div className="text-xl font-bold">{selectedAccountData.syncFrequency}</div>
-                </div>
-
-                <div className="p-4 border rounded-md">
-                  <div className="text-sm text-muted-foreground">{t('accounts.lastSynced')}</div>
-                  <div className="text-xl font-bold">
-                    {selectedAccountData.lastSyncTime
-                      ? new Date(selectedAccountData.lastSyncTime).toLocaleString()
-                      : t('accounts.never')}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 border rounded-md">
-                <h4 className="font-medium mb-2">{t('accounts.accountActions')}</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSync(selectedAccountData.id)}
-                    disabled={syncingIds.has(selectedAccountData.id)}
-                  >
-                    {syncingIds.has(selectedAccountData.id) ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                    )}
-                    {t('accounts.syncNow')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleOpenEdit}
-                  >
-                    {t('accounts.editSettings')}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => disconnectMutation.mutate(selectedAccountData.id)}
-                    disabled={disconnectMutation.isPending}
-                  >
-                    {disconnectMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : null}
-                    {t('accounts.disconnect')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setViewAccountOpen(false)}>
-                {t('accounts.close')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AccountDetailSheet
+          account={selectedAccountData}
+          open={viewAccountOpen}
+          onOpenChange={setViewAccountOpen}
+          onSync={() => handleSync(selectedAccountData.id)}
+          onEdit={handleOpenEdit}
+          onDisconnect={() => setConfirmDisconnectOpen(true)}
+          isSyncing={syncingIds.has(selectedAccountData.id)}
+          isDisconnecting={disconnectMutation.isPending}
+          getSyncFrequencyLabel={getSyncFrequencyLabel}
+        />
       )}
+
+      {/* Disconnect Confirmation */}
+      <AlertDialog open={confirmDisconnectOpen} onOpenChange={setConfirmDisconnectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('accounts.confirmDisconnect')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('accounts.confirmDisconnectDescription', {
+                account: selectedAccountData ? getAccountTitle(selectedAccountData) : '',
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (selectedAccountData) {
+                  disconnectMutation.mutate(selectedAccountData.id);
+                }
+              }}
+            >
+              {disconnectMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t('accounts.disconnect')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Account Dialog */}
       {selectedAccountData && (
@@ -697,15 +1063,31 @@ const Accounts = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="edit-account-type">{t('accounts.accountType')}</Label>
+                <Select value={editAccountType} onValueChange={setEditAccountType}>
+                  <SelectTrigger id="edit-account-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="REAL">{t('accounts.realAccount')}</SelectItem>
+                    <SelectItem value="DEMO">{t('accounts.demoAccount')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="edit-sync-frequency">{t('accounts.syncFrequency')}</Label>
                 <Select value={editSyncFrequency} onValueChange={setEditSyncFrequency}>
                   <SelectTrigger id="edit-sync-frequency">
                     <SelectValue placeholder={t('accounts.selectSyncFrequency')} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="EVERY_5_MINUTES">{t('accounts.every5Minutes')}</SelectItem>
+                    <SelectItem value="EVERY_15_MINUTES">{t('accounts.every15Minutes')}</SelectItem>
+                    <SelectItem value="EVERY_30_MINUTES">{t('accounts.every30Minutes')}</SelectItem>
                     <SelectItem value="HOURLY">{t('accounts.hourly')}</SelectItem>
                     <SelectItem value="DAILY">{t('accounts.daily')}</SelectItem>
                     <SelectItem value="WEEKLY">{t('accounts.weekly')}</SelectItem>
+                    <SelectItem value="MONTHLY">{t('accounts.monthly')}</SelectItem>
                     <SelectItem value="MANUAL">{t('accounts.manual')}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -740,6 +1122,49 @@ const Accounts = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Manual Account Dialog */}
+      <Dialog open={manualAccountOpen} onOpenChange={setManualAccountOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('accounts.createManualAccount')}</DialogTitle>
+            <DialogDescription>{t('accounts.createManualAccountDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="manual-name">{t('accounts.manualAccountName')}</Label>
+              <Input
+                id="manual-name"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder={t('accounts.manualAccountNamePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('accounts.accountType')}</Label>
+              <Select value={manualAccountType} onValueChange={setManualAccountType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="REAL">{t('accounts.real')}</SelectItem>
+                  <SelectItem value="DEMO">{t('accounts.demo')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManualAccountOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={() => createManualMutation.mutate()}
+              disabled={!manualName.trim() || createManualMutation.isPending}
+            >
+              {createManualMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t('common.create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

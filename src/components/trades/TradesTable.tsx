@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { TableActions } from '@/components/trades/TableActions';
-import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPercentage, cn } from '@/lib/utils';
 import { Trade } from './TradesTableWrapper';
 
 interface AdvancedFilters {
@@ -29,6 +29,7 @@ interface TradesTableProps {
   onEdit?: (tradeId: string) => void;
   onDelete?: (tradeId: string) => void;
   onView?: (tradeId: string) => void;
+  highlightTradeId?: string | null;
 }
 
 export const TradesTable: React.FC<TradesTableProps> = ({
@@ -41,6 +42,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
   onEdit,
   onDelete,
   onView,
+  highlightTradeId,
 }) => {
   const { t } = useTranslation();
 
@@ -67,11 +69,11 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     }
   };
 
-  const getTypeBadgeVariant = (type: string) => {
+  const getDirectionClassName = (type: string) => {
     switch (type) {
-      case 'long': return 'default';
-      case 'short': return 'destructive';
-      default: return 'outline';
+      case 'long': return 'border-primary/30 text-primary bg-primary/10';
+      case 'short': return 'border-destructive/30 text-destructive bg-destructive/10';
+      default: return '';
     }
   };
 
@@ -88,6 +90,9 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             )}
             {visibleColumns.status && (
               <TableHead className="label-caps">{t('trades.status')}</TableHead>
+            )}
+            {visibleColumns.accountType && (
+              <TableHead className="label-caps">{t('trades.accountType', 'Account Type')}</TableHead>
             )}
             {visibleColumns.entryDate && (
               <TableHead className="label-caps">{t('trades.entryDate')}</TableHead>
@@ -146,13 +151,16 @@ export const TradesTable: React.FC<TradesTableProps> = ({
         <TableBody>
           {filteredTrades.length > 0 ? (
             filteredTrades.map((trade) => (
-              <TableRow key={trade.id}>
+              <TableRow
+                key={trade.id}
+                className={trade.id === highlightTradeId ? 'ring-2 ring-primary/50 bg-primary/5' : ''}
+              >
                 {visibleColumns.symbol && (
                   <TableCell className="font-mono font-semibold">{trade.symbol}</TableCell>
                 )}
                 {visibleColumns.type && (
                   <TableCell>
-                    <Badge variant={getTypeBadgeVariant(trade.type)}>
+                    <Badge variant="outline" className={`capitalize font-mono text-xs border backdrop-blur-sm ${getDirectionClassName(trade.type)}`}>
                       {t(`trades.${trade.type}`)}
                     </Badge>
                   </TableCell>
@@ -161,6 +169,18 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(trade.status)}>
                       {t(`trades.${trade.status}`)}
+                    </Badge>
+                  </TableCell>
+                )}
+                {visibleColumns.accountType && (
+                  <TableCell>
+                    <Badge variant="outline" className={cn(
+                      "text-xs",
+                      trade.accountType === 'DEMO'
+                        ? "border-amber-500/30 text-amber-600 bg-amber-500/10"
+                        : "border-emerald-500/30 text-emerald-600 bg-emerald-500/10"
+                    )}>
+                      {trade.accountType === 'DEMO' ? t('accounts.demo', 'Demo') : t('accounts.real', 'Real')}
                     </Badge>
                   </TableCell>
                 )}

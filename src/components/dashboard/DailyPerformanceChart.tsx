@@ -43,14 +43,17 @@ const DailyPerformanceChart: React.FC<DailyPerformanceChartProps> = ({ data }) =
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end gap-1 h-32">
+        <div className={cn("flex items-stretch h-32", recentData.length === 1 ? "justify-center" : "gap-1")}>
           {recentData.map((day) => {
             const heightPercent = Math.max((Math.abs(day.profitLoss) / maxAbsValue) * 100, 4);
             const isProfit = day.profitLoss >= 0;
             return (
               <div
                 key={day.date}
-                className="flex-1 flex flex-col items-center justify-end group relative"
+                className={cn(
+                  "flex flex-col items-center justify-end group relative h-full",
+                  recentData.length === 1 ? "w-16" : "flex-1"
+                )}
               >
                 <div
                   className={cn(
@@ -65,12 +68,21 @@ const DailyPerformanceChart: React.FC<DailyPerformanceChartProps> = ({ data }) =
           })}
         </div>
         <div className="flex justify-between mt-2">
-          <span className="text-xs text-muted-foreground">
-            {recentData[0]?.date?.slice(5)}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {recentData[recentData.length - 1]?.date?.slice(5)}
-          </span>
+          {recentData.length === 1 ? (
+            <span className="text-xs text-muted-foreground w-full text-center">
+              {new Date(recentData[0].date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {' — '}{formatCurrency(recentData[0].profitLoss)}
+            </span>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground">
+                {recentData[0]?.date?.slice(5)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {recentData[recentData.length - 1]?.date?.slice(5)}
+              </span>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

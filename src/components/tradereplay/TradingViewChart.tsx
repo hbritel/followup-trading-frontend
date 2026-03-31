@@ -100,7 +100,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ replayData, isLoadi
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <span className="font-mono font-semibold text-lg kpi-value">{replayData.symbol}</span>
-            <span className={`label-caps text-sm font-medium ${replayData.direction === 'LONG' ? 'text-profit' : 'text-loss'}`}>
+            <span className={`label-caps text-sm font-medium ${replayData.direction === 'LONG' ? 'text-primary' : 'text-destructive'}`}>
               {replayData.direction}
             </span>
           </div>

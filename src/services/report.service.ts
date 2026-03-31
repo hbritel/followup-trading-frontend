@@ -17,11 +17,15 @@ export const reportService = {
     return response.data;
   },
 
-  downloadReport: async (id: string): Promise<Blob> => {
+  downloadReport: async (id: string): Promise<{ blob: Blob; filename: string }> => {
     const response = await apiClient.get(`/reports/${id}/download`, {
       responseType: 'blob',
     });
-    return response.data;
+    // Extract filename from Content-Disposition header
+    const disposition = response.headers['content-disposition'] || '';
+    const match = disposition.match(/filename="?(.+?)"?$/);
+    const filename = match?.[1] || `report-${id}.pdf`;
+    return { blob: response.data, filename };
   },
 
   deleteReport: async (id: string): Promise<void> => {

@@ -24,6 +24,7 @@ import {
   useMarkAllAsRead,
   useLiveNotifications,
 } from '@/hooks/useNotifications';
+import { usePreferences } from '@/contexts/preferences-context';
 import NotificationItem from './NotificationItem';
 
 // ---------------------------------------------------------------------------
@@ -34,14 +35,24 @@ interface UnreadBadgeProps {
   count: number;
 }
 
+const formatBadgeCount = (count: number): string => {
+  if (count > 99) return '99+';
+  return String(count);
+};
+
 const UnreadBadge: React.FC<UnreadBadgeProps> = ({ count }) => {
   if (count <= 0) return null;
+  const label = formatBadgeCount(count);
+  const isWide = label.length > 2;
   return (
     <span
       aria-label={`${count} unread notifications`}
-      className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none z-10"
+      className={cn(
+        'absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none z-10',
+        isWide ? 'h-5 min-w-5 px-1' : 'h-5 w-5',
+      )}
     >
-      {count > 9 ? '9+' : count}
+      {label}
     </span>
   );
 };
@@ -57,12 +68,14 @@ interface PanelContentProps {
 const NotificationPanelContent: React.FC<PanelContentProps> = ({ onClose }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading } = useNotifications(0, 20);
+  const [pageSize, setPageSize] = useState(20);
+  const { data, isLoading } = useNotifications(0, pageSize);
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
   const notifications = data?.content ?? [];
   const hasUnread = notifications.some((n) => !n.read);
+  const hasMore = data ? notifications.length < data.totalElements : false;
 
   const handleRead = (id: string) => {
     const notification = notifications.find((n) => n.id === id);
@@ -134,19 +147,16 @@ const NotificationPanelContent: React.FC<PanelContentProps> = ({ onClose }) => {
         )}
       </div>
 
-      {/* Footer */}
-      {notifications.length > 0 && (
+      {/* Footer — load more */}
+      {hasMore && (
         <div className="border-t border-border/50 px-4 py-2">
           <Button
             variant="ghost"
             size="sm"
             className="w-full text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              onClose();
-              navigate('/activity');
-            }}
+            onClick={() => setPageSize((s) => s + 20)}
           >
-            {t('notifications.viewAll', 'View all')}
+            {t('notifications.loadMore', 'Load more')}
           </Button>
         </div>
       )}
@@ -163,7 +173,9 @@ const NotificationCenter: React.FC = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { data: unreadData } = useUnreadCount();
+  const { preferences } = usePreferences();
   const unreadCount = unreadData?.count ?? 0;
+  const showBadge = preferences?.showNotificationBadge !== false; // default true
 
   // Subscribe to live WebSocket notifications
   useLiveNotifications();
@@ -176,7 +188,7 @@ const NotificationCenter: React.FC = () => {
       className="relative"
     >
       <Bell className="h-5 w-5" />
-      <UnreadBadge count={unreadCount} />
+      {showBadge && <UnreadBadge count={unreadCount} />}
     </Button>
   );
 

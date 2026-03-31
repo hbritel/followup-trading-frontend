@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import AccountSelector from '@/components/dashboard/AccountSelector';
+import { usePageFilter } from '@/contexts/page-filters-context';
 import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -218,7 +220,7 @@ const TaxLotsTable = ({ lots, isLoading }: TaxLotsTableProps) => {
                   variant="outline"
                   className={
                     lot.holdingPeriod === 'LONG_TERM'
-                      ? 'border-violet-500/40 text-violet-400'
+                      ? 'border-primary/40 text-primary'
                       : 'border-amber-500/40 text-amber-400'
                   }
                 >
@@ -329,7 +331,7 @@ interface ExportCardProps {
 const ExportCard = ({ title, description, icon, onDownload, isPending }: ExportCardProps) => (
   <div className="glass-card p-6 flex flex-col gap-4">
     <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
         {icon}
       </div>
       <div className="min-w-0">
@@ -358,6 +360,8 @@ const ExportCard = ({ title, description, icon, onDownload, isPending }: ExportC
 const TaxReporting = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+
+  const [selectedAccountId, setSelectedAccountId] = usePageFilter('taxReporting', 'accountId', 'all');
 
   const [year, setYear] = useState<number>(CURRENT_YEAR - 1);
   const [jurisdiction, setJurisdiction] = useState<TaxJurisdiction>('US');
@@ -432,6 +436,12 @@ const TaxReporting = () => {
             <p className="text-muted-foreground text-sm mt-0.5">{t('tax.description')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            {/* Account selector */}
+            <AccountSelector
+              value={selectedAccountId}
+              onChange={setSelectedAccountId}
+              className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            />
             {/* Year selector */}
             <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
               <SelectTrigger className="w-28">

@@ -88,7 +88,7 @@ const LeaderboardTable: React.FC = () => {
                       className={cn(
                         'border-white/5 transition-colors',
                         isCurrentUser &&
-                          'border border-violet-500/30 bg-violet-500/5',
+                          'border border-primary/30 bg-primary/5',
                       )}
                     >
                       {/* Rank */}
@@ -113,7 +113,7 @@ const LeaderboardTable: React.FC = () => {
                             {entry.username}
                           </span>
                           {isCurrentUser && (
-                            <span className="text-[9px] bg-violet-500/20 text-violet-400 px-1.5 py-0.5 rounded-full font-medium">
+                            <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">
                               You
                             </span>
                           )}

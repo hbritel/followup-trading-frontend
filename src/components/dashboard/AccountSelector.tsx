@@ -1,6 +1,6 @@
 import React from 'react';
 import { useBrokerConnections } from '@/hooks/useBrokers';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 
 interface AccountSelectorProps {
@@ -20,7 +20,30 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
     [connections],
   );
 
+  const realAccounts = React.useMemo(
+    () => connectedAccounts.filter(a => a.accountType !== 'DEMO'),
+    [connectedAccounts],
+  );
+
+  const demoAccounts = React.useMemo(
+    () => connectedAccounts.filter(a => a.accountType === 'DEMO'),
+    [connectedAccounts],
+  );
+
   const hasAccounts = connectedAccounts.length > 0;
+
+  const buildLabel = (account: typeof connectedAccounts[number]) => {
+    const broker = account.brokerDisplayName || account.brokerCode || account.id;
+    const acctId = account.accountIdentifier && account.accountIdentifier !== 'default'
+      ? account.accountIdentifier
+      : null;
+    const custom = account.displayName;
+    return custom
+      ? `${broker} - ${custom}`
+      : acctId
+        ? `${broker} - ${acctId}`
+        : broker;
+  };
 
   return (
     <Select value={value} onValueChange={onChange} disabled={isLoading}>
@@ -30,7 +53,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
             isLoading
               ? t('common.loading', 'Loading...')
               : hasAccounts
-                ? t('trades.accountFilter', 'All Accounts')
+                ? t('accounts.allAccounts', 'All Accounts')
                 : t('settings.noAccountsConnected', 'No accounts connected')
           }
         />
@@ -39,26 +62,40 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
         {hasAccounts ? (
           <>
             <SelectItem value="all">
-              {t('trades.allAccounts', 'All Accounts')}
+              {t('accounts.allAccounts', 'All Accounts')}
             </SelectItem>
-            {connectedAccounts.map(account => {
-              const broker = account.brokerDisplayName || account.brokerCode || account.id;
-              const acctId = account.accountIdentifier && account.accountIdentifier !== 'default'
-                ? account.accountIdentifier
-                : null;
-              const custom = account.displayName;
-              const label = custom
-                ? `${broker} - ${custom}`
-                : acctId
-                  ? `${broker} - ${acctId}`
-                  : broker;
 
-              return (
-                <SelectItem key={account.id} value={account.id}>
-                  {label}
+            <SelectSeparator />
+
+            {realAccounts.length > 0 && (
+              <SelectGroup>
+                <SelectItem value="all-real" className="font-semibold">
+                  {t('accounts.allRealAccounts', 'All Real Accounts')}
                 </SelectItem>
-              );
-            })}
+                {realAccounts.map(account => (
+                  <SelectItem key={account.id} value={account.id} className="pl-8">
+                    {buildLabel(account)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+
+            {realAccounts.length > 0 && demoAccounts.length > 0 && (
+              <SelectSeparator />
+            )}
+
+            {demoAccounts.length > 0 && (
+              <SelectGroup>
+                <SelectItem value="all-demo" className="font-semibold">
+                  {t('accounts.allDemoAccounts', 'All Demo Accounts')}
+                </SelectItem>
+                {demoAccounts.map(account => (
+                  <SelectItem key={account.id} value={account.id} className="pl-8">
+                    {buildLabel(account)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
           </>
         ) : (
           <SelectItem value="all" disabled={false}>

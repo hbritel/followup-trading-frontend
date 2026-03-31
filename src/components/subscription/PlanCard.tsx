@@ -75,7 +75,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 
   const cardClasses = cn(
     'glass-card rounded-2xl p-8 relative flex flex-col gap-6 transition-all duration-300',
-    isPro && 'border-primary/50 shadow-[0_0_30px_rgba(139,92,246,0.15)]',
+    isPro && 'border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]',
     isEnterprise && 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]',
   );
 

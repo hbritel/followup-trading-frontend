@@ -9,12 +9,12 @@ const LEVEL_COLORS: Record<string, string> = {
   APPRENTICE: 'bg-blue-600 text-blue-100',
   TRADER: 'bg-green-600 text-green-100',
   SKILLED: 'bg-amber-500 text-amber-100',
-  ADVANCED: 'bg-violet-600 text-violet-100',
+  ADVANCED: 'bg-primary text-primary-foreground',
   EXPERT: 'bg-rose-500 text-rose-100',
   MASTER: 'bg-indigo-600 text-indigo-100',
   ELITE: 'bg-amber-400 text-amber-900',
-  LEGEND: 'bg-gradient-to-r from-amber-400 to-violet-500 text-white',
-  GOAT: 'bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400 text-white',
+  LEGEND: 'bg-gradient-to-r from-amber-400 to-primary text-white',
+  GOAT: 'bg-gradient-to-r from-pink-500 via-primary to-cyan-400 text-white',
 };
 
 const getLevelInitial = (levelName: string) => levelName.charAt(0).toUpperCase();
@@ -78,7 +78,7 @@ const XpProgressBar: React.FC<XpProgressBarProps> = ({ className }) => {
         {/* Progress bar */}
         <div className="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-700"
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700"
             style={{ width: `${Math.min(100, profile.xpProgress)}%` }}
           />
         </div>

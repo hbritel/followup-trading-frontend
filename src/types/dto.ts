@@ -426,12 +426,17 @@ export interface JournalEntryResponseDto {
 export interface WatchlistRequestDto {
   name: string;
   description?: string | null;
+  icon?: string | null;
 }
 
 export interface WatchlistItemRequestDto {
   symbol: string;
   notes?: string | null;
   alertPrice?: number | null;
+  alertCondition?: 'ABOVE' | 'BELOW' | 'CROSSES' | null;
+  alertName?: string | null;
+  notifyEmail?: boolean | null;
+  notifyPush?: boolean | null;
 }
 
 export interface WatchlistItemResponseDto {
@@ -439,6 +444,9 @@ export interface WatchlistItemResponseDto {
   symbol: string;
   notes: string | null;
   alertPrice: number | null;
+  alertId: string | null;
+  alertCondition: string | null;
+  activeAlertCount: number;
   addedAt: string;
 }
 
@@ -446,6 +454,7 @@ export interface WatchlistResponseDto {
   id: string;
   name: string;
   description: string | null;
+  icon: string | null;
   items: WatchlistItemResponseDto[];
   createdAt: string;
   updatedAt: string;
@@ -485,15 +494,19 @@ export interface AlertResponseDto {
   notifyPush: boolean;
   createdAt: string;
   updatedAt: string;
+  sourceWatchlistId: string | null;
+  sourceWatchlistName: string | null;
 }
 
 // --- Insight types (matches backend InsightDto) ---
 
-export type InsightType = 'PATTERN' | 'STREAK' | 'RISK_WARNING' | 'IMPROVEMENT' | 'MILESTONE';
+export type InsightType = 'PATTERN' | 'STREAK' | 'RISK_WARNING' | 'IMPROVEMENT' | 'MILESTONE' | 'AI_DIGEST';
+export type InsightSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
 export interface InsightResponseDto {
   id: string;
   type: InsightType;
+  severity: InsightSeverity;
   title: string;
   description: string;
   confidence: number;
@@ -502,11 +515,25 @@ export interface InsightResponseDto {
   dismissed: boolean;
   generatedAt: string;
   expiresAt: string | null;
+  relatedTradeIds: string[];
 }
 
 // --- Report types (matches backend ReportDto) ---
 
-export type ReportType = 'TRADE_SUMMARY' | 'PERFORMANCE' | 'TAX_PREVIEW';
+export type ReportType =
+  | 'TRADE_SUMMARY'
+  | 'PERFORMANCE'
+  | 'DAILY_JOURNAL'
+  | 'STRATEGY_BREAKDOWN'
+  | 'RISK_REPORT'
+  | 'PERFORMANCE_ATTRIBUTION'
+  | 'PROP_FIRM_VERIFICATION'
+  | 'BEHAVIORAL_ANALYSIS'
+  | 'COMMISSION_ANALYSIS'
+  | 'TAX_PREVIEW'
+  | 'EQUITY_CURVE_ADVANCED'
+  | 'BACKTEST_VS_LIVE'
+  | 'YEAR_IN_REVIEW';
 export type ReportFormat = 'PDF' | 'CSV';
 export type ReportStatus = 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED';
 
@@ -515,6 +542,7 @@ export interface ReportRequestDto {
   format: ReportFormat;
   startDate?: string | null;
   endDate?: string | null;
+  accountId?: string;
 }
 
 export interface ReportResponseDto {
@@ -530,13 +558,55 @@ export interface ReportResponseDto {
 
 // --- Backtest types (matches backend BacktestDto) ---
 
-export type BacktestStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type BacktestStatus = 'NOT_STARTED' | 'ONGOING' | 'FINISHED' | 'FAILED';
+
+export interface BacktestSaveStateRequestDto {
+  sessionState: string;
+  status?: string;
+}
+
+/** Shape of the session state blob persisted as JSON */
+export interface BacktestSessionState {
+  currentIndex: number;
+  timeframe: string;
+  trades: Array<{
+    id: string;
+    direction: 'LONG' | 'SHORT';
+    entryPrice: number;
+    stopLoss: number;
+    takeProfit: number;
+    lotSize: number;
+    riskPercent: number;
+    riskAmount: number;
+    rrRatio: number;
+    entryTime: number;
+    exitPrice?: number;
+    exitTime?: number;
+    pnl?: number;
+    status: 'OPEN' | 'CLOSED_TP' | 'CLOSED_SL' | 'CLOSED_MANUAL';
+  }>;
+  quickLotSize: string;
+}
+
+export interface BacktestUpdateRequestDto {
+  name?: string | null;
+  symbol?: string | null;
+  timeframe?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  icon?: string | null;
+}
 
 export interface BacktestRequestDto {
   name: string;
   strategyDefinition: string;
   startDate: string;
   endDate: string;
+  strategyId?: string | null;
+  symbol?: string | null;
+  timeframe?: string | null;
+  initialCapital?: number | null;
+  icon?: string | null;
 }
 
 export interface BacktestResponseDto {
@@ -549,6 +619,12 @@ export interface BacktestResponseDto {
   endDate: string;
   createdAt: string;
   completedAt: string | null;
+  strategyId: string | null;
+  symbol: string | null;
+  timeframe: string | null;
+  initialCapital: number | null;
+  sessionState: string | null;
+  icon: string | null;
   totalTrades: number | null;
   winningTrades: number | null;
   losingTrades: number | null;
@@ -562,14 +638,26 @@ export interface BacktestResponseDto {
   monteCarloP95: number | null;
 }
 
-// --- Trade Replay types (matches backend TradeReplayDto) ---
-
-export interface TimelinePointDto {
-  timestamp: string;
-  price: number;
-  unrealizedPnl: number;
-  annotation: string | null;
+export interface OhlcvCandleDto {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
+
+export interface IndicatorPointDto {
+  timestamp: number;
+  value: number;
+}
+
+export interface MarketHistoryResponseDto {
+  candles: OhlcvCandleDto[];
+  indicators: Record<string, IndicatorPointDto[]>;
+}
+
+// --- Trade Replay types (matches backend TradeReplayDto) ---
 
 export interface TradeReplayResponseDto {
   tradeId: string;
@@ -577,14 +665,30 @@ export interface TradeReplayResponseDto {
   direction: string;
   entryPrice: number;
   exitPrice: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
   entryDate: string;
   exitDate: string;
   quantity: number;
   profitLoss: number;
-  timelinePoints: TimelinePointDto[];
+  interval: string;
+  candles: OhlcvCandleDto[];
 }
 
-// --- Time metrics types (matches backend DayOfWeekPerformance / HourOfDayPerformance) ---
+// --- Time metrics types (matches backend MonthlyPerformance / DayOfWeekPerformance / HourOfDayPerformance) ---
+
+export interface MonthlyPerformanceDto {
+  year: number;
+  month: number;
+  startDate: string;
+  endDate: string;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  profitLoss: number;
+  averageEquity: number;
+  winRate: number;
+}
 
 export interface DayOfWeekPerformanceDto {
   dayOfWeek: number;
@@ -601,6 +705,51 @@ export interface HourOfDayPerformanceDto {
   losses: number;
   totalPnl: number;
 }
+
+// --- Insights Metrics types ---
+
+export interface SymbolPerformanceDto {
+  symbol: string;
+  tradeCount: number;
+  winRate: number;
+  totalPnl: number;
+  averagePnl: number;
+  averageHoldingTimeMinutes: number;
+  profitFactor: number;
+  bestTrade: number;
+  worstTrade: number;
+}
+
+export interface HeatmapCellDto {
+  dayOfWeek: string;
+  hour: number;
+  tradeCount: number;
+  totalPnl: number;
+  winRate: number;
+}
+
+export interface SessionPerformanceDto {
+  session: string;
+  tradeCount: number;
+  winRate: number;
+  totalPnl: number;
+  averagePnl: number;
+  profitFactor: number;
+}
+
+export interface TradeFrequencyPointDto {
+  date: string;
+  tradeCount: number;
+  totalPnl: number;
+}
+
+export interface RollingMetricPointDto {
+  tradeIndex: number;
+  date: string;
+  value: number;
+}
+
+export type RollingMetric = 'WIN_RATE' | 'PROFIT_FACTOR' | 'EXPECTANCY';
 
 // --- AI Trading Coach types ---
 

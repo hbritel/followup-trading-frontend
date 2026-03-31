@@ -58,7 +58,11 @@ const OpenPositionsPanel: React.FC<OpenPositionsPanelProps> = ({ positions }) =>
                 <tr key={pos.tradeId} className="border-b last:border-0">
                   <td className="py-2 px-3 text-sm font-medium">{pos.symbol}</td>
                   <td className="py-2 px-3">
-                    <Badge variant={pos.direction === 'LONG' ? 'default' : 'secondary'} className="text-xs">
+                    <Badge variant="outline" className={cn("text-xs capitalize font-mono border backdrop-blur-sm",
+                      pos.direction === 'LONG'
+                        ? "border-primary/30 text-primary bg-primary/10"
+                        : "border-destructive/30 text-destructive bg-destructive/10"
+                    )}>
                       {pos.direction}
                     </Badge>
                   </td>

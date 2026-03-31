@@ -142,7 +142,7 @@ const HomePage = () => {
       </section>
       
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 bg-accent/30">
+      <section id="features" className="py-20 px-6 bg-primary/5 dark:bg-primary/15">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Fonctionnalités principales</h2>
@@ -332,7 +332,7 @@ const HomePage = () => {
       </section>
       
       {/* CTA Section */}
-      <section className="py-16 px-6 bg-primary/10">
+      <section className="py-16 px-6 bg-primary/5 dark:bg-primary/15">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="text-3xl font-bold mb-4">Prêt à améliorer votre trading?</h2>
           <p className="text-xl text-muted-foreground mb-8">
@@ -366,9 +366,9 @@ const HomePage = () => {
               <span className="text-xl font-semibold">Followup Trading</span>
             </div>
             <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Confidentialité</Link>
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Conditions d'utilisation</Link>
-              <Link to="#" className="text-sm text-muted-foreground hover:text-foreground">Contact</Link>
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground">Confidentialité</Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">Conditions d'utilisation</Link>
+              <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact</Link>
             </div>
           </div>
           <div className="text-center text-muted-foreground text-sm mt-8">

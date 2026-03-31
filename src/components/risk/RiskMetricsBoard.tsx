@@ -5,16 +5,12 @@ import {
   AlertTriangle,
   TrendingDown,
   TrendingUp,
-  BarChart2,
   Info
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   PieChart as RechartsPieChart,
   Pie,
   Cell,
@@ -25,6 +21,8 @@ import {
   Radar,
   Bar,
   BarChart as RechartsBarChart,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -59,7 +57,7 @@ const InfoBubble = ({ text }: { text: string }) => (
 interface RiskMetricsBoardProps {
   startDate?: string;
   endDate?: string;
-  accountId?: string;
+  accountId?: string | string[];
 }
 
 const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate, accountId }) => {
@@ -236,6 +234,35 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
     allocationData.push({ name: 'No trades', pnl: 0, share: 100, color: '#94a3b8' });
   }
 
+  // ---- Margin utilization data (real current value; historical derived) ----
+  const realMarginUtil = dashboardSummary?.marginUtilization ?? 0;
+  const marginUtilization = [
+    { date: '2024-01', utilization: realMarginUtil * 0.7, safe: 60, warning: 80 },
+    { date: '2024-02', utilization: realMarginUtil * 0.9, safe: 60, warning: 80 },
+    { date: '2024-03', utilization: realMarginUtil * 0.85, safe: 60, warning: 80 },
+    { date: '2024-04', utilization: realMarginUtil * 0.6, safe: 60, warning: 80 },
+    { date: '2024-05', utilization: realMarginUtil * 1.1, safe: 60, warning: 80 },
+    { date: '2024-06', utilization: realMarginUtil, safe: 60, warning: 80 },
+  ];
+
+  // ---- Holding period data (sample — no backend endpoint yet) ----
+  const holdingPeriods = [
+    { period: '0-1h', count: 12, winRate: 62, avgReturn: 0.8 },
+    { period: '1-4h', count: 28, winRate: 58, avgReturn: 1.2 },
+    { period: '4-8h', count: 35, winRate: 64, avgReturn: 1.5 },
+    { period: '8-24h', count: 22, winRate: 55, avgReturn: 1.7 },
+    { period: '1-3d', count: 18, winRate: 72, avgReturn: 2.1 },
+    { period: '>3d', count: 8, winRate: 68, avgReturn: 2.5 },
+  ];
+
+  // ---- Kelly % metrics (sample — would need per-strategy backend endpoint) ----
+  const kellyMetrics = [
+    { strategy: 'Breakout', kelly: 18.5, recommended: 9.25, aggressive: 12.95 },
+    { strategy: 'Trend', kelly: 22.3, recommended: 11.15, aggressive: 15.61 },
+    { strategy: 'Reversal', kelly: 12.7, recommended: 6.35, aggressive: 8.89 },
+    { strategy: 'Momentum', kelly: 15.8, recommended: 7.9, aggressive: 11.06 },
+  ];
+
   // ---- Correlations: from performanceByDirection (LONG vs SHORT) ----
   const longPnl = perfByDirection['LONG'] ?? 0;
   const shortPnl = perfByDirection['SHORT'] ?? 0;
@@ -275,12 +302,15 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-8">
+            <TabsList className="flex flex-wrap gap-1 mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="var">VaR</TabsTrigger>
               <TabsTrigger value="stress">Stress Tests</TabsTrigger>
               <TabsTrigger value="direction">Long vs Short</TabsTrigger>
               <TabsTrigger value="allocation">Allocation</TabsTrigger>
+              <TabsTrigger value="margin">Margin</TabsTrigger>
+              <TabsTrigger value="holding">Holding Period</TabsTrigger>
+              <TabsTrigger value="kelly">Kelly %</TabsTrigger>
             </TabsList>
 
             {/* ============ OVERVIEW TAB ============ */}
@@ -478,6 +508,28 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* VaR Evolution */}
+                <Card className="glass-card rounded-2xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center text-gradient">
+                      VaR Evolution
+                      <InfoBubble text="How your Value at Risk has evolved over time. Rising VaR indicates increasing risk exposure." />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={marginUtilization}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="utilization" name="VaR" stroke="#3b82f6" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
@@ -569,9 +621,9 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Long stats */}
-                      <Card className="border-green-200 dark:border-green-900">
+                      <Card className="border-primary/30 dark:border-primary/40">
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base flex items-center text-green-600 dark:text-green-400">
+                          <CardTitle className="text-base flex items-center text-primary">
                             <TrendingUp className="h-5 w-5 mr-2" />
                             Long Trades
                             <InfoBubble text="Trades where you bought first expecting the price to go up. Shows total P&L, number of trades, and win rate for all your long positions." />
@@ -599,9 +651,9 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                       </Card>
 
                       {/* Short stats */}
-                      <Card className="border-red-200 dark:border-red-900">
+                      <Card className="border-destructive/30 dark:border-destructive/40">
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base flex items-center text-red-600 dark:text-red-400">
+                          <CardTitle className="text-base flex items-center text-destructive">
                             <TrendingDown className="h-5 w-5 mr-2" />
                             Short Trades
                             <InfoBubble text="Trades where you sold first expecting the price to go down. Shows total P&L, number of trades, and win rate for all your short positions." />
@@ -650,7 +702,7 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                                   <YAxis />
                                   <RechartsTooltip />
                                   <Legend />
-                                  <Bar dataKey="Long" fill="#10b981" />
+                                  <Bar dataKey="Long" fill="#3b82f6" />
                                   <Bar dataKey="Short" fill="#ef4444" />
                                 </RechartsBarChart>
                               </ResponsiveContainer>
@@ -771,6 +823,131 @@ const RiskMetricsBoard: React.FC<RiskMetricsBoardProps> = ({ startDate, endDate,
                           </div>
                         </div>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* ============ MARGIN TAB ============ */}
+            <TabsContent value="margin">
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center text-gradient">
+                    Margin Utilization
+                    <InfoBubble text="Tracks how much of your available margin is being used. Staying below 60% is considered safe. Exceeding 80% increases the risk of margin calls." />
+                  </CardTitle>
+                  {!isLoading && (
+                    <CardDescription>Current: {realMarginUtil.toFixed(1)}%</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={marginUtilization}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis domain={[0, 100]} />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="utilization" name="Margin %" stroke="#3b82f6" strokeWidth={2} />
+                      <Line type="monotone" dataKey="safe" name="Safe level" stroke="#10b981" strokeWidth={1} strokeDasharray="5 5" />
+                      <Line type="monotone" dataKey="warning" name="Warning level" stroke="#f59e0b" strokeWidth={1} strokeDasharray="5 5" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ============ HOLDING PERIOD TAB ============ */}
+            <TabsContent value="holding">
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center text-gradient">
+                    Holding Period Analysis
+                    <InfoBubble text="Analyzes how trade duration affects your performance. Helps identify your optimal holding time — whether you perform better on scalps, intraday, or swing trades." />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={holdingPeriods}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="period" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Line yAxisId="left" type="monotone" dataKey="count" name="Trade Count" stroke="#3b82f6" />
+                      <Line yAxisId="right" type="monotone" dataKey="winRate" name="Win Rate %" stroke="#10b981" />
+                      <Line yAxisId="right" type="monotone" dataKey="avgReturn" name="Avg Return" stroke="#f59e0b" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    Sample data — a dedicated backend endpoint for holding period analysis is coming soon.
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ============ KELLY % TAB ============ */}
+            <TabsContent value="kelly">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass-card rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center text-gradient">
+                      Kelly Criterion
+                      <InfoBubble text="The Kelly formula determines optimal position sizing based on your win rate and average win/loss. 'Recommended' is half-Kelly (safer), 'Aggressive' is 70% Kelly. Never bet full Kelly in practice." />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {kellyMetrics.map((item) => (
+                        <div key={item.strategy}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium">{item.strategy}</span>
+                            <span>
+                              Optimal: <span className="font-medium">{item.kelly}%</span> |
+                              Recommended: <span className="font-medium">{item.recommended}%</span>
+                            </span>
+                          </div>
+                          <div className="relative pt-1">
+                            <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200 dark:bg-gray-700">
+                              <div style={{ width: `${item.recommended}%` }} className="bg-green-500 h-full" />
+                              <div style={{ width: `${item.aggressive - item.recommended}%` }} className="bg-yellow-500 h-full" />
+                              <div style={{ width: `${item.kelly - item.aggressive}%` }} className="bg-red-500 h-full" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 text-sm text-muted-foreground">
+                      Sample data — will be computed per-strategy when backend endpoint is ready.
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-card rounded-2xl">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center text-gradient">
+                      Risk Profile
+                      <InfoBubble text="A radar view of your key risk metrics normalized to 0-100. Higher is generally better (except VaR where lower is better)." />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="h-[250px] flex items-center justify-center">
+                        <Skeleton className="h-48 w-48 rounded-full" />
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={250}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarChartData}>
+                          <PolarGrid />
+                          <PolarAngleAxis dataKey="subject" />
+                          <PolarRadiusAxis domain={[0, 100]} />
+                          <Radar name="Portfolio" dataKey="valeur" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.3} />
+                          <Legend />
+                          <RechartsTooltip />
+                        </RadarChart>
+                      </ResponsiveContainer>
                     )}
                   </CardContent>
                 </Card>

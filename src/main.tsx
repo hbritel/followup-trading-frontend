@@ -11,7 +11,7 @@ import './i18n/i18n.ts'; // Import i18n configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 2 * 60 * 1000, // 2 minutes
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         // Do not retry on 4xx client errors (bad request, auth, not found, etc.)

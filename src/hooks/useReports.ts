@@ -8,11 +8,16 @@ export const useReports = () => {
   return useQuery({
     queryKey: REPORTS_KEY,
     queryFn: () => reportService.getReports(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
     placeholderData: keepPreviousData,
+    // Poll every 3s while any report is still PENDING or GENERATING, stop when all are done
+    refetchInterval: (query) => {
+      const reports = query.state.data;
+      if (!reports || !Array.isArray(reports)) return false;
+      const hasPending = reports.some(
+        (r: { status: string }) => r.status === 'PENDING' || r.status === 'GENERATING'
+      );
+      return hasPending ? 3000 : false;
+    },
   });
 };
 
@@ -29,11 +34,11 @@ export const useGenerateReport = () => {
 export const useDownloadReport = () => {
   return useMutation({
     mutationFn: async (id: string) => {
-      const blob = await reportService.downloadReport(id);
+      const { blob, filename } = await reportService.downloadReport(id);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `report-${id}`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

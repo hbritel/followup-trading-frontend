@@ -20,7 +20,6 @@ import {
   Trades,
   DailyJournal,
   Calendar,
-  Activity,
   Playbook,
   Insights,
   Performance,
@@ -48,6 +47,9 @@ import {
   SocialFeed,
   StrategyMarketplace,
   TradersDirectory,
+  Privacy,
+  Terms,
+  Contact,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -95,7 +97,6 @@ function App() {
                     <Route path="/trades" element={<Trades />} />
                     <Route path="/daily-journal" element={<DailyJournal />} />
                     <Route path="/calendar" element={<Calendar />} />
-                    <Route path="/activity" element={<Activity />} />
                     <Route path="/playbook" element={<Playbook />} />
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/performance" element={<Performance />} />
@@ -127,6 +128,9 @@ function App() {
                   <Route path="/payment/canceled" element={<PaymentCanceled />} />
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/p/:username" element={<PublicProfile />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/contact" element={<Contact />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

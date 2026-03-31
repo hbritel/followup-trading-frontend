@@ -22,7 +22,7 @@ const TYPE_ICON_MAP: Record<string, { Icon: React.ElementType; color: string }> 
   SYNC_COMPLETED: { Icon: RefreshCcw, color: 'text-emerald-400' },
   TRADE_IMPORTED: { Icon: ArrowDownToDot, color: 'text-emerald-400' },
   BROKER_DISCONNECTED: { Icon: Unplug, color: 'text-red-400' },
-  WEEKLY_DIGEST: { Icon: Sparkles, color: 'text-violet-400' },
+  WEEKLY_DIGEST: { Icon: Sparkles, color: 'text-primary' },
   NEW_LOGIN_DETECTED: { Icon: Shield, color: 'text-amber-400' },
   JOURNAL_REMINDER: { Icon: BookText, color: 'text-blue-400' },
 };

@@ -47,7 +47,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         <div
           className={cn(
             'p-2 rounded-xl border border-white/[0.08] bg-white/[0.04]',
-            'dark:shadow-[0_0_12px_rgba(139,92,246,0.18)]',
+            'dark:shadow-[0_0_12px_hsl(var(--primary)/0.18)]',
             iconClassName,
           )}
         >

@@ -1,6 +1,11 @@
 // src/services/metrics.service.ts
 import apiClient from './apiClient';
-import type { DailyPerformanceDto, OpenPositionDto, DayOfWeekPerformanceDto, HourOfDayPerformanceDto } from '@/types/dto';
+import type {
+  DailyPerformanceDto, OpenPositionDto, MonthlyPerformanceDto,
+  DayOfWeekPerformanceDto, HourOfDayPerformanceDto,
+  SymbolPerformanceDto, HeatmapCellDto, SessionPerformanceDto,
+  TradeFrequencyPointDto, RollingMetricPointDto, RollingMetric,
+} from '@/types/dto';
 
 // --- TypeScript types matching backend domain models ---
 
@@ -75,6 +80,13 @@ export interface DashboardSummary {
   profitLossThisYear: number;
   recentDailyPerformance?: DailyPerformanceDto[];
   openPositions?: OpenPositionDto[];
+  // Account funding metrics
+  totalDeposits?: number;
+  totalWithdrawals?: number;
+  netFunding?: number;
+  realizedTradingPnl?: number;
+  accountBalance?: number;
+  returnOnInvestment?: number;
 }
 
 /** Matches backend RiskDistribution (core/domain/model/metrics) */
@@ -94,11 +106,11 @@ export const metricsService = {
    * Get advanced risk metrics for the authenticated user.
    * Backend: GET /api/v1/metrics/advanced/risk
    */
-  getAdvancedRiskMetrics: async (startDate?: string, endDate?: string, accountIds?: string): Promise<AdvancedRiskMetrics> => {
+  getAdvancedRiskMetrics: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<AdvancedRiskMetrics> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<AdvancedRiskMetrics>('/metrics/advanced/risk', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -109,11 +121,11 @@ export const metricsService = {
    * Get dashboard summary with all metrics (sharpe, sortino, drawdown, performance, etc.).
    * Backend: GET /api/v1/metrics/dashboard/summary
    */
-  getDashboardSummary: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DashboardSummary> => {
+  getDashboardSummary: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<DashboardSummary> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<DashboardSummary>('/metrics/dashboard/summary', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -124,11 +136,11 @@ export const metricsService = {
    * Get drawdown metrics for the authenticated user.
    * Backend: GET /api/v1/metrics/risk/drawdown
    */
-  getDrawdownMetrics: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DrawdownMetrics> => {
+  getDrawdownMetrics: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<DrawdownMetrics> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<DrawdownMetrics>('/metrics/risk/drawdown', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -139,11 +151,11 @@ export const metricsService = {
    * Get trade performance summary.
    * Backend: GET /api/v1/metrics/trade/performance
    */
-  getTradePerformance: async (startDate?: string, endDate?: string, accountIds?: string): Promise<TradePerformanceSummary> => {
+  getTradePerformance: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<TradePerformanceSummary> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<TradePerformanceSummary>('/metrics/trade/performance', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -163,36 +175,100 @@ export const metricsService = {
    * Get risk distribution metrics (VaR95, VaR99, CVaR95, P&L distribution).
    * Backend: GET /api/v1/metrics/risk/distribution
    */
-  getRiskDistribution: async (startDate?: string, endDate?: string, accountIds?: string): Promise<RiskDistribution> => {
+  getRiskDistribution: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<RiskDistribution> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<RiskDistribution>('/metrics/risk/distribution', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
   },
 
-  getPerformanceByDayOfWeek: async (startDate?: string, endDate?: string, accountIds?: string): Promise<DayOfWeekPerformanceDto[]> => {
+  getMonthlyPerformance: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<MonthlyPerformanceDto[]> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
+    const response = await apiClient.get<MonthlyPerformanceDto[]>('/metrics/time/monthly', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getPerformanceByDayOfWeek: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<DayOfWeekPerformanceDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<DayOfWeekPerformanceDto[]>('/metrics/time/by-day-of-week', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
   },
 
-  getPerformanceByHourOfDay: async (startDate?: string, endDate?: string, accountIds?: string): Promise<HourOfDayPerformanceDto[]> => {
+  getPerformanceByHourOfDay: async (startDate?: string, endDate?: string, accountIds?: string | string[]): Promise<HourOfDayPerformanceDto[]> => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (accountIds) params.accountIds = accountIds;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
     const response = await apiClient.get<HourOfDayPerformanceDto[]>('/metrics/time/by-hour-of-day', {
       params: Object.keys(params).length > 0 ? params : undefined,
     });
+    return response.data;
+  },
+
+  getPerformanceBySymbol: async (startDate?: string, endDate?: string, accountId?: string): Promise<SymbolPerformanceDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountId) params.accountId = accountId;
+    const response = await apiClient.get<SymbolPerformanceDto[]>('/metrics/by-symbol', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getHeatmap: async (startDate?: string, endDate?: string, accountId?: string): Promise<HeatmapCellDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountId) params.accountId = accountId;
+    const response = await apiClient.get<HeatmapCellDto[]>('/metrics/heatmap', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getPerformanceBySession: async (startDate?: string, endDate?: string, accountId?: string): Promise<SessionPerformanceDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountId) params.accountId = accountId;
+    const response = await apiClient.get<SessionPerformanceDto[]>('/metrics/by-session', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getTradeFrequency: async (startDate?: string, endDate?: string, accountId?: string): Promise<TradeFrequencyPointDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountId) params.accountId = accountId;
+    const response = await apiClient.get<TradeFrequencyPointDto[]>('/metrics/trade-frequency', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
+
+  getRollingMetric: async (metric: RollingMetric, windowSize: number, startDate?: string, endDate?: string, accountId?: string): Promise<RollingMetricPointDto[]> => {
+    const params: Record<string, string> = { metric, windowSize: String(windowSize) };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountId) params.accountId = accountId;
+    const response = await apiClient.get<RollingMetricPointDto[]>('/metrics/rolling', { params });
     return response.data;
   },
 };

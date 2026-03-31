@@ -34,7 +34,7 @@ const TradersDirectory: React.FC = () => {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Globe className="w-6 h-6 text-violet-400" />
+            <Globe className="w-6 h-6 text-primary" />
             {t('social.traders')}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -70,8 +70,8 @@ const TradersDirectory: React.FC = () => {
         {/* Empty state */}
         {!isLoading && !isError && (!traders || traders.length === 0) && (
           <div className="glass-card rounded-2xl p-12 flex flex-col items-center gap-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center">
-              <Users className="w-7 h-7 text-violet-400" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users className="w-7 h-7 text-primary" />
             </div>
             <div>
               <p className="font-semibold text-white">

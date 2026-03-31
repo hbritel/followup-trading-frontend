@@ -11,20 +11,23 @@ interface TradeColumnFilterProps {
   onChange: (column: string, visible: boolean) => void;
   onApply: () => void;
   onReset: () => void;
+  onSaveDefault?: () => void;
 }
 
 const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
   visibleColumns,
   onChange,
   onApply,
-  onReset
+  onReset,
+  onSaveDefault
 }) => {
   const { t } = useTranslation();
-  
+
   const allColumns = [
     { id: 'symbol', label: t('trades.symbol') },
     { id: 'type', label: t('trades.type') },
     { id: 'status', label: t('trades.status') },
+    { id: 'accountType', label: t('trades.accountType', 'Account Type') },
     { id: 'entryDate', label: t('trades.entryDate') },
     { id: 'exitDate', label: t('trades.exitDate') },
     { id: 'entryPrice', label: t('trades.entryPrice') },
@@ -50,8 +53,8 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {allColumns.map(column => (
             <div key={column.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`column-${column.id}`} 
+              <Checkbox
+                id={`column-${column.id}`}
                 checked={visibleColumns[column.id] || false}
                 onCheckedChange={(checked) => onChange(column.id, checked as boolean)}
               />
@@ -60,9 +63,18 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
           ))}
         </div>
       </ScrollArea>
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={onReset}>{t('common.reset')}</Button>
-        <Button onClick={onApply}>{t('common.apply')}</Button>
+      <div className="flex justify-between">
+        <div>
+          {onSaveDefault && (
+            <Button variant="secondary" onClick={onSaveDefault}>
+              {t('trades.setAsDefault', 'Set as Default')}
+            </Button>
+          )}
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={onReset}>{t('common.reset')}</Button>
+          <Button onClick={onApply}>{t('common.apply')}</Button>
+        </div>
       </div>
     </div>
   );

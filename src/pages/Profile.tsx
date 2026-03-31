@@ -12,225 +12,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { userService } from '@/services/user.service';
-import { useActivity } from '@/hooks/useActivity';
-import { formatDistanceToNow } from 'date-fns';
-import type { ActivityCategory, ActivityItemDto, UserPreferencesDto } from '@/types/dto';
-import {
-  ArrowRightLeft,
-  LogIn,
-  Link2,
-  Settings,
-  Inbox,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
-
-// ---------------------------------------------------------------------------
-// Activity tab sub-components
-// ---------------------------------------------------------------------------
-
-const CATEGORY_FILTER_KEYS: { labelKey: string; value: string }[] = [
-  { labelKey: 'common.all', value: 'all' },
-  { labelKey: 'profile.categoryTrades', value: 'trade' },
-  { labelKey: 'profile.categoryLogins', value: 'login' },
-  { labelKey: 'profile.categoryBroker', value: 'broker' },
-  { labelKey: 'common.settings', value: 'setting' },
-];
-
-/** Returns the Tailwind border-color class for the category left-accent. */
-const categoryBorderClass = (category: ActivityCategory): string => {
-  switch (category) {
-    case 'trade':
-      return 'border-green-500';
-    case 'login':
-      return 'border-primary';
-    case 'broker':
-      return 'border-purple-500';
-    case 'setting':
-      return 'border-orange-500';
-    default:
-      return 'border-muted-foreground';
-  }
-};
-
-/** Returns a lucide-react icon component for the given category. */
-const CategoryIcon = ({ category }: { category: ActivityCategory }) => {
-  const className = 'h-4 w-4 shrink-0 text-muted-foreground';
-  switch (category) {
-    case 'trade':
-      return <ArrowRightLeft className={className} />;
-    case 'login':
-      return <LogIn className={className} />;
-    case 'broker':
-      return <Link2 className={className} />;
-    case 'setting':
-      return <Settings className={className} />;
-    default:
-      return <Inbox className={className} />;
-  }
-};
-
-/** Single activity entry. */
-const ActivityEntry = ({ item }: { item: ActivityItemDto }) => {
-  const relativeTime = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
-
-  return (
-    <div className={`border-l-4 ${categoryBorderClass(item.category)} pl-4 py-2`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <CategoryIcon category={item.category} />
-          <span className="font-medium truncate">{item.title}</span>
-        </div>
-        <Badge variant="outline" className="shrink-0 text-xs whitespace-nowrap">
-          {relativeTime}
-        </Badge>
-      </div>
-      {item.description && (
-        <p className="text-sm text-muted-foreground mt-1 pl-6">{item.description}</p>
-      )}
-    </div>
-  );
-};
-
-/** Skeleton placeholder shown while the activity list is loading. */
-const ActivitySkeleton = () => (
-  <div className="space-y-4">
-    {Array.from({ length: 5 }).map((_, i) => (
-      <div key={i} className="border-l-4 border-muted pl-4 py-2 space-y-2">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-5 w-20 rounded-full" />
-        </div>
-        <Skeleton className="h-3 w-64 ml-6" />
-      </div>
-    ))}
-  </div>
-);
-
-/** Empty state when no activity items exist. */
-const ActivityEmptyState = () => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Inbox className="h-12 w-12 text-muted-foreground/50 mb-4" />
-      <h3 className="text-lg font-medium mb-1">{t('profile.noActivity')}</h3>
-      <p className="text-sm text-muted-foreground max-w-sm">
-        {t('profile.noActivityDescription')}
-      </p>
-    </div>
-  );
-};
-
-/** Full Activity tab content with filters, list, and pagination. */
-const ActivityTab = () => {
-  const { t } = useTranslation();
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [page, setPage] = useState(0);
-  const pageSize = 20;
-
-  // Reset to first page when category filter changes
-  useEffect(() => {
-    setPage(0);
-  }, [categoryFilter]);
-
-  const { data, isLoading, isError } = useActivity(page, pageSize, categoryFilter);
-
-  const totalPages = data?.totalPages ?? 0;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('profile.recentActivity')}</CardTitle>
-        <CardDescription>{t('profile.recentActivityDescription')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Category filter buttons */}
-        <div className="flex flex-wrap gap-2">
-          {CATEGORY_FILTER_KEYS.map((f) => (
-            <Button
-              key={f.value}
-              variant={categoryFilter === f.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCategoryFilter(f.value)}
-            >
-              {t(f.labelKey)}
-            </Button>
-          ))}
-        </div>
-
-        {/* Content */}
-        {isLoading ? (
-          <ActivitySkeleton />
-        ) : isError ? (
-          <p className="text-sm text-destructive">
-            {t('profile.activityLoadError')}
-          </p>
-        ) : !data || data.content.length === 0 ? (
-          <ActivityEmptyState />
-        ) : (
-          <>
-            <div className="space-y-4">
-              {data.content.map((item) => (
-                <ActivityEntry key={item.id} item={item} />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2">
-                <p className="text-sm text-muted-foreground">
-                  {t('profile.showingActivities', {
-                    from: page * pageSize + 1,
-                    to: Math.min((page + 1) * pageSize, data.totalElements),
-                    total: data.totalElements,
-                  })}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page === 0}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm tabular-nums">
-                    {page + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Shared select styling class (matches Personal Info tab selects)
-// ---------------------------------------------------------------------------
-const selectClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+import type { UserPreferencesDto } from '@/types/dto';
+import { Camera, Lock } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Profile page
@@ -398,439 +196,447 @@ const Profile = () => {
   return (
     <DashboardLayout pageTitle={t('common.profile')}>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{t('profile.myProfile')}</h1>
-            <p className="text-muted-foreground">{t('profile.manageProfile')}</p>
-          </div>
-        </div>
 
+        {/* ------------------------------------------------------------------ */}
+        {/* Profile Header                                                      */}
+        {/* ------------------------------------------------------------------ */}
+        <Card className="glass-card rounded-2xl">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              {/* Avatar with camera overlay */}
+              <div className="relative shrink-0 group">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={user?.profilePictureUrl || ''} />
+                  <AvatarFallback className="text-2xl font-semibold">{getInitials()}</AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                  aria-label={t('profile.changeAvatar')}
+                >
+                  <Camera className="h-5 w-5 text-white" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+
+              {/* Name, username, email, member since */}
+              <div className="flex flex-col items-center sm:items-start gap-1 min-w-0">
+                <h1 className="text-2xl font-bold leading-tight truncate">
+                  {[firstName, lastName].filter(Boolean).join(' ') || user?.fullName || user?.username || '—'}
+                </h1>
+                {user?.username && (
+                  <Badge variant="secondary" className="w-fit text-sm font-normal">
+                    @{user.username}
+                  </Badge>
+                )}
+                {user?.email && (
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                )}
+                {isUploadingAvatar && (
+                  <p className="text-xs text-muted-foreground animate-pulse">{t('profile.uploading')}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Tabs                                                                */}
+        {/* ------------------------------------------------------------------ */}
         <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="info">{t('profile.personalInfo')}</TabsTrigger>
-            <TabsTrigger value="activity">{t('profile.activity')}</TabsTrigger>
             <TabsTrigger value="preferences">{t('profile.preferences')}</TabsTrigger>
           </TabsList>
 
+          {/* ============================================================== */}
+          {/* TAB: Personal Info                                               */}
+          {/* ============================================================== */}
           <TabsContent value="info" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('profile.personalInformation')}</CardTitle>
-                <CardDescription>{t('profile.updatePersonalDetails')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="flex flex-col gap-6 sm:flex-row">
-                    <div className="flex flex-col items-center gap-4">
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src={user?.profilePictureUrl || ''} />
-                        <AvatarFallback className="text-xl">{getInitials()}</AvatarFallback>
-                      </Avatar>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        onClick={handleAvatarClick}
-                        disabled={isUploadingAvatar}
-                      >
-                        {isUploadingAvatar ? t('profile.uploading') : t('profile.changeAvatar')}
-                      </Button>
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
 
-                    <div className="flex-1 space-y-4">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="first-name">{t('common.firstName')}</Label>
-                          <Input
-                            id="first-name"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last-name">{t('common.lastName')}</Label>
-                          <Input
-                            id="last-name"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="display-name">{t('profile.displayName')}</Label>
-                        <Input id="display-name" value={user?.username || ''} disabled />
-                        <p className="text-sm text-muted-foreground">
-                          {t('profile.displayNameHint')}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="email">{t('common.email')}</Label>
-                        <Input id="email" value={user?.email || ''} disabled />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
-                        <Input
-                          id="phone"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+1 (555) 123-4567"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.aboutMe')}</h3>
+              {/* Card 1 — Personal Details */}
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle>{t('profile.personalInformation')}</CardTitle>
+                  <CardDescription>{t('profile.updatePersonalDetails')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* First / Last name grid */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="bio">{t('profile.tradingBio')}</Label>
-                      <Textarea
-                        id="bio"
-                        placeholder={t('profile.tradingBioPlaceholder')}
-                        value={tradingBio}
-                        onChange={(e) => setTradingBio(e.target.value)}
-                        className="min-h-24"
+                      <Label htmlFor="first-name">{t('common.firstName')}</Label>
+                      <Input
+                        id="first-name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last-name">{t('common.lastName')}</Label>
+                      <Input
+                        id="last-name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <Separator />
+                  {/* Phone */}
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">{t('profile.phoneNumber')}</Label>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
 
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.tradingExperience')}</h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="experience">{t('profile.experienceLevel')}</Label>
-                        <select
-                          id="experience"
-                          className={selectClass}
-                          value={experienceLevel}
-                          onChange={(e) => setExperienceLevel(e.target.value)}
-                        >
-                          <option value="">{t('profile.selectLevel')}</option>
-                          <option value="beginner">{t('profile.beginner')}</option>
-                          <option value="intermediate">{t('profile.intermediate')}</option>
-                          <option value="advanced">{t('profile.advanced')}</option>
-                          <option value="professional">{t('profile.professional')}</option>
-                        </select>
-                      </div>
+                  {/* Read-only: Display Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="display-name" className="flex items-center gap-1.5">
+                      {t('profile.displayName')}
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    </Label>
+                    <Input
+                      id="display-name"
+                      value={user?.username || ''}
+                      readOnly
+                      className="bg-muted/50 cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {t('profile.displayNameHint')}
+                    </p>
+                  </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="years-trading">{t('profile.yearsTrading')}</Label>
-                        <select
-                          id="years-trading"
-                          className={selectClass}
-                          value={yearsTrading}
-                          onChange={(e) => setYearsTrading(e.target.value)}
-                        >
-                          <option value="">{t('profile.selectRange')}</option>
-                          <option value="<1">{t('profile.lessThan1Year')}</option>
-                          <option value="1-3">{t('profile.years1to3')}</option>
-                          <option value="3-5">{t('profile.years3to5')}</option>
-                          <option value="5-10">{t('profile.years5to10')}</option>
-                          <option value=">10">{t('profile.moreThan10Years')}</option>
-                        </select>
-                      </div>
+                  {/* Read-only: Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="flex items-center gap-1.5">
+                      {t('common.email')}
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    </Label>
+                    <Input
+                      id="email"
+                      value={user?.email || ''}
+                      readOnly
+                      className="bg-muted/50 cursor-default focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 2 — About & Experience */}
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle>{t('profile.aboutMe')}</CardTitle>
+                  <CardDescription>{t('profile.tradingExperience')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Trading bio */}
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">{t('profile.tradingBio')}</Label>
+                    <Textarea
+                      id="bio"
+                      placeholder={t('profile.tradingBioPlaceholder')}
+                      value={tradingBio}
+                      onChange={(e) => setTradingBio(e.target.value)}
+                      className="min-h-24"
+                    />
+                  </div>
+
+                  {/* Experience level + years trading */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="experience">{t('profile.experienceLevel')}</Label>
+                      <Select
+                        value={experienceLevel}
+                        onValueChange={(val) => setExperienceLevel(val === '__none__' ? '' : val)}
+                      >
+                        <SelectTrigger id="experience">
+                          <SelectValue placeholder={t('profile.selectLevel')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.selectLevel')}</SelectItem>
+                          <SelectItem value="beginner">{t('profile.beginner')}</SelectItem>
+                          <SelectItem value="intermediate">{t('profile.intermediate')}</SelectItem>
+                          <SelectItem value="advanced">{t('profile.advanced')}</SelectItem>
+                          <SelectItem value="professional">{t('profile.professional')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="years-trading">{t('profile.yearsTrading')}</Label>
+                      <Select
+                        value={yearsTrading}
+                        onValueChange={(val) => setYearsTrading(val === '__none__' ? '' : val)}
+                      >
+                        <SelectTrigger id="years-trading">
+                          <SelectValue placeholder={t('profile.selectRange')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.selectRange')}</SelectItem>
+                          <SelectItem value="<1">{t('profile.lessThan1Year')}</SelectItem>
+                          <SelectItem value="1-3">{t('profile.years1to3')}</SelectItem>
+                          <SelectItem value="3-5">{t('profile.years3to5')}</SelectItem>
+                          <SelectItem value="5-10">{t('profile.years5to10')}</SelectItem>
+                          <SelectItem value=">10">{t('profile.moreThan10Years')}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? t('profile.saving') : t('common.saveChanges')}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? t('profile.saving') : t('common.saveChanges')}
+                </Button>
+              </div>
+            </form>
           </TabsContent>
 
-          <TabsContent value="activity" className="space-y-6">
-            <ActivityTab />
-          </TabsContent>
-
+          {/* ============================================================== */}
+          {/* TAB: Preferences                                                 */}
+          {/* ============================================================== */}
           <TabsContent value="preferences" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('profile.userPreferences')}</CardTitle>
-                <CardDescription>{t('profile.customizeExperience')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSavePreferences} className="space-y-6">
-                  {/* ---- Section 1: Notifications ---- */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.notifications')}</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-email-notifications">{t('profile.emailNotifications')}</Label>
-                        <Switch
-                          id="pref-email-notifications"
-                          checked={!!prefState.emailNotificationsEnabled}
-                          onCheckedChange={(val) => updatePref('emailNotificationsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-mobile-push">{t('profile.pushNotificationsMobile')}</Label>
-                        <Switch
-                          id="pref-mobile-push"
-                          checked={!!prefState.mobilePushNotificationsEnabled}
-                          onCheckedChange={(val) => updatePref('mobilePushNotificationsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-browser-push">{t('profile.browserNotifications')}</Label>
-                        <Switch
-                          id="pref-browser-push"
-                          checked={!!prefState.browserPushNotificationsEnabled}
-                          onCheckedChange={(val) => updatePref('browserPushNotificationsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-price-alerts">{t('profile.priceAlerts')}</Label>
-                        <Switch
-                          id="pref-price-alerts"
-                          checked={!!prefState.priceAlertsEnabled}
-                          onCheckedChange={(val) => updatePref('priceAlertsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-trade-confirmations">{t('profile.tradeConfirmations')}</Label>
-                        <Switch
-                          id="pref-trade-confirmations"
-                          checked={!!prefState.tradeConfirmationsEnabled}
-                          onCheckedChange={(val) => updatePref('tradeConfirmationsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-news-alerts">{t('profile.newsAlerts')}</Label>
-                        <Switch
-                          id="pref-news-alerts"
-                          checked={!!prefState.newsAlertsEnabled}
-                          onCheckedChange={(val) => updatePref('newsAlertsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-earnings">{t('profile.earningsAnnouncements')}</Label>
-                        <Switch
-                          id="pref-earnings"
-                          checked={!!prefState.earningsAnnouncementsEnabled}
-                          onCheckedChange={(val) => updatePref('earningsAnnouncementsEnabled', val)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pref-account-activity">{t('profile.accountActivity')}</Label>
-                        <Switch
-                          id="pref-account-activity"
-                          checked={!!prefState.accountActivityNotificationsEnabled}
-                          onCheckedChange={(val) => updatePref('accountActivityNotificationsEnabled', val)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+            <form onSubmit={handleSavePreferences} className="space-y-6">
 
-                  <Separator />
-
-                  {/* ---- Section 2: Trading Defaults ---- */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.tradingDefaults')}</h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-default-currency">{t('profile.defaultCurrency')}</Label>
-                        <select
-                          id="pref-default-currency"
-                          className={selectClass}
-                          value={prefState.defaultCurrency || ''}
-                          onChange={(e) => updatePref('defaultCurrency', e.target.value || null)}
-                        >
-                          <option value="">{t('profile.selectCurrency')}</option>
-                          <option value="USD">{t('profile.currencyUSD')}</option>
-                          <option value="EUR">{t('profile.currencyEUR')}</option>
-                          <option value="GBP">{t('profile.currencyGBP')}</option>
-                          <option value="JPY">{t('profile.currencyJPY')}</option>
-                          <option value="CHF">{t('profile.currencyCHF')}</option>
-                          <option value="AUD">{t('profile.currencyAUD')}</option>
-                          <option value="CAD">{t('profile.currencyCAD')}</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-default-date-range">{t('profile.defaultDateRange')}</Label>
-                        <select
-                          id="pref-default-date-range"
-                          className={selectClass}
-                          value={prefState.defaultDateRange || ''}
-                          onChange={(e) => updatePref('defaultDateRange', e.target.value || null)}
-                        >
-                          <option value="">{t('profile.selectRange')}</option>
-                          <option value="1d">{t('profile.dateRange1d')}</option>
-                          <option value="1w">{t('profile.dateRange1w')}</option>
-                          <option value="1m">{t('profile.dateRange1m')}</option>
-                          <option value="3m">{t('profile.dateRange3m')}</option>
-                          <option value="ytd">{t('profile.dateRangeYtd')}</option>
-                          <option value="1y">{t('profile.dateRange1y')}</option>
-                          <option value="all">{t('common.allTime')}</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-report-frequency">{t('profile.reportFrequency')}</Label>
-                        <select
-                          id="pref-report-frequency"
-                          className={selectClass}
-                          value={prefState.performanceReportFrequency || ''}
-                          onChange={(e) => updatePref('performanceReportFrequency', e.target.value || null)}
-                        >
-                          <option value="">{t('common.none')}</option>
-                          <option value="DAILY">{t('profile.daily')}</option>
-                          <option value="WEEKLY">{t('profile.weekly')}</option>
-                          <option value="MONTHLY">{t('profile.monthly')}</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-date-format">{t('profile.dateFormat')}</Label>
-                        <select
-                          id="pref-date-format"
-                          className={selectClass}
-                          value={prefState.dateFormat || ''}
-                          onChange={(e) => updatePref('dateFormat', e.target.value || null)}
-                        >
-                          <option value="">{t('profile.default')}</option>
-                          <option value="MM/dd/yyyy">MM/DD/YYYY</option>
-                          <option value="dd/MM/yyyy">DD/MM/YYYY</option>
-                          <option value="yyyy-MM-dd">YYYY-MM-DD</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* ---- Section 3: Display Preferences ---- */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.displayPreferences')}</h3>
+              {/* Card 1 — Trading Defaults */}
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle>{t('profile.tradingDefaults')}</CardTitle>
+                  <CardDescription>{t('profile.tradingDefaultsDesc', 'Default values applied across the platform')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="pref-font-size">{t('profile.fontSize')}</Label>
-                      <select
-                        id="pref-font-size"
-                        className={selectClass}
-                        value={prefState.fontSize || ''}
-                        onChange={(e) => updatePref('fontSize', e.target.value || null)}
+                      <Label htmlFor="pref-default-currency">{t('profile.defaultCurrency')}</Label>
+                      <Select
+                        value={prefState.defaultCurrency || '__none__'}
+                        onValueChange={(val) => updatePref('defaultCurrency', val === '__none__' ? null : val)}
                       >
-                        <option value="">{t('profile.default')}</option>
-                        <option value="small">{t('profile.fontSmall')}</option>
-                        <option value="medium">{t('profile.fontMedium')}</option>
-                        <option value="large">{t('profile.fontLarge')}</option>
-                      </select>
+                        <SelectTrigger id="pref-default-currency">
+                          <SelectValue placeholder={t('profile.selectCurrency')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.selectCurrency')}</SelectItem>
+                          <SelectItem value="USD">{t('profile.currencyUSD')}</SelectItem>
+                          <SelectItem value="EUR">{t('profile.currencyEUR')}</SelectItem>
+                          <SelectItem value="GBP">{t('profile.currencyGBP')}</SelectItem>
+                          <SelectItem value="JPY">{t('profile.currencyJPY')}</SelectItem>
+                          <SelectItem value="CHF">{t('profile.currencyCHF')}</SelectItem>
+                          <SelectItem value="AUD">{t('profile.currencyAUD')}</SelectItem>
+                          <SelectItem value="CAD">{t('profile.currencyCAD')}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>{t('profile.accentColor')}</Label>
-                      <div className="flex flex-wrap gap-3">
-                        {[
-                          { value: 'blue', labelKey: 'profile.colorBlue', bg: 'bg-blue-500' },
-                          { value: 'green', labelKey: 'profile.colorGreen', bg: 'bg-green-500' },
-                          { value: 'purple', labelKey: 'profile.colorPurple', bg: 'bg-purple-500' },
-                          { value: 'orange', labelKey: 'profile.colorOrange', bg: 'bg-orange-500' },
-                          { value: 'red', labelKey: 'profile.colorRed', bg: 'bg-red-500' },
-                        ].map((color) => (
+                      <Label htmlFor="pref-default-date-range">{t('profile.defaultDateRange')}</Label>
+                      <Select
+                        value={prefState.defaultDateRange || '__none__'}
+                        onValueChange={(val) => updatePref('defaultDateRange', val === '__none__' ? null : val)}
+                      >
+                        <SelectTrigger id="pref-default-date-range">
+                          <SelectValue placeholder={t('profile.selectRange')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.selectRange')}</SelectItem>
+                          <SelectItem value="1d">{t('profile.dateRange1d')}</SelectItem>
+                          <SelectItem value="1w">{t('profile.dateRange1w')}</SelectItem>
+                          <SelectItem value="1m">{t('profile.dateRange1m')}</SelectItem>
+                          <SelectItem value="3m">{t('profile.dateRange3m')}</SelectItem>
+                          <SelectItem value="ytd">{t('profile.dateRangeYtd')}</SelectItem>
+                          <SelectItem value="1y">{t('profile.dateRange1y')}</SelectItem>
+                          <SelectItem value="all">{t('common.allTime')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pref-report-frequency">{t('profile.reportFrequency')}</Label>
+                      <Select
+                        value={prefState.performanceReportFrequency || '__none__'}
+                        onValueChange={(val) => updatePref('performanceReportFrequency', val === '__none__' ? null : val)}
+                      >
+                        <SelectTrigger id="pref-report-frequency">
+                          <SelectValue placeholder={t('common.none')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('common.none')}</SelectItem>
+                          <SelectItem value="DAILY">{t('profile.daily')}</SelectItem>
+                          <SelectItem value="WEEKLY">{t('profile.weekly')}</SelectItem>
+                          <SelectItem value="MONTHLY">{t('profile.monthly')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pref-date-format">{t('profile.dateFormat')}</Label>
+                      <Select
+                        value={prefState.dateFormat || '__none__'}
+                        onValueChange={(val) => updatePref('dateFormat', val === '__none__' ? null : val)}
+                      >
+                        <SelectTrigger id="pref-date-format">
+                          <SelectValue placeholder={t('profile.default')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.default')}</SelectItem>
+                          <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                          <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                          <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 3 — Display */}
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle>{t('profile.displayPreferences')}</CardTitle>
+                  <CardDescription>{t('profile.displayPreferencesDesc', 'Customize the look and feel of the interface')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pref-font-size">{t('profile.fontSize')}</Label>
+                    <Select
+                      value={prefState.fontSize || '__none__'}
+                      onValueChange={(val) => updatePref('fontSize', val === '__none__' ? null : val)}
+                    >
+                      <SelectTrigger id="pref-font-size" className="sm:max-w-xs">
+                        <SelectValue placeholder={t('profile.default')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">{t('profile.default')}</SelectItem>
+                        <SelectItem value="small">{t('profile.fontSmall')}</SelectItem>
+                        <SelectItem value="medium">{t('profile.fontMedium')}</SelectItem>
+                        <SelectItem value="large">{t('profile.fontLarge')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{t('profile.accentColor')}</Label>
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'blue', labelKey: 'profile.colorBlue', bg: 'bg-blue-500' },
+                        { value: 'green', labelKey: 'profile.colorGreen', bg: 'bg-green-500' },
+                        { value: 'purple', labelKey: 'profile.colorPurple', bg: 'bg-purple-500' },
+                        { value: 'orange', labelKey: 'profile.colorOrange', bg: 'bg-orange-500' },
+                        { value: 'red', labelKey: 'profile.colorRed', bg: 'bg-red-500' },
+                      ].map((color) => {
+                        const isSelected = (prefState.accentColor || 'blue') === color.value;
+                        return (
                           <button
                             key={color.value}
                             type="button"
-                            className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
-                              (prefState.accentColor || 'blue') === color.value
-                                ? 'border-primary bg-accent font-medium'
-                                : 'border-input hover:bg-accent/50'
-                            }`}
                             onClick={() => updatePref('accentColor', color.value)}
-                          >
-                            <span className={`inline-block h-4 w-4 rounded-full ${color.bg}`} />
-                            {t(color.labelKey)}
-                          </button>
-                        ))}
-                      </div>
+                            aria-label={t(color.labelKey)}
+                            className={`h-8 w-8 rounded-full ${color.bg} transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                              isSelected ? 'ring-2 ring-offset-2 ring-foreground scale-110' : 'hover:scale-105'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 4 — Chart Preferences */}
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle>{t('profile.chartPreferences')}</CardTitle>
+                  <CardDescription>{t('profile.chartPreferencesDesc', 'Default chart style and display options')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="pref-chart-style">{t('profile.defaultChartStyle')}</Label>
+                      <Select
+                        value={prefState.defaultChartStyle || '__none__'}
+                        onValueChange={(val) => updatePref('defaultChartStyle', val === '__none__' ? null : val)}
+                      >
+                        <SelectTrigger id="pref-chart-style">
+                          <SelectValue placeholder={t('profile.default')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.default')}</SelectItem>
+                          <SelectItem value="candle">{t('profile.chartCandlestick')}</SelectItem>
+                          <SelectItem value="bar">{t('profile.chartBar')}</SelectItem>
+                          <SelectItem value="line">{t('profile.chartLine')}</SelectItem>
+                          <SelectItem value="area">{t('profile.chartArea')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pref-chart-interval">{t('profile.defaultChartInterval')}</Label>
+                      <Select
+                        value={prefState.defaultChartInterval || '__none__'}
+                        onValueChange={(val) => updatePref('defaultChartInterval', val === '__none__' ? null : val)}
+                      >
+                        <SelectTrigger id="pref-chart-interval">
+                          <SelectValue placeholder={t('profile.default')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('profile.default')}</SelectItem>
+                          <SelectItem value="1">{t('profile.interval1min')}</SelectItem>
+                          <SelectItem value="5">{t('profile.interval5min')}</SelectItem>
+                          <SelectItem value="15">{t('profile.interval15min')}</SelectItem>
+                          <SelectItem value="60">{t('profile.interval1hour')}</SelectItem>
+                          <SelectItem value="D">{t('profile.intervalDaily')}</SelectItem>
+                          <SelectItem value="W">{t('profile.intervalWeekly')}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
-                  <Separator />
-
-                  {/* ---- Section 4: Chart Preferences ---- */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">{t('profile.chartPreferences')}</h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-chart-style">{t('profile.defaultChartStyle')}</Label>
-                        <select
-                          id="pref-chart-style"
-                          className={selectClass}
-                          value={prefState.defaultChartStyle || ''}
-                          onChange={(e) => updatePref('defaultChartStyle', e.target.value || null)}
-                        >
-                          <option value="">{t('profile.default')}</option>
-                          <option value="candle">{t('profile.chartCandlestick')}</option>
-                          <option value="bar">{t('profile.chartBar')}</option>
-                          <option value="line">{t('profile.chartLine')}</option>
-                          <option value="area">{t('profile.chartArea')}</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="pref-chart-interval">{t('profile.defaultChartInterval')}</Label>
-                        <select
-                          id="pref-chart-interval"
-                          className={selectClass}
-                          value={prefState.defaultChartInterval || ''}
-                          onChange={(e) => updatePref('defaultChartInterval', e.target.value || null)}
-                        >
-                          <option value="">{t('profile.default')}</option>
-                          <option value="1">{t('profile.interval1min')}</option>
-                          <option value="5">{t('profile.interval5min')}</option>
-                          <option value="15">{t('profile.interval15min')}</option>
-                          <option value="60">{t('profile.interval1hour')}</option>
-                          <option value="D">{t('profile.intervalDaily')}</option>
-                          <option value="W">{t('profile.intervalWeekly')}</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center justify-between py-3 border-b border-border/50">
+                      <div>
                         <Label htmlFor="pref-show-volume">{t('profile.showVolume')}</Label>
-                        <Switch
-                          id="pref-show-volume"
-                          checked={!!prefState.showChartVolume}
-                          onCheckedChange={(val) => updatePref('showChartVolume', val)}
-                        />
+                        <p className="text-[13px] text-muted-foreground">{t('profile.showVolumeDesc', 'Display volume bars at the bottom of the chart')}</p>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <Switch
+                        id="pref-show-volume"
+                        checked={!!prefState.showChartVolume}
+                        onCheckedChange={(val) => updatePref('showChartVolume', val)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-3 last:border-0">
+                      <div>
                         <Label htmlFor="pref-extended-hours">{t('profile.showExtendedHours')}</Label>
-                        <Switch
-                          id="pref-extended-hours"
-                          checked={!!prefState.showExtendedHours}
-                          onCheckedChange={(val) => updatePref('showExtendedHours', val)}
-                        />
+                        <p className="text-[13px] text-muted-foreground">{t('profile.extendedHoursDesc', 'Show pre-market and after-hours trading data')}</p>
                       </div>
+                      <Switch
+                        id="pref-extended-hours"
+                        checked={!!prefState.showExtendedHours}
+                        onCheckedChange={(val) => updatePref('showExtendedHours', val)}
+                      />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSavingPrefs}>
-                      {isSavingPrefs ? t('profile.saving') : t('profile.savePreferences')}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSavingPrefs}>
+                  {isSavingPrefs ? t('profile.saving') : t('profile.savePreferences')}
+                </Button>
+              </div>
+            </form>
           </TabsContent>
         </Tabs>
       </div>

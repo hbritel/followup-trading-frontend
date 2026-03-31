@@ -9,8 +9,8 @@ import {
   BookOpen as BookOpenIcon,
   BookText as BookTextIcon,
   Calendar as CalendarIcon,
+  ChevronDown as ChevronDownIcon,
   CircleDollarSign as CircleDollarSignIcon,
-  Clock as ClockIcon,
   FileText as FileTextIcon,
   Globe as GlobeIcon,
   LineChart as LineChartIcon,
@@ -23,28 +23,37 @@ import {
   Shield as ShieldIcon,
   ShoppingBag as ShoppingBagIcon,
   Trophy as TrophyIcon,
-  Users as UsersIcon,
   Wallet as WalletIcon,
   BellRing as BellRingIcon,
   AlertTriangle as AlertTriangleIcon,
   Calculator as CalculatorIcon,
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
-const DashboardSidebar = () => {
+const COLLAPSED_KEY = 'sidebar-collapsed-sections';
+
+function getInitialCollapsed(): Record<string, boolean> {
+  try {
+    const stored = localStorage.getItem(COLLAPSED_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch { return {}; }
+}
+
+/** Shared sidebar navigation content used by both desktop and mobile layouts */
+const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
-  const { open, openMobile } = useSidebar();
   const location = useLocation();
+  const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>(getInitialCollapsed);
 
-  const sidebarVisible = isMobile ? openMobile : open;
+  const toggleSection = (index: number) => {
+    setCollapsed(prev => {
+      const next = { ...prev, [index]: !prev[index] };
+      localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const sidebarGroups = [
     {
@@ -54,7 +63,6 @@ const DashboardSidebar = () => {
         { href: '/trades', label: t('sidebar.trades'), icon: LineChartIcon },
         { href: '/daily-journal', label: t('sidebar.dailyJournal'), icon: BookTextIcon },
         { href: '/calendar', label: t('sidebar.calendar'), icon: CalendarIcon },
-        { href: '/activity', label: t('sidebar.activity'), icon: ClockIcon },
       ],
     },
     {
@@ -93,185 +101,170 @@ const DashboardSidebar = () => {
     },
   ];
 
-  if (!sidebarVisible) {
-    return null;
-  }
-
   return (
-    <TooltipProvider delayDuration={200}>
-      {/* Outer wrapper: fixed 64px wide by default, expands to 240px on hover */}
-      <div
-        className={[
-          'group/sidebar hidden md:flex flex-col h-full py-4 pl-4 flex-shrink-0',
-          'w-16 hover:w-60',
-          'transition-[width] duration-300',
-          '[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-        ].join(' ')}
-        style={{ willChange: 'width' }}
-      >
-        {/* Inner glass panel fills the full height */}
-        <div className="glass-panel h-full rounded-2xl flex flex-col border border-white/5 bg-black/20 overflow-hidden">
-
-          {/* Logo */}
-          <div className="flex items-center justify-center group-hover/sidebar:justify-start h-16 px-0 group-hover/sidebar:px-3 flex-shrink-0 overflow-hidden transition-all duration-300">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-3 min-w-0"
-            >
-              {/* "FT" badge — always visible, fixed width so it doesn't shrink */}
-              <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-500/50 text-sm font-bold text-white shadow-lg shadow-violet-500/20 transition-all duration-300 hover:shadow-violet-500/40">
-                FT
-              </div>
-              {/* "FollowUp" text — hidden by default, revealed on group hover */}
-              <span
-                className={[
-                  'text-lg font-bold whitespace-nowrap',
-                  'bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70',
-                  // Fade-in/out on group hover
-                  'opacity-0 group-hover/sidebar:opacity-100',
-                  'translate-x-2 group-hover/sidebar:translate-x-0',
-                  'transition-[opacity,transform] duration-300',
-                  '[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                ].join(' ')}
-              >
-                FollowUp
-              </span>
-            </Link>
+    <div className="glass-panel h-full rounded-2xl flex flex-col border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 overflow-hidden">
+      {/* Logo */}
+      <div className="flex items-center h-16 flex-shrink-0 overflow-hidden justify-start px-3">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-3 min-w-0"
+          onClick={onNavigate}
+        >
+          <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/50 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/40">
+            FT
           </div>
+          <span className="text-lg font-bold whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70">
+            FollowUp
+          </span>
+        </Link>
+      </div>
 
-          {/* Divider */}
-          <div className="mx-3 border-b border-white/5 flex-shrink-0" />
+      {/* Divider */}
+      <div className="mx-3 border-b border-slate-200 dark:border-white/5 flex-shrink-0" />
 
-          {/* Nav groups — scrollable */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-            <nav className="grid gap-y-6 px-1 group-hover/sidebar:px-2 transition-all duration-300">
-              {sidebarGroups.map((group, groupIndex) => (
-                <div key={groupIndex}>
-                  {/* Section label: invisible when collapsed, visible when expanded */}
-                  <div
-                    className={[
-                      'label-caps text-[10px] text-muted-foreground/60 mb-1 px-2 whitespace-nowrap overflow-hidden',
-                      'opacity-0 group-hover/sidebar:opacity-100',
-                      'transition-opacity duration-200',
-                    ].join(' ')}
-                  >
-                    {group.label}
+      {/* Nav groups — scrollable */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10">
+        <nav className="grid gap-y-0 px-2">
+          {sidebarGroups.map((group, groupIndex) => {
+            const isCollapsed = !!collapsed[groupIndex];
+            return (
+              <div key={group.label}>
+                {/* Divider between sections */}
+                {groupIndex > 0 && (
+                  <div className="mx-1 my-2 border-t border-slate-200 dark:border-white/5" />
+                )}
+
+                {/* Section header — clickable to collapse */}
+                <button
+                  type="button"
+                  onClick={() => toggleSection(groupIndex)}
+                  className="flex items-center justify-between w-full label-caps text-[10px] text-muted-foreground/60 mb-1 px-2 py-1.5 hover:text-muted-foreground transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <ChevronDownIcon
+                      className={[
+                        'w-3 h-3 flex-shrink-0 transition-transform duration-200',
+                        isCollapsed ? '-rotate-90' : '',
+                      ].join(' ')}
+                    />
+                    <span className="whitespace-nowrap overflow-hidden">{group.label}</span>
                   </div>
+                  {isCollapsed && (
+                    <span className="text-[10px] font-medium text-primary/60">{group.items.length}</span>
+                  )}
+                </button>
 
+                {!isCollapsed && (
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
                       return (
                         <li key={item.href}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Link
-                                to={item.href}
-                                aria-current={isActive ? 'page' : undefined}
-                                className={[
-                                  'relative flex items-center justify-center group-hover/sidebar:justify-start gap-x-3 rounded-xl px-0 group-hover/sidebar:px-2.5 py-2.5',
-                                  'text-sm font-medium transition-all duration-200',
-                                  'overflow-hidden whitespace-nowrap',
-                                  // Active: violet glow + left border indicator
-                                  isActive
-                                    ? [
-                                        'bg-violet-500/10 text-violet-400',
-                                        'shadow-[0_0_12px_rgba(139,92,246,0.15)]',
-                                        'border border-violet-500/20',
-                                        // Left border indicator via pseudo-like absolute element
-                                      ].join(' ')
-                                    : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent',
-                                ].join(' ')}
-                              >
-                                {/* Active left-border indicator */}
-                                {isActive && (
-                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
-                                )}
+                          <Link
+                            to={item.href}
+                            onClick={onNavigate}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={[
+                              'relative flex items-center gap-x-3 rounded-xl py-2.5',
+                              'justify-start px-2.5',
+                              'text-sm font-medium transition-all duration-200',
+                              'overflow-hidden whitespace-nowrap',
+                              isActive
+                                ? [
+                                    'bg-primary/10 text-primary',
+                                    'shadow-[0_0_12px_hsl(var(--primary)/0.15)]',
+                                    'border border-primary/20',
+                                  ].join(' ')
+                                : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
+                            ].join(' ')}
+                          >
+                            {isActive && (
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
+                            )}
 
-                                {/* Icon — fixed size, always visible */}
-                                <item.icon
-                                  className={[
-                                    'flex-shrink-0 transition-colors duration-200',
-                                    'w-5 h-5',
-                                    isActive ? 'text-violet-400' : 'group-hover/link:text-white',
-                                  ].join(' ')}
-                                />
+                            <item.icon
+                              className={[
+                                'flex-shrink-0 transition-colors duration-200',
+                                'w-5 h-5',
+                                isActive ? 'text-primary' : '',
+                              ].join(' ')}
+                            />
 
-                                {/* Label — fades in on group hover */}
-                                <span
-                                  className={[
-                                    'text-sm overflow-hidden whitespace-nowrap',
-                                    'opacity-0 group-hover/sidebar:opacity-100',
-                                    'translate-x-1 group-hover/sidebar:translate-x-0',
-                                    'transition-[opacity,transform] duration-300 delay-75',
-                                    '[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                                  ].join(' ')}
-                                >
-                                  {item.label}
-                                </span>
-                              </Link>
-                            </TooltipTrigger>
-                            {/* Tooltip only shown when sidebar is NOT expanded (collapsed state) */}
-                            <TooltipContent
-                              side="right"
-                              className="group-hover/sidebar:hidden pointer-events-none"
-                            >
+                            <span className="text-sm overflow-hidden whitespace-nowrap">
                               {item.label}
-                            </TooltipContent>
-                          </Tooltip>
+                            </span>
+                          </Link>
                         </li>
                       );
                     })}
                   </ul>
-                </div>
-              ))}
-            </nav>
-          </div>
-
-          {/* Divider */}
-          <div className="mx-3 border-t border-white/5 flex-shrink-0" />
-
-          {/* Bottom: Settings */}
-          <div className="flex-shrink-0 px-1 group-hover/sidebar:px-2 py-3 transition-all duration-300">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/settings"
-                  aria-current={location.pathname === '/settings' ? 'page' : undefined}
-                  className={[
-                    'relative flex items-center justify-center group-hover/sidebar:justify-start gap-x-3 rounded-xl px-0 group-hover/sidebar:px-2.5 py-2.5',
-                    'text-sm font-medium transition-all duration-200 overflow-hidden whitespace-nowrap',
-                    location.pathname === '/settings'
-                      ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]'
-                      : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent',
-                  ].join(' ')}
-                >
-                  {location.pathname === '/settings' && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
-                  )}
-                  <SettingsIcon className="flex-shrink-0 w-5 h-5" />
-                  <span
-                    className={[
-                      'text-sm overflow-hidden whitespace-nowrap',
-                      'opacity-0 group-hover/sidebar:opacity-100',
-                      'translate-x-1 group-hover/sidebar:translate-x-0',
-                      'transition-[opacity,transform] duration-300 delay-75',
-                      '[transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                    ].join(' ')}
-                  >
-                    {t('common.settings', 'Settings')}
-                  </span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="group-hover/sidebar:hidden pointer-events-none">
-                {t('common.settings', 'Settings')}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-        </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
       </div>
-    </TooltipProvider>
+
+      {/* Divider */}
+      <div className="mx-3 border-t border-slate-200 dark:border-white/5 flex-shrink-0" />
+
+      {/* Bottom: Settings */}
+      <div className="flex-shrink-0 py-3 px-2">
+        <Link
+          to="/settings"
+          onClick={onNavigate}
+          aria-current={location.pathname === '/settings' ? 'page' : undefined}
+          className={[
+            'relative flex items-center gap-x-3 rounded-xl py-2.5',
+            'justify-start px-2.5',
+            'text-sm font-medium transition-all duration-200 overflow-hidden whitespace-nowrap',
+            location.pathname === '/settings'
+              ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_hsl(var(--primary)/0.15)]'
+              : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
+          ].join(' ')}
+        >
+          {location.pathname === '/settings' && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
+          )}
+          <SettingsIcon className="flex-shrink-0 w-5 h-5" />
+          <span className="text-sm overflow-hidden whitespace-nowrap">
+            {t('common.settings', 'Settings')}
+          </span>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+const DashboardSidebar = () => {
+  const isMobile = useIsMobile();
+  const { open, openMobile, setOpenMobile } = useSidebar();
+
+  const closeMobile = React.useCallback(() => setOpenMobile(false), [setOpenMobile]);
+
+  // Mobile: Sheet-based drawer overlay
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <SheetContent
+          side="left"
+          className="w-72 p-0 pt-4 px-2 pb-4 bg-background border-r-0"
+        >
+          <SidebarContent onNavigate={closeMobile} />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: collapsible sidebar — hidden when toggled off
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="hidden md:flex flex-col h-full py-4 px-2 flex-shrink-0 w-60">
+      <SidebarContent />
+    </div>
   );
 };
 

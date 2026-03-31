@@ -13,12 +13,12 @@ const LEVEL_COLORS: Record<string, string> = {
   APPRENTICE: 'bg-blue-600',
   TRADER: 'bg-green-600',
   SKILLED: 'bg-amber-500',
-  ADVANCED: 'bg-violet-600',
+  ADVANCED: 'bg-primary',
   EXPERT: 'bg-rose-500',
   MASTER: 'bg-indigo-600',
   ELITE: 'bg-amber-400',
-  LEGEND: 'bg-gradient-to-r from-amber-400 to-violet-500',
-  GOAT: 'bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-400',
+  LEGEND: 'bg-gradient-to-r from-amber-400 to-primary',
+  GOAT: 'bg-gradient-to-r from-pink-500 via-primary to-cyan-400',
 };
 
 interface ProfileCardProps {
@@ -93,7 +93,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, recentBadges = [], c
                 `@${username}`
               )}
             </h3>
-            <p className="text-violet-400 text-sm font-medium">{profile.levelName}</p>
+            <p className="text-primary text-sm font-medium">{profile.levelName}</p>
             <p className="text-white/50 text-xs mt-0.5">
               {profile.xp.toLocaleString()} {t('gamification.xp', 'XP')}
             </p>
@@ -108,7 +108,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, recentBadges = [], c
           </div>
           <div className="h-2 rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-700"
+              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700"
               style={{ width: `${profile.xpProgress}%` }}
             />
           </div>

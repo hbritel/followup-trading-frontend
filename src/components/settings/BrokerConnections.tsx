@@ -310,6 +310,20 @@ function BrokerCard({
   const isConnected = connection?.status === 'CONNECTED';
   const hasConnection = !!connection;
 
+  const getSyncFrequencyLabel = (freq: string) => {
+    const key: Record<string, string> = {
+      'EVERY_5_MINUTES': 'accounts.every5Minutes',
+      'EVERY_15_MINUTES': 'accounts.every15Minutes',
+      'EVERY_30_MINUTES': 'accounts.every30Minutes',
+      'HOURLY': 'accounts.hourly',
+      'DAILY': 'accounts.daily',
+      'WEEKLY': 'accounts.weekly',
+      'MONTHLY': 'accounts.monthly',
+      'MANUAL': 'accounts.manual',
+    };
+    return key[freq] ? t(key[freq]) : freq;
+  };
+
   return (
     <Card className="relative overflow-hidden">
       {/* Subtle top border for connected brokers */}
@@ -361,7 +375,7 @@ function BrokerCard({
             )}
             <p>
               <span className="font-medium">{t('settings.syncFrequency', 'Sync')}:</span>{' '}
-              {connection.syncFrequency}
+              {getSyncFrequencyLabel(connection.syncFrequency)}
             </p>
             {connection.lastSyncTime && (
               <p>

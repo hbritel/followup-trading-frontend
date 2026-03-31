@@ -3,7 +3,7 @@ import type { TaxReportDto, TaxLotDto, WashSaleDto, TaxJurisdiction } from '@/ty
 
 export const taxService = {
   generateReport: async (year: number, jurisdiction: TaxJurisdiction): Promise<TaxReportDto> => {
-    const response = await apiClient.post<TaxReportDto>('/tax/reports/generate', {
+    const response = await apiClient.post<TaxReportDto>('/tax/report', {
       year,
       jurisdiction,
     });
@@ -11,7 +11,7 @@ export const taxService = {
   },
 
   getReport: async (year: number, jurisdiction: TaxJurisdiction): Promise<TaxReportDto> => {
-    const response = await apiClient.get<TaxReportDto>('/tax/reports', {
+    const response = await apiClient.get<TaxReportDto>('/tax/report', {
       params: { year, jurisdiction },
     });
     return response.data;

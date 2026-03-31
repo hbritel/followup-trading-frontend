@@ -4,6 +4,34 @@ import { useAuth } from './auth-context';
 
 type FilterMap = Record<string, unknown>;
 
+const STORAGE_KEY = 'ft_page_filters';
+
+/** ISO-date string pattern produced by Date.toISOString() */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+function loadStore(): Record<string, FilterMap> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw, (_key, value) => {
+      // Revive ISO date strings back to Date objects
+      if (typeof value === 'string' && ISO_DATE_RE.test(value)) {
+        const d = new Date(value);
+        if (!isNaN(d.getTime())) return d;
+      }
+      return value;
+    });
+  } catch {
+    return {};
+  }
+}
+
+function persistStore(store: Record<string, FilterMap>): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  } catch { /* quota exceeded — ignore */ }
+}
+
 interface PageFiltersContextType {
   getFilter: <T>(pageKey: string, filterKey: string, defaultValue: T) => T;
   setFilter: <T>(pageKey: string, filterKey: string, value: T) => void;
@@ -13,14 +41,17 @@ interface PageFiltersContextType {
 const PageFiltersContext = createContext<PageFiltersContextType | undefined>(undefined);
 
 export const PageFiltersProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Use ref for storage to avoid re-rendering every consumer on any filter change.
-  // Individual pages trigger their own re-renders via local state.
-  const store = useRef<Record<string, FilterMap>>({});
+  const store = useRef<Record<string, FilterMap>>(loadStore());
   const { user } = useAuth();
+  const prevUserId = useRef<string | undefined>(user?.id);
 
-  // Clear all page filters when the user changes (logout → login as different user)
+  // Clear all page filters only when the user actually changes (not on initial mount)
   useEffect(() => {
-    store.current = {};
+    if (prevUserId.current !== undefined && prevUserId.current !== user?.id) {
+      store.current = {};
+      persistStore(store.current);
+    }
+    prevUserId.current = user?.id;
   }, [user?.id]);
 
   const getFilter = useCallback(<T,>(pageKey: string, filterKey: string, defaultValue: T): T => {
@@ -34,10 +65,12 @@ export const PageFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
       store.current[pageKey] = {};
     }
     store.current[pageKey][filterKey] = value;
+    persistStore(store.current);
   }, []);
 
   const resetPage = useCallback((pageKey: string): void => {
     delete store.current[pageKey];
+    persistStore(store.current);
   }, []);
 
   return (
@@ -48,7 +81,7 @@ export const PageFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
 };
 
 /**
- * Hook for pages to persist filters across navigation.
+ * Hook for pages to persist filters across navigation and page refreshes.
  *
  * Usage:
  *   const [account, setAccount] = usePageFilter('trades', 'accountId', 'all');
@@ -57,7 +90,7 @@ export function usePageFilter<T>(pageKey: string, filterKey: string, defaultValu
   const ctx = useContext(PageFiltersContext);
   if (!ctx) throw new Error('usePageFilter must be used within PageFiltersProvider');
 
-  // Initialize from stored value (survives remount) or use default
+  // Initialize from stored value (survives remount AND page refresh) or use default
   const [value, setValue] = useState<T>(() => ctx.getFilter(pageKey, filterKey, defaultValue));
 
   const set = useCallback((v: T) => {
