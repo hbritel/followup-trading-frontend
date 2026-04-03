@@ -101,7 +101,44 @@ export const useRevokeSession = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (sessionId: string) => sessionService.revokeSession(sessionId),
-    onSuccess: () => {
+    onMutate: async (sessionId) => {
+      // Optimistic: remove session from cache immediately
+      await queryClient.cancelQueries({ queryKey: USER_SESSIONS_KEY });
+      const previous = queryClient.getQueryData(USER_SESSIONS_KEY);
+      queryClient.setQueryData(USER_SESSIONS_KEY, (old: any[] | undefined) =>
+        old ? old.filter((s: any) => s.id !== sessionId) : [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(USER_SESSIONS_KEY, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: USER_SESSIONS_KEY });
+    },
+  });
+};
+
+export const useRevokeAllOtherSessions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => sessionService.revokeAllOtherSessions(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: USER_SESSIONS_KEY });
+      const previous = queryClient.getQueryData(USER_SESSIONS_KEY);
+      queryClient.setQueryData(USER_SESSIONS_KEY, (old: any[] | undefined) =>
+        old ? old.filter((s: any) => s.isCurrentSession) : [],
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(USER_SESSIONS_KEY, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: USER_SESSIONS_KEY });
     },
   });

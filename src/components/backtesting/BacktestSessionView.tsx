@@ -14,7 +14,7 @@ import {
 import {
   ArrowLeft, TrendingUp, TrendingDown, BarChart3, Activity,
   DollarSign, Percent, Save, Loader2, CheckCircle, CandlestickChart, Play,
-  ArrowUpRight, ArrowDownRight, Settings,
+  ArrowUpRight, ArrowDownRight, Settings, AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -590,27 +590,40 @@ const BacktestSessionView: React.FC<BacktestSessionViewProps> = ({ session, onBa
 
       {/* Unsaved changes dialog */}
       <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('backtesting.unsavedChanges')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('backtesting.unsavedChangesDescription')}</AlertDialogDescription>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
+              <AlertTriangle className="h-6 w-6 text-amber-400" />
+            </div>
+            <AlertDialogTitle className="text-center">{t('backtesting.unsavedChanges')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-balance">
+              {t('backtesting.unsavedChangesDescription')}
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-2">
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogFooter className="!flex-col gap-2 mt-2 sm:!flex-col">
+            {/* Primary safe action — most prominent */}
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full"
+              onClick={() => {
+                handleSave();
+                setShowLeaveDialog(false);
+                setTimeout(() => onBack(), 500);
+              }}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {t('backtesting.saveAndLeave')}
+            </AlertDialogAction>
+            {/* Destructive action — visually distinct */}
+            <AlertDialogAction
+              className="w-full bg-transparent border border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => { setShowLeaveDialog(false); onBack(); }}
             >
               {t('backtesting.leaveWithoutSaving')}
             </AlertDialogAction>
-            <AlertDialogAction onClick={() => {
-              handleSave();
-              setShowLeaveDialog(false);
-              setTimeout(() => onBack(), 500);
-            }}>
-              <Save className="h-4 w-4 mr-1.5" />
-              {t('backtesting.saveAndLeave')}
-            </AlertDialogAction>
+            {/* Cancel — least emphasis */}
+            <AlertDialogCancel className="w-full mt-0 border-border/40">
+              {t('common.cancel')}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

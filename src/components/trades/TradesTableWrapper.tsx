@@ -42,6 +42,8 @@ export interface Trade {
   strategies?: { id: string; name: string }[];
   notes?: string;
   tags?: string[];
+  tagIds?: number[];
+  tagObjects?: { id: number; name: string; color: string }[];
   createdAt?: string;
   updatedAt?: string;
   balance?: number;

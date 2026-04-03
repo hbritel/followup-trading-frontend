@@ -27,4 +27,11 @@ i18n
     },
   });
 
+// Keep <html lang="..."> in sync so Intl.DateTimeFormat picks up the right locale
+const syncHtmlLang = (lng: string) => {
+  document.documentElement.lang = lng;
+};
+syncHtmlLang(i18n.language);
+i18n.on('languageChanged', syncHtmlLang);
+
 export default i18n;

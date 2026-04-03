@@ -25,6 +25,7 @@ import { Pencil, Save, X, Loader2, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategies } from '@/hooks/useStrategies';
+import { TagPicker } from '@/components/trades/TagPicker';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { tradeService } from '@/services/trade.service';
 import type { CreateTradeRequest } from '@/services/trade.service';
@@ -106,6 +107,7 @@ interface EditFormState {
   fees: string;
   notes: string;
   strategyId: string;
+  tagIds: number[];
 }
 
 const initFormFromTrade = (trade: Trade): EditFormState => ({
@@ -120,6 +122,7 @@ const initFormFromTrade = (trade: Trade): EditFormState => ({
   fees: trade.fees != null ? String(trade.fees) : '',
   notes: trade.notes ?? '',
   strategyId: trade.strategies?.[0]?.id ?? '',
+  tagIds: trade.tagIds ?? [],
 });
 
 const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOpenChange, initialEditMode = false, onTradeUpdated }) => {
@@ -136,7 +139,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<EditFormState>({
     entryPrice: '', exitPrice: '', quantity: '', entryDate: '', exitDate: '',
-    direction: 'LONG', stopLoss: '', takeProfit: '', fees: '', notes: '', strategyId: '',
+    direction: 'LONG', stopLoss: '', takeProfit: '', fees: '', notes: '', strategyId: '', tagIds: [],
   });
 
   // Sync form state when trade changes or dialog opens
@@ -171,6 +174,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
         status: hasExit ? 'CLOSED' : 'OPEN',
         accountId: trade.accountId ?? null,
         strategyIds: form.strategyId && form.strategyId !== 'none' ? [form.strategyId] : [],
+        tagIds: form.tagIds,
       };
       return tradeService.updateTrade(trade.id, request);
     },
@@ -387,7 +391,16 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               ) : (
                 <Field label={t('trades.strategy', 'Strategy')} value={trade.strategy || t('trades.noStrategy', 'No strategy')} />
               )}
-              {trade.tags && trade.tags.length > 0 && (
+              {/* Tags */}
+              {editing ? (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('trades.tags', 'Tags')}</span>
+                  <TagPicker
+                    selectedTagIds={form.tagIds}
+                    onChange={(ids) => setForm(prev => ({ ...prev, tagIds: ids }))}
+                  />
+                </div>
+              ) : trade.tags && trade.tags.length > 0 ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('trades.tags', 'Tags')}</span>
                   <div className="flex flex-wrap gap-1.5">
@@ -396,7 +409,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 

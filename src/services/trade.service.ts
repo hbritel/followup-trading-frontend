@@ -101,6 +101,7 @@ export interface CreateTradeRequest {
     assetType?: string | null;
     accountId?: string | null;
     strategyIds?: string[];
+    tagIds?: number[];
 }
 
 // --- Mapping: Backend DTO -> Frontend Trade type ---
@@ -127,6 +128,8 @@ export const mapApiResponseToTrade = (r: TradeApiResponse): Trade => ({
     fees: r.fees ?? undefined,
     notes: r.notes ?? undefined,
     tags: r.tags?.map(t => t.name) ?? [],
+    tagIds: r.tags?.map(t => t.id) ?? [],
+    tagObjects: r.tags?.map(t => ({ id: t.id, name: t.name, color: t.color })) ?? [],
     strategy: r.strategies?.[0]?.name ?? undefined,
     strategies: r.strategies?.map(s => ({ id: s.id, name: s.name })) ?? [],
     currency: 'USD',   // backend doesn't send currency yet

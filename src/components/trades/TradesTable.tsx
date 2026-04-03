@@ -47,11 +47,13 @@ export const TradesTable: React.FC<TradesTableProps> = ({
   const { t } = useTranslation();
 
   const filteredTrades = trades.filter((trade) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
       searchQuery === '' ||
-      trade.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (trade.strategy && trade.strategy.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (trade.notes && trade.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+      trade.symbol.toLowerCase().includes(q) ||
+      (trade.strategy && trade.strategy.toLowerCase().includes(q)) ||
+      (trade.notes && trade.notes.toLowerCase().includes(q)) ||
+      (trade.tags && trade.tags.some(tag => tag.toLowerCase().includes(q)));
 
     const matchesStatus = statusFilter === 'all' || trade.status === statusFilter;
     const matchesType = typeFilter === 'all' || trade.type === typeFilter;
@@ -153,7 +155,11 @@ export const TradesTable: React.FC<TradesTableProps> = ({
             filteredTrades.map((trade) => (
               <TableRow
                 key={trade.id}
-                className={trade.id === highlightTradeId ? 'ring-2 ring-primary/50 bg-primary/5' : ''}
+                className={[
+                  trade.id === highlightTradeId ? 'ring-2 ring-primary/50 bg-primary/5' : '',
+                  onView ? 'cursor-pointer hover:bg-muted/50 transition-colors' : '',
+                ].join(' ')}
+                onClick={() => onView?.(trade.id)}
               >
                 {visibleColumns.symbol && (
                   <TableCell className="font-mono font-semibold">{trade.symbol}</TableCell>
@@ -267,11 +273,28 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 {visibleColumns.tags && (
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {trade.tags && trade.tags.length > 0 ? (
-                        trade.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline">
-                            {tag}
+                      {trade.tagObjects && trade.tagObjects.length > 0 ? (
+                        trade.tagObjects.map((tag) => (
+                          <Badge
+                            key={tag.id}
+                            variant="outline"
+                            className="text-xs gap-1 pr-1.5"
+                            style={{
+                              borderColor: tag.color + '40',
+                              backgroundColor: tag.color + '15',
+                              color: tag.color,
+                            }}
+                          >
+                            <span
+                              className="h-1.5 w-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: tag.color }}
+                            />
+                            {tag.name}
                           </Badge>
+                        ))
+                      ) : trade.tags && trade.tags.length > 0 ? (
+                        trade.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline">{tag}</Badge>
                         ))
                       ) : (
                         '-'
@@ -285,7 +308,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 {visibleColumns.updatedAt && (
                   <TableCell>{trade.updatedAt ? formatDate(trade.updatedAt) : '-'}</TableCell>
                 )}
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <TableActions
                     tradeId={trade.id}
                     onView={onView}

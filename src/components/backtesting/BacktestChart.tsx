@@ -39,6 +39,8 @@ interface BacktestChartProps {
   trades?: ChartTradeLine[];
   staticLines?: StaticPriceLine[];
   staticMarkers?: StaticMarker[];
+  /** Optional visible range (epoch seconds). Chart zooms to this range instead of fitContent. */
+  visibleRange?: { from: number; to: number };
   height?: number;
   preserveScale?: boolean;
   onDragSL?: (tradeId: string, newPrice: number) => void;
@@ -75,7 +77,7 @@ function getThemeColors(dark: boolean) {
 }
 
 const BacktestChart: React.FC<BacktestChartProps> = memo(({
-  data, trades = [], staticLines = [], staticMarkers = [], height = 500, preserveScale = true, onDragSL, onDragTP,
+  data, trades = [], staticLines = [], staticMarkers = [], visibleRange, height = 500, preserveScale = true, onDragSL, onDragTP,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -248,7 +250,14 @@ const BacktestChart: React.FC<BacktestChartProps> = memo(({
       time: d.timestamp as unknown as Time, value: d.volume,
       color: d.close >= d.open ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
     })));
-    if (!hasInitialFit.current) {
+    if (visibleRange && chartRef.current) {
+      // Zoom to the specified range (e.g. entry→exit with padding)
+      chartRef.current.timeScale().setVisibleRange({
+        from: visibleRange.from as unknown as Time,
+        to: visibleRange.to as unknown as Time,
+      });
+      hasInitialFit.current = true;
+    } else if (!hasInitialFit.current) {
       chartRef.current?.timeScale().fitContent();
       hasInitialFit.current = true;
     } else if (preserveScale) {
@@ -256,7 +265,7 @@ const BacktestChart: React.FC<BacktestChartProps> = memo(({
     } else {
       chartRef.current?.timeScale().fitContent();
     }
-  }, [data, preserveScale]);
+  }, [data, preserveScale, visibleRange]);
 
   // Update trade markers and price lines
   useEffect(() => {

@@ -39,6 +39,8 @@ export const useDeleteTag = () => {
     mutationFn: (id: number) => tagService.deleteTag(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TAGS_KEY });
+      // Refresh trades since tag associations are removed on delete
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
     },
   });
 };

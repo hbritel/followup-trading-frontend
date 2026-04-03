@@ -57,28 +57,28 @@ const UsageBar: React.FC<UsageBarProps> = ({ label, current, max, suffix = '' })
 const buildUsageBars = (usage: UsageDto, t: (key: string) => string) => [
   {
     label: t('subscription.features.brokerConnections'),
-    current: usage.connections.current,
-    max: usage.connections.max,
+    current: usage.connectionsUsed ?? 0,
+    max: usage.connectionsMax ?? 0,
   },
   {
     label: t('subscription.features.tradesStored'),
-    current: usage.trades.current,
-    max: usage.trades.max,
+    current: usage.tradesUsed ?? 0,
+    max: usage.tradesMax ?? 0,
   },
   {
     label: `${t('subscription.features.aiCoach')} (${t('common.today')})`,
-    current: usage.aiMessages.today,
-    max: usage.aiMessages.max,
+    current: usage.aiMessagesToday ?? 0,
+    max: usage.aiMessagesMax ?? 0,
   },
   {
     label: t('subscription.features.alerts'),
-    current: usage.alerts.current,
-    max: usage.alerts.max,
+    current: usage.alertsUsed ?? 0,
+    max: usage.alertsMax ?? 0,
   },
   {
     label: `${t('subscription.features.reports')} (${t('common.thisMonth')})`,
-    current: usage.reports.thisMonth,
-    max: usage.reports.max,
+    current: usage.reportsThisMonth ?? 0,
+    max: usage.reportsMax ?? 0,
   },
 ];
 
@@ -89,7 +89,10 @@ const UsageDashboard: React.FC = () => {
   const createPortal = useCreatePortal();
 
   const handleManageBilling = () => {
-    createPortal.mutate({ returnUrl: window.location.href });
+    createPortal.mutate(
+      { returnUrl: window.location.href },
+      { onError: () => navigate('/account-management?tab=subscription') },
+    );
   };
 
   if (isLoading) {
@@ -167,7 +170,7 @@ const UsageDashboard: React.FC = () => {
                   {t('subscription.manageBilling')}
                 </Button>
               )}
-              <Button size="sm" onClick={() => navigate('/pricing')}>
+              <Button size="sm" onClick={() => navigate('/account-management?tab=subscription')}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 {t('subscription.upgrade')}
               </Button>

@@ -100,6 +100,16 @@ const TradeReplay = () => {
     ];
   }, [replayData]);
 
+  // Visible range centered on entry→exit with 20% padding on each side
+  const chartVisibleRange = useMemo(() => {
+    if (!replayData) return undefined;
+    const entryTs = Math.floor(new Date(replayData.entryDate).getTime() / 1000);
+    const exitTs = Math.floor(new Date(replayData.exitDate).getTime() / 1000);
+    const duration = Math.max(exitTs - entryTs, 60); // at least 60s
+    const padding = Math.max(Math.floor(duration * 0.3), 300); // at least 5 min padding
+    return { from: entryTs - padding, to: exitTs + padding };
+  }, [replayData]);
+
   const formatDisplayDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString(undefined, {
@@ -168,7 +178,7 @@ const TradeReplay = () => {
             {isChartLoading ? (
               <Skeleton className="w-full h-[500px] rounded-xl" />
             ) : displayCandles.length > 0 ? (
-              <BacktestChart data={displayCandles} staticLines={staticLines} staticMarkers={staticMarkers} height={500} />
+              <BacktestChart data={displayCandles} staticLines={staticLines} staticMarkers={staticMarkers} visibleRange={chartVisibleRange} height={500} preserveScale={false} />
             ) : (
               <Card className="glass-card rounded-2xl">
                 <CardContent className="flex items-center justify-center py-20 text-muted-foreground">

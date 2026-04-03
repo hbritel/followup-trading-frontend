@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import {
   User,
-  MessageSquare,
   Sun,
   Moon,
   LogOut,
@@ -24,7 +23,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { useTheme } from '@/components/providers/theme-provider';
@@ -39,7 +37,6 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
-  const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -112,9 +109,6 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <LanguageSwitcher />
-            <Button variant="ghost" size="icon" aria-label={t('navbar.messages', 'Messages')}>
-              <MessageSquare className="h-5 w-5" />
-            </Button>
           </div>
 
           {/* Mobile-only: overflow menu for secondary actions */}
@@ -132,13 +126,6 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
                     {theme === 'dark' ? t('navbar.lightMode', 'Light mode') : t('navbar.darkMode', 'Dark mode')}
                   </div>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/messages')}>
-                  <div className="flex items-center w-full">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {t('navbar.messages', 'Messages')}
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Globe className="h-4 w-4 mr-2" />
@@ -177,11 +164,9 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{t('navbar.myAccount', 'My Account')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <DropdownMenuItem onClick={() => navigate('/account-management')}>
+                <User className="h-4 w-4 mr-2" />
                 {t('common.profile')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
-                {t('common.settings')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

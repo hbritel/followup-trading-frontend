@@ -11,16 +11,133 @@ export interface AdminUserDto {
   enabled: boolean;
   mfaEnabled: boolean;
   roles: string[];
+  plan: string | null;
   lastLoginAt: string | null;
   createdAt: string;
+}
+
+export interface DailyCountDto {
+  date: string;
+  count: number;
+}
+
+export interface TopUserDto {
+  userId: string;
+  username: string;
+  fullName: string | null;
+  tradeCount: number;
+  lastLoginAt: string | null;
+}
+
+export interface SubscriptionStatsDto {
+  mrr: number;
+  churnRate: number;
+  conversionRate: number;
+  totalPaid: number;
+  totalFree: number;
+}
+
+export interface ServiceHealthDto {
+  name: string;
+  status: 'UP' | 'DOWN';
+  latencyMs: number;
+  error: string | null;
+}
+
+export interface HealthResponseDto {
+  services: ServiceHealthDto[];
+}
+
+export interface ScheduledTaskDto {
+  name: string;
+  description: string;
+  cronExpression: string;
+}
+
+export interface UserFeatureOverrideDto {
+  featureKey: string;
+  enabled: boolean;
+  changedBy: string | null;
+  changedAt: string | null;
+}
+
+export interface RecentAdminActionDto {
+  timestamp: string;
+  adminUsername: string;
+  eventType: string;
+  details: string;
+}
+
+export interface DashboardStatsDto {
+  // KPIs
+  totalUsers: number;
+  activeToday: number;
+  newThisWeek: number;
+  totalTrades: number;
+  totalConnections: number;
+  mfaEnabledUsers: number;
+  disabledUsers: number;
+  tradesToday: number;
+  connectionsInError: number;
+  // Revenue
+  mrr: number;
+  arr: number;
+  arpu: number;
+  conversionRate: number;
+  churnRate: number;
+  totalPaid: number;
+  totalFree: number;
+  // User Activity
+  retentionRate: number;
+  // System
+  uptimeSeconds: number;
+  postgresStatus: string;
+  postgresLatencyMs: number;
+  redisStatus: string;
+  redisLatencyMs: number;
+  // Broker Connections
+  connectionsByStatus: Record<string, number>;
+  connectionsByBroker: Record<string, number>;
+  failedSyncsLast24h: number;
+  // Audit & Security
+  auditEventsToday: number;
+  failedLoginsLast24h: number;
+  recentAdminActions: RecentAdminActionDto[];
+}
+
+export interface AdminBrokerConnectionDto {
+  id: string;
+  userId: string;
+  username: string;
+  brokerCode: string;
+  brokerDisplayName: string | null;
+  protocol: string;
+  status: string;
+  accountIdentifier: string | null;
+  displayName: string | null;
+  lastSyncTime: string | null;
+  createdAt: string;
+  enabled: boolean;
 }
 
 export interface AdminStatsDto {
   totalUsers: number;
   activeToday: number;
   totalTrades: number;
-  javaVersion: string;
-  springProfile: string;
+  newThisWeek: number;
+  totalConnections: number;
+  disabledUsers: number;
+  mfaEnabledUsers: number;
+}
+
+export interface AdminSubscriptionDto {
+  userId: string;
+  username: string;
+  email: string;
+  plan: string;
+  status: string;
+  billingInterval: string | null;
+  currentPeriodEnd: string | null;
 }
 
 export interface RoleDto {
@@ -136,5 +253,94 @@ export const adminService = {
       params: { page, size, ...filters },
     });
     return response.data;
+  },
+
+  getPlanDistribution: async (): Promise<Record<string, number>> => {
+    const response = await apiClient.get<Record<string, number>>('/admin/plan-distribution');
+    return response.data;
+  },
+
+  getSubscriptions: async (page = 0, size = 20): Promise<PageResponse<AdminSubscriptionDto>> => {
+    const response = await apiClient.get<PageResponse<AdminSubscriptionDto>>('/admin/subscriptions', {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  changeUserPlan: async (userId: string, plan: string): Promise<void> => {
+    await apiClient.put(`/admin/users/${userId}/plan`, { plan });
+  },
+
+  resetUserPassword: async (userId: string): Promise<{ message: string; temporaryPassword?: string }> => {
+    const response = await apiClient.post<{ message: string; temporaryPassword?: string }>(`/admin/users/${userId}/reset-password`);
+    return response.data;
+  },
+
+  getUserGrowth: async (): Promise<DailyCountDto[]> => {
+    const response = await apiClient.get<DailyCountDto[]>('/admin/user-growth');
+    return response.data;
+  },
+
+  getTopUsers: async (limit = 5): Promise<TopUserDto[]> => {
+    const response = await apiClient.get<TopUserDto[]>('/admin/top-users', { params: { limit } });
+    return response.data;
+  },
+
+  getSubscriptionStats: async (): Promise<SubscriptionStatsDto> => {
+    const response = await apiClient.get<SubscriptionStatsDto>('/admin/subscription-stats');
+    return response.data;
+  },
+
+  getHealth: async (): Promise<HealthResponseDto> => {
+    const response = await apiClient.get<HealthResponseDto>('/admin/health');
+    return response.data;
+  },
+
+  getFeatureFlags: async (): Promise<Record<string, boolean>> => {
+    const response = await apiClient.get<Record<string, boolean>>('/admin/feature-flags');
+    return response.data;
+  },
+
+  setFeatureFlag: async (key: string, enabled: boolean): Promise<void> => {
+    await apiClient.put(`/admin/feature-flags/${key}`, { enabled });
+  },
+
+  getScheduledTasks: async (): Promise<ScheduledTaskDto[]> => {
+    const response = await apiClient.get<ScheduledTaskDto[]>('/admin/scheduled-tasks');
+    return response.data;
+  },
+
+  getDashboardStats: async (): Promise<DashboardStatsDto> => {
+    const response = await apiClient.get<DashboardStatsDto>('/admin/dashboard-stats');
+    return response.data;
+  },
+
+  getAuditEventTypes: async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/admin/audit-event-types');
+    return response.data;
+  },
+
+  getBrokerConnections: async (page = 0, size = 20, status?: string, brokerCode?: string): Promise<PageResponse<AdminBrokerConnectionDto>> => {
+    const response = await apiClient.get<PageResponse<AdminBrokerConnectionDto>>('/admin/broker-connections', {
+      params: { page, size, ...(status ? { status } : {}), ...(brokerCode ? { brokerCode } : {}) },
+    });
+    return response.data;
+  },
+
+  forceDisconnectConnection: async (id: string): Promise<void> => {
+    await apiClient.post(`/admin/broker-connections/${id}/force-disconnect`);
+  },
+
+  getUserFeatureOverrides: async (userId: string): Promise<UserFeatureOverrideDto[]> => {
+    const response = await apiClient.get<UserFeatureOverrideDto[]>(`/admin/users/${userId}/feature-overrides`);
+    return response.data;
+  },
+
+  setUserFeatureOverride: async (userId: string, featureKey: string, enabled: boolean): Promise<void> => {
+    await apiClient.put(`/admin/users/${userId}/feature-overrides/${featureKey}`, { enabled });
+  },
+
+  removeUserFeatureOverride: async (userId: string, featureKey: string): Promise<void> => {
+    await apiClient.delete(`/admin/users/${userId}/feature-overrides/${featureKey}`);
   },
 };

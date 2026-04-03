@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import {
   Activity as ActivityIcon,
   Award as AwardIcon,
@@ -10,18 +11,15 @@ import {
   BookText as BookTextIcon,
   Calendar as CalendarIcon,
   ChevronDown as ChevronDownIcon,
-  CircleDollarSign as CircleDollarSignIcon,
   FileText as FileTextIcon,
-  Globe as GlobeIcon,
   LineChart as LineChartIcon,
   List as ListIcon,
+  Newspaper as NewspaperIcon,
   PieChart as PieChartIcon,
   RefreshCcw as RefreshCcwIcon,
   Rewind as RewindIcon,
-  Rss as RssIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
-  ShoppingBag as ShoppingBagIcon,
   Trophy as TrophyIcon,
   Wallet as WalletIcon,
   BellRing as BellRingIcon,
@@ -45,6 +43,7 @@ function getInitialCollapsed(): Record<string, boolean> {
 const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const { isEnabled } = useFeatureFlags();
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>(getInitialCollapsed);
 
   const toggleSection = (index: number) => {
@@ -74,28 +73,25 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/statistics', label: t('sidebar.statistics'), icon: PieChartIcon },
         { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon },
         { href: '/watchlists', label: t('sidebar.watchlists'), icon: ListIcon },
-        { href: '/alerts', label: t('sidebar.alerts'), icon: BellRingIcon },
-        { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon },
-        { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon },
-        { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon },
+        { href: '/alerts', label: t('sidebar.alerts'), icon: BellRingIcon, featureKey: 'alerts' },
+        { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon, featureKey: 'backtesting' },
+        { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon, featureKey: 'trade_replay' },
+        { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon, featureKey: 'reports' },
         { href: '/tax-reporting', label: t('sidebar.taxReporting', 'Tax Reporting'), icon: CalculatorIcon },
-        { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
-        { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
       ],
     },
     {
       label: t('sidebar.social'),
       items: [
-        { href: '/social/feed', label: t('sidebar.socialFeed'), icon: RssIcon },
-        { href: '/social/marketplace', label: t('sidebar.marketplace'), icon: ShoppingBagIcon },
-        { href: '/social/traders', label: t('sidebar.traders'), icon: GlobeIcon },
+        { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
+        { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
+        { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed' },
       ],
     },
     {
       label: t('sidebar.account'),
       items: [
         { href: '/accounts', label: t('sidebar.accounts'), icon: WalletIcon },
-        { href: '/account-management', label: t('sidebar.accountManagement'), icon: CircleDollarSignIcon },
         { href: '/administration', label: t('sidebar.administration'), icon: ShieldIcon },
       ],
     },
@@ -158,6 +154,9 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
+                      const featureDisabled = 'featureKey' in item && item.featureKey
+                        ? !isEnabled(item.featureKey as string)
+                        : false;
                       return (
                         <li key={item.href}>
                           <Link
@@ -169,16 +168,18 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                               'justify-start px-2.5',
                               'text-sm font-medium transition-all duration-200',
                               'overflow-hidden whitespace-nowrap',
-                              isActive
-                                ? [
-                                    'bg-primary/10 text-primary',
-                                    'shadow-[0_0_12px_hsl(var(--primary)/0.15)]',
-                                    'border border-primary/20',
-                                  ].join(' ')
-                                : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
+                              featureDisabled
+                                ? 'opacity-40 pointer-events-auto text-muted-foreground border border-transparent'
+                                : isActive
+                                  ? [
+                                      'bg-primary/10 text-primary',
+                                      'shadow-[0_0_12px_hsl(var(--primary)/0.15)]',
+                                      'border border-primary/20',
+                                    ].join(' ')
+                                  : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
                             ].join(' ')}
                           >
-                            {isActive && (
+                            {isActive && !featureDisabled && (
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
                             )}
 
@@ -186,13 +187,17 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                               className={[
                                 'flex-shrink-0 transition-colors duration-200',
                                 'w-5 h-5',
-                                isActive ? 'text-primary' : '',
+                                featureDisabled ? 'text-muted-foreground/50' : isActive ? 'text-primary' : '',
                               ].join(' ')}
                             />
 
-                            <span className="text-sm overflow-hidden whitespace-nowrap">
+                            <span className="text-sm overflow-hidden whitespace-nowrap flex-1">
                               {item.label}
                             </span>
+
+                            {featureDisabled && (
+                              <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground/40" title={t('featureGate.unavailable', 'Feature disabled')} />
+                            )}
                           </Link>
                         </li>
                       );
