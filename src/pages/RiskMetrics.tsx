@@ -9,6 +9,7 @@ import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/Da
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import RiskMetricsBoard from '@/components/risk/RiskMetricsBoard';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -44,7 +45,9 @@ const RiskMetrics = () => {
           />
           <AccountSelector value={accountId} onChange={setAccountId} className="w-[200px]" />
         </div>
-        <RiskMetricsBoard startDate={dateRange.startDate} endDate={dateRange.endDate} accountId={effectiveAccountId} />
+        <PlanGatedSection requiredPlan="PRO" feature="Risk metrics">
+          <RiskMetricsBoard startDate={dateRange.startDate} endDate={dateRange.endDate} accountId={effectiveAccountId} />
+        </PlanGatedSection>
       </PageTransition>
     </DashboardLayout>
   );

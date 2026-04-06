@@ -10,6 +10,8 @@ import StrategyDetail from '@/components/playbook/StrategyDetail';
 import { useStrategyStats, useDeleteStrategy } from '@/hooks/useStrategies';
 import { useToast } from '@/hooks/use-toast';
 import type { StrategyStatsDto, StrategyResponseDto } from '@/types/dto';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 /** Convert stats DTO to the response shape expected by StrategyForm / StrategyDetail */
 const toResponseDto = (s: StrategyStatsDto): StrategyResponseDto => ({
@@ -24,9 +26,12 @@ const toResponseDto = (s: StrategyStatsDto): StrategyResponseDto => ({
   rules: s.rules ?? [],
 });
 
+const STRATEGY_LIMITS: Record<string, number> = { FREE: 2, STARTER: 5, PRO: 20, ELITE: 2147483647 };
+
 const Playbook = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { currentPlan } = useFeatureFlags();
 
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -85,6 +90,8 @@ const Playbook = () => {
   };
 
   const count = strategies?.length ?? 0;
+  const maxStrategies = STRATEGY_LIMITS[currentPlan] ?? 2;
+  const atStrategyLimit = count >= maxStrategies;
 
   return (
     <DashboardLayout pageTitle={t('pages.playbook')}>
@@ -108,10 +115,20 @@ const Playbook = () => {
             </div>
           </div>
 
-          <Button onClick={handleNew} className="gap-2 shrink-0">
-            <Plus className="h-4 w-4" />
-            {t('playbook.newStrategy')}
-          </Button>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {!isLoading && (
+              <UsageLimitIndicator
+                used={count}
+                max={maxStrategies}
+                label={t('playbook.strategiesUsed', 'Strategies')}
+                showBar
+              />
+            )}
+            <Button onClick={handleNew} className="gap-2" disabled={atStrategyLimit}>
+              <Plus className="h-4 w-4" />
+              {t('playbook.newStrategy')}
+            </Button>
+          </div>
         </div>
 
         {/* Content */}

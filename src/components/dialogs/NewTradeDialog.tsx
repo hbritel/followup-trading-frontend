@@ -61,6 +61,7 @@ import type { CreateTradeRequest } from '@/services/trade.service';
 import { brokerService } from '@/services/broker.service';
 import { useSymbolSpecifications } from '@/hooks/useSymbolSpecifications';
 import { useStrategies } from '@/hooks/useStrategies';
+import { TagPicker } from '@/components/trades/TagPicker';
 
 // Define the form schema with Zod -- matches TradeDto.Request on the backend
 const formSchema = z.object({
@@ -128,6 +129,7 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [accountId, setAccountId] = React.useState<string>('none');
   const [selectedStrategyId, setSelectedStrategyId] = React.useState<string>('none');
+  const [selectedTagIds, setSelectedTagIds] = React.useState<number[]>([]);
   const createTrade = useCreateTrade();
   const { data: symbolSpecs } = useSymbolSpecifications();
   const { data: strategies } = useStrategies();
@@ -184,6 +186,7 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
       status: data.exitDate && data.exitPrice ? 'CLOSED' : 'OPEN',
       accountId: accountId && accountId !== 'none' ? accountId : undefined,
       strategyIds: selectedStrategyId !== 'none' ? [selectedStrategyId] : [],
+      tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
     };
 
     createTrade.mutate(request, {
@@ -193,6 +196,7 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
         form.reset();
         setAccountId('none');
         setSelectedStrategyId('none');
+        setSelectedTagIds([]);
       },
       onError: (error: Error) => {
         const message = error.message || t('trades.tradeCreatedError', 'Failed to create trade. Please try again.');
@@ -273,6 +277,12 @@ const NewTradeDialog: React.FC<NewTradeDialogProps> = ({
                   Rule compliance checklist will be available after the trade is created.
                 </p>
               )}
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>{t('trades.tags', 'Tags')}</Label>
+              <TagPicker selectedTagIds={selectedTagIds} onChange={setSelectedTagIds} />
             </div>
 
             {/* Symbol — Combobox with autocomplete + info tooltip + contract size badge */}

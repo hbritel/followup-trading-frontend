@@ -14,48 +14,66 @@ interface PlanCardProps {
   isLoading?: boolean;
 }
 
-const PLAN_FEATURES: Record<string, { key: string; included: boolean }[]> = {
+const PLAN_FEATURES: Record<string, { key: string; included: boolean; detail?: string }[]> = {
   FREE: [
-    { key: 'importCsv', included: true },
-    { key: 'brokerConnections', included: false },
-    { key: 'tradesStored', included: true },
-    { key: 'analytics', included: true },
-    { key: 'aiCoach', included: false },
+    { key: 'trades', included: true, detail: '100 trades' },
+    { key: 'brokerAccount', included: true, detail: '1 account' },
+    { key: 'sync', included: true, detail: 'Monthly sync' },
+    { key: 'csvImport', included: true },
+    { key: 'journal', included: true },
+    { key: 'basicMetrics', included: true },
+    { key: 'badges', included: true },
+    { key: 'csvExport', included: false },
     { key: 'alerts', included: false },
+    { key: 'aiCoach', included: false },
     { key: 'reports', included: false },
     { key: 'backtesting', included: false },
-    { key: 'leaderboard', included: true },
-    { key: 'publicProfile', included: false },
-    { key: 'prioritySupport', included: false },
-    { key: 'apiAccess', included: false },
+    { key: 'tradeReplay', included: false },
+  ],
+  STARTER: [
+    { key: 'trades', included: true, detail: '1,500 trades' },
+    { key: 'brokerAccounts', included: true, detail: '2 accounts' },
+    { key: 'sync', included: true, detail: 'Weekly sync' },
+    { key: 'csvImportExport', included: true },
+    { key: 'journal', included: true, detail: 'With calendar' },
+    { key: 'basicMetrics', included: true },
+    { key: 'badges', included: true },
+    { key: 'aiCoach', included: true, detail: '5 msg/day' },
+    { key: 'alerts', included: true, detail: '5 price alerts' },
+    { key: 'reports', included: true, detail: '3/month' },
+    { key: 'marketFeed', included: true, detail: '1 source' },
+    { key: 'economicCalendar', included: true },
+    { key: 'backtesting', included: false },
+    { key: 'tradeReplay', included: false },
   ],
   PRO: [
-    { key: 'importCsv', included: true },
-    { key: 'brokerConnections', included: true },
-    { key: 'tradesStored', included: true },
-    { key: 'analytics', included: true },
-    { key: 'aiCoach', included: true },
-    { key: 'alerts', included: true },
-    { key: 'reports', included: true },
-    { key: 'backtesting', included: true },
-    { key: 'leaderboard', included: true },
+    { key: 'trades', included: true, detail: '15,000 trades' },
+    { key: 'brokerAccounts', included: true, detail: '5 accounts' },
+    { key: 'sync', included: true, detail: 'Daily sync' },
+    { key: 'csvImportExport', included: true },
+    { key: 'journal', included: true, detail: 'With calendar' },
+    { key: 'advancedMetrics', included: true, detail: 'Sharpe, VaR...' },
+    { key: 'liveWebSocket', included: true },
+    { key: 'aiCoach', included: true, detail: '30 msg/day' },
+    { key: 'alerts', included: true, detail: '25 alerts' },
+    { key: 'reports', included: true, detail: '15/month, 12 types' },
+    { key: 'backtesting', included: true, detail: '3 sessions' },
+    { key: 'tradeReplay', included: true },
+    { key: 'taxPreview', included: true },
     { key: 'publicProfile', included: true },
-    { key: 'prioritySupport', included: false },
-    { key: 'apiAccess', included: false },
   ],
-  ENTERPRISE: [
-    { key: 'importCsv', included: true },
-    { key: 'brokerConnections', included: true },
-    { key: 'tradesStored', included: true },
-    { key: 'analytics', included: true },
-    { key: 'aiCoach', included: true },
-    { key: 'alerts', included: true },
-    { key: 'reports', included: true },
-    { key: 'backtesting', included: true },
-    { key: 'leaderboard', included: true },
-    { key: 'publicProfile', included: true },
-    { key: 'prioritySupport', included: true },
-    { key: 'apiAccess', included: true },
+  ELITE: [
+    { key: 'trades', included: true, detail: 'Unlimited' },
+    { key: 'brokerAccounts', included: true, detail: 'Unlimited' },
+    { key: 'sync', included: true, detail: 'Real-time sync' },
+    { key: 'everything', included: true, detail: 'All PRO features' },
+    { key: 'aiCoach', included: true, detail: '150 msg/day' },
+    { key: 'alerts', included: true, detail: 'Unlimited, all types' },
+    { key: 'reports', included: true, detail: 'Unlimited, 16 types' },
+    { key: 'backtesting', included: true, detail: 'Unlimited sessions' },
+    { key: 'fullTaxReport', included: true, detail: '14 jurisdictions' },
+    { key: 'dedicatedSupport', included: true },
+    { key: 'customRss', included: true },
   ],
 };
 
@@ -68,15 +86,19 @@ const PlanCard: React.FC<PlanCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const isPro = plan.name === 'PRO';
-  const isEnterprise = plan.name === 'ENTERPRISE';
+  const isElite = plan.name === 'ELITE';
+  const isStarter = plan.name === 'STARTER';
   const isCurrent = currentPlan === plan.name;
-  const price = billingInterval === 'ANNUAL' ? plan.annualPrice : plan.monthlyPrice;
+  const monthlyPrice = (plan as PlanDto & { monthlyPrice?: number }).monthlyPrice ?? plan.monthlyPriceUsd;
+  const annualPrice = (plan as PlanDto & { annualPrice?: number }).annualPrice ?? plan.annualMonthlyPriceUsd;
+  const price = billingInterval === 'ANNUAL' ? annualPrice : monthlyPrice;
   const features = PLAN_FEATURES[plan.name] ?? [];
 
   const cardClasses = cn(
     'glass-card rounded-2xl p-8 relative flex flex-col gap-6 transition-all duration-300',
     isPro && 'border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]',
-    isEnterprise && 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]',
+    isElite && 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]',
+    isStarter && 'border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.08)]',
   );
 
   const getButtonLabel = () => {
@@ -101,6 +123,11 @@ const PlanCard: React.FC<PlanCardProps> = ({
               {t('subscription.mostPopular')}
             </span>
           )}
+          {isStarter && (
+            <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full self-start">
+              {t('subscription.bestValue', 'Best Value')}
+            </span>
+          )}
           {isCurrent && (
             <Badge variant="secondary" className="self-start">
               {t('subscription.currentPlan')}
@@ -115,7 +142,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
           className={cn(
             'text-xl font-bold mb-1',
             isPro && 'text-gradient-primary',
-            isEnterprise && 'text-gradient-gold',
+            isElite && 'text-gradient-gold',
+            isStarter && 'text-blue-400',
           )}
         >
           {plan.displayName}
@@ -129,7 +157,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
             <>
               {billingInterval === 'ANNUAL' && (
                 <span className="line-through text-muted-foreground text-lg self-end mb-1 mr-1">
-                  ${plan.monthlyPrice}
+                  ${monthlyPrice}
                 </span>
               )}
               <span className="kpi-value text-5xl">${price}</span>
@@ -152,7 +180,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
               <X className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
             )}
             <span className={cn(!f.included && 'text-muted-foreground/60')}>
-              {t(`subscription.features.${f.key}`)}
+              {t(`subscription.features.${f.key}`, f.key)}
+              {f.detail && <span className="text-muted-foreground ml-1">({f.detail})</span>}
             </span>
           </li>
         ))}
@@ -162,7 +191,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
       <Button
         className={cn(
           'w-full mt-auto',
-          isEnterprise &&
+          isElite &&
             !isCurrent &&
             'bg-gradient-to-r from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 border-0',
         )}

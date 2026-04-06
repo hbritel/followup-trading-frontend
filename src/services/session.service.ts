@@ -31,8 +31,14 @@ const revokeSession = async (sessionId: string): Promise<MessageResponseDto> => 
 };
 
 
+const revokeAllOtherSessions = async (): Promise<{ revoked: number }> => {
+    const response = await apiClient.delete<{ revoked: number }>('/users/me/sessions');
+    return response.data;
+};
+
 export const sessionService = {
     getActiveSessions,
     revokeSession,
-    getErrorMessage: authService.getErrorMessage, // Exporter aussi l'erreur
+    revokeAllOtherSessions,
+    getErrorMessage: authService.getErrorMessage,
 };

@@ -25,7 +25,17 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useSymbolSpecifications } from '@/hooks/useSymbolSpecifications';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import type { WatchlistItemResponseDto } from '@/types/dto';
+
+// Symbols-per-watchlist limits per plan
+const SYMBOL_LIMITS: Record<string, number> = {
+  FREE: 10,
+  STARTER: 25,
+  PRO: 50,
+  ELITE: 2147483647,
+};
 
 interface WatchlistContentProps {
   title: string;
@@ -52,7 +62,13 @@ const WatchlistContent: React.FC<WatchlistContentProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { currentPlan } = useFeatureFlags();
   const [filterQuery, setFilterQuery] = useState('');
+
+  const symbolLimit = SYMBOL_LIMITS[currentPlan] ?? 10;
+  const isUnlimitedSymbols = symbolLimit >= 2147483647;
+  const atSymbolLimit = !isUnlimitedSymbols && items.length >= symbolLimit;
+  const showSymbolCounter = !isUnlimitedSymbols;
 
   const filteredItems = useMemo(() => {
     if (!filterQuery) return items;
@@ -85,12 +101,26 @@ const WatchlistContent: React.FC<WatchlistContentProps> = ({
             <CardTitle className="text-gradient">{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {showSymbolCounter && (
+              <UsageLimitIndicator
+                used={items.length}
+                max={symbolLimit}
+                label={t('watchlists.symbols', 'Symbols')}
+                showBar={false}
+              />
+            )}
             <Button variant="outline" size="sm" className="rounded-xl" onClick={onEditClick}>
               <Pencil className="h-4 w-4 mr-2" />
               {t('common.edit')}
             </Button>
-            <Button size="sm" className="rounded-xl" onClick={onAddSymbolClick}>
+            <Button
+              size="sm"
+              className="rounded-xl"
+              onClick={onAddSymbolClick}
+              disabled={atSymbolLimit}
+              title={atSymbolLimit ? t('watchlists.symbolLimitReached', 'Symbol limit reached. Upgrade your plan to add more symbols.') : undefined}
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               {t('watchlists.addSymbol')}
             </Button>
@@ -122,7 +152,13 @@ const WatchlistContent: React.FC<WatchlistContentProps> = ({
               <p className="font-medium">{t('watchlists.noItemsTitle')}</p>
               <p className="text-sm text-muted-foreground mt-1">{t('watchlists.noItemsDesc')}</p>
             </div>
-            <Button variant="outline" size="sm" className="rounded-xl" onClick={onAddSymbolClick}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={onAddSymbolClick}
+              disabled={atSymbolLimit}
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               {t('watchlists.addSymbol')}
             </Button>

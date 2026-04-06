@@ -45,17 +45,18 @@ import {
   PaymentCanceled,
   TaxReporting,
   SocialFeed,
-  StrategyMarketplace,
-  TradersDirectory,
   Privacy,
   Terms,
   Contact,
+  Cookies,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useFingerprint } from '@/hooks/useFingerprint';
 import { PreferencesProvider } from '@/contexts/preferences-context';
+import { FeatureFlagsProvider } from '@/contexts/feature-flags-context';
+import { FeatureGate } from '@/components/guards/FeatureGate';
 import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 
@@ -68,6 +69,7 @@ function App() {
           <AuthProvider>
             <ThemeProvider>
               <PreferencesProvider>
+                <FeatureFlagsProvider>
                 <PageFiltersProvider>
                 <Routes>
                   {/* Make the homepage the root route */}
@@ -106,18 +108,16 @@ function App() {
                     <Route path="/account-management" element={<AccountManagement />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/backtesting" element={<Backtesting />} />
-                    <Route path="/trade-replay" element={<TradeReplay />} />
+                    <Route path="/reports" element={<FeatureGate featureKey="reports" requiredPlan="STARTER"><Reports /></FeatureGate>} />
+                    <Route path="/backtesting" element={<FeatureGate featureKey="backtesting" requiredPlan="PRO"><Backtesting /></FeatureGate>} />
+                    <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay" requiredPlan="PRO"><TradeReplay /></FeatureGate>} />
                     <Route path="/administration" element={<Administration />} />
-                    <Route path="/alerts" element={<Alerts />} />
+                    <Route path="/alerts" element={<FeatureGate featureKey="alerts" requiredPlan="STARTER"><Alerts /></FeatureGate>} />
                     <Route path="/risk-metrics" element={<RiskMetrics />} />
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/tax-reporting" element={<TaxReporting />} />
-                    <Route path="/social/feed" element={<SocialFeed />} />
-                    <Route path="/social/marketplace" element={<StrategyMarketplace />} />
-                    <Route path="/social/traders" element={<TradersDirectory />} />
+                    <Route path="/tax-reporting" element={<FeatureGate featureKey="tax_reporting" requiredPlan="PRO"><TaxReporting /></FeatureGate>} />
+                    <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
@@ -131,10 +131,12 @@ function App() {
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/cookies" element={<Cookies />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </PageFiltersProvider>
+                </FeatureFlagsProvider>
               </PreferencesProvider>
             </ThemeProvider>
           </AuthProvider>

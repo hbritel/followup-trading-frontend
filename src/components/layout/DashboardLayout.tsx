@@ -8,6 +8,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useIdleLogout } from '@/hooks/useIdleLogout';
 import { useOnboardingStatus } from '@/hooks/useOnboarding';
 import { OnboardingWizard } from '@/components/onboarding';
+import { useJournalReminder } from '@/hooks/useJournalReminder';
+import { useLiveNotifications } from '@/hooks/useNotifications';
+import JournalReminderPopup from '@/components/notifications/JournalReminderPopup';
 
 // Importer les composants nécessaires pour le dialogue d'avertissement
 import {
@@ -49,6 +52,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingDismissed(true);
   }, []);
+
+  // --- Journal reminder popup ---
+  const { showReminder, trigger: triggerReminder, dismiss: dismissReminder, snooze: snoozeReminder } =
+    useJournalReminder();
+
+  // Connect WebSocket live notifications; intercept JOURNAL_REMINDER events
+  useLiveNotifications({ onJournalReminder: triggerReminder });
 
   // --- Appel du hook d'inactivité ---
   // Récupérer les fonctions et états nécessaires
@@ -121,6 +131,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* --- Onboarding Wizard --- */}
       {showOnboarding && (
         <OnboardingWizard onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* --- Journal Reminder Popup --- */}
+      {showReminder && (
+        <JournalReminderPopup
+          onDismiss={dismissReminder}
+          onSnooze={snoozeReminder}
+        />
       )}
     </>
   );

@@ -72,7 +72,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, recentBadges = [], c
   return (
     <div className={cn('space-y-4', className)}>
       {/* Card preview */}
-      <div className="bg-gradient-to-br from-[#0c0c10] to-[#1a1a2e] rounded-2xl p-6 border border-white/10 shadow-2xl">
+      <div className="bg-gradient-to-br from-[#0c0c10] to-[#1a1a2e] rounded-2xl p-6 border border-slate-700 shadow-2xl">
         <div className="flex items-start gap-4 mb-4">
           {/* Level badge */}
           <div
@@ -136,35 +136,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, recentBadges = [], c
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 min-w-[120px]"
+          className="w-full text-xs"
           onClick={handleDownload}
         >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          {t('gamification.downloadCard', 'Download Card')}
+          <Download className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+          <span className="truncate">{t('gamification.downloadCard', 'Download')}</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 min-w-[120px]"
+          className="w-full text-xs"
           onClick={handleCopyLink}
         >
-          <Copy className="w-3.5 h-3.5 mr-1.5" />
-          {t('gamification.copyLink', 'Copy Link')}
+          <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+          <span className="truncate">{t('gamification.copyLink', 'Copy Link')}</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 min-w-[120px]"
+          className="w-full text-xs"
           onClick={handleShareX}
         >
-          <Twitter className="w-3.5 h-3.5 mr-1.5" />
-          {t('gamification.shareOnX', 'Share on X')}
+          <Twitter className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+          <span className="truncate">{t('gamification.shareOnX', 'Share on X')}</span>
         </Button>
       </div>
     </div>

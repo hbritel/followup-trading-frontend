@@ -9,6 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 // Import components
 import WatchlistsSidebar from '@/components/watchlists/WatchlistsSidebar';
@@ -30,9 +32,13 @@ import {
 
 import type { WatchlistResponseDto } from '@/types/dto';
 
+const WATCHLIST_LIMITS: Record<string, number> = { FREE: 1, STARTER: 3, PRO: 10, ELITE: 2147483647 };
+
 const Watchlists = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { currentPlan } = useFeatureFlags();
+  const maxWatchlists = WATCHLIST_LIMITS[currentPlan] ?? 1;
 
   // API hooks
   const { data: watchlists = [], isLoading, isError, refetch } = useWatchlists();
@@ -266,10 +272,21 @@ const Watchlists = () => {
             <h1 className="text-2xl font-bold text-gradient">{t('watchlists.title')}</h1>
             <p className="text-sm text-muted-foreground">{t('watchlists.description')}</p>
           </div>
-          <Button onClick={() => setOpenNewWatchlistDialog(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            {t('watchlists.newWatchlist')}
-          </Button>
+          <div className="flex flex-col items-end gap-1.5">
+            <UsageLimitIndicator
+              used={watchlists.length}
+              max={maxWatchlists}
+              label={t('watchlists.watchlistsUsed', 'Watchlists')}
+              showBar
+            />
+            <Button
+              onClick={() => setOpenNewWatchlistDialog(true)}
+              disabled={watchlists.length >= maxWatchlists}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              {t('watchlists.newWatchlist')}
+            </Button>
+          </div>
         </div>
 
         {watchlists.length === 0 ? (

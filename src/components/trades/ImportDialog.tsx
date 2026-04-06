@@ -1,7 +1,7 @@
 // src/components/trades/ImportDialog.tsx
 import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, FileText, X, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, FileText, X, ChevronDown, ChevronUp, Loader2, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -40,10 +40,10 @@ function formatFileSize(bytes: number): string {
 
 const FORMAT_OPTIONS = [
   { value: 'AUTO', labelKey: 'import.formatAuto', fallback: 'Auto-detect' },
+  { value: 'GENERIC_CSV', labelKey: 'import.formatFollowup', fallback: 'FollowUp Trading CSV' },
   { value: 'MT5_CSV', labelKey: 'import.formatMt5Csv', fallback: 'MT5 CSV' },
   { value: 'MT5_HTML', labelKey: 'import.formatMt5Html', fallback: 'MT5 HTML Report' },
   { value: 'CTRADER_CSV', labelKey: 'import.formatCtraderCsv', fallback: 'cTrader CSV' },
-  { value: 'GENERIC_CSV', labelKey: 'import.formatGenericCsv', fallback: 'Generic CSV' },
 ];
 
 const ImportDialog: React.FC<ImportDialogProps> = ({ open, onOpenChange }) => {
@@ -59,6 +59,23 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ open, onOpenChange }) => {
   const [errorDetailsExpanded, setErrorDetailsExpanded] = useState(false);
 
   const importMutation = useImportTrades();
+
+  const downloadTemplate = () => {
+    const template = [
+      'symbol,direction,open price,close price,quantity,profit,commission,open time,close time,comment',
+      'EURUSD,BUY,1.0850,1.0920,1.0,70.00,3.50,2026-01-15 10:30:00,2026-01-15 14:45:00,Example trade',
+      'GBPUSD,SELL,1.2650,1.2580,0.5,35.00,2.50,2026-01-20 09:00:00,2026-01-20 16:30:00,Scalp trade',
+    ].join('\n');
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'trade_import_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // --- File validation ---
   const validateFile = (f: File): string | null => {
@@ -277,6 +294,16 @@ const ImportDialog: React.FC<ImportDialogProps> = ({ open, onOpenChange }) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Template download */}
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="flex items-center gap-1.5 text-xs text-primary hover:underline transition-colors"
+              >
+                <Download className="h-3 w-3" />
+                {t('import.downloadTemplate', 'Download CSV template')}
+              </button>
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-1">

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import {
   Activity as ActivityIcon,
   Award as AwardIcon,
@@ -10,18 +11,16 @@ import {
   BookText as BookTextIcon,
   Calendar as CalendarIcon,
   ChevronDown as ChevronDownIcon,
-  CircleDollarSign as CircleDollarSignIcon,
   FileText as FileTextIcon,
-  Globe as GlobeIcon,
   LineChart as LineChartIcon,
   List as ListIcon,
+  Lock as LockIcon,
+  Newspaper as NewspaperIcon,
   PieChart as PieChartIcon,
   RefreshCcw as RefreshCcwIcon,
   Rewind as RewindIcon,
-  Rss as RssIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
-  ShoppingBag as ShoppingBagIcon,
   Trophy as TrophyIcon,
   Wallet as WalletIcon,
   BellRing as BellRingIcon,
@@ -31,6 +30,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useAuth } from '@/contexts/auth-context';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-sections';
 
@@ -45,6 +45,9 @@ function getInitialCollapsed(): Record<string, boolean> {
 const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const { isEnabled, hasPlan } = useFeatureFlags();
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>(getInitialCollapsed);
 
   const toggleSection = (index: number) => {
@@ -72,31 +75,28 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/insights', label: t('sidebar.insights'), icon: LineChartIcon },
         { href: '/performance', label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: '/statistics', label: t('sidebar.statistics'), icon: PieChartIcon },
-        { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon },
+        { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon, requiredPlan: 'PRO' as const },
         { href: '/watchlists', label: t('sidebar.watchlists'), icon: ListIcon },
-        { href: '/alerts', label: t('sidebar.alerts'), icon: BellRingIcon },
-        { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon },
-        { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon },
-        { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon },
-        { href: '/tax-reporting', label: t('sidebar.taxReporting', 'Tax Reporting'), icon: CalculatorIcon },
-        { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
-        { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
+        { href: '/alerts', label: t('sidebar.alerts'), icon: BellRingIcon, featureKey: 'alerts', requiredPlan: 'STARTER' as const },
+        { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon, featureKey: 'backtesting', requiredPlan: 'PRO' as const },
+        { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon, featureKey: 'trade_replay', requiredPlan: 'PRO' as const },
+        { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon, featureKey: 'reports', requiredPlan: 'STARTER' as const },
+        { href: '/tax-reporting', label: t('sidebar.taxReporting', 'Tax Reporting'), icon: CalculatorIcon, requiredPlan: 'PRO' as const },
       ],
     },
     {
       label: t('sidebar.social'),
       items: [
-        { href: '/social/feed', label: t('sidebar.socialFeed'), icon: RssIcon },
-        { href: '/social/marketplace', label: t('sidebar.marketplace'), icon: ShoppingBagIcon },
-        { href: '/social/traders', label: t('sidebar.traders'), icon: GlobeIcon },
+        { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
+        { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
+        { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
       ],
     },
     {
       label: t('sidebar.account'),
       items: [
         { href: '/accounts', label: t('sidebar.accounts'), icon: WalletIcon },
-        { href: '/account-management', label: t('sidebar.accountManagement'), icon: CircleDollarSignIcon },
-        { href: '/administration', label: t('sidebar.administration'), icon: ShieldIcon },
+        ...(isAdmin ? [{ href: '/administration', label: t('sidebar.administration'), icon: ShieldIcon }] : []),
       ],
     },
   ];
@@ -158,6 +158,16 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.href;
+                      const hasRequiredPlan = 'requiredPlan' in item && !!item.requiredPlan;
+                      // Plan check: user must have the required plan
+                      const planLocked = hasRequiredPlan
+                        ? !hasPlan(item.requiredPlan as string)
+                        : false;
+                      // Feature flag disabled (admin kill-switch) — only for items without plan gate
+                      const featureDisabled = !hasRequiredPlan && 'featureKey' in item && item.featureKey
+                        ? !isEnabled(item.featureKey as string)
+                        : false;
+                      const dimmed = featureDisabled || planLocked;
                       return (
                         <li key={item.href}>
                           <Link
@@ -165,20 +175,21 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                             onClick={onNavigate}
                             aria-current={isActive ? 'page' : undefined}
                             className={[
-                              'relative flex items-center gap-x-3 rounded-xl py-2.5',
+                              'relative flex items-center gap-x-2 rounded-xl py-2.5',
                               'justify-start px-2.5',
                               'text-sm font-medium transition-all duration-200',
-                              'overflow-hidden whitespace-nowrap',
-                              isActive
-                                ? [
-                                    'bg-primary/10 text-primary',
-                                    'shadow-[0_0_12px_hsl(var(--primary)/0.15)]',
-                                    'border border-primary/20',
-                                  ].join(' ')
-                                : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
+                              dimmed
+                                ? 'opacity-60 text-muted-foreground border border-transparent'
+                                : isActive
+                                  ? [
+                                      'bg-primary/10 text-primary',
+                                      'shadow-[0_0_12px_hsl(var(--primary)/0.15)]',
+                                      'border border-primary/20',
+                                    ].join(' ')
+                                  : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white border border-transparent',
                             ].join(' ')}
                           >
-                            {isActive && (
+                            {isActive && !dimmed && (
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
                             )}
 
@@ -186,13 +197,27 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                               className={[
                                 'flex-shrink-0 transition-colors duration-200',
                                 'w-5 h-5',
-                                isActive ? 'text-primary' : '',
+                                dimmed ? 'text-muted-foreground/50' : isActive ? 'text-primary' : '',
                               ].join(' ')}
                             />
 
-                            <span className="text-sm overflow-hidden whitespace-nowrap">
+                            <span className="text-sm truncate min-w-0 flex-1">
                               {item.label}
                             </span>
+
+                            {featureDisabled && (
+                              <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground/40" title={t('featureGate.unavailable', 'Feature disabled')} />
+                            )}
+                            {planLocked && hasRequiredPlan && (
+                              <span className={[
+                                'flex-shrink-0 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded-full border leading-none',
+                                item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' :
+                                item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
+                                'text-primary bg-primary/10 border-primary/20',
+                              ].join(' ')}>
+                                {(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()}+
+                              </span>
+                            )}
                           </Link>
                         </li>
                       );
@@ -262,7 +287,7 @@ const DashboardSidebar = () => {
   }
 
   return (
-    <div className="hidden md:flex flex-col h-full py-4 px-2 flex-shrink-0 w-60">
+    <div className="hidden md:flex flex-col h-full py-4 px-2 flex-shrink-0 w-64">
       <SidebarContent />
     </div>
   );

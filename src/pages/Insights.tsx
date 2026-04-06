@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 import PageTransition from '@/components/ui/page-transition';
 import PerformanceMetrics from '@/components/insights/PerformanceMetrics';
 import KpiStrip from '@/components/insights/KpiStrip';
@@ -355,7 +356,7 @@ const Insights = () => {
 
           {/* ---- Tab 2: AI Insights + Weekly Digest ---- */}
           <TabsContent value="ai" className="space-y-6">
-            {/* AI Insight cards */}
+            {/* AI Insight cards — patterns and risk warnings are advanced */}
             <section aria-label={t('insights.aiInsights', 'AI Insights')}>
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb className="h-5 w-5 text-amber-400" />
@@ -366,35 +367,39 @@ const Insights = () => {
                   </Badge>
                 )}
               </div>
-              {renderInsightsContent()}
+              <PlanGatedSection requiredPlan="PRO" feature="AI Insights — patterns and risk warnings">
+                {renderInsightsContent()}
+              </PlanGatedSection>
             </section>
 
             {/* Weekly Digest */}
-            <section aria-label={t('ai.digest', 'Weekly Digest')} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gradient-primary flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-amber-400" />
-                    {t('ai.digest', 'Weekly Digest')}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t('ai.digestDescription', 'AI-generated summary of your trading week')}
-                  </p>
+            <PlanGatedSection requiredPlan="PRO" feature="AI Digest">
+              <section aria-label={t('ai.digest', 'Weekly Digest')} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gradient-primary flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-amber-400" />
+                      {t('ai.digest', 'Weekly Digest')}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t('ai.digestDescription', 'AI-generated summary of your trading week')}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => generateDigest.mutate()}
+                    disabled={generateDigest.isPending || digestError}
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${generateDigest.isPending ? 'animate-spin' : ''}`} />
+                    {t('ai.generateDigest', 'Generate Digest')}
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => generateDigest.mutate()}
-                  disabled={generateDigest.isPending || digestError}
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${generateDigest.isPending ? 'animate-spin' : ''}`} />
-                  {t('ai.generateDigest', 'Generate Digest')}
-                </Button>
-              </div>
 
-              {renderDigestContent()}
-            </section>
+                {renderDigestContent()}
+              </section>
+            </PlanGatedSection>
           </TabsContent>
         </Tabs>
       </PageTransition>

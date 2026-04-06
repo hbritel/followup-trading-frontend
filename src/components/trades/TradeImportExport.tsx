@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Download, Upload, Loader2 } from 'lucide-react';
+import { Download, Upload, Loader2, Lock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,27 +13,29 @@ import {
 import { Trade } from '@/components/trades/TradesTableWrapper';
 import { tradeService } from '@/services/trade.service';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 
 /** Column key -> human-readable header */
+/** CSV headers — names match the GenericCsvParser aliases so export → re-import works */
 const COLUMN_HEADERS: Record<string, string> = {
   symbol: 'Symbol',
   type: 'Direction',
   status: 'Status',
   accountType: 'Account Type',
-  entryDate: 'Entry Date',
-  exitDate: 'Exit Date',
-  entryPrice: 'Entry Price',
-  exitPrice: 'Exit Price',
+  entryDate: 'Open Time',
+  exitDate: 'Close Time',
+  entryPrice: 'Open Price',
+  exitPrice: 'Close Price',
   quantity: 'Quantity',
   stopLoss: 'Stop Loss',
   takeProfit: 'Take Profit',
-  profit: 'P&L',
+  profit: 'Profit',
   profitPercentage: 'P&L %',
   balance: 'Balance',
-  fees: 'Fees',
+  fees: 'Commission',
   currency: 'Currency',
   strategy: 'Strategy',
-  notes: 'Notes',
+  notes: 'Comment',
   tags: 'Tags',
   createdAt: 'Created At',
   updatedAt: 'Updated At',
@@ -42,12 +44,29 @@ const COLUMN_HEADERS: Record<string, string> = {
 /** All exportable column keys in display order */
 const ALL_COLUMNS = Object.keys(COLUMN_HEADERS);
 
+/** Format an ISO date string to "YYYY-MM-DD HH:mm:ss" (UTC) for CSV export */
+function formatDateForCsv(isoString: unknown): string {
+  if (!isoString || typeof isoString !== 'string') return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+  } catch {
+    return '';
+  }
+}
+
 function getTradeValue(trade: Trade, col: string): string {
   const val = (trade as Record<string, unknown>)[col];
   if (val === undefined || val === null) return '';
   if (col === 'tags' && Array.isArray(val)) return (val as string[]).join('; ');
   if (col === 'profit' || col === 'balance' || col === 'fees') return String(Number(val).toFixed(2));
   if (col === 'profitPercentage') return String(Number(val).toFixed(2)) + '%';
+  // Format dates as "YYYY-MM-DD HH:mm:ss" for import compatibility
+  if (col === 'entryDate' || col === 'exitDate' || col === 'createdAt' || col === 'updatedAt') {
+    return formatDateForCsv(val);
+  }
   return String(val);
 }
 
@@ -80,6 +99,7 @@ function downloadBlob(content: string, filename: string, mimeType: string) {
 
 interface TradeImportExportProps {
   onImport?: (trades: any[]) => void;
+  onOpenImportDialog?: () => void;
   filteredTrades: Trade[];
   visibleColumns: Record<string, boolean>;
   accountFilter?: string;
@@ -88,19 +108,20 @@ interface TradeImportExportProps {
 
 const TradeImportExport: React.FC<TradeImportExportProps> = ({
   onImport,
+  onOpenImportDialog,
   filteredTrades,
   visibleColumns,
   accountFilter,
   totalElements,
 }) => {
   const { accountIds: resolvedAccountIds } = useAccountFilter(accountFilter ?? 'all');
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const { hasPlan } = useFeatureFlags();
+  const canExport = hasPlan('STARTER');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'excel'>('csv');
   const [exportScope, setExportScope] = useState<'filtered' | 'all'>('filtered');
   const [exportColumns, setExportColumns] = useState<'visible' | 'all'>('visible');
   const [isExporting, setIsExporting] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
 
   const openExportDialog = (format: 'csv' | 'excel') => {
     setExportFormat(format);
@@ -140,47 +161,43 @@ const TradeImportExport: React.FC<TradeImportExportProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const handleImport = () => {
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        const csvData = event.target.result as string;
-        console.log('CSV Data:', csvData);
-        setImportDialogOpen(false);
-        setFile(null);
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => openExportDialog('csv')}>
-            Export as CSV
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openExportDialog('excel')}>
-            Export as Excel
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={!canExport}>
+                    {canExport ? (
+                      <Download className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Lock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    )}
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => openExportDialog('csv')}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openExportDialog('excel')}>
+                    Export as Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </span>
+          </TooltipTrigger>
+          {!canExport && (
+            <TooltipContent>
+              <p>Upgrade to Starter to export trades</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
 
-      <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+      <Button variant="outline" onClick={() => onOpenImportDialog?.()}>
         <Upload className="h-4 w-4 mr-2" />
         Import
       </Button>
@@ -294,43 +311,6 @@ const TradeImportExport: React.FC<TradeImportExportProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Import Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Import Trades</DialogTitle>
-            <DialogDescription>
-              Upload a CSV or Excel file containing your trade data.
-              The file should include headers matching the expected format.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center gap-4">
-              <Input
-                id="file-upload"
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleFileChange}
-              />
-            </div>
-            {file && (
-              <p className="text-sm text-muted-foreground">
-                Selected file: {file.name}
-              </p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleImport} disabled={!file}>
-              Import
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

@@ -9,6 +9,7 @@ import PageTransition from '@/components/ui/page-transition';
 import JournalEntryForm from '@/components/journal/JournalEntryForm';
 import JournalEntries from '@/components/journal/JournalEntries';
 import JournalCalendar from '@/components/journal/JournalCalendar';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -144,14 +145,20 @@ const DailyJournal = () => {
                 {t('journal.newEntry')}
               </Button>
 
-              {/* Calendar */}
-              <JournalCalendar
-                entries={journalEntries}
-                selectedMonth={selectedMonth}
-                onMonthChange={(m) => setSelectedMonth(startOfMonth(m))}
-                onSelectDate={handleCalendarSelectDate}
-                onNewEntryForDate={openNewEntry}
-              />
+              {/* Calendar — STARTER+ only */}
+              <PlanGatedSection
+                requiredPlan="STARTER"
+                feature={t('journal.calendarView', 'Journal calendar view')}
+                showBlurredPreview
+              >
+                <JournalCalendar
+                  entries={journalEntries}
+                  selectedMonth={selectedMonth}
+                  onMonthChange={(m) => setSelectedMonth(startOfMonth(m))}
+                  onSelectDate={handleCalendarSelectDate}
+                  onNewEntryForDate={openNewEntry}
+                />
+              </PlanGatedSection>
             </div>
 
             {/* Monthly summary card */}
@@ -199,17 +206,24 @@ const DailyJournal = () => {
               </Button>
             </div>
 
-            {/* Mobile collapsible calendar */}
+            {/* Mobile collapsible calendar — STARTER+ only */}
             {calendarOpen && (
-              <div className="glass-card rounded-2xl p-4 lg:hidden">
-                <JournalCalendar
-                  entries={journalEntries}
-                  selectedMonth={selectedMonth}
-                  onMonthChange={(m) => setSelectedMonth(startOfMonth(m))}
-                  onSelectDate={handleCalendarSelectDate}
-                  onNewEntryForDate={openNewEntry}
-                />
-              </div>
+              <PlanGatedSection
+                requiredPlan="STARTER"
+                feature={t('journal.calendarView', 'Journal calendar view')}
+                showBlurredPreview
+                className="lg:hidden"
+              >
+                <div className="glass-card rounded-2xl p-4">
+                  <JournalCalendar
+                    entries={journalEntries}
+                    selectedMonth={selectedMonth}
+                    onMonthChange={(m) => setSelectedMonth(startOfMonth(m))}
+                    onSelectDate={handleCalendarSelectDate}
+                    onNewEntryForDate={openNewEntry}
+                  />
+                </div>
+              </PlanGatedSection>
             )}
 
             {/* Entry list header */}

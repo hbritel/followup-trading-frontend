@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useCallback, useRef } from 'react';
+import { Clock, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreference,
 } from '@/hooks/useNotificationPreferences';
+import type { NotificationPreferenceDto } from '@/types/dto';
 
 // ---------------------------------------------------------------------------
 // Event type ordering
@@ -47,6 +48,25 @@ const NotificationPreferences: React.FC = () => {
   const getPref = (eventType: string) =>
     prefs?.find((p) => p.eventType === eventType);
 
+  // Debounce time changes — user may scroll through values quickly
+  const timeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTimeChange = useCallback(
+    (eventType: string, time: string, pref: NotificationPreferenceDto | undefined) => {
+      if (!pref) return;
+      if (timeDebounceRef.current) clearTimeout(timeDebounceRef.current);
+      timeDebounceRef.current = setTimeout(() => {
+        updatePref.mutate({
+          eventType,
+          inAppEnabled: pref.inAppEnabled,
+          emailEnabled: pref.emailEnabled,
+          scheduledTime: time,
+        });
+      }, 600);
+    },
+    [updatePref],
+  );
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-10">
@@ -83,8 +103,26 @@ const NotificationPreferences: React.FC = () => {
               index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
             )}
           >
-            {/* Event label */}
-            <span className="flex-1 text-sm">{label}</span>
+            {/* Event label (with optional time picker for JOURNAL_REMINDER) */}
+            <div className="flex-1 min-w-0">
+              <span className="text-sm">{label}</span>
+              {eventType === 'JOURNAL_REMINDER' &&
+                (pref?.inAppEnabled || pref?.emailEnabled) && (
+                  <div className="flex items-center gap-2 mt-1.5 ml-0.5">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground">
+                      {t('notifications.remindAt', 'Remind me at')}
+                    </span>
+                    <input
+                      type="time"
+                      defaultValue={pref?.scheduledTime ?? '18:00'}
+                      onChange={(e) => handleTimeChange(eventType, e.target.value, pref)}
+                      className="bg-transparent border border-border rounded-md px-2 py-1 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      aria-label="Journal reminder time"
+                    />
+                  </div>
+                )}
+            </div>
 
             {/* In-App toggle */}
             <div className="w-16 flex justify-center">

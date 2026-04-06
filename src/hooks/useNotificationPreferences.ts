@@ -22,14 +22,16 @@ export const useUpdateNotificationPreference = () => {
       eventType,
       inAppEnabled,
       emailEnabled,
+      scheduledTime,
     }: {
       eventType: string;
       inAppEnabled: boolean;
       emailEnabled: boolean;
-    }) => notificationService.updatePreference(eventType, inAppEnabled, emailEnabled),
+      scheduledTime?: string | null;
+    }) => notificationService.updatePreference(eventType, inAppEnabled, emailEnabled, scheduledTime),
 
     // Optimistic update — toggle immediately without waiting for server
-    onMutate: async ({ eventType, inAppEnabled, emailEnabled }) => {
+    onMutate: async ({ eventType, inAppEnabled, emailEnabled, scheduledTime }) => {
       await queryClient.cancelQueries({ queryKey: PREFS_KEY });
 
       const previousPrefs = queryClient.getQueryData<NotificationPreferenceDto[]>(PREFS_KEY);
@@ -38,7 +40,12 @@ export const useUpdateNotificationPreference = () => {
         if (!old) return old;
         return old.map((pref) =>
           pref.eventType === eventType
-            ? { ...pref, inAppEnabled, emailEnabled }
+            ? {
+                ...pref,
+                inAppEnabled,
+                emailEnabled,
+                ...(scheduledTime !== undefined ? { scheduledTime } : {}),
+              }
             : pref,
         );
       });

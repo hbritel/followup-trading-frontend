@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, TrendingUp, Loader2 } from 'lucide-react';
+import { CreditCard, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useSubscription, useCreatePortal } from '@/hooks/useSubscription';
 import type { UsageDto } from '@/types/dto';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -54,31 +55,53 @@ const UsageBar: React.FC<UsageBarProps> = ({ label, current, max, suffix = '' })
   );
 };
 
+const PLAN_SYNC_LABEL: Record<string, string> = {
+  FREE: 'Monthly sync',
+  STARTER: 'Weekly sync',
+  PRO: 'Daily sync',
+  ELITE: 'Real-time sync',
+};
+
 const buildUsageBars = (usage: UsageDto, t: (key: string) => string) => [
   {
     label: t('subscription.features.brokerConnections'),
-    current: usage.connections.current,
-    max: usage.connections.max,
+    current: usage.connectionsUsed ?? 0,
+    max: usage.connectionsMax ?? 0,
   },
   {
     label: t('subscription.features.tradesStored'),
-    current: usage.trades.current,
-    max: usage.trades.max,
+    current: usage.tradesUsed ?? 0,
+    max: usage.tradesMax ?? 0,
+  },
+  {
+    label: t('subscription.features.strategies'),
+    current: usage.strategiesUsed ?? 0,
+    max: usage.strategiesMax ?? 0,
+  },
+  {
+    label: t('subscription.features.tags'),
+    current: usage.tagsUsed ?? 0,
+    max: usage.tagsMax ?? 0,
+  },
+  {
+    label: t('subscription.features.watchlists'),
+    current: usage.watchlistsUsed ?? 0,
+    max: usage.watchlistsMax ?? 0,
   },
   {
     label: `${t('subscription.features.aiCoach')} (${t('common.today')})`,
-    current: usage.aiMessages.today,
-    max: usage.aiMessages.max,
+    current: usage.aiMessagesToday ?? 0,
+    max: usage.aiMessagesMax ?? 0,
   },
   {
     label: t('subscription.features.alerts'),
-    current: usage.alerts.current,
-    max: usage.alerts.max,
+    current: usage.alertsUsed ?? 0,
+    max: usage.alertsMax ?? 0,
   },
   {
     label: `${t('subscription.features.reports')} (${t('common.thisMonth')})`,
-    current: usage.reports.thisMonth,
-    max: usage.reports.max,
+    current: usage.reportsThisMonth ?? 0,
+    max: usage.reportsMax ?? 0,
   },
 ];
 
@@ -89,7 +112,10 @@ const UsageDashboard: React.FC = () => {
   const createPortal = useCreatePortal();
 
   const handleManageBilling = () => {
-    createPortal.mutate({ returnUrl: window.location.href });
+    createPortal.mutate(
+      { returnUrl: window.location.href },
+      { onError: () => navigate('/account-management?tab=subscription') },
+    );
   };
 
   if (isLoading) {
@@ -167,7 +193,7 @@ const UsageDashboard: React.FC = () => {
                   {t('subscription.manageBilling')}
                 </Button>
               )}
-              <Button size="sm" onClick={() => navigate('/pricing')}>
+              <Button size="sm" onClick={() => navigate('/account-management?tab=subscription')}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 {t('subscription.upgrade')}
               </Button>
@@ -176,14 +202,34 @@ const UsageDashboard: React.FC = () => {
         </CardHeader>
       </Card>
 
+      {/* Sync frequency info */}
+      <Card className="glass-card">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-2 text-sm">
+            <RefreshCw className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground">{t('subscription.brokerSyncFrequency', 'Broker sync frequency')}:</span>
+            <span className="font-medium">{PLAN_SYNC_LABEL[subscription.plan] ?? PLAN_SYNC_LABEL.FREE}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Usage bars */}
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-base">{t('subscription.usage')}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           {usageBars.map((bar) => (
-            <UsageBar key={bar.label} {...bar} />
+            <div key={bar.label} className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{bar.label}</span>
+              </div>
+              <UsageLimitIndicator
+                used={bar.current}
+                max={bar.max}
+                showBar
+              />
+            </div>
           ))}
         </CardContent>
       </Card>

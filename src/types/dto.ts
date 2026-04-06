@@ -805,6 +805,7 @@ export interface NotificationPreferenceDto {
   eventType: string;
   inAppEnabled: boolean;
   emailEnabled: boolean;
+  scheduledTime?: string | null;
 }
 
 // --- Gamification types ---
@@ -858,30 +859,70 @@ export interface UpdatePublicProfileRequestDto {
 
 // --- Subscription / Billing types ---
 
+export type PlanName = 'FREE' | 'STARTER' | 'PRO' | 'ELITE';
+
 export interface UsageDto {
-  connections: { current: number; max: number };
-  trades: { current: number; max: number };
-  aiMessages: { today: number; max: number };
-  alerts: { current: number; max: number };
-  reports: { thisMonth: number; max: number };
+  connectionsUsed: number;
+  connectionsMax: number;
+  tradesUsed: number;
+  tradesMax: number;
+  aiMessagesToday: number;
+  aiMessagesMax: number;
+  alertsUsed: number;
+  alertsMax: number;
+  reportsThisMonth: number;
+  reportsMax: number;
+  backtestingEnabled: boolean;
+  strategiesUsed: number;
+  strategiesMax: number;
+  tagsUsed: number;
+  tagsMax: number;
+  watchlistsUsed: number;
+  watchlistsMax: number;
 }
 
 export interface SubscriptionDto {
-  plan: 'FREE' | 'PRO' | 'ENTERPRISE';
-  status: 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'TRIALING';
-  billingInterval: 'MONTHLY' | 'ANNUAL' | null;
+  plan: string;
+  planDisplayName: string;
+  status: string;
+  billingInterval: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  monthlyPriceUsd: number;
+  annualMonthlyPriceUsd: number;
   usage: UsageDto;
 }
 
 export interface PlanDto {
   name: string;
   displayName: string;
-  monthlyPrice: number;
-  annualPrice: number;
+  monthlyPriceUsd: number;
+  annualMonthlyPriceUsd: number;
+  maxBrokerConnections: number;
+  maxTrades: number;
+  maxAiMessagesPerDay: number;
+  maxAlerts: number;
+  maxReportsPerMonth: number;
+  backtestingEnabled: boolean;
+  publicProfileEnabled: boolean;
   features: string[];
-  limits: Record<string, number>;
+  maxStrategies: number;
+  maxTags: number;
+  maxWatchlists: number;
+  maxSymbolsPerWatchlist: number;
+  tradeReplayEnabled: boolean;
+  taxPreviewEnabled: boolean;
+  fullTaxReportEnabled: boolean;
+  csvExportEnabled: boolean;
+  advancedMetricsEnabled: boolean;
+  scheduledReportsEnabled: boolean;
+  marketFeedEnabled: boolean;
+  economicCalendarEnabled: boolean;
+  websocketEnabled: boolean;
+  maxOhlcvHistoryDays: number;
+  maxBacktestSessions: number;
+  maxManualSyncsPerDay: number;
+  autoSyncFrequencyDays: number;
 }
 
 export interface CheckoutResponseDto {
@@ -944,7 +985,7 @@ export interface ShareStrategyRequestDto {
 
 // --- Tax Reporting types ---
 
-export type TaxJurisdiction = 'US' | 'UK' | 'DE' | 'FR' | 'CA' | 'AU' | 'OTHER';
+export type TaxJurisdiction = 'US' | 'UK' | 'DE' | 'FR' | 'CA' | 'AU' | 'MA' | 'OTHER';
 export type HoldingPeriod = 'SHORT_TERM' | 'LONG_TERM';
 
 export interface TaxLotDto {
@@ -977,6 +1018,9 @@ export interface TaxReportDto {
   totalGain: number;
   totalShortTermGain: number;
   totalLongTermGain: number;
+  totalWins: number;
+  totalLosses: number;
+  tradeCount: number;
   washSaleCount: number;
   washSaleAdjustment: number;
   estimatedTax: number;
@@ -1048,4 +1092,33 @@ export interface RuleComplianceStatDto {
   followRate: number;
   avgPnlWhenFollowed?: number;
   avgPnlWhenNotFollowed?: number;
+}
+
+// ── Market Feed ────────────────────────────────────────────
+export type MarketFeedSource = 'REDDIT' | 'TWITTER' | 'RSS' | 'NEWS_API';
+export type MarketFeedCategory = 'FOREX' | 'CRYPTO' | 'STOCKS' | 'COMMODITIES' | 'MACRO' | 'ALL';
+
+export interface MarketFeedItemDto {
+  id: string;
+  source: MarketFeedSource;
+  category: MarketFeedCategory;
+  title: string;
+  summary: string;
+  url: string;
+  imageUrl?: string;
+  author?: string;
+  subreddit?: string;  // Reddit only
+  symbols?: string[];  // Mentioned tickers: ["GOLD", "EURUSD"]
+  sentiment?: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+  score?: number;      // Reddit upvotes or engagement score
+  publishedAt: string;
+}
+
+export interface MarketFeedSourceConfig {
+  id: string;
+  source: MarketFeedSource;
+  sourceKey: string;
+  label: string;
+  enabled: boolean;
+  categories: MarketFeedCategory[];
 }

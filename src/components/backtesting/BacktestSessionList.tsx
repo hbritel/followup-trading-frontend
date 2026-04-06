@@ -14,6 +14,7 @@ interface BacktestSessionListProps {
   onCreateSession: () => void;
   onEditSession: (session: BacktestResponseDto) => void;
   onDeleteSession: (id: string) => void;
+  createDisabled?: boolean;
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
@@ -24,7 +25,7 @@ const statusConfig: Record<string, { icon: React.ReactNode; color: string; label
 };
 
 const BacktestSessionList: React.FC<BacktestSessionListProps> = ({
-  sessions, strategies = [], onSelectSession, onCreateSession, onEditSession, onDeleteSession,
+  sessions, strategies = [], onSelectSession, onCreateSession, onEditSession, onDeleteSession, createDisabled = false,
 }) => {
   const { t } = useTranslation();
 
@@ -37,8 +38,13 @@ const BacktestSessionList: React.FC<BacktestSessionListProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {/* Create new session card */}
       <Card
-        className="glass-card rounded-2xl border-dashed border-2 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
-        onClick={onCreateSession}
+        className={cn(
+          'glass-card rounded-2xl border-dashed border-2 transition-all',
+          createDisabled
+            ? 'cursor-not-allowed opacity-50'
+            : 'cursor-pointer hover:border-primary/50 hover:bg-primary/5'
+        )}
+        onClick={createDisabled ? undefined : onCreateSession}
       >
         <CardContent className="flex flex-col items-center justify-center gap-3 py-12">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -46,7 +52,11 @@ const BacktestSessionList: React.FC<BacktestSessionListProps> = ({
           </div>
           <div className="text-center">
             <p className="font-medium">{t('backtesting.newSession')}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t('backtesting.newSessionHint')}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {createDisabled
+                ? t('backtesting.sessionLimitReached', 'Session limit reached. Upgrade to Elite for unlimited sessions.')
+                : t('backtesting.newSessionHint')}
+            </p>
           </div>
         </CardContent>
       </Card>

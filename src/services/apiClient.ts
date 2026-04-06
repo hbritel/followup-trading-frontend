@@ -15,6 +15,15 @@ const isTokenExpired = (token: string | null): boolean => {
     } catch { return true; }
 };
 
+// Returns true if the token will expire within the given margin (seconds)
+const isTokenExpiringSoon = (token: string | null, marginSeconds = 60): boolean => {
+    if (!token) return true;
+    try {
+        const decoded: { exp: number } = jwtDecode(token);
+        return decoded.exp < (Date.now() / 1000) + marginSeconds;
+    } catch { return true; }
+};
+
 const getAccessToken = (): string | null => localStorage.getItem('accessToken');
 const getRefreshToken = (): string | null => localStorage.getItem('refreshToken');
 const setTokens = (accessToken: string, refreshToken?: string): void => {
@@ -57,15 +66,46 @@ const apiClient = axios.create({
     },
 });
 
+// Proactive token refresh — shared promise to avoid concurrent refreshes
+let proactiveRefreshPromise: Promise<string | null> | null = null;
+
+async function ensureFreshToken(): Promise<string | null> {
+    const token = getAccessToken();
+    if (!token) return null;
+
+    // Token is still fresh (>60s left) — use it as-is
+    if (!isTokenExpiringSoon(token, 60)) return token;
+
+    // Token is expired or about to expire — try refresh
+    if (proactiveRefreshPromise) return proactiveRefreshPromise;
+
+    const refreshTokenValue = getRefreshToken();
+    if (!refreshTokenValue || isTokenExpired(refreshTokenValue)) return token; // Let the 401 interceptor handle it
+
+    proactiveRefreshPromise = (async () => {
+        try {
+            const rs = await authService.refreshToken({ refreshToken: refreshTokenValue });
+            setTokens(rs.accessToken, rs.refreshToken);
+            return rs.accessToken;
+        } catch {
+            return token; // Fall back to the old token, 401 interceptor will handle
+        } finally {
+            proactiveRefreshPromise = null;
+        }
+    })();
+
+    return proactiveRefreshPromise;
+}
+
 // Request interceptor -- adds JWT token and device fingerprint
 apiClient.interceptors.request.use(
     async (axiosConfig: InternalAxiosRequestConfig) => {
-        const token = getAccessToken();
-        if (token && axiosConfig.headers) {
-            const publicAuthPaths = ['/auth/login', '/auth/register', '/auth/refresh-token', '/auth/forgot-password', '/auth/reset-password'];
-            const isPublicAuthPath = publicAuthPaths.some(path => axiosConfig.url?.startsWith(path));
+        const publicAuthPaths = ['/auth/login', '/auth/register', '/auth/refresh-token', '/auth/forgot-password', '/auth/reset-password'];
+        const isPublicAuthPath = publicAuthPaths.some(path => axiosConfig.url?.startsWith(path));
 
-            if (!isPublicAuthPath) {
+        if (!isPublicAuthPath) {
+            const token = await ensureFreshToken();
+            if (token && axiosConfig.headers) {
                 axiosConfig.headers.Authorization = `Bearer ${token}`;
             }
         }

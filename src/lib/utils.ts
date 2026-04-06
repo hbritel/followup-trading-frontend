@@ -30,16 +30,20 @@ export function formatCurrency(value: number, currencyCode: string = 'USD'): str
  */
 export function formatDate(dateString: string | undefined | null): string {
   if (!dateString) return '-';
-  
+
   try {
     const date = new Date(dateString);
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       return '-';
     }
-    
-    return new Intl.DateTimeFormat('en-US', {
+
+    // Use the current i18n locale (falls back to browser default)
+    const locale = document.documentElement.lang || navigator.language || 'en-US';
+
+    return new Intl.DateTimeFormat(locale, {
+      weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric',

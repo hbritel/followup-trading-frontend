@@ -5,6 +5,7 @@ import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTradePerformance, useDashboardSummary } from '@/hooks/useAdvancedMetrics';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 import PageTransition from '@/components/ui/page-transition';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
@@ -175,104 +176,106 @@ const Performance = () => {
 
         <PerformanceChart analytics={analytics} />
 
-        <Card className="glass-card rounded-2xl">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle className="text-gradient flex items-center gap-1.5">{t('insights.performanceAnalysis')}<InfoTip text={t('performance.performanceAnalysisTooltip')} /></CardTitle>
-                <CardDescription>{t('performance.detailedBreakdown')}</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" />
-                  {t('common.filter')}
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  {t('common.export')}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="symbols">
-              <TabsList>
-                <TabsTrigger value="symbols">{t('performance.symbols')}</TabsTrigger>
-                <TabsTrigger value="direction">{t('performance.direction', 'Direction')}</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="symbols" className="mt-4">
-                <div className="overflow-x-auto">
-                  {isLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : symbolEntries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
-                  ) : (
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4 label-caps">{t('performance.symbol')}</th>
-                          <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {symbolEntries
-                          .sort((a, b) => b.total - a.total)
-                          .map((item) => (
-                          <tr key={item.symbol} className="border-b">
-                            <td className="py-3 px-4 text-sm font-mono">{item.symbol}</td>
-                            <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
-                              item.total >= 0 ? "text-profit" : "text-loss")}>
-                              {formatCurrency(item.total)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+        <PlanGatedSection requiredPlan="PRO" feature="Advanced performance analytics">
+          <Card className="glass-card rounded-2xl">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('insights.performanceAnalysis')}<InfoTip text={t('performance.performanceAnalysisTooltip')} /></CardTitle>
+                  <CardDescription>{t('performance.detailedBreakdown')}</CardDescription>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="direction" className="mt-4">
-                <div className="overflow-x-auto">
-                  {isLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : directionEntries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
-                  ) : (
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4 label-caps">{t('common.direction', 'Direction')}</th>
-                          <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {directionEntries.map((item) => (
-                          <tr key={item.direction} className="border-b">
-                            <td className={cn("py-3 px-4 text-sm font-mono",
-                              item.direction.toLowerCase() === 'long' ? 'text-primary' : 'text-destructive'
-                            )}>{item.direction}</td>
-                            <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
-                              item.total >= 0 ? "text-profit" : "text-loss")}>
-                              {formatCurrency(item.total)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    <Filter className="mr-2 h-4 w-4" />
+                    {t('common.filter')}
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    {t('common.export')}
+                  </Button>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="symbols">
+                <TabsList>
+                  <TabsTrigger value="symbols">{t('performance.symbols')}</TabsTrigger>
+                  <TabsTrigger value="direction">{t('performance.direction', 'Direction')}</TabsTrigger>
+                </TabsList>
 
-        <DetailedPerformanceCharts startDate={dateRange.startDate} endDate={dateRange.endDate} accountId={accountId} />
+                <TabsContent value="symbols" className="mt-4">
+                  <div className="overflow-x-auto">
+                    {isLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : symbolEntries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                    ) : (
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-3 px-4 label-caps">{t('performance.symbol')}</th>
+                            <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {symbolEntries
+                            .sort((a, b) => b.total - a.total)
+                            .map((item) => (
+                            <tr key={item.symbol} className="border-b">
+                              <td className="py-3 px-4 text-sm font-mono">{item.symbol}</td>
+                              <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
+                                item.total >= 0 ? "text-profit" : "text-loss")}>
+                                {formatCurrency(item.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="direction" className="mt-4">
+                  <div className="overflow-x-auto">
+                    {isLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : directionEntries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                    ) : (
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-3 px-4 label-caps">{t('common.direction', 'Direction')}</th>
+                            <th className="text-right py-3 px-4 label-caps">{t('performance.netPnl')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {directionEntries.map((item) => (
+                            <tr key={item.direction} className="border-b">
+                              <td className={cn("py-3 px-4 text-sm font-mono",
+                                item.direction.toLowerCase() === 'long' ? 'text-primary' : 'text-destructive'
+                              )}>{item.direction}</td>
+                              <td className={cn("py-3 px-4 text-sm font-medium text-right tabular-nums font-mono",
+                                item.total >= 0 ? "text-profit" : "text-loss")}>
+                                {formatCurrency(item.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <DetailedPerformanceCharts startDate={dateRange.startDate} endDate={dateRange.endDate} accountId={accountId} />
+        </PlanGatedSection>
       </PageTransition>
     </DashboardLayout>
   );

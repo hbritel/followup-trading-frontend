@@ -13,11 +13,20 @@ import EditSessionDialog from '@/components/backtesting/EditSessionDialog';
 
 import { useBacktests, useRunBacktest, useUpdateBacktest, useDeleteBacktest } from '@/hooks/useBacktests';
 import { useStrategies } from '@/hooks/useStrategies';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import type { BacktestResponseDto } from '@/types/dto';
+
+// PRO: max 3 backtest sessions. ELITE: unlimited.
+const BACKTEST_SESSION_LIMITS: Record<string, number> = {
+  PRO: 3,
+  ELITE: 2147483647,
+};
 
 const Backtesting = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { currentPlan } = useFeatureFlags();
 
   const { data: sessions = [], isLoading } = useBacktests();
   const { data: strategies = [] } = useStrategies();
@@ -30,6 +39,11 @@ const Backtesting = () => {
   const [editingSession, setEditingSession] = useState<BacktestResponseDto | null>(null);
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) || null;
+
+  const sessionLimit = BACKTEST_SESSION_LIMITS[currentPlan] ?? 2147483647;
+  const isUnlimitedSessions = sessionLimit >= 2147483647;
+  const atSessionLimit = !isUnlimitedSessions && sessions.length >= sessionLimit;
+  const showSessionCounter = !isUnlimitedSessions;
 
   const handleCreateSession = (data: {
     name: string;
@@ -121,6 +135,14 @@ const Backtesting = () => {
                 <h1 className="text-2xl font-bold text-gradient">{t('backtesting.title')}</h1>
                 <p className="text-sm text-muted-foreground mt-1">{t('backtesting.subtitle')}</p>
               </div>
+              {showSessionCounter && (
+                <UsageLimitIndicator
+                  used={sessions.length}
+                  max={sessionLimit}
+                  label={t('backtesting.sessionsLabel', 'Backtest sessions')}
+                  showBar={false}
+                />
+              )}
             </div>
 
             <BacktestSessionList
@@ -130,6 +152,7 @@ const Backtesting = () => {
               onCreateSession={() => setShowNewSessionDialog(true)}
               onEditSession={setEditingSession}
               onDeleteSession={handleDeleteSession}
+              createDisabled={atSessionLimit}
             />
           </>
         )}
