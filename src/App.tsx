@@ -48,6 +48,7 @@ import {
   Privacy,
   Terms,
   Contact,
+  Cookies,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -107,16 +108,16 @@ function App() {
                     <Route path="/account-management" element={<AccountManagement />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/reports" element={<FeatureGate featureKey="reports"><Reports /></FeatureGate>} />
-                    <Route path="/backtesting" element={<FeatureGate featureKey="backtesting"><Backtesting /></FeatureGate>} />
-                    <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay"><TradeReplay /></FeatureGate>} />
+                    <Route path="/reports" element={<FeatureGate featureKey="reports" requiredPlan="STARTER"><Reports /></FeatureGate>} />
+                    <Route path="/backtesting" element={<FeatureGate featureKey="backtesting" requiredPlan="PRO"><Backtesting /></FeatureGate>} />
+                    <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay" requiredPlan="PRO"><TradeReplay /></FeatureGate>} />
                     <Route path="/administration" element={<Administration />} />
-                    <Route path="/alerts" element={<FeatureGate featureKey="alerts"><Alerts /></FeatureGate>} />
+                    <Route path="/alerts" element={<FeatureGate featureKey="alerts" requiredPlan="STARTER"><Alerts /></FeatureGate>} />
                     <Route path="/risk-metrics" element={<RiskMetrics />} />
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/tax-reporting" element={<TaxReporting />} />
-                    <Route path="/social/feed" element={<FeatureGate featureKey="market_feed"><SocialFeed /></FeatureGate>} />
+                    <Route path="/tax-reporting" element={<FeatureGate featureKey="tax_reporting" requiredPlan="PRO"><TaxReporting /></FeatureGate>} />
+                    <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
@@ -130,6 +131,7 @@ function App() {
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />
+                  <Route path="/cookies" element={<Cookies />} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

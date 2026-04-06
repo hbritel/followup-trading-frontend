@@ -40,10 +40,11 @@ export const notificationService = {
     eventType: string,
     inAppEnabled: boolean,
     emailEnabled: boolean,
+    scheduledTime?: string | null,
   ): Promise<NotificationPreferenceDto> => {
     const response = await apiClient.put<NotificationPreferenceDto>(
       `/notifications/preferences/${eventType}`,
-      { inAppEnabled, emailEnabled },
+      { inAppEnabled, emailEnabled, ...(scheduledTime !== undefined ? { scheduledTime } : {}) },
     );
     return response.data;
   },

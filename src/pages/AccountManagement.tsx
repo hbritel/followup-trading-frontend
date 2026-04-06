@@ -935,10 +935,12 @@ const SubscriptionTab = () => {
           <p className="text-sm text-muted-foreground">
             {t('accountManagement.availablePlansDesc', 'Compare plans and choose the one that fits your trading needs. Upgrade or downgrade anytime.')}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map((plan) => {
               const isCurrent = plan.name === subscription?.plan;
               const isPopular = plan.name === 'PRO';
+              const isElite = plan.name === 'ELITE';
+              const isStarter = plan.name === 'STARTER';
               return (
                 <div
                   key={plan.name}
@@ -948,7 +950,11 @@ const SubscriptionTab = () => {
                       ? 'border-primary/40 bg-primary/5'
                       : isPopular
                         ? 'border-primary/20'
-                        : 'border-border/50 hover:border-border',
+                        : isElite
+                          ? 'border-amber-500/30'
+                          : isStarter
+                            ? 'border-blue-500/20'
+                            : 'border-border/50 hover:border-border',
                   )}
                 >
                   {isPopular && !isCurrent && (
@@ -956,8 +962,17 @@ const SubscriptionTab = () => {
                       {t('accountManagement.popular', 'Popular')}
                     </Badge>
                   )}
+                  {isStarter && !isCurrent && (
+                    <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] bg-blue-500 text-white">
+                      {t('accountManagement.bestValue', 'Best Value')}
+                    </Badge>
+                  )}
                   <div className="flex items-center justify-between">
-                    <p className="font-semibold">{plan.displayName}</p>
+                    <p className={cn(
+                      'font-semibold',
+                      isElite && 'text-amber-500',
+                      isStarter && 'text-blue-400',
+                    )}>{plan.displayName}</p>
                     {isCurrent && (
                       <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30">
                         {t('accountManagement.currentPlanLabel')}

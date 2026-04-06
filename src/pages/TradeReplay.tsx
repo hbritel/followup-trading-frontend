@@ -9,6 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ArrowLeft, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   Calendar, Hash, DollarSign,
 } from 'lucide-react';
@@ -17,18 +23,22 @@ import BacktestChart, { type StaticPriceLine, type StaticMarker } from '@/compon
 import TradeReplaySelector, { type TradeReplayFilters } from '@/components/tradereplay/TradeReplaySelector';
 import { useTradeReplay } from '@/hooks/useTradeReplay';
 import { useMarketHistory } from '@/hooks/useMarketHistory';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import PlanBadge from '@/components/subscription/PlanBadge';
 
-const TIMEFRAMES = [
-  { value: '1m', label: '1m' },
-  { value: '5m', label: '5m' },
-  { value: '15m', label: '15m' },
-  { value: '1h', label: '1H' },
-  { value: '1d', label: '1D' },
-  { value: '1wk', label: '1W' },
+// Timeframes: PRO gets 1h, 4h, 1d — ELITE gets all (including 1m, 5m, 15m, 1w)
+const TIMEFRAMES: { value: string; label: string; requiredPlan: 'PRO' | 'ELITE' }[] = [
+  { value: '1m',  label: '1m',  requiredPlan: 'ELITE' },
+  { value: '5m',  label: '5m',  requiredPlan: 'ELITE' },
+  { value: '15m', label: '15m', requiredPlan: 'ELITE' },
+  { value: '1h',  label: '1H',  requiredPlan: 'PRO' },
+  { value: '1d',  label: '1D',  requiredPlan: 'PRO' },
+  { value: '1wk', label: '1W',  requiredPlan: 'ELITE' },
 ];
 
 const TradeReplay = () => {
   const { t } = useTranslation();
+  const { hasPlan } = useFeatureFlags();
   const [searchParams] = useSearchParams();
   const initialTradeId = searchParams.get('tradeId');
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(initialTradeId);
@@ -159,19 +169,48 @@ const TradeReplay = () => {
               </div>
 
               {/* Timeframe selector */}
-              <div className="flex items-center gap-1 rounded-xl border bg-card/50 p-1 w-fit">
-                {TIMEFRAMES.map(tf => (
-                  <Button
-                    key={tf.value}
-                    variant={activeTimeframe === tf.value ? 'default' : 'ghost'}
-                    size="sm"
-                    className={cn('h-8 px-3 text-xs font-mono', activeTimeframe === tf.value && 'shadow-sm')}
-                    onClick={() => setCustomTimeframe(tf.value === replayData.interval ? null : tf.value)}
-                  >
-                    {tf.label}
-                  </Button>
-                ))}
-              </div>
+              <TooltipProvider>
+                <div className="flex items-center gap-1 rounded-xl border bg-card/50 p-1 w-fit">
+                  {TIMEFRAMES.map(tf => {
+                    const accessible = hasPlan(tf.requiredPlan);
+                    const isActive = activeTimeframe === tf.value;
+                    return (
+                      <Tooltip key={tf.value} delayDuration={200}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">
+                            <Button
+                              variant={isActive ? 'default' : 'ghost'}
+                              size="sm"
+                              disabled={!accessible}
+                              className={cn(
+                                'h-8 px-3 text-xs font-mono relative',
+                                isActive && 'shadow-sm',
+                                !accessible && 'opacity-50 cursor-not-allowed',
+                              )}
+                              onClick={() => accessible && setCustomTimeframe(tf.value === replayData.interval ? null : tf.value)}
+                            >
+                              {tf.label}
+                              {!accessible && (
+                                <span className="absolute -top-1.5 -right-1 text-[8px] font-bold text-amber-400 leading-none">
+                                  E
+                                </span>
+                              )}
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        {!accessible && (
+                          <TooltipContent side="bottom">
+                            <div className="flex items-center gap-1.5">
+                              <PlanBadge plan={tf.requiredPlan} size="sm" />
+                              <span className="text-xs">required</span>
+                            </div>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
             </div>
 
             {/* Chart */}

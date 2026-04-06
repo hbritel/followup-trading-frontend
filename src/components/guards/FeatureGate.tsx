@@ -1,67 +1,82 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { ShieldAlert } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import UpgradePrompt from '@/components/subscription/UpgradePrompt';
 
 interface FeatureGateProps {
   featureKey: string;
+  requiredPlan?: 'STARTER' | 'PRO' | 'ELITE';
   children: React.ReactNode;
 }
 
+const PLAN_HIERARCHY: Record<string, number> = {
+  FREE: 0,
+  STARTER: 1,
+  PRO: 2,
+  ELITE: 3,
+};
+
+function hasSufficientPlan(userPlan: string, requiredPlan: string): boolean {
+  return (PLAN_HIERARCHY[userPlan] ?? 0) >= (PLAN_HIERARCHY[requiredPlan] ?? 0);
+}
+
 /**
- * Wraps a page component and blocks rendering if the feature flag is disabled.
- * Shows a dialog and navigates back to the dashboard.
+ * Wraps a page component and gates access based on subscription plan.
+ *
+ * Access logic:
+ * 1. If requiredPlan is specified, the user MUST have that plan or higher.
+ *    Feature flags do NOT bypass plan requirements.
+ * 2. Feature flags are for admin kill-switches only (globally disable a feature
+ *    for maintenance/bugs). Not used for per-user access control.
+ * 3. For commercial gestures (granting a user access above their plan),
+ *    use the admin "Change Plan" action instead.
  */
-export function FeatureGate({ featureKey, children }: FeatureGateProps) {
-  const { isEnabled, isLoading } = useFeatureFlags();
+export function FeatureGate({ featureKey, requiredPlan, children }: FeatureGateProps) {
+  const { isLoading, currentPlan } = useFeatureFlags();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [showDialog, setShowDialog] = useState(false);
 
-  const enabled = isEnabled(featureKey);
-
-  useEffect(() => {
-    if (!isLoading && !enabled) {
-      setShowDialog(true);
-    }
-  }, [isLoading, enabled]);
+  const planSufficient = !requiredPlan || hasSufficientPlan(currentPlan, requiredPlan);
 
   if (isLoading) {
     return <>{children}</>;
   }
 
-  if (!enabled) {
+  // Plan gate — user must have the required plan
+  if (!planSufficient) {
     return (
-      <AlertDialog open={showDialog} onOpenChange={() => { setShowDialog(false); navigate('/dashboard'); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <ShieldAlert className="h-5 w-5 text-destructive" />
-              </div>
-              <AlertDialogTitle>{t('featureGate.unavailable', 'Feature Unavailable')}</AlertDialogTitle>
-            </div>
-            <AlertDialogDescription>
-              {t('featureGate.disabledMessage', 'This feature is currently disabled by the administrator. Please contact support if you need access.')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setShowDialog(false); navigate('/dashboard'); }}>
-              {t('featureGate.backToDashboard', 'Back to Dashboard')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="relative min-h-[60vh]">
+        {/* Blurred page content rendered behind */}
+        <div
+          className="pointer-events-none select-none"
+          style={{ filter: 'blur(14px)', opacity: 0.3 }}
+          aria-hidden="true"
+        >
+          {children}
+        </div>
+
+        {/* Overlay with upgrade prompt */}
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
+          <UpgradePrompt
+            feature={t(`featureGate.features.${featureKey}`, featureKey)}
+            requiredPlan={requiredPlan}
+            currentPlan={currentPlan}
+            className="max-w-md w-full shadow-2xl"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="mt-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('common.goBack', 'Go back')}
+          </Button>
+        </div>
+      </div>
     );
   }
 

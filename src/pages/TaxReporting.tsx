@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { usePageFilter } from '@/contexts/page-filters-context';
 import PageTransition from '@/components/ui/page-transition';
@@ -1065,6 +1067,8 @@ const CountryExportTab = ({
 const TaxReporting = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { hasPlan } = useFeatureFlags();
+  const isElite = hasPlan('ELITE');
 
   const [selectedAccountId, setSelectedAccountId] = usePageFilter(
     'taxReporting',
@@ -1197,7 +1201,29 @@ const TaxReporting = () => {
         {/* ST/LT breakdown strip — only when report is available */}
         {report && <BreakdownStrip report={report} config={config} />}
 
-        {/* Tabs */}
+        {/* PRO upgrade prompt — shown only for PRO users (not ELITE) */}
+        {!isElite && (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-300 flex items-center gap-3">
+            <span className="flex-shrink-0 text-base">★</span>
+            <span>
+              {t(
+                'tax.eliteUpsell',
+                'Upgrade to Elite for the full tax report: detailed tax lots, wash sale detection, and CSV exports for 14 jurisdictions.'
+              )}
+              {' '}
+              <a href="/pricing" className="underline font-medium hover:text-amber-200">
+                {t('subscription.viewPlans', 'View plans')}
+              </a>
+            </span>
+          </div>
+        )}
+
+        {/* Tabs — ELITE only: tax lots table, wash sales, export */}
+        <PlanGatedSection
+          requiredPlan="ELITE"
+          feature={t('tax.eliteFeature', 'Upgrade to Elite for full tax report with 14 jurisdictions, tax lots, and wash sale detection.')}
+          showBlurredPreview={false}
+        >
         <Tabs key={jurisdiction} defaultValue={defaultTab} className="w-full">
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="lots">{t('tax.tabs.taxLots', 'Tax Lots')}</TabsTrigger>
@@ -1281,6 +1307,7 @@ const TaxReporting = () => {
             />
           </TabsContent>
         </Tabs>
+        </PlanGatedSection>
 
       </PageTransition>
     </DashboardLayout>

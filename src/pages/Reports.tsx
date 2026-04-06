@@ -9,7 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import ReportTemplates from '@/components/reports/ReportTemplates';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
   Dialog,
   DialogContent,
@@ -81,6 +83,13 @@ const Reports = () => {
   const generateReport = useGenerateReport();
   const downloadReport = useDownloadReport();
   const deleteReport = useDeleteReport();
+
+  // Subscription usage
+  const { data: subscription } = useSubscription();
+  const reportsUsed = subscription?.usage?.reportsThisMonth ?? 0;
+  const reportsMax = subscription?.usage?.reportsMax ?? 0;
+  const isUnlimited = reportsMax >= 2147483647;
+  const atMonthlyLimit = !isUnlimited && reportsMax > 0 && reportsUsed >= reportsMax;
 
   // Reports list filters
   const [filterType, setFilterType] = useState<'all' | ReportType>('all');
@@ -304,9 +313,24 @@ const Reports = () => {
       <PageTransition className="space-y-8">
 
         {/* ── Page header ── */}
-        <div>
-          <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{t('reports.description')}</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">{t('reports.description')}</p>
+          </div>
+
+          {/* Monthly usage counter */}
+          {reportsMax > 0 && (
+            <div className="flex items-center gap-2 rounded-xl border bg-card/50 px-4 py-2.5 shrink-0">
+              <UsageLimitIndicator
+                used={reportsUsed}
+                max={reportsMax}
+                label={t('reports.reportsThisMonth', 'Reports this month:')}
+                showBar
+                className="min-w-[160px]"
+              />
+            </div>
+          )}
         </div>
 
         {/* ── Template gallery ── */}
@@ -314,7 +338,7 @@ const Reports = () => {
           <h2 id="templates-heading" className="text-base font-semibold mb-4">
             {t('reports.templatesTitle')}
           </h2>
-          <ReportTemplates onGenerate={openDialog} />
+          <ReportTemplates onGenerate={openDialog} atMonthlyLimit={atMonthlyLimit} />
         </section>
 
         {/* ── Generated reports list ── */}
@@ -499,12 +523,18 @@ const Reports = () => {
             <Button variant="outline" onClick={() => setShowDialog(false)}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleGenerate} disabled={generateReport.isPending}>
+            <Button
+              onClick={handleGenerate}
+              disabled={generateReport.isPending || atMonthlyLimit}
+              title={atMonthlyLimit ? t('reports.monthlyLimitReached', 'Monthly report limit reached') : undefined}
+            >
               {generateReport.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t('reports.generatingBtn')}
                 </>
+              ) : atMonthlyLimit ? (
+                t('reports.monthlyLimitReached', 'Monthly limit reached')
               ) : (
                 t('reports.generateReport')
               )}

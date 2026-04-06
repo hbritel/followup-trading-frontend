@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSymbolSearch } from '@/hooks/useSymbolSearch';
 import { cn } from '@/lib/utils';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import PlanBadge from '@/components/subscription/PlanBadge';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import {
   Card,
   CardContent,
@@ -75,8 +78,29 @@ import type {
   AlertStatus
 } from '@/types/dto';
 
+// ── Plan-based alert type access ──────────────────────────────────────────────
+// STARTER: only PRICE
+// PRO: all except CUSTOM
+// ELITE: all types
+const ALERT_TYPE_PLAN: Record<AlertType, 'STARTER' | 'PRO' | 'ELITE'> = {
+  PRICE: 'STARTER',
+  DRAWDOWN: 'PRO',
+  PROFIT_TARGET: 'PRO',
+  WIN_RATE: 'PRO',
+  CUSTOM: 'ELITE',
+};
+
+// Active alert limits per plan
+const ALERT_LIMITS: Record<string, number> = {
+  FREE: 0,
+  STARTER: 5,
+  PRO: 25,
+  ELITE: 2147483647,
+};
+
 const AlertManager = () => {
   const { t } = useTranslation();
+  const { hasPlan, currentPlan } = useFeatureFlags();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [showNewAlertDialog, setShowNewAlertDialog] = useState(false);
@@ -425,6 +449,11 @@ const AlertManager = () => {
   const activeCount = alerts.filter(a => a.status === 'ACTIVE').length;
   const triggeredCount = alerts.filter(a => a.status === 'TRIGGERED').length;
 
+  const alertLimit = ALERT_LIMITS[currentPlan] ?? 0;
+  const isUnlimitedAlerts = alertLimit >= 2147483647;
+  const atAlertLimit = !isUnlimitedAlerts && activeCount >= alertLimit;
+  const showAlertCounter = currentPlan !== 'FREE';
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -479,13 +508,21 @@ const AlertManager = () => {
               <CardTitle>{t('alerts.alertManagement')}</CardTitle>
               <CardDescription>{t('alerts.alertManagementDescription')}</CardDescription>
             </div>
-            <div className="mt-2 sm:mt-0">
+            <div className="mt-2 sm:mt-0 flex flex-col sm:flex-row sm:items-center gap-3">
+              {showAlertCounter && (
+                <UsageLimitIndicator
+                  used={activeCount}
+                  max={alertLimit}
+                  label={t('alerts.activeAlerts', 'Active alerts')}
+                  showBar={false}
+                />
+              )}
               <Dialog open={showNewAlertDialog} onOpenChange={(open) => {
                 setShowNewAlertDialog(open);
                 if (!open) resetForm();
               }}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button disabled={atAlertLimit} title={atAlertLimit ? t('alerts.limitReachedTooltip', 'Upgrade your plan to create more alerts') : undefined}>
                     <Plus className="mr-2 h-4 w-4" />
                     {t('alerts.createAlert')}
                   </Button>
@@ -575,33 +612,57 @@ const AlertManager = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="PRICE">
-                            <div className="flex items-center">
-                              <DollarSign className="mr-2 h-4 w-4" />
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-4 w-4" />
                               {t('alerts.typePrice')}
                             </div>
                           </SelectItem>
-                          <SelectItem value="DRAWDOWN">
-                            <div className="flex items-center">
-                              <Activity className="mr-2 h-4 w-4" />
+                          <SelectItem
+                            value="DRAWDOWN"
+                            disabled={!hasPlan(ALERT_TYPE_PLAN.DRAWDOWN)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Activity className="h-4 w-4" />
                               {t('alerts.typeDrawdown')}
+                              {!hasPlan(ALERT_TYPE_PLAN.DRAWDOWN) && (
+                                <PlanBadge plan={ALERT_TYPE_PLAN.DRAWDOWN} size="sm" />
+                              )}
                             </div>
                           </SelectItem>
-                          <SelectItem value="PROFIT_TARGET">
-                            <div className="flex items-center">
-                              <ArrowUp className="mr-2 h-4 w-4" />
+                          <SelectItem
+                            value="PROFIT_TARGET"
+                            disabled={!hasPlan(ALERT_TYPE_PLAN.PROFIT_TARGET)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <ArrowUp className="h-4 w-4" />
                               {t('alerts.typeProfitTarget')}
+                              {!hasPlan(ALERT_TYPE_PLAN.PROFIT_TARGET) && (
+                                <PlanBadge plan={ALERT_TYPE_PLAN.PROFIT_TARGET} size="sm" />
+                              )}
                             </div>
                           </SelectItem>
-                          <SelectItem value="WIN_RATE">
-                            <div className="flex items-center">
-                              <BarChart className="mr-2 h-4 w-4" />
+                          <SelectItem
+                            value="WIN_RATE"
+                            disabled={!hasPlan(ALERT_TYPE_PLAN.WIN_RATE)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <BarChart className="h-4 w-4" />
                               {t('alerts.typeWinRate')}
+                              {!hasPlan(ALERT_TYPE_PLAN.WIN_RATE) && (
+                                <PlanBadge plan={ALERT_TYPE_PLAN.WIN_RATE} size="sm" />
+                              )}
                             </div>
                           </SelectItem>
-                          <SelectItem value="CUSTOM">
-                            <div className="flex items-center">
-                              <BellRing className="mr-2 h-4 w-4" />
+                          <SelectItem
+                            value="CUSTOM"
+                            disabled={!hasPlan(ALERT_TYPE_PLAN.CUSTOM)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <BellRing className="h-4 w-4" />
                               {t('alerts.typeCustom')}
+                              {!hasPlan(ALERT_TYPE_PLAN.CUSTOM) && (
+                                <PlanBadge plan={ALERT_TYPE_PLAN.CUSTOM} size="sm" />
+                              )}
                             </div>
                           </SelectItem>
                         </SelectContent>

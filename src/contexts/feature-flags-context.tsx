@@ -2,21 +2,33 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/apiClient';
 import { useAuth } from '@/contexts/auth-context';
+import type { SubscriptionDto } from '@/types/dto';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type FeatureFlags = Record<string, boolean>;
 
+const PLAN_HIERARCHY: Record<string, number> = {
+  FREE: 0,
+  STARTER: 1,
+  PRO: 2,
+  ELITE: 3,
+};
+
 interface FeatureFlagsContextValue {
   flags: FeatureFlags;
   isLoading: boolean;
   isEnabled: (key: string) => boolean;
+  currentPlan: string;
+  hasPlan: (required: string) => boolean;
 }
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue>({
   flags: {},
   isLoading: false,
   isEnabled: () => true,
+  currentPlan: 'FREE',
+  hasPlan: () => true,
 });
 
 // ── Provider ─────────────────────────────────────────────────────────────────
@@ -26,26 +38,48 @@ const fetchFlags = async (): Promise<FeatureFlags> => {
   return response.data;
 };
 
+const fetchSubscription = async (): Promise<SubscriptionDto> => {
+  const response = await apiClient.get<SubscriptionDto>('/subscription');
+  return response.data;
+};
+
 export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
 
-  const { data: flags = {}, isLoading } = useQuery({
+  const { data: flags = {}, isLoading: flagsLoading } = useQuery({
     queryKey: ['feature-flags'],
     queryFn: fetchFlags,
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     retry: false,
-    enabled: isAuthenticated, // Only fetch when user is logged in
+    enabled: isAuthenticated,
   });
 
+  const { data: subscription, isLoading: subLoading } = useQuery({
+    queryKey: ['subscription', 'me'],
+    queryFn: fetchSubscription,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    enabled: isAuthenticated,
+  });
+
+  const isLoading = flagsLoading || subLoading;
+  const currentPlan = subscription?.plan ?? 'FREE';
+
   const isEnabled = (key: string) => {
-    if (isLoading) return true; // Don't block while loading
+    if (flagsLoading) return true; // Don't block while loading
     return flags[key] !== false; // Default to enabled if flag doesn't exist
   };
 
+  const hasPlan = (required: string): boolean => {
+    return (PLAN_HIERARCHY[currentPlan] ?? 0) >= (PLAN_HIERARCHY[required] ?? 0);
+  };
+
   return (
-    <FeatureFlagsContext.Provider value={{ flags, isLoading, isEnabled }}>
+    <FeatureFlagsContext.Provider value={{ flags, isLoading, isEnabled, currentPlan, hasPlan }}>
       {children}
     </FeatureFlagsContext.Provider>
   );
@@ -66,4 +100,5 @@ export const FEATURES = {
   MARKET_FEED: 'market_feed',
   REPORTS: 'reports',
   ALERTS: 'alerts',
+  TAX_REPORTING: 'tax_reporting',
 } as const;

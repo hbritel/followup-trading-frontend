@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 import PageTransition from '@/components/ui/page-transition';
 import {
   Card,
@@ -356,138 +357,140 @@ const Statistics = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="by-day">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="by-day">{t('statistics.performanceByDay')}</TabsTrigger>
-            <TabsTrigger value="by-time">{t('statistics.performanceByTime')}</TabsTrigger>
-          </TabsList>
+        <PlanGatedSection requiredPlan="PRO" feature="Advanced metrics — performance by day/time and session analysis">
+          <Tabs defaultValue="by-day">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="by-day">{t('statistics.performanceByDay')}</TabsTrigger>
+              <TabsTrigger value="by-time">{t('statistics.performanceByTime')}</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="by-day" className="space-y-6">
+            <TabsContent value="by-day" className="space-y-6">
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByDay')}<InfoTip text={t('statistics.performanceByDayTooltip')} /></CardTitle>
+                  <CardDescription>{t('statistics.winLossDistributionByDay')}</CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={tradeDayData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
+                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="by-time" className="space-y-6">
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByTime')}<InfoTip text={t('statistics.performanceByTimeTooltip')} /></CardTitle>
+                  <CardDescription>{t('statistics.winLossDistributionByTime')}</CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={tradeTimeData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
+                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByDay')}<InfoTip text={t('statistics.performanceByDayTooltip')} /></CardTitle>
-                <CardDescription>{t('statistics.winLossDistributionByDay')}</CardDescription>
+                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.bestTradingSessions')}<InfoTip text={t('statistics.bestSessionsTooltip')} /></CardTitle>
+                <CardDescription>{t('statistics.highestWinRateSessions')}</CardDescription>
               </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={tradeDayData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
-                    <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                  </div>
+                ) : bestSessions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+                ) : (
+                  <div className="space-y-4">
+                    {bestSessions.map((s) => (
+                      <div key={s.label} className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{s.label}</div>
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {t('statistics.tradesCount', { count: s.totalTrades })}
+                          </div>
+                        </div>
+                        <div className="font-mono tabular-nums text-sm font-semibold text-profit">
+                          {s.winRate.toFixed(1)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="by-time" className="space-y-6">
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByTime')}<InfoTip text={t('statistics.performanceByTimeTooltip')} /></CardTitle>
-                <CardDescription>{t('statistics.winLossDistributionByTime')}</CardDescription>
+                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.worstTradingSessions')}<InfoTip text={t('statistics.worstSessionsTooltip')} /></CardTitle>
+                <CardDescription>{t('statistics.lowestWinRateSessions')}</CardDescription>
               </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={tradeTimeData}
-                    margin={{
-                      top: 20,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
-                    <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
-                  </BarChart>
-                </ResponsiveContainer>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                  </div>
+                ) : worstSessions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+                ) : (
+                  <div className="space-y-4">
+                    {worstSessions.map((s) => (
+                      <div key={s.label} className="flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{s.label}</div>
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {t('statistics.tradesCount', { count: s.totalTrades })}
+                          </div>
+                        </div>
+                        <div className="font-mono tabular-nums text-sm font-semibold text-loss">
+                          {s.winRate.toFixed(1)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="glass-card rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.bestTradingSessions')}<InfoTip text={t('statistics.bestSessionsTooltip')} /></CardTitle>
-              <CardDescription>{t('statistics.highestWinRateSessions')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-                </div>
-              ) : bestSessions.length === 0 ? (
-                <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
-              ) : (
-                <div className="space-y-4">
-                  {bestSessions.map((s) => (
-                    <div key={s.label} className="flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">{s.label}</div>
-                        <div className="text-xs font-mono text-muted-foreground">
-                          {t('statistics.tradesCount', { count: s.totalTrades })}
-                        </div>
-                      </div>
-                      <div className="font-mono tabular-nums text-sm font-semibold text-profit">
-                        {s.winRate.toFixed(1)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.worstTradingSessions')}<InfoTip text={t('statistics.worstSessionsTooltip')} /></CardTitle>
-              <CardDescription>{t('statistics.lowestWinRateSessions')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-                </div>
-              ) : worstSessions.length === 0 ? (
-                <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
-              ) : (
-                <div className="space-y-4">
-                  {worstSessions.map((s) => (
-                    <div key={s.label} className="flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">{s.label}</div>
-                        <div className="text-xs font-mono text-muted-foreground">
-                          {t('statistics.tradesCount', { count: s.totalTrades })}
-                        </div>
-                      </div>
-                      <div className="font-mono tabular-nums text-sm font-semibold text-loss">
-                        {s.winRate.toFixed(1)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+          </div>
+        </PlanGatedSection>
       </PageTransition>
     </DashboardLayout>
   );

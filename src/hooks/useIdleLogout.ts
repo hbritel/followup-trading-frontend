@@ -4,6 +4,7 @@ import { useIdleTimer } from 'react-idle-timer';
 import { useAuth } from '@/contexts/auth-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { useToast } from '@/hooks/use-toast';
+import { useTokenRefreshTimer } from '@/hooks/useTokenRefreshTimer';
 
 interface UseIdleLogoutReturn {
     isIdleModalOpen: boolean;
@@ -17,6 +18,7 @@ export function useIdleLogout(): UseIdleLogoutReturn {
     const { preferences } = usePreferences();
     const { toast } = useToast();
     const [isIdleModalOpen, setIsIdleModalOpen] = useState<boolean>(false);
+    const [isIdle, setIsIdle] = useState(false);
 
     // Derive timeout directly from shared preferences context.
     // This reacts immediately when the user saves a new value in Settings.
@@ -24,7 +26,13 @@ export function useIdleLogout(): UseIdleLogoutReturn {
     const timeoutMinutes =
         savedTimeout && savedTimeout > 0 ? savedTimeout : Infinity;
 
+    // Background token refresh — keeps JWT alive while user is within their
+    // inactivity window. Stops when idle timeout fires (security: abandoned
+    // sessions will NOT keep refreshing tokens).
+    useTokenRefreshTimer(!isIdle && isAuthenticated);
+
     const handleOnIdle = useCallback(() => {
+        setIsIdle(true);
         if (isAuthenticated && timeoutMinutes !== Infinity) {
             toast({
                 title: "Session Expired",
@@ -36,6 +44,7 @@ export function useIdleLogout(): UseIdleLogoutReturn {
     }, [logout, isAuthenticated, timeoutMinutes, toast]);
 
     const handleOnActive = useCallback(() => {
+        setIsIdle(false);
         setIsIdleModalOpen(false);
     }, []);
 

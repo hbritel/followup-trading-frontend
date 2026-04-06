@@ -805,6 +805,7 @@ export interface NotificationPreferenceDto {
   eventType: string;
   inAppEnabled: boolean;
   emailEnabled: boolean;
+  scheduledTime?: string | null;
 }
 
 // --- Gamification types ---
@@ -858,6 +859,8 @@ export interface UpdatePublicProfileRequestDto {
 
 // --- Subscription / Billing types ---
 
+export type PlanName = 'FREE' | 'STARTER' | 'PRO' | 'ELITE';
+
 export interface UsageDto {
   connectionsUsed: number;
   connectionsMax: number;
@@ -870,6 +873,12 @@ export interface UsageDto {
   reportsThisMonth: number;
   reportsMax: number;
   backtestingEnabled: boolean;
+  strategiesUsed: number;
+  strategiesMax: number;
+  tagsUsed: number;
+  tagsMax: number;
+  watchlistsUsed: number;
+  watchlistsMax: number;
 }
 
 export interface SubscriptionDto {
@@ -897,6 +906,23 @@ export interface PlanDto {
   backtestingEnabled: boolean;
   publicProfileEnabled: boolean;
   features: string[];
+  maxStrategies: number;
+  maxTags: number;
+  maxWatchlists: number;
+  maxSymbolsPerWatchlist: number;
+  tradeReplayEnabled: boolean;
+  taxPreviewEnabled: boolean;
+  fullTaxReportEnabled: boolean;
+  csvExportEnabled: boolean;
+  advancedMetricsEnabled: boolean;
+  scheduledReportsEnabled: boolean;
+  marketFeedEnabled: boolean;
+  economicCalendarEnabled: boolean;
+  websocketEnabled: boolean;
+  maxOhlcvHistoryDays: number;
+  maxBacktestSessions: number;
+  maxManualSyncsPerDay: number;
+  autoSyncFrequencyDays: number;
 }
 
 export interface CheckoutResponseDto {

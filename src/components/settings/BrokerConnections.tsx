@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -30,6 +32,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -40,6 +48,8 @@ import {
   Wifi,
   WifiOff,
   Unplug,
+  Lock,
+  ArrowUpCircle,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -97,9 +107,16 @@ interface ConnectDialogProps {
 
 function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps) {
   const { t } = useTranslation();
+  const { currentPlan } = useFeatureFlags();
   const [selectedProtocol, setSelectedProtocol] = useState<string | undefined>(undefined);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [displayName, setDisplayName] = useState('');
+
+  // Default sync frequency based on current plan
+  const defaultSyncFrequency = useMemo(() => {
+    const allowed = SYNC_FREQUENCIES_BY_PLAN[currentPlan] ?? ['MONTHLY'];
+    return allowed[0]; // Highest allowed for the plan (first in list is best)
+  }, [currentPlan]);
 
   const effectiveProtocol = selectedProtocol || broker?.defaultProtocol;
 
@@ -147,7 +164,7 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
         protocol: effectiveProtocol,
         credentials: JSON.stringify(formValues),
         displayName: displayName.trim() || undefined,
-        syncFrequency: 'HOURLY',
+        syncFrequency: defaultSyncFrequency,
       });
 
       toast({
@@ -293,6 +310,8 @@ interface BrokerCardProps {
   isSyncing: boolean;
   isTesting: boolean;
   isDisconnecting: boolean;
+  currentPlan: string;
+  onUpgrade: () => void;
 }
 
 function BrokerCard({
@@ -305,10 +324,21 @@ function BrokerCard({
   isSyncing,
   isTesting,
   isDisconnecting,
+  currentPlan,
+  onUpgrade,
 }: BrokerCardProps) {
   const { t } = useTranslation();
   const isConnected = connection?.status === 'CONNECTED';
   const hasConnection = !!connection;
+
+  const syncCooldownDays = connection?.lastSyncTime
+    ? daysUntilNextSync(connection.lastSyncTime, currentPlan)
+    : 0;
+  const syncOnCooldown = syncCooldownDays > 0;
+
+  // FREE users cannot manually trigger sync
+  const canManuallySync = currentPlan !== 'FREE';
+  const syncButtonDisabled = isSyncing || syncOnCooldown;
 
   const getSyncFrequencyLabel = (freq: string) => {
     const key: Record<string, string> = {
@@ -403,19 +433,57 @@ function BrokerCard({
           <>
             {isConnected && (
               <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onSync(connection.id)}
-                  disabled={isSyncing}
-                >
-                  {isSyncing ? (
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCcw className="mr-2 h-3.5 w-3.5" />
-                  )}
-                  {t('settings.syncNow', 'Sync Now')}
-                </Button>
+                {/* Manual sync — gated by plan */}
+                {!canManuallySync ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-muted-foreground"
+                          onClick={onUpgrade}
+                        >
+                          <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
+                          {t('settings.upgradeSyncNow', 'Upgrade to sync')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('settings.freeNoManualSync', 'Manual sync is not available on the Free plan. Upgrade to Starter or higher.')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onSync(connection.id)}
+                            disabled={syncButtonDisabled}
+                          >
+                            {isSyncing ? (
+                              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                            ) : syncOnCooldown ? (
+                              <Lock className="mr-2 h-3.5 w-3.5" />
+                            ) : (
+                              <RefreshCcw className="mr-2 h-3.5 w-3.5" />
+                            )}
+                            {t('settings.syncNow', 'Sync Now')}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {syncOnCooldown && (
+                        <TooltipContent>
+                          {t('settings.syncCooldown', 'Next sync available in {{days}} day(s)', { days: syncCooldownDays })}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
                 <Button
                   size="sm"
                   variant="outline"
@@ -479,9 +547,69 @@ function BrokerGridSkeleton() {
   );
 }
 
+// -- Plan-based sync frequency labels --
+const PLAN_SYNC_LABEL: Record<string, string> = {
+  FREE: 'Monthly sync',
+  STARTER: 'Weekly sync',
+  PRO: 'Daily sync',
+  ELITE: 'Real-time sync',
+};
+
+// Frequencies available per plan (subset available for selection)
+const SYNC_FREQUENCIES_BY_PLAN: Record<string, string[]> = {
+  FREE: ['MONTHLY'],
+  STARTER: ['WEEKLY', 'MONTHLY'],
+  PRO: ['DAILY', 'WEEKLY', 'MONTHLY'],
+  ELITE: ['EVERY_5_MINUTES', 'EVERY_15_MINUTES', 'EVERY_30_MINUTES', 'HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY'],
+};
+
+const ALL_SYNC_FREQUENCIES = [
+  'EVERY_5_MINUTES',
+  'EVERY_15_MINUTES',
+  'EVERY_30_MINUTES',
+  'HOURLY',
+  'DAILY',
+  'WEEKLY',
+  'MONTHLY',
+];
+
+const SYNC_FREQUENCY_PLAN_REQUIRED: Record<string, string> = {
+  EVERY_5_MINUTES: 'ELITE',
+  EVERY_15_MINUTES: 'ELITE',
+  EVERY_30_MINUTES: 'ELITE',
+  HOURLY: 'ELITE',
+  DAILY: 'PRO',
+  WEEKLY: 'STARTER',
+  MONTHLY: 'FREE',
+};
+
+const SYNC_FREQUENCY_LABELS: Record<string, string> = {
+  EVERY_5_MINUTES: 'Every 5 minutes',
+  EVERY_15_MINUTES: 'Every 15 minutes',
+  EVERY_30_MINUTES: 'Every 30 minutes',
+  HOURLY: 'Hourly',
+  DAILY: 'Daily',
+  WEEKLY: 'Weekly',
+  MONTHLY: 'Monthly',
+};
+
+/** Returns how many days until the next allowed sync based on plan cooldown. */
+function daysUntilNextSync(lastSyncTime: string | null, plan: string): number {
+  if (!lastSyncTime) return 0;
+  const last = new Date(lastSyncTime).getTime();
+  const now = Date.now();
+  const elapsedDays = (now - last) / (1000 * 60 * 60 * 24);
+  const cooldownDays = plan === 'STARTER' ? 7 : plan === 'PRO' ? 1 : 0;
+  return Math.max(0, Math.ceil(cooldownDays - elapsedDays));
+}
+
+const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3 };
+
 // -- Main component --
 const BrokerConnections = () => {
   const { t } = useTranslation();
+  const { currentPlan } = useFeatureFlags();
+  const navigate = useNavigate();
   const [connectDialogBroker, setConnectDialogBroker] = useState<BrokerResponse | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -586,13 +714,21 @@ const BrokerConnections = () => {
                 {t('settings.brokerConnectionsDescription', 'Connect your brokerage accounts to automatically sync trades.')}
               </CardDescription>
             </div>
-            {connections && connections.length > 0 && (
-              <div className="mt-2 sm:mt-0 flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                {connections.filter(c => c.status === 'CONNECTED').length}{' '}
-                {t('settings.activeConnections', 'active')}
+            <div className="mt-2 sm:mt-0 flex items-center gap-3 flex-wrap">
+              {connections && connections.length > 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  {connections.filter(c => c.status === 'CONNECTED').length}{' '}
+                  {t('settings.activeConnections', 'active')}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+                <RefreshCcw className="h-3 w-3" />
+                <span>
+                  {t('settings.yourPlanSync', 'Your plan')}: <span className="font-medium text-foreground">{PLAN_SYNC_LABEL[currentPlan] ?? PLAN_SYNC_LABEL.FREE}</span>
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </CardHeader>
 
@@ -633,6 +769,8 @@ const BrokerConnections = () => {
                     isSyncing={syncingId === connectionsByBrokerCode.get(broker.code)?.id}
                     isTesting={testingId === connectionsByBrokerCode.get(broker.code)?.id}
                     isDisconnecting={disconnectingId === connectionsByBrokerCode.get(broker.code)?.id}
+                    currentPlan={currentPlan}
+                    onUpgrade={() => navigate('/pricing')}
                   />
                 ))}
             </div>

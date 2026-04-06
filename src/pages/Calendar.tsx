@@ -7,6 +7,7 @@ import type { EconomicCalendarFilters } from '@/types/dto';
 import CalendarFilters from '@/components/calendar/CalendarFilters';
 import EconomicEventTable from '@/components/calendar/EconomicEventTable';
 import UpcomingHighImpact from '@/components/calendar/UpcomingHighImpact';
+import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 
 const CalendarPage = () => {
   const { t } = useTranslation();
@@ -63,36 +64,42 @@ const CalendarPage = () => {
         />
 
         {/* Main content: table + sidebar */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Event table — 3/4 width on xl */}
-          <div className="xl:col-span-3">
-            <EconomicEventTable events={events} isLoading={isLoading} />
-          </div>
+        <PlanGatedSection
+          requiredPlan="STARTER"
+          feature={t('calendar.economicEventsGated', 'Economic calendar events require a Starter plan or above.')}
+          showBlurredPreview
+        >
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+            {/* Event table — 3/4 width on xl */}
+            <div className="xl:col-span-3">
+              <EconomicEventTable events={events} isLoading={isLoading} />
+            </div>
 
-          {/* Sidebar — 1/4 width on xl, full on mobile */}
-          <div className="space-y-4">
-            <UpcomingHighImpact events={upcomingHigh} />
+            {/* Sidebar — 1/4 width on xl, full on mobile */}
+            <div className="space-y-4">
+              <UpcomingHighImpact events={upcomingHigh} />
 
-            {/* Impact legend */}
-            <div className="rounded-lg border bg-card p-4 space-y-3">
-              <h3 className="text-sm font-semibold">{t('calendar.impact')}</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-[3px] h-6 rounded-full bg-red-500" />
-                  <span className="text-sm">{t('calendar.impactHigh')}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-[3px] h-4 rounded-full bg-amber-500" />
-                  <span className="text-sm">{t('calendar.impactMedium')}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-[3px] h-2 rounded-full bg-yellow-400" />
-                  <span className="text-sm">{t('calendar.impactLow')}</span>
+              {/* Impact legend */}
+              <div className="rounded-lg border bg-card p-4 space-y-3">
+                <h3 className="text-sm font-semibold">{t('calendar.impact')}</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-[3px] h-6 rounded-full bg-red-500" />
+                    <span className="text-sm">{t('calendar.impactHigh')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-[3px] h-4 rounded-full bg-amber-500" />
+                    <span className="text-sm">{t('calendar.impactMedium')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-[3px] h-2 rounded-full bg-yellow-400" />
+                    <span className="text-sm">{t('calendar.impactLow')}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </PlanGatedSection>
       </div>
     </DashboardLayout>
   );

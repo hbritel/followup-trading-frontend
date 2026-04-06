@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSubscription } from '@/hooks/useSubscription';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import {
@@ -434,6 +435,12 @@ const Accounts = () => {
   const realAccounts = accounts.filter(a => a.accountType !== 'DEMO');
   const demoAccounts = accounts.filter(a => a.accountType === 'DEMO');
 
+  // Plan-based connection limits
+  const { data: subscription } = useSubscription();
+  const connectionsMax = subscription?.usage?.connectionsMax ?? 1;
+  const isUnlimitedConnections = connectionsMax >= 2147483647;
+  const isOverConnectionLimit = !isUnlimitedConnections && accounts.length > connectionsMax;
+
   // Computed stats
   const activeCount = accounts.filter(a => a.enabled && (a.status === 'CONNECTED' || a.status === 'ACTIVE')).length;
   const errorCount = accounts.filter(a => a.status === 'ERROR').length;
@@ -850,6 +857,28 @@ const Accounts = () => {
   return (
     <DashboardLayout pageTitle={t('pages.accounts')}>
       <PageTransition className="space-y-6">
+        {/* Over-limit warning */}
+        {isOverConnectionLimit && (
+          <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-300">
+                {t('accounts.overLimitTitle', 'Too many broker connections for your plan')}
+              </p>
+              <p className="text-amber-400/70 text-xs mt-0.5">
+                {t('accounts.overLimitDescription', 'Your {{plan}} plan allows {{max}} connection(s). Please disconnect {{excess}} account(s) or upgrade your plan.', {
+                  plan: subscription?.plan ?? 'FREE',
+                  max: connectionsMax,
+                  excess: accounts.length - connectionsMax,
+                })}
+              </p>
+            </div>
+            <a href="/pricing" className="text-xs font-medium text-amber-400 hover:underline shrink-0">
+              {t('subscription.upgrade', 'Upgrade')}
+            </a>
+          </div>
+        )}
+
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -1043,7 +1072,7 @@ const Accounts = () => {
                   ))}
                 </div>
               ) : availableBrokers && availableBrokers.length <= 12 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[240px] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
                   {availableBrokers.map(broker => {
                     const isSelected = newBrokerType === broker.code;
                     const brokerColorCls = getBrokerColor(broker.code);
@@ -1067,7 +1096,7 @@ const Accounts = () => {
                           {broker.displayName.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium truncate text-xs">{broker.displayName}</p>
+                          <p className="font-medium text-xs leading-snug break-words">{broker.displayName}</p>
                           {broker.propFirm && (
                             <span className="text-[10px] text-amber-500">Prop Firm</span>
                           )}

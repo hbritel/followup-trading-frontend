@@ -8,13 +8,14 @@ import { useTranslation } from 'react-i18next';
 interface UpgradePromptProps {
   feature: string;
   currentPlan?: string;
-  requiredPlan: 'PRO' | 'ENTERPRISE';
+  requiredPlan: 'STARTER' | 'PRO' | 'ELITE';
   className?: string;
 }
 
 const PLAN_LABELS: Record<string, string> = {
+  STARTER: 'Starter',
   PRO: 'Pro',
-  ENTERPRISE: 'Enterprise',
+  ELITE: 'Elite',
 };
 
 const UpgradePrompt: React.FC<UpgradePromptProps> = ({
@@ -25,26 +26,32 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const planLabel = PLAN_LABELS[requiredPlan] ?? requiredPlan;
-  const isEnterprise = requiredPlan === 'ENTERPRISE';
+  const isElite = requiredPlan === 'ELITE';
+  const isStarter = requiredPlan === 'STARTER';
 
   return (
     <div
       className={cn(
         'glass-card rounded-2xl p-6 flex flex-col items-center text-center gap-4',
-        isEnterprise
+        isElite
           ? 'border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.08)]'
-          : 'border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.08)]',
+          : isStarter
+            ? 'border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.08)]'
+            : 'border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.08)]',
         className,
       )}
     >
       <div
         className={cn(
           'h-12 w-12 rounded-full flex items-center justify-center',
-          isEnterprise ? 'bg-amber-500/10' : 'bg-primary/10',
+          isElite ? 'bg-amber-500/10' : isStarter ? 'bg-blue-500/10' : 'bg-primary/10',
         )}
       >
         <Lock
-          className={cn('h-5 w-5', isEnterprise ? 'text-amber-400' : 'text-primary')}
+          className={cn(
+            'h-5 w-5',
+            isElite ? 'text-amber-400' : isStarter ? 'text-blue-400' : 'text-primary',
+          )}
         />
       </div>
 
@@ -55,7 +62,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
           <span
             className={cn(
               'font-semibold',
-              isEnterprise ? 'text-amber-400' : 'text-primary',
+              isElite ? 'text-amber-400' : isStarter ? 'text-blue-400' : 'text-primary',
             )}
           >
             {planLabel}
@@ -67,10 +74,12 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
       <Button
         size="sm"
         className={cn(
-          isEnterprise &&
+          isElite &&
             'bg-gradient-to-r from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 border-0',
+          isStarter &&
+            'bg-blue-500 text-white hover:bg-blue-600 border-0',
         )}
-        variant={isEnterprise ? 'outline' : 'default'}
+        variant={isElite || isStarter ? 'outline' : 'default'}
         onClick={() => navigate('/pricing')}
       >
         {t('subscription.upgrade')} to {planLabel}

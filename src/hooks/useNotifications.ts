@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { notificationService } from '@/services/notification.service';
@@ -154,15 +154,29 @@ export const useMarkAllAsRead = () => {
 // Live WebSocket hook
 // ---------------------------------------------------------------------------
 
+export interface LiveNotificationOptions {
+  /** Called when a JOURNAL_REMINDER notification arrives instead of a plain toast. */
+  onJournalReminder?: () => void;
+}
+
 /**
  * Subscribes to `/topic/notifications/{userId}` via STOMP.
  * On each message: invalidates notifications cache, increments unread count,
- * and shows a toast.
+ * and shows a toast. JOURNAL_REMINDER notifications are intercepted and
+ * handled by the optional `onJournalReminder` callback instead.
  */
-export const useLiveNotifications = (): void => {
+export const useLiveNotifications = (options: LiveNotificationOptions = {}): void => {
+  const { onJournalReminder } = options;
   const { user } = useAuth();
   const { subscribe, connected } = useWebSocket();
   const queryClient = useQueryClient();
+
+  // Keep a stable ref so the subscribe effect doesn't re-run when the
+  // callback identity changes between renders.
+  const onJournalReminderRef = useRef(onJournalReminder);
+  useEffect(() => {
+    onJournalReminderRef.current = onJournalReminder;
+  }, [onJournalReminder]);
 
   useEffect(() => {
     if (!connected || !user?.id) return;
@@ -181,7 +195,13 @@ export const useLiveNotifications = (): void => {
           count: (old?.count ?? 0) + 1,
         }));
 
-        // Show toast notification
+        // Journal reminders are shown as a rich popup, not a plain toast
+        if (payload.type === 'JOURNAL_REMINDER' && onJournalReminderRef.current) {
+          onJournalReminderRef.current();
+          return;
+        }
+
+        // Show toast notification for all other types
         const toastFn = payload.priority === 'HIGH' ? toast.error : toast.info;
         toastFn(payload.title, {
           description: payload.message,

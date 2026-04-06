@@ -14,6 +14,8 @@ export interface AdminUserDto {
   plan: string | null;
   lastLoginAt: string | null;
   createdAt: string;
+  grantedByAdmin: boolean | null;
+  planExpiresAt: string | null;
 }
 
 export interface DailyCountDto {
@@ -103,6 +105,8 @@ export interface DashboardStatsDto {
   auditEventsToday: number;
   failedLoginsLast24h: number;
   recentAdminActions: RecentAdminActionDto[];
+  // Granted subscriptions
+  grantedSubscriptionsCount: number | null;
 }
 
 export interface AdminBrokerConnectionDto {
@@ -138,6 +142,8 @@ export interface AdminSubscriptionDto {
   status: string;
   billingInterval: string | null;
   currentPeriodEnd: string | null;
+  grantedByAdmin: boolean | null;
+  planExpiresAt: string | null;
 }
 
 export interface RoleDto {
@@ -267,8 +273,8 @@ export const adminService = {
     return response.data;
   },
 
-  changeUserPlan: async (userId: string, plan: string): Promise<void> => {
-    await apiClient.put(`/admin/users/${userId}/plan`, { plan });
+  changeUserPlan: async (userId: string, plan: string, durationDays: number | null = null): Promise<void> => {
+    await apiClient.put(`/admin/users/${userId}/plan`, { plan, durationDays });
   },
 
   resetUserPassword: async (userId: string): Promise<{ message: string; temporaryPassword?: string }> => {

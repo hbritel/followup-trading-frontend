@@ -22,6 +22,19 @@ export const useAdminUsers = (page = 0, size = 20) => {
   });
 };
 
+/**
+ * Fetches a large batch of users (up to 500) for building a UUID→UserInfo
+ * lookup map used by the audit logs tab to replace raw UUIDs with readable names.
+ */
+export const useAdminAllUsersForLookup = () => {
+  return useQuery({
+    queryKey: [...ADMIN_USERS_KEY, 'lookup', { size: 500 }],
+    queryFn: () => adminService.getUsers(0, 500),
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useAdminSearchUsers = (term: string, page = 0, size = 20) => {
   return useQuery({
     queryKey: [...ADMIN_USERS_KEY, 'search', { term, page, size }],
@@ -172,13 +185,26 @@ export const useAdminSubscriptions = (page = 0, size = 20) => {
 export const useChangeUserPlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, plan }: { userId: string; plan: string }) =>
-      adminService.changeUserPlan(userId, plan),
+    mutationFn: ({ userId, plan, durationDays }: { userId: string; plan: string; durationDays?: number | null }) =>
+      adminService.changeUserPlan(userId, plan, durationDays ?? null),
     onSuccess: () => {
+      // Invalidate admin caches
       queryClient.invalidateQueries({ queryKey: ADMIN_USERS_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_SUBSCRIPTIONS_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_PLAN_DIST_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_STATS_KEY });
+      // Invalidate current user's subscription + feature flags + ALL data queries
+      // so plan changes take effect immediately (trade visibility, metrics, etc.)
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['performance'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['insights'] });
+      queryClient.invalidateQueries({ queryKey: ['risk-metrics'] });
       toast({ title: 'Plan changed', description: 'User subscription plan has been updated.' });
     },
     onError: () => {

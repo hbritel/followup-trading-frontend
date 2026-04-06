@@ -5,7 +5,9 @@ import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, AlertTriangle, BookOpen, X } from 'lucide-react';
+import { Plus, Columns, Search, AlertTriangle, BookOpen, X, Info } from 'lucide-react';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useSubscription } from '@/hooks/useSubscription';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
@@ -172,6 +174,14 @@ const Trades = () => {
   const trades = tradesResponse?.content || [];
   const totalElements = tradesResponse?.totalElements || 0;
 
+  // --- Plan-based trade visibility ---
+  const { currentPlan } = useFeatureFlags();
+  const { data: subscription } = useSubscription();
+  const tradesMax = subscription?.usage?.tradesMax ?? 0;
+  const tradesTotal = subscription?.usage?.tradesUsed ?? 0;
+  const isUnlimitedTrades = tradesMax >= 2147483647;
+  const isTradesCapped = !isUnlimitedTrades && tradesTotal > tradesMax && tradesMax > 0;
+
   // --- Enrich trades with accountType from broker connections ---
   const { data: connections } = useBrokerConnections();
   const accountTypeMap = useMemo(() => {
@@ -313,6 +323,21 @@ const Trades = () => {
               <X className="h-3 w-3 mr-1" />
               {t('common.clearFilter', 'Clear filter')}
             </Button>
+          </div>
+        )}
+        {isTradesCapped && (
+          <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2.5 text-sm">
+            <Info className="h-4 w-4 text-blue-400 shrink-0" />
+            <span className="text-blue-300">
+              {t('trades.planLimitInfo', 'Your {{plan}} plan shows the {{max}} most recent trades. You have {{total}} trades total.', {
+                plan: currentPlan,
+                max: tradesMax.toLocaleString(),
+                total: tradesTotal.toLocaleString(),
+              })}
+            </span>
+            <a href="/pricing" className="ml-auto text-xs font-medium text-blue-400 hover:underline shrink-0">
+              {t('subscription.upgrade', 'Upgrade')}
+            </a>
           </div>
         )}
         <FiltersSection
@@ -516,6 +541,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
         <div className="flex items-center gap-2">
           <TradeImportExport
               onImport={onImport}
+              onOpenImportDialog={onOpenImportDialog}
               filteredTrades={trades}
               visibleColumns={visibleColumns}
               accountFilter={accountFilter}

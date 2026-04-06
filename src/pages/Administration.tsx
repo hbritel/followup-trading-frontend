@@ -1,5 +1,6 @@
-import { useState, useDeferredValue } from 'react';
+import { useState, useDeferredValue, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import {
@@ -75,6 +76,15 @@ import {
   XCircle,
   Timer,
   Download,
+  Tag,
+  Plus,
+  Eye,
+  Percent,
+  DollarSign,
+  Sparkles,
+  ArrowUpCircle,
+  Users2,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -85,6 +95,7 @@ import {
   useRemoveRole,
   useAdminRoles,
   useAuditLogs,
+  useAdminAllUsersForLookup,
   useAdminAuditEventTypes,
   useAdminDashboardStats,
   useAdminPlanDistribution,
@@ -105,7 +116,10 @@ import {
   useRemoveUserFeatureOverride,
 } from '@/hooks/useAdmin';
 import type { AdminUserDto, AuditLogFilters } from '@/services/admin.service';
+import { promoService, type PromoCodeDto, type PromoUsageDto } from '@/services/promo.service';
 import { useAuth } from '@/contexts/auth-context';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -133,8 +147,9 @@ function roleBadgeVariant(name: string) {
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: 'bg-muted text-muted-foreground',
+  STARTER: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
   PRO: 'bg-primary/10 text-primary border-primary/30',
-  ENTERPRISE: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+  ELITE: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
 };
 
 // ── Pagination ────────────────────────────────────────────────────────────────
@@ -259,7 +274,64 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
   const [selectedRoleName, setSelectedRoleName] = useState('');
   const [planDialogUser, setPlanDialogUser] = useState<AdminUserDto | null>(null);
   const [selectedPlan, setSelectedPlan] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState('permanent');
+  const [customDays, setCustomDays] = useState('');
   const [featureOverrideUser, setFeatureOverrideUser] = useState<AdminUserDto | null>(null);
+
+  // Batch selection state
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [batchPromoDialogOpen, setBatchPromoDialogOpen] = useState(false);
+  const [batchSelectedPromoId, setBatchSelectedPromoId] = useState('');
+  const [batchPlanDialogOpen, setBatchPlanDialogOpen] = useState(false);
+  const [batchSelectedPlan, setBatchSelectedPlan] = useState('');
+  const [batchSelectedDuration, setBatchSelectedDuration] = useState('permanent');
+  const [batchCustomDays, setBatchCustomDays] = useState('');
+  const { data: promos } = useAdminPromos();
+  const applyBatchMutation = useApplyBatch();
+
+  const toggleSelectUser = (id: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUserIds.size === data.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(data.map(u => u.id)));
+    }
+  };
+
+  const handleBatchApplyPromo = async () => {
+    if (!batchSelectedPromoId || selectedUserIds.size === 0) return;
+    await applyBatchMutation.mutateAsync({ promoId: batchSelectedPromoId, userIds: Array.from(selectedUserIds) });
+    setSelectedUserIds(new Set());
+    setBatchPromoDialogOpen(false);
+    setBatchSelectedPromoId('');
+  };
+
+  const resolveDurationDays = (duration: string, custom: string): number | null => {
+    if (duration === 'permanent') return null;
+    if (duration === 'custom') return parseInt(custom, 10) || null;
+    return parseInt(duration, 10);
+  };
+
+  const handleBatchChangePlan = () => {
+    if (!batchSelectedPlan || selectedUserIds.size === 0) return;
+    const durationDays = resolveDurationDays(batchSelectedDuration, batchCustomDays);
+    Array.from(selectedUserIds).forEach((userId) => {
+      changePlanMutation.mutate({ userId, plan: batchSelectedPlan, durationDays });
+    });
+    setSelectedUserIds(new Set());
+    setBatchPlanDialogOpen(false);
+    setBatchSelectedPlan('');
+    setBatchSelectedDuration('permanent');
+    setBatchCustomDays('');
+  };
 
   const handleConfirm = () => {
     if (!confirmAction) return;
@@ -280,9 +352,12 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
 
   const handleChangePlan = () => {
     if (!planDialogUser || !selectedPlan) return;
-    changePlanMutation.mutate({ userId: planDialogUser.id, plan: selectedPlan });
+    const durationDays = resolveDurationDays(selectedDuration, customDays);
+    changePlanMutation.mutate({ userId: planDialogUser.id, plan: selectedPlan, durationDays });
     setPlanDialogUser(null);
     setSelectedPlan('');
+    setSelectedDuration('permanent');
+    setCustomDays('');
   };
 
   if (isLoading) {
@@ -300,9 +375,16 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
   return (
     <>
       <div className="rounded-lg border overflow-x-auto">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[860px]">
           <thead>
             <tr className="border-b bg-muted/50">
+              <th className="px-3 py-3 text-left">
+                <Checkbox
+                  checked={data.length > 0 && selectedUserIds.size === data.length}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label={t('admin.selectAll', 'Select all')}
+                />
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.name')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.email')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.roles')}</th>
@@ -315,13 +397,20 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {t('admin.noUsersFound')}
                 </td>
               </tr>
             ) : (
               data.map((user) => (
-                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <tr key={user.id} className={cn('border-b last:border-0 hover:bg-muted/30 transition-colors', selectedUserIds.has(user.id) && 'bg-primary/5')}>
+                  <td className="px-3 py-3">
+                    <Checkbox
+                      checked={selectedUserIds.has(user.id)}
+                      onCheckedChange={() => toggleSelectUser(user.id)}
+                      aria-label={`Select ${user.username}`}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
@@ -363,9 +452,23 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', PLAN_COLORS[user.plan ?? 'FREE'] ?? PLAN_COLORS['FREE'])}>
-                      {user.plan ?? 'FREE'}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', PLAN_COLORS[user.plan ?? 'FREE'] ?? PLAN_COLORS['FREE'])}>
+                          {user.plan ?? 'FREE'}
+                        </Badge>
+                        {user.grantedByAdmin && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-violet-400 border-violet-500/30 bg-violet-500/10">
+                            {t('admin.granted', 'Granted')}
+                          </Badge>
+                        )}
+                      </div>
+                      {user.planExpiresAt && (
+                        <span className="text-[10px] text-amber-400/80">
+                          {t('admin.expiresIn', 'Expires in {{days}}d', { days: Math.max(0, Math.ceil((new Date(user.planExpiresAt).getTime() - Date.now()) / 86400000)) })}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -452,6 +555,136 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
         />
       )}
 
+      {/* Floating batch action bar */}
+      {selectedUserIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border bg-background/95 backdrop-blur-sm shadow-lg px-5 py-3">
+          <span className="text-sm font-medium text-muted-foreground">
+            {selectedUserIds.size} {t('admin.usersSelected', 'selected')}
+          </span>
+          <Separator orientation="vertical" className="h-5" />
+          <Button size="sm" variant="outline" onClick={() => setBatchPlanDialogOpen(true)}>
+            <Crown className="h-3.5 w-3.5 mr-1.5" />
+            {t('admin.changePlan', 'Change Plan')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setBatchPromoDialogOpen(true)}>
+            <Tag className="h-3.5 w-3.5 mr-1.5" />
+            {t('admin.applyPromo', 'Apply Promo')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedUserIds(new Set())}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      )}
+
+      {/* Batch apply promo dialog */}
+      <Dialog open={batchPromoDialogOpen} onOpenChange={(open) => { if (!open) setBatchPromoDialogOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('admin.applyPromoToUsers', 'Apply Promo Code to Users')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.applyPromoDescription', 'Apply a promo code to {{count}} selected user(s).', { count: selectedUserIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>{t('admin.selectPromo', 'Select Promo Code')}</Label>
+            <Select value={batchSelectedPromoId} onValueChange={setBatchSelectedPromoId}>
+              <SelectTrigger className="mt-2">
+                <SelectValue placeholder={t('admin.selectPromo', 'Select a promo code')} />
+              </SelectTrigger>
+              <SelectContent>
+                {(promos ?? []).filter(p => p.active).map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    <span className="font-mono font-semibold">{p.code}</span>
+                    <span className="text-muted-foreground ml-2 text-xs">— {p.name}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchPromoDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button
+              onClick={handleBatchApplyPromo}
+              disabled={!batchSelectedPromoId || applyBatchMutation.isPending}
+            >
+              {applyBatchMutation.isPending ? t('common.saving', 'Applying...') : t('admin.applyPromo', 'Apply Promo')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch change plan dialog */}
+      <Dialog open={batchPlanDialogOpen} onOpenChange={(open) => { if (!open) { setBatchPlanDialogOpen(false); setBatchSelectedDuration('permanent'); setBatchCustomDays(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
+            <DialogDescription>
+              {t('admin.batchChangePlanDescription', 'Change plan for {{count}} selected user(s).', { count: selectedUserIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>{t('admin.plan', 'Plan')}</Label>
+              <Select value={batchSelectedPlan} onValueChange={setBatchSelectedPlan}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FREE">Free</SelectItem>
+                  <SelectItem value="STARTER">Starter</SelectItem>
+                  <SelectItem value="PRO">Pro</SelectItem>
+                  <SelectItem value="ELITE">Elite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('admin.duration', 'Duration')}</Label>
+              <Select value={batchSelectedDuration} onValueChange={(v) => { setBatchSelectedDuration(v); setBatchCustomDays(''); }}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
+                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
+                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
+                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
+                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
+                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
+                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {batchSelectedDuration === 'custom' && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
+                    value={batchCustomDays}
+                    onChange={(e) => setBatchCustomDays(e.target.value)}
+                    className="w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
+                </div>
+              )}
+              {batchSelectedDuration !== 'permanent' && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBatchPlanDialogOpen(false); setBatchSelectedDuration('permanent'); setBatchCustomDays(''); }}>{t('common.cancel')}</Button>
+            <Button
+              onClick={handleBatchChangePlan}
+              disabled={!batchSelectedPlan || changePlanMutation.isPending || (batchSelectedDuration === 'custom' && !batchCustomDays)}
+            >
+              {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('admin.applyToSelected', 'Apply to Selected')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmActionDialog confirmAction={confirmAction} onConfirm={handleConfirm} onClose={() => setConfirmAction(null)} />
 
       {/* Assign role dialog */}
@@ -489,7 +722,7 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
       </Dialog>
 
       {/* Change plan dialog */}
-      <Dialog open={planDialogUser !== null} onOpenChange={(open) => { if (!open) setPlanDialogUser(null); }}>
+      <Dialog open={planDialogUser !== null} onOpenChange={(open) => { if (!open) { setPlanDialogUser(null); setSelectedDuration('permanent'); setCustomDays(''); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
@@ -497,22 +730,63 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
               {t('admin.changePlanDescription', 'Change subscription plan for {{name}}', { name: planDialogUser?.fullName ?? planDialogUser?.username })}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label>{t('admin.plan', 'Plan')}</Label>
-            <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FREE">Free</SelectItem>
-                <SelectItem value="PRO">Pro</SelectItem>
-                <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>{t('admin.plan', 'Plan')}</Label>
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FREE">Free</SelectItem>
+                  <SelectItem value="STARTER">Starter</SelectItem>
+                  <SelectItem value="PRO">Pro</SelectItem>
+                  <SelectItem value="ELITE">Elite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('admin.duration', 'Duration')}</Label>
+              <Select value={selectedDuration} onValueChange={(v) => { setSelectedDuration(v); setCustomDays(''); }}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
+                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
+                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
+                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
+                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
+                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
+                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedDuration === 'custom' && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
+                </div>
+              )}
+              {selectedDuration !== 'permanent' && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPlanDialogUser(null)}>{t('common.cancel')}</Button>
-            <Button onClick={handleChangePlan} disabled={!selectedPlan || changePlanMutation.isPending}>
+            <Button variant="outline" onClick={() => { setPlanDialogUser(null); setSelectedDuration('permanent'); setCustomDays(''); }}>{t('common.cancel')}</Button>
+            <Button
+              onClick={handleChangePlan}
+              disabled={!selectedPlan || changePlanMutation.isPending || (selectedDuration === 'custom' && !customDays)}
+            >
               {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('common.confirm')}
             </Button>
           </DialogFooter>
@@ -543,6 +817,24 @@ const OVERRIDE_FLAG_LABELS: Record<string, string> = {
   alerts: 'Price Alerts',
 };
 
+/** Minimum plan required to access each feature (independent of feature flags). */
+const FEATURE_REQUIRED_PLAN: Record<string, string> = {
+  ai_chat: 'STARTER',
+  backtesting: 'PRO',
+  trade_replay: 'PRO',
+  market_feed: 'STARTER',
+  reports: 'STARTER',
+  alerts: 'STARTER',
+};
+
+const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3 };
+
+function userPlanAllowsFeature(userPlan: string | undefined, featureKey: string): boolean {
+  const required = FEATURE_REQUIRED_PLAN[featureKey];
+  if (!required) return true;
+  return (PLAN_RANK[userPlan ?? 'FREE'] ?? 0) >= (PLAN_RANK[required] ?? 0);
+}
+
 function UserFeatureOverridesDialog({ user, open, onOpenChange }: {
   user: AdminUserDto; open: boolean; onOpenChange: (open: boolean) => void;
 }) {
@@ -561,10 +853,16 @@ function UserFeatureOverridesDialog({ user, open, onOpenChange }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('admin.featureOverrides', 'Feature Overrides')}</DialogTitle>
+          <DialogTitle>{t('admin.featureAccess', 'Feature Access')}</DialogTitle>
           <DialogDescription>
-            {t('admin.featureOverridesDescription', 'Override global feature flags for {{name}}. Per-user overrides take priority over global settings.', { name: user.fullName ?? user.username })}
+            {t('admin.featureOverridesDescription', 'Customize feature access for {{name}}. Overrides take priority over global settings.', { name: user.fullName ?? user.username })}
           </DialogDescription>
+          <div className="flex items-center gap-2 pt-2">
+            <span className="text-xs text-muted-foreground">{t('admin.userPlan', 'Plan')}:</span>
+            <Badge variant="outline" className="text-xs font-semibold">
+              {user.plan ?? 'FREE'}
+            </Badge>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -577,21 +875,37 @@ function UserFeatureOverridesDialog({ user, open, onOpenChange }: {
               const globalValue = globalFlags?.[key] ?? true;
               const hasOverride = overrideMap.has(key);
               const effectiveValue = hasOverride ? overrideMap.get(key)! : globalValue;
+              const planAllows = userPlanAllowsFeature(user.plan, key);
+              const requiredPlan = FEATURE_REQUIRED_PLAN[key];
+
+              const grantedByOverride = !planAllows && hasOverride && effectiveValue;
 
               return (
                 <div key={key} className={cn(
                   'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                  hasOverride
-                    ? effectiveValue
-                      ? 'border-emerald-500/20 bg-emerald-500/5'
-                      : 'border-destructive/20 bg-destructive/5'
-                    : 'border-border',
+                  grantedByOverride
+                    ? 'border-emerald-500/20 bg-emerald-500/5'
+                    : !planAllows
+                      ? 'border-amber-500/20 bg-amber-500/5'
+                      : hasOverride
+                        ? effectiveValue
+                          ? 'border-emerald-500/20 bg-emerald-500/5'
+                          : 'border-destructive/20 bg-destructive/5'
+                        : 'border-border',
                 )}>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium">{OVERRIDE_FLAG_LABELS[key] ?? key}</p>
+                      {!planAllows && requiredPlan && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-400 border-amber-500/30 bg-amber-500/10">
+                          {requiredPlan.charAt(0) + requiredPlan.slice(1).toLowerCase()}+
+                        </Badge>
+                      )}
                       {hasOverride ? (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        <Badge variant="outline" className={cn(
+                          'text-[10px] px-1.5 py-0',
+                          grantedByOverride ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' : '',
+                        )}>
                           {t('admin.overridden', 'Override')}
                         </Badge>
                       ) : (
@@ -600,6 +914,16 @@ function UserFeatureOverridesDialog({ user, open, onOpenChange }: {
                         </Badge>
                       )}
                     </div>
+                    {!planAllows && !grantedByOverride && (
+                      <p className="text-[11px] text-amber-400/70 mt-0.5">
+                        {t('admin.planBlockedCanOverride', 'Not included in plan — toggle ON to grant access')}
+                      </p>
+                    )}
+                    {grantedByOverride && (
+                      <p className="text-[11px] text-emerald-400/70 mt-0.5">
+                        {t('admin.grantedByOverride', 'Access granted by admin override (bypasses plan)')}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Switch
@@ -721,6 +1045,11 @@ function DashboardTab() {
                 </TooltipTrigger><TooltipContent side="right" className="max-w-[220px] text-xs">{t('admin.mrrInfo', 'Monthly Recurring Revenue — total monthly income from all paid subscriptions')}</TooltipContent></Tooltip></TooltipProvider>
                 <span className="text-lg font-bold tabular-nums text-emerald-500">${(stats?.mrr ?? 0).toFixed(2)}</span>
               </div>
+              {(stats?.grantedSubscriptionsCount ?? 0) > 0 && (
+                <p className="text-[10px] text-muted-foreground/70">
+                  {t('admin.excludesGranted', 'Excludes {{count}} admin-granted subscription(s)', { count: stats!.grantedSubscriptionsCount })}
+                </p>
+              )}
               <div className="flex items-center justify-between">
                 <TooltipProvider><Tooltip><TooltipTrigger asChild>
                   <span className="text-xs text-muted-foreground flex items-center gap-1 cursor-help">ARR <Info className="h-3 w-3 text-muted-foreground/50" /></span>
@@ -795,7 +1124,7 @@ function DashboardTab() {
                     <div key={plan} className="flex items-center gap-2">
                       <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 w-20 justify-center', PLAN_COLORS[plan])}>{plan}</Badge>
                       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={cn('h-full rounded-full', plan === 'PRO' ? 'bg-primary' : plan === 'ENTERPRISE' ? 'bg-amber-500' : 'bg-muted-foreground/30')} style={{ width: `${pct}%` }} />
+                        <div className={cn('h-full rounded-full', plan === 'ELITE' ? 'bg-amber-500' : plan === 'PRO' ? 'bg-primary' : plan === 'STARTER' ? 'bg-blue-500' : 'bg-muted-foreground/30')} style={{ width: `${pct}%` }} />
                       </div>
                       <span className="text-xs tabular-nums text-muted-foreground w-16 text-right">{count} ({pct}%)</span>
                     </div>
@@ -946,12 +1275,23 @@ function SubscriptionsTab() {
   const changePlanMutation = useChangeUserPlan();
   const [planDialog, setPlanDialog] = useState<{ userId: string; username: string } | null>(null);
   const [selectedPlan, setSelectedPlan] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState('permanent');
+  const [customDays, setCustomDays] = useState('');
+
+  const resolveDurationDays = (duration: string, custom: string): number | null => {
+    if (duration === 'permanent') return null;
+    if (duration === 'custom') return parseInt(custom, 10) || null;
+    return parseInt(duration, 10);
+  };
 
   const handleChangePlan = () => {
     if (!planDialog || !selectedPlan) return;
-    changePlanMutation.mutate({ userId: planDialog.userId, plan: selectedPlan });
+    const durationDays = resolveDurationDays(selectedDuration, customDays);
+    changePlanMutation.mutate({ userId: planDialog.userId, plan: selectedPlan, durationDays });
     setPlanDialog(null);
     setSelectedPlan('');
+    setSelectedDuration('permanent');
+    setCustomDays('');
   };
 
   if (isLoading) {
@@ -999,9 +1339,23 @@ function SubscriptionsTab() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={cn('text-xs', PLAN_COLORS[sub.plan] ?? PLAN_COLORS['FREE'])}>
-                      {sub.plan}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge variant="outline" className={cn('text-xs', PLAN_COLORS[sub.plan] ?? PLAN_COLORS['FREE'])}>
+                          {sub.plan}
+                        </Badge>
+                        {sub.grantedByAdmin && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-violet-400 border-violet-500/30 bg-violet-500/10">
+                            {t('admin.granted', 'Granted')}
+                          </Badge>
+                        )}
+                      </div>
+                      {sub.planExpiresAt && (
+                        <span className="text-[10px] text-amber-400/80">
+                          {t('admin.expiresIn', 'Expires in {{days}}d', { days: Math.max(0, Math.ceil((new Date(sub.planExpiresAt).getTime() - Date.now()) / 86400000)) })}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={sub.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px]">
@@ -1045,7 +1399,7 @@ function SubscriptionsTab() {
       </div>
 
       {/* Change plan dialog */}
-      <Dialog open={planDialog !== null} onOpenChange={(open) => { if (!open) setPlanDialog(null); }}>
+      <Dialog open={planDialog !== null} onOpenChange={(open) => { if (!open) { setPlanDialog(null); setSelectedDuration('permanent'); setCustomDays(''); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
@@ -1053,22 +1407,63 @@ function SubscriptionsTab() {
               {t('admin.changePlanDescription', 'Change subscription plan for {{name}}', { name: planDialog?.username })}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label>{t('admin.plan', 'Plan')}</Label>
-            <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FREE">Free</SelectItem>
-                <SelectItem value="PRO">Pro</SelectItem>
-                <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>{t('admin.plan', 'Plan')}</Label>
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FREE">Free</SelectItem>
+                  <SelectItem value="STARTER">Starter</SelectItem>
+                  <SelectItem value="PRO">Pro</SelectItem>
+                  <SelectItem value="ELITE">Elite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('admin.duration', 'Duration')}</Label>
+              <Select value={selectedDuration} onValueChange={(v) => { setSelectedDuration(v); setCustomDays(''); }}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
+                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
+                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
+                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
+                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
+                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
+                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedDuration === 'custom' && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
+                </div>
+              )}
+              {selectedDuration !== 'permanent' && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPlanDialog(null)}>{t('common.cancel')}</Button>
-            <Button onClick={handleChangePlan} disabled={!selectedPlan || changePlanMutation.isPending}>
+            <Button variant="outline" onClick={() => { setPlanDialog(null); setSelectedDuration('permanent'); setCustomDays(''); }}>{t('common.cancel')}</Button>
+            <Button
+              onClick={handleChangePlan}
+              disabled={!selectedPlan || changePlanMutation.isPending || (selectedDuration === 'custom' && !customDays)}
+            >
               {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('common.confirm')}
             </Button>
           </DialogFooter>
@@ -1097,6 +1492,61 @@ function getEventColor(eventType: string): string {
   return 'bg-muted text-muted-foreground';
 }
 
+// UUID regex — used to detect whether a string is a raw UUID
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface UserInfo {
+  username: string;
+  email: string;
+  fullName: string | null;
+}
+
+/**
+ * Given a raw principal value (UUID or username) and a user lookup map,
+ * returns a readable display label and a tooltip string with full details.
+ */
+function resolvePrincipal(
+  principal: string,
+  userMap: Map<string, UserInfo>
+): { label: string; tooltip: string } {
+  if (!UUID_RE.test(principal)) {
+    // Already a username / system name — display as-is
+    return { label: principal, tooltip: principal };
+  }
+  const user = userMap.get(principal);
+  if (!user) {
+    // Unknown UUID — show short form
+    return {
+      label: principal.slice(0, 8) + '…',
+      tooltip: principal,
+    };
+  }
+  const name = user.fullName ? `${user.username} (${user.fullName})` : user.username;
+  return { label: name, tooltip: `${name}\n${user.email}\nID: ${principal}` };
+}
+
+/**
+ * Resolves a resourceId to a readable label when resourceType is USER.
+ * For other resource types the raw UUID short form is kept.
+ */
+function resolveResourceId(
+  resourceId: string,
+  resourceType: string,
+  userMap: Map<string, UserInfo>
+): { label: string; tooltip: string } {
+  if (!UUID_RE.test(resourceId)) {
+    return { label: resourceId, tooltip: resourceId };
+  }
+  if (resourceType === 'USER') {
+    const user = userMap.get(resourceId);
+    if (user) {
+      const name = user.fullName ? `${user.username} (${user.fullName})` : user.username;
+      return { label: name, tooltip: `${name}\n${user.email}\nID: ${resourceId}` };
+    }
+  }
+  return { label: resourceId.slice(0, 8) + '…', tooltip: resourceId };
+}
+
 function AuditLogsTab() {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
@@ -1114,6 +1564,16 @@ function AuditLogsTab() {
 
   const { data, isLoading, isError, refetch, isFetching } = useAuditLogs(page, 20, filters);
   const { data: eventTypes } = useAdminAuditEventTypes();
+
+  // Fetch a large batch of users so we can resolve UUIDs to human-readable names
+  const { data: allUsers } = useAdminAllUsersForLookup();
+  const userMap = useMemo<Map<string, UserInfo>>(() => {
+    const map = new Map<string, UserInfo>();
+    for (const u of allUsers ?? []) {
+      map.set(u.id, { username: u.username, email: u.email, fullName: u.fullName });
+    }
+    return map;
+  }, [allUsers]);
 
   const hasFilters = eventType !== 'all' || startDate || endDate;
 
@@ -1165,9 +1625,13 @@ function AuditLogsTab() {
         </Button>
         {data && (data.content ?? []).length > 0 && (
           <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => {
-            const rows = (data.content ?? []).map(log =>
-              [log.timestamp, log.principal, log.eventType, log.resourceType, log.resourceId ?? '', log.details ?? ''].join(',')
-            );
+            const rows = (data.content ?? []).map(log => {
+              const { label: principalLabel } = resolvePrincipal(log.principal, userMap);
+              const resourceLabel = log.resourceId
+                ? resolveResourceId(log.resourceId, log.resourceType, userMap).label
+                : '';
+              return [log.timestamp, principalLabel, log.eventType, log.resourceType, resourceLabel, log.details ?? ''].join(',');
+            });
             const csv = ['Timestamp,Principal,Event Type,Resource Type,Resource ID,Details', ...rows].join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
@@ -1198,7 +1662,7 @@ function AuditLogsTab() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.timestamp')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.principal')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.actor', 'Actor')}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.eventType')}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.resource')}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.details')}</th>
@@ -1212,32 +1676,58 @@ function AuditLogsTab() {
                     </td>
                   </tr>
                 ) : (
-                  (data?.content ?? []).map((log) => (
-                    <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedLog(log)}>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
-                        {fmtDate(log.timestamp)}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs truncate max-w-[140px]" title={log.principal}>
-                        {log.principal}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <Badge variant="outline" className={cn('text-[10px] font-mono px-1.5 py-0', getEventColor(log.eventType))}>
-                          {log.eventType}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs">
-                        <span className="font-medium">{log.resourceType}</span>
-                        {log.resourceId && (
-                          <span className="text-muted-foreground ml-1 truncate block max-w-[100px]" title={log.resourceId}>
-                            {log.resourceId.slice(0, 8)}...
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[220px] truncate" title={log.details ?? ''}>
-                        {log.details ?? '—'}
-                      </td>
-                    </tr>
-                  ))
+                  (data?.content ?? []).map((log) => {
+                    const principal = resolvePrincipal(log.principal, userMap);
+                    const resource = log.resourceId
+                      ? resolveResourceId(log.resourceId, log.resourceType, userMap)
+                      : null;
+                    return (
+                      <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => setSelectedLog(log)}>
+                        <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
+                          {fmtDate(log.timestamp)}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs max-w-[160px]">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={cn('truncate block', UUID_RE.test(log.principal) && !userMap.has(log.principal) ? 'font-mono text-muted-foreground' : 'font-medium')}>
+                                  {principal.label}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="whitespace-pre-line text-xs max-w-[260px]">
+                                {principal.tooltip}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <Badge variant="outline" className={cn('text-[10px] font-mono px-1.5 py-0', getEventColor(log.eventType))}>
+                            {log.eventType}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs max-w-[160px]">
+                          <span className="font-medium">{log.resourceType}</span>
+                          {resource && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={cn('truncate block mt-0.5', UUID_RE.test(log.resourceId ?? '') && !userMap.has(log.resourceId ?? '') ? 'font-mono text-muted-foreground text-[11px]' : 'text-muted-foreground text-[11px]')}>
+                                    {resource.label}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="whitespace-pre-line text-xs max-w-[260px]">
+                                  {resource.tooltip}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[220px] truncate" title={log.details ?? ''}>
+                          {log.details ?? '—'}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -1263,33 +1753,49 @@ function AuditLogsTab() {
           <DialogHeader>
             <DialogTitle>{t('admin.auditLogDetail', 'Audit Log Detail')}</DialogTitle>
           </DialogHeader>
-          {selectedLog && (
-            <div className="space-y-3 py-2">
-              <div className="grid grid-cols-[100px_1fr] gap-y-3 gap-x-3 text-sm">
-                <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.timestamp')}</span>
-                <span className="font-mono text-xs">{fmtDateFull(selectedLog.timestamp)}</span>
+          {selectedLog && (() => {
+            const principal = resolvePrincipal(selectedLog.principal, userMap);
+            const resource = selectedLog.resourceId
+              ? resolveResourceId(selectedLog.resourceId, selectedLog.resourceType, userMap)
+              : null;
+            return (
+              <div className="space-y-3 py-2">
+                <div className="grid grid-cols-[100px_1fr] gap-y-3 gap-x-3 text-sm">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.timestamp')}</span>
+                  <span className="font-mono text-xs">{fmtDateFull(selectedLog.timestamp)}</span>
 
-                <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.principal')}</span>
-                <span className="font-mono text-xs break-all">{selectedLog.principal}</span>
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.actor', 'Actor')}</span>
+                  <div>
+                    <span className="text-xs font-medium">{principal.label}</span>
+                    {UUID_RE.test(selectedLog.principal) && (
+                      <p className="font-mono text-[11px] text-muted-foreground break-all mt-0.5">{selectedLog.principal}</p>
+                    )}
+                  </div>
 
-                <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.eventType')}</span>
-                <Badge variant="outline" className={cn('text-[10px] font-mono px-1.5 py-0 w-fit', getEventColor(selectedLog.eventType))}>
-                  {selectedLog.eventType}
-                </Badge>
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.eventType')}</span>
+                  <Badge variant="outline" className={cn('text-[10px] font-mono px-1.5 py-0 w-fit', getEventColor(selectedLog.eventType))}>
+                    {selectedLog.eventType}
+                  </Badge>
 
-                <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.resource')}</span>
-                <div>
-                  <span className="font-medium text-xs">{selectedLog.resourceType}</span>
-                  {selectedLog.resourceId && (
-                    <p className="font-mono text-[11px] text-muted-foreground break-all">{selectedLog.resourceId}</p>
-                  )}
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.resource')}</span>
+                  <div>
+                    <span className="font-medium text-xs">{selectedLog.resourceType}</span>
+                    {resource && (
+                      <>
+                        <p className="text-xs text-muted-foreground mt-0.5">{resource.label}</p>
+                        {selectedLog.resourceId && (
+                          <p className="font-mono text-[11px] text-muted-foreground break-all">{selectedLog.resourceId}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.details')}</span>
+                  <p className="text-xs whitespace-pre-wrap break-all">{selectedLog.details ?? '—'}</p>
                 </div>
-
-                <span className="text-xs font-medium text-muted-foreground uppercase">{t('admin.details')}</span>
-                <p className="text-xs whitespace-pre-wrap break-all">{selectedLog.details ?? '—'}</p>
               </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedLog(null)}>{t('common.close')}</Button>
           </DialogFooter>
@@ -1517,6 +2023,526 @@ function FeatureFlagsTab() {
   );
 }
 
+// ── Promotions Tab ────────────────────────────────────────────────────────────
+
+const DISCOUNT_TYPE_LABELS: Record<string, string> = {
+  PERCENTAGE: 'Percentage',
+  FIXED_AMOUNT: 'Fixed Amount',
+  FEATURE_ACCESS: 'Feature Access',
+  PLAN_UPGRADE: 'Plan Upgrade',
+};
+
+const PROMO_QUERY_KEY = ['admin', 'promos'];
+
+function useAdminPromos() {
+  return useQuery({
+    queryKey: PROMO_QUERY_KEY,
+    queryFn: () => promoService.listPromos(),
+    staleTime: 30 * 1000,
+  });
+}
+
+function useCreatePromo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<PromoCodeDto>) => promoService.createPromo(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROMO_QUERY_KEY }),
+  });
+}
+
+function useUpdatePromo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<PromoCodeDto> }) =>
+      promoService.updatePromo(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROMO_QUERY_KEY }),
+  });
+}
+
+function useDeactivatePromo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => promoService.deactivatePromo(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROMO_QUERY_KEY }),
+  });
+}
+
+function usePromoUsage(id: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'promos', id, 'usage'],
+    queryFn: () => promoService.getPromoUsage(id!),
+    enabled: !!id,
+    staleTime: 30 * 1000,
+  });
+}
+
+function useApplyBatch() {
+  return useMutation({
+    mutationFn: ({ promoId, userIds }: { promoId: string; userIds: string[] }) =>
+      promoService.applyBatch(promoId, userIds),
+  });
+}
+
+const EMPTY_PROMO: Partial<PromoCodeDto> = {
+  code: '',
+  name: '',
+  discountType: 'PERCENTAGE',
+  discountValue: null,
+  targetPlan: null,
+  featureKeys: null,
+  featureDurationDays: null,
+  validFrom: new Date().toISOString().slice(0, 16),
+  validUntil: null,
+  maxUses: null,
+  maxUsesPerUser: 1,
+  active: true,
+};
+
+function PromoFormDialog({
+  open,
+  onOpenChange,
+  initial,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial: Partial<PromoCodeDto> | null;
+}) {
+  const { t } = useTranslation();
+  const createMutation = useCreatePromo();
+  const updateMutation = useUpdatePromo();
+  const [form, setForm] = useState<Partial<PromoCodeDto>>(initial ?? EMPTY_PROMO);
+  const isEditing = !!initial?.id;
+
+  const set = (key: keyof PromoCodeDto, value: unknown) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isEditing && initial?.id) {
+      await updateMutation.mutateAsync({ id: initial.id, data: form });
+    } else {
+      await createMutation.mutateAsync(form);
+    }
+    onOpenChange(false);
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? t('admin.editPromo', 'Edit Promo Code') : t('admin.createPromo', 'Create Promo Code')}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-code">{t('admin.promoCode', 'Code')} *</Label>
+              <Input
+                id="promo-code"
+                value={form.code ?? ''}
+                onChange={e => set('code', e.target.value.toUpperCase())}
+                placeholder="SUMMER25"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-name">{t('admin.promoName', 'Name')} *</Label>
+              <Input
+                id="promo-name"
+                value={form.name ?? ''}
+                onChange={e => set('name', e.target.value)}
+                placeholder="Summer 2025"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{t('admin.discountType', 'Discount Type')}</Label>
+              <Select value={form.discountType ?? 'PERCENTAGE'} onValueChange={v => set('discountType', v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(DISCOUNT_TYPE_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-value">
+                {form.discountType === 'PERCENTAGE'
+                  ? t('admin.discountPct', 'Discount %')
+                  : form.discountType === 'FIXED_AMOUNT'
+                    ? t('admin.discountAmount', 'Amount ($)')
+                    : t('admin.discountValue', 'Value')}
+              </Label>
+              <Input
+                id="promo-value"
+                type="number"
+                value={form.discountValue ?? ''}
+                onChange={e => set('discountValue', e.target.value ? Number(e.target.value) : null)}
+                placeholder="20"
+              />
+            </div>
+          </div>
+
+          {form.discountType === 'PLAN_UPGRADE' && (
+            <div className="space-y-1.5">
+              <Label>{t('admin.targetPlan', 'Target Plan')}</Label>
+              <Select value={form.targetPlan ?? ''} onValueChange={v => set('targetPlan', v || null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STARTER">Starter</SelectItem>
+                  <SelectItem value="PRO">Pro</SelectItem>
+                  <SelectItem value="ELITE">Elite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {form.discountType === 'FEATURE_ACCESS' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="promo-features">{t('admin.featureKeys', 'Feature Keys')}</Label>
+                <Input
+                  id="promo-features"
+                  value={form.featureKeys ?? ''}
+                  onChange={e => set('featureKeys', e.target.value || null)}
+                  placeholder="backtesting,trade_replay"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="promo-duration">{t('admin.featureDurationDays', 'Duration (days)')}</Label>
+                <Input
+                  id="promo-duration"
+                  type="number"
+                  value={form.featureDurationDays ?? ''}
+                  onChange={e => set('featureDurationDays', e.target.value ? Number(e.target.value) : null)}
+                  placeholder="30"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-valid-from">{t('admin.validFrom', 'Valid From')}</Label>
+              <Input
+                id="promo-valid-from"
+                type="datetime-local"
+                value={form.validFrom ? form.validFrom.slice(0, 16) : ''}
+                onChange={e => set('validFrom', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-valid-until">{t('admin.validUntil', 'Valid Until')}</Label>
+              <Input
+                id="promo-valid-until"
+                type="datetime-local"
+                value={form.validUntil ? form.validUntil.slice(0, 16) : ''}
+                onChange={e => set('validUntil', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-max-uses">{t('admin.maxUses', 'Max Uses (total)')}</Label>
+              <Input
+                id="promo-max-uses"
+                type="number"
+                value={form.maxUses ?? ''}
+                onChange={e => set('maxUses', e.target.value ? Number(e.target.value) : null)}
+                placeholder="Unlimited"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="promo-max-per-user">{t('admin.maxUsesPerUser', 'Max Per User')}</Label>
+              <Input
+                id="promo-max-per-user"
+                type="number"
+                min={1}
+                value={form.maxUsesPerUser ?? 1}
+                onChange={e => set('maxUsesPerUser', Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isPending || !form.code || !form.name}>
+              {isPending ? t('common.saving', 'Saving...') : isEditing ? t('common.save', 'Save') : t('admin.create', 'Create')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PromoUsageDialog({
+  promoId,
+  promoCode,
+  open,
+  onOpenChange,
+}: {
+  promoId: string;
+  promoCode: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { data: usages, isLoading } = usePromoUsage(open ? promoId : null);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {t('admin.promoUsageTitle', 'Redemptions for')} <span className="font-mono text-primary">{promoCode}</span>
+          </DialogTitle>
+          <DialogDescription>
+            {usages ? `${usages.length} ${t('admin.redemptions', 'redemptions')}` : ''}
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="space-y-2 py-4">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full rounded" />)}
+          </div>
+        ) : usages && usages.length > 0 ? (
+          <div className="rounded-lg border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">{t('admin.userId', 'User ID')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">{t('admin.appliedAt', 'Applied')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">{t('admin.grantedPlan', 'Plan')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">{t('admin.discount', 'Discount')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground uppercase">{t('admin.status')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usages.map(u => (
+                  <tr key={u.id} className="border-b last:border-0 hover:bg-muted/20">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground truncate max-w-[100px]">{u.userId}</td>
+                    <td className="px-3 py-2 text-xs">{fmtDate(u.appliedAt)}</td>
+                    <td className="px-3 py-2">
+                      {u.grantedPlan ? (
+                        <Badge variant="outline" className={cn('text-[10px]', PLAN_COLORS[u.grantedPlan])}>{u.grantedPlan}</Badge>
+                      ) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      {u.discountAmount != null ? `$${u.discountAmount.toFixed(2)}` : '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge variant={u.active ? 'default' : 'secondary'} className="text-[10px]">
+                        {u.active ? t('admin.active') : t('admin.expired', 'Expired')}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground py-6 text-center">{t('admin.noRedemptions', 'No redemptions yet.')}</p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.close')}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PromotionsTab() {
+  const { t } = useTranslation();
+  const { data: promos, isLoading, isError, refetch } = useAdminPromos();
+  const deactivateMutation = useDeactivatePromo();
+
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editPromo, setEditPromo] = useState<PromoCodeDto | null>(null);
+  const [usagePromo, setUsagePromo] = useState<PromoCodeDto | null>(null);
+
+  const handleDeactivate = (id: string) => {
+    deactivateMutation.mutate(id);
+  };
+
+  const discountTypeIcon = (type: string) => {
+    if (type === 'PERCENTAGE') return <Percent className="h-3 w-3" />;
+    if (type === 'FIXED_AMOUNT') return <DollarSign className="h-3 w-3" />;
+    if (type === 'FEATURE_ACCESS') return <Sparkles className="h-3 w-3" />;
+    if (type === 'PLAN_UPGRADE') return <ArrowUpCircle className="h-3 w-3" />;
+    return null;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">{t('admin.promoCodes', 'Promo Codes')}</h3>
+          <p className="text-xs text-muted-foreground">{t('admin.promoCodesDescription', 'Manage discount codes and promotional offers.')}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={cn('h-3.5 w-3.5 mr-1.5', isLoading && 'animate-spin')} />
+            {t('common.refresh', 'Refresh')}
+          </Button>
+          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            {t('admin.createPromo', 'Create Promo')}
+          </Button>
+        </div>
+      </div>
+
+      {isError && (
+        <p className="text-sm text-destructive">{t('common.errorLoadingData')}</p>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+        </div>
+      ) : promos && promos.length > 0 ? (
+        <div className="rounded-lg border overflow-x-auto">
+          <table className="w-full min-w-[900px]">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.promoCode', 'Code')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.promoName', 'Name')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.discountType', 'Type')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.validity', 'Validity')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.usage', 'Usage')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.status')}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promos.map(promo => (
+                <tr key={promo.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-sm font-semibold tracking-wider">{promo.code}</span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">{promo.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0">
+                        {discountTypeIcon(promo.discountType)}
+                        {DISCOUNT_TYPE_LABELS[promo.discountType] ?? promo.discountType}
+                      </Badge>
+                      {promo.discountValue != null && (
+                        <span className="text-xs text-muted-foreground">
+                          {promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}%` : `$${promo.discountValue}`}
+                        </span>
+                      )}
+                      {promo.targetPlan && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', PLAN_COLORS[promo.targetPlan])}>
+                          {promo.targetPlan}
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <div className="space-y-0.5">
+                      <p>{fmtDate(promo.validFrom)}</p>
+                      {promo.validUntil && <p className="text-[10px]">→ {fmtDate(promo.validUntil)}</p>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Users2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-sm tabular-nums">
+                        {promo.usedCount}{promo.maxUses != null ? `/${promo.maxUses}` : ''}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={promo.active ? 'default' : 'secondary'} className="text-[10px]">
+                      {promo.active ? t('admin.active') : t('admin.inactive')}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>{t('admin.promoActions', 'Actions')}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setUsagePromo(promo)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('admin.viewUsage', 'View Redemptions')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditPromo(promo)}>
+                          <Tag className="mr-2 h-4 w-4" />
+                          {t('common.edit', 'Edit')}
+                        </DropdownMenuItem>
+                        {promo.active && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeactivate(promo.id)}
+                            disabled={deactivateMutation.isPending}
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            {t('admin.deactivate', 'Deactivate')}
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-10 border rounded-lg">
+          <Tag className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">{t('admin.noPromos', 'No promo codes yet.')}</p>
+          <Button size="sm" className="mt-3" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            {t('admin.createPromo', 'Create Promo')}
+          </Button>
+        </div>
+      )}
+
+      {/* Create/Edit dialog */}
+      <PromoFormDialog
+        open={createDialogOpen || editPromo !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateDialogOpen(false);
+            setEditPromo(null);
+          }
+        }}
+        initial={editPromo}
+      />
+
+      {/* Usage detail dialog */}
+      {usagePromo && (
+        <PromoUsageDialog
+          promoId={usagePromo.id}
+          promoCode={usagePromo.code}
+          open={!!usagePromo}
+          onOpenChange={(open) => { if (!open) setUsagePromo(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const Administration = () => {
@@ -1569,6 +2595,10 @@ const Administration = () => {
               <Plug className="h-4 w-4" />
               {t('admin.brokerConnections', 'Connections')}
             </TabsTrigger>
+            <TabsTrigger value="promotions" className="gap-2">
+              <Tag className="h-4 w-4" />
+              {t('admin.promotions', 'Promotions')}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <ToggleLeft className="h-4 w-4" />
               {t('admin.system', 'System')}
@@ -1593,6 +2623,10 @@ const Administration = () => {
 
           <TabsContent value="brokerConnections" className="mt-6">
             <BrokerConnectionsTab />
+          </TabsContent>
+
+          <TabsContent value="promotions" className="mt-6">
+            <PromotionsTab />
           </TabsContent>
 
           <TabsContent value="system" className="mt-6">

@@ -13,6 +13,7 @@ import {
   Loader2,
   Sparkles,
   CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -26,6 +27,9 @@ import { marketFeedService } from '@/services/marketfeed.service';
 import { useQueryClient } from '@tanstack/react-query';
 import type { MarketFeedCategory, MarketFeedItemDto } from '@/types/dto';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
+import UpgradePrompt from '@/components/subscription/UpgradePrompt';
 
 // ── Category filter configuration ────────────────────────────────────────────
 
@@ -114,8 +118,14 @@ const TrendingSymbols: React.FC<TrendingSymbolsProps> = ({ items }) => {
 
 // ── Source settings panel ─────────────────────────────────────────────────────
 
+// STARTER: 1 source max. PRO/ELITE: unlimited.
+const STARTER_SOURCE_LIMIT = 1;
+
 const SourceSettings: React.FC<{ onSourceChange?: () => void }> = ({ onSourceChange }) => {
   const { t } = useTranslation();
+  const { hasPlan, currentPlan } = useFeatureFlags();
+  const isStarter = currentPlan === 'STARTER';
+
   const { data: sources, isLoading } = useMarketFeedSources();
   const { mutate: toggleSource } = useToggleFeedSource();
   const deleteMutation = useDeleteFeedSource();
@@ -125,8 +135,12 @@ const SourceSettings: React.FC<{ onSourceChange?: () => void }> = ({ onSourceCha
   const [customKey, setCustomKey] = useState('');
   const [customType, setCustomType] = useState<'REDDIT' | 'RSS' | 'TWITTER'>('RSS');
 
+  const sourceCount = sources?.length ?? 0;
+  const atStarterLimit = isStarter && sourceCount >= STARTER_SOURCE_LIMIT;
+
   const handleAddCustom = () => {
     if (!customLabel.trim() || !customKey.trim()) return;
+    if (atStarterLimit) return;
     const sourceKey = customType === 'REDDIT' ? customKey.replace(/^r\//, '') : customKey;
     subscribeMutation.mutate(
       { source: customType, sourceKey, label: customLabel, categories: ['ALL' as any] },
@@ -143,19 +157,43 @@ const SourceSettings: React.FC<{ onSourceChange?: () => void }> = ({ onSourceCha
             {t('marketFeed.sources.title', 'My Sources')}
           </h3>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          {t('marketFeed.sources.add', 'Add')}
-        </Button>
+        {/* Show usage indicator for STARTER */}
+        {isStarter && (
+          <UsageLimitIndicator
+            used={sourceCount}
+            max={STARTER_SOURCE_LIMIT}
+            label={t('marketFeed.sources.limit', 'Sources')}
+            showBar={false}
+          />
+        )}
+        {atStarterLimit ? (
+          <a href="/pricing" className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium">
+            <Lock className="w-3 h-3" />
+            {t('subscription.upgrade', 'Upgrade')}
+          </a>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setShowAddForm(!showAddForm)}
+            disabled={atStarterLimit}
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            {t('marketFeed.sources.add', 'Add')}
+          </Button>
+        )}
       </div>
 
+      {/* Starter limit notice */}
+      {atStarterLimit && (
+        <div className="text-xs text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+          {t('marketFeed.sources.starterLimit', 'Starter plan allows 1 source. Upgrade to Pro for unlimited sources.')}
+        </div>
+      )}
+
       {/* Add custom source form */}
-      {showAddForm && (
+      {showAddForm && !atStarterLimit && (
         <div className="space-y-2 p-3 rounded-xl bg-muted/50 border border-border">
           <div className="flex gap-2">
             {(['RSS', 'REDDIT', 'TWITTER'] as const).map((type) => (
