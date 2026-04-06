@@ -49,6 +49,8 @@ import {
   Terms,
   Contact,
   Cookies,
+  PropFirmHub,
+  PropFirmEvaluationDetail,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -117,6 +119,8 @@ function App() {
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/tax-reporting" element={<FeatureGate featureKey="tax_reporting" requiredPlan="PRO"><TaxReporting /></FeatureGate>} />
+                    <Route path="/prop-firm" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmHub /></FeatureGate>} />
+                    <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
 
                     {/* Redirect from /account to /profile */}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#fff"/>
+  <path d="M8 42L24 18l8 12-8 12H8z" fill="url(#apex-grad)"/>
+  <path d="M24 18l16 24H32l-8-12z" fill="#1a1a3e"/>
+  <path d="M40 42l8-12 8 12H40z" fill="#1a1a3e"/>
+  <defs>
+    <linearGradient id="apex-grad" x1="8" y1="42" x2="32" y2="18" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#1a1a3e"/>
+    </linearGradient>
+  </defs>
+</svg>
