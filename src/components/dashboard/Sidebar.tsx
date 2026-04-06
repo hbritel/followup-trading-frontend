@@ -26,6 +26,7 @@ import {
   BellRing as BellRingIcon,
   AlertTriangle as AlertTriangleIcon,
   Calculator as CalculatorIcon,
+  Target as TargetIcon,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -82,6 +83,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/trade-replay', label: t('sidebar.tradeReplay'), icon: RewindIcon, featureKey: 'trade_replay', requiredPlan: 'PRO' as const },
         { href: '/reports', label: t('sidebar.reports'), icon: FileTextIcon, featureKey: 'reports', requiredPlan: 'STARTER' as const },
         { href: '/tax-reporting', label: t('sidebar.taxReporting', 'Tax Reporting'), icon: CalculatorIcon, requiredPlan: 'PRO' as const },
+      ],
+    },
+    {
+      label: t('sidebar.propFirm', 'Prop Firm'),
+      items: [
+        { href: '/prop-firm', label: t('sidebar.propFirmTracker', 'Evaluations'), icon: TargetIcon, featureKey: 'prop_firm', requiredPlan: 'STARTER' as const },
       ],
     },
     {

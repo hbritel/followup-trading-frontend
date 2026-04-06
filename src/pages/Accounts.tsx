@@ -700,7 +700,8 @@ const Accounts = () => {
     const statusConfig = getStatusConfigForAccount(account);
     const brokerColor = getBrokerColor(account.brokerCode || account.brokerType || '');
     const isConnected = account.status === 'CONNECTED' || account.status === 'ACTIVE';
-    const canSync = !isManualProtocol && account.enabled && isConnected;
+    const isSyncable = isConnected || account.status === 'PENDING';
+    const canSync = !isManualProtocol && account.enabled && isSyncable;
 
     return (
       <div
