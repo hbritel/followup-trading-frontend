@@ -34,3 +34,4 @@ export { default as Contact } from './Contact';
 export { default as Cookies } from './Cookies';
 export { default as PropFirmHub } from './PropFirmHub';
 export { default as PropFirmEvaluationDetail } from './PropFirmEvaluationDetail';
+export { default as AiCoach } from './AiCoach';

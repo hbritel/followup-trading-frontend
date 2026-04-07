@@ -51,6 +51,7 @@ import {
   Cookies,
   PropFirmHub,
   PropFirmEvaluationDetail,
+  AiCoach,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -122,6 +123,7 @@ function App() {
                     <Route path="/prop-firm" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmHub /></FeatureGate>} />
                     <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
+                    <Route path="/ai-coach" element={<AiCoach />} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />

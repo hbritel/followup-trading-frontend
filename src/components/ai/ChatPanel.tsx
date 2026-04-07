@@ -162,6 +162,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ open, onClose }) => {
           </div>
         </SheetHeader>
 
+        {/* Disclaimer notice */}
+        <div className="px-4 pt-2 pb-0">
+          <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
+            AI responses are for educational purposes only and do not constitute investment advice.
+            You are solely responsible for your trading decisions.
+          </p>
+        </div>
+
         {/* Messages area */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">

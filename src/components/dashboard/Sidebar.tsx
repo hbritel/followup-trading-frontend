@@ -9,6 +9,7 @@ import {
   BarChart2 as BarChart2Icon,
   BookOpen as BookOpenIcon,
   BookText as BookTextIcon,
+  Brain as BrainIcon,
   Calendar as CalendarIcon,
   ChevronDown as ChevronDownIcon,
   FileText as FileTextIcon,
@@ -74,6 +75,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       items: [
         { href: '/playbook', label: t('sidebar.playbook'), icon: BookOpenIcon },
         { href: '/insights', label: t('sidebar.insights'), icon: LineChartIcon },
+        { href: '/ai-coach', label: t('sidebar.aiCoach', 'AI Coach'), icon: BrainIcon },
         { href: '/performance', label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: '/statistics', label: t('sidebar.statistics'), icon: PieChartIcon },
         { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon, requiredPlan: 'PRO' as const },

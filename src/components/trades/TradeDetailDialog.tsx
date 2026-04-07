@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Pencil, Save, X, Loader2, Play } from 'lucide-react';
+import { Pencil, Save, X, Loader2, Play, ChevronDown, ChevronUp, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategies } from '@/hooks/useStrategies';
@@ -31,6 +31,7 @@ import { tradeService } from '@/services/trade.service';
 import type { CreateTradeRequest } from '@/services/trade.service';
 import type { Trade } from './TradesTableWrapper';
 import RuleComplianceChecklist from './RuleComplianceChecklist';
+import EmotionPicker from '@/components/ai-coach/EmotionPicker';
 
 interface TradeDetailDialogProps {
   trade: Trade | null;
@@ -137,6 +138,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
     [allStrategies],
   );
   const [editing, setEditing] = useState(false);
+  const [psychologyOpen, setPsychologyOpen] = useState(false);
   const [form, setForm] = useState<EditFormState>({
     entryPrice: '', exitPrice: '', quantity: '', entryDate: '', exitDate: '',
     direction: 'LONG', stopLoss: '', takeProfit: '', fees: '', notes: '', strategyId: '', tagIds: [],
@@ -451,6 +453,35 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               </p>
             )}
           </div>
+
+          {/* Trading Psychology — collapsible, only visible for existing trades */}
+          {trade.id && (
+            <>
+              <Separator />
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setPsychologyOpen((prev) => !prev)}
+                  className="flex items-center gap-2 w-full text-left group"
+                >
+                  <Brain className="h-4 w-4 text-primary" />
+                  <h4 className="text-sm font-semibold flex-1">
+                    {t('trades.tradingPsychology', 'Trading Psychology')}
+                  </h4>
+                  {psychologyOpen ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                {psychologyOpen && (
+                  <div className="mt-3">
+                    <EmotionPicker tradeId={trade.id} />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Metadata */}
           <Separator />

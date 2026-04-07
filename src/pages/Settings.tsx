@@ -22,6 +22,7 @@ import {
     BarChart3,
     Bell,
     BellRing,
+    Brain,
     CreditCard,
     Globe,
     Laptop,
@@ -70,6 +71,7 @@ import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
 import UsageDashboard from "@/components/subscription/UsageDashboard";
+import AiProviderSettings from "@/components/settings/AiProviderSettings";
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -395,6 +397,10 @@ const Settings = () => {
                         <TabsTrigger value="billing" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
                             <CreditCard className="h-4 w-4" />
                             {t("subscription.manageBilling", "Billing")}
+                        </TabsTrigger>
+                        <TabsTrigger value="ai-provider" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <Brain className="h-4 w-4" />
+                            {t("settings.aiProvider", "AI Provider")}
                         </TabsTrigger>
                     </TabsList>
 
@@ -906,6 +912,11 @@ const Settings = () => {
                     {/* ========== BILLING TAB ========== */}
                     <TabsContent value="billing" className="space-y-6">
                         <UsageDashboard />
+                    </TabsContent>
+
+                    {/* ========== AI PROVIDER TAB ========== */}
+                    <TabsContent value="ai-provider" className="space-y-6">
+                        <AiProviderSettings />
                     </TabsContent>
                 </Tabs>
             </div>

@@ -1122,3 +1122,114 @@ export interface MarketFeedSourceConfig {
   enabled: boolean;
   categories: MarketFeedCategory[];
 }
+
+// ── AI Coach types ──────────────────────────────────────────
+
+export interface BehavioralAlertResponseDto {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  dismissed: boolean;
+  triggerTradeId?: string;
+  createdAt: string;
+}
+
+export interface TiltScoreResponseDto {
+  score: number;
+  factors: string;
+  scoreDate: string;
+  thresholdLabel: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+}
+
+export interface BriefingResponseDto {
+  id: string;
+  briefingDate: string;
+  content: string;
+  warnings?: string;
+  strengths?: string;
+  propFirmStatus?: string;
+  status: 'GENERATED' | 'VIEWED' | 'DISMISSED';
+  generatedAt: string;
+  viewedAt?: string;
+}
+
+export interface SessionDebriefResponseDto {
+  id: string;
+  sessionDate: string;
+  summary: string;
+  sessionScore?: number;
+  tradesCount?: number;
+  sessionPnl?: number;
+  winRate?: number;
+  strengths?: string;
+  improvements?: string;
+  tomorrowRecommendation?: string;
+  generatedAt: string;
+}
+
+export interface PsychologyEntryRequestDto {
+  emotionAfter: string;
+  emotionBefore?: string;
+  confidence?: number;
+  notes?: string;
+}
+
+export interface PsychologyEntryResponseDto {
+  id: string;
+  tradeId: string;
+  emotionBefore?: string;
+  emotionAfter: string;
+  confidence?: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface PsychologyCorrelationResponseDto {
+  entries: Array<{
+    emotion: string;
+    tradeCount: number;
+    winRate: number;
+    avgPnl: number;
+  }>;
+}
+
+export interface UserAiConfigRequestDto {
+  providerType: string;
+  baseUrl?: string;
+  apiKey?: string;
+  modelName: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+export interface UserAiConfigResponseDto {
+  providerType: string;
+  baseUrl?: string;
+  maskedApiKey?: string;
+  modelName: string;
+  maxTokens?: number;
+  temperature?: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface AiProviderTestResultDto {
+  success: boolean;
+  message: string;
+  latencyMs: number;
+}
+
+export interface DisclaimerStatusDto {
+  accepted: boolean;
+  version: string;
+}
+
+export interface SessionSummaryResponseDto {
+  todayTradesCount: number;
+  todayPnl: number;
+  todayWinRate: number;
+  activeAlertCount: number;
+  tiltScore: number;
+}
