@@ -27,6 +27,7 @@ interface WatchlistDialogsProps {
   onAddSymbol: (data: SymbolFormValues) => void;
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
+  isPendingAddSymbol?: boolean;
 }
 
 const WatchlistDialogs: React.FC<WatchlistDialogsProps> = ({
@@ -43,7 +44,8 @@ const WatchlistDialogs: React.FC<WatchlistDialogsProps> = ({
   onEditWatchlist,
   onAddSymbol,
   onCancelDelete,
-  onConfirmDelete
+  onConfirmDelete,
+  isPendingAddSymbol = false,
 }) => {
   const { t } = useTranslation();
 
@@ -89,7 +91,7 @@ const WatchlistDialogs: React.FC<WatchlistDialogsProps> = ({
               {t('watchlists.addSymbolDescription')}
             </DialogDescription>
           </DialogHeader>
-          <SymbolForm onSubmit={onAddSymbol} />
+          <SymbolForm onSubmit={onAddSymbol} isPending={isPendingAddSymbol} />
         </DialogContent>
       </Dialog>
 

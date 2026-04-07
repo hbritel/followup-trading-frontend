@@ -20,10 +20,13 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Filter, Info, Loader2 } from 'lucide-react';
+import { Download, Filter, Info, Loader2, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DetailedPerformanceCharts from '@/components/performance/DetailedPerformanceCharts';
+import PageSkeleton from '@/components/ui/page-skeleton';
+import PageError from '@/components/ui/page-error';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -48,8 +51,39 @@ const InfoTip = ({ text }: { text: string }) => (
   </TooltipProvider>
 );
 
+// Reusable empty state component for Performance and Statistics pages
+const EmptyState = ({
+  icon: Icon = BarChart2,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) => (
+  <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+    <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center">
+      <Icon className="h-6 w-6 text-muted-foreground" />
+    </div>
+    <div>
+      <p className="font-medium text-sm">{title}</p>
+      <p className="text-xs text-muted-foreground mt-1 max-w-[280px]">{description}</p>
+    </div>
+    {actionLabel && onAction && (
+      <Button size="sm" variant="outline" onClick={onAction} className="mt-1">
+        {actionLabel}
+      </Button>
+    )}
+  </div>
+);
+
 const Performance = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('performance', 'accountId', 'all');
   const [datePreset, setDatePreset] = useDefaultDatePreset('performance', '3m');
@@ -64,15 +98,21 @@ const Performance = () => {
       }
     : computeDateRange(datePreset);
 
-  const { data: performance, isLoading: perfLoading } = useTradePerformance(
+  const { data: performance, isLoading: perfLoading, isError: perfError, refetch: refetchPerf } = useTradePerformance(
     dateRange.startDate, dateRange.endDate, accountIds
   );
-  const { data: summary, isLoading: summaryLoading } = useDashboardSummary(
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useDashboardSummary(
     dateRange.startDate, dateRange.endDate, accountIds
   );
   const { data: analytics } = useAnalytics(accountIds, dateRange.startDate, dateRange.endDate);
 
   const isLoading = perfLoading || summaryLoading;
+  const isError = perfError || summaryError;
+
+  const handleRetry = () => {
+    refetchPerf();
+    refetchSummary();
+  };
 
   const symbolEntries = summary?.performanceByAssetType
     ? Object.entries(summary.performanceByAssetType).map(([symbol, pnl]) => ({
@@ -87,6 +127,26 @@ const Performance = () => {
         total: pnl,
       }))
     : [];
+
+  if (isLoading) {
+    return (
+      <DashboardLayout pageTitle={t('pages.performance')}>
+        <PageSkeleton variant="cards" cardCount={3} />
+      </DashboardLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <DashboardLayout pageTitle={t('pages.performance')}>
+        <PageError
+          title="Failed to load performance data"
+          message="Could not fetch your performance metrics. Please try again."
+          onRetry={handleRetry}
+        />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout pageTitle={t('pages.performance')}>
@@ -210,7 +270,12 @@ const Performance = () => {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
                     ) : symbolEntries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                      <EmptyState
+                        title={t('performance.noSymbolData', 'No symbol data for this period')}
+                        description={t('performance.noSymbolDataDesc', 'No trades found for this period. Try a wider date range or add trades.')}
+                        actionLabel={t('performance.viewAllTrades', 'View all trades')}
+                        onAction={() => navigate('/trades')}
+                      />
                     ) : (
                       <table className="w-full">
                         <thead>
@@ -244,7 +309,12 @@ const Performance = () => {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
                     ) : directionEntries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData', 'No data available')}</p>
+                      <EmptyState
+                        title={t('performance.noDirectionData', 'No direction data for this period')}
+                        description={t('performance.noDirectionDataDesc', 'No trades found for this period. Try a wider date range or add trades.')}
+                        actionLabel={t('performance.viewAllTrades', 'View all trades')}
+                        onAction={() => navigate('/trades')}
+                      />
                     ) : (
                       <table className="w-full">
                         <thead>

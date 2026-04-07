@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   ArrowLeft, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-  Calendar, Hash, DollarSign,
+  Calendar, Hash, DollarSign, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BacktestChart, { type StaticPriceLine, type StaticMarker } from '@/components/backtesting/BacktestChart';
@@ -25,6 +25,7 @@ import { useTradeReplay } from '@/hooks/useTradeReplay';
 import { useMarketHistory } from '@/hooks/useMarketHistory';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import PlanBadge from '@/components/subscription/PlanBadge';
+import { useToast } from '@/hooks/use-toast';
 
 // Timeframes: PRO gets 1h, 4h, 1d — ELITE gets all (including 1m, 5m, 15m, 1w)
 const TIMEFRAMES: { value: string; label: string; requiredPlan: 'PRO' | 'ELITE' }[] = [
@@ -39,6 +40,7 @@ const TIMEFRAMES: { value: string; label: string; requiredPlan: 'PRO' | 'ELITE' 
 const TradeReplay = () => {
   const { t } = useTranslation();
   const { hasPlan } = useFeatureFlags();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const initialTradeId = searchParams.get('tradeId');
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(initialTradeId);
@@ -181,18 +183,30 @@ const TradeReplay = () => {
                             <Button
                               variant={isActive ? 'default' : 'ghost'}
                               size="sm"
-                              disabled={!accessible}
                               className={cn(
-                                'h-8 px-3 text-xs font-mono relative',
+                                'h-8 px-3 text-xs font-mono relative flex flex-col items-center gap-0',
                                 isActive && 'shadow-sm',
-                                !accessible && 'opacity-50 cursor-not-allowed',
+                                !accessible && 'opacity-70 cursor-not-allowed',
                               )}
-                              onClick={() => accessible && setCustomTimeframe(tf.value === replayData.interval ? null : tf.value)}
+                              onClick={() => {
+                                if (!accessible) {
+                                  toast({
+                                    title: `Upgrade to ${tf.requiredPlan} to unlock this timeframe`,
+                                    description: `The ${tf.label} timeframe requires the ${tf.requiredPlan} plan.`,
+                                    variant: 'destructive',
+                                  });
+                                  return;
+                                }
+                                setCustomTimeframe(tf.value === replayData.interval ? null : tf.value);
+                              }}
                             >
-                              {tf.label}
+                              <span className="flex items-center gap-1">
+                                {!accessible && <Lock className="h-3 w-3 text-amber-400" />}
+                                {tf.label}
+                              </span>
                               {!accessible && (
-                                <span className="absolute -top-1.5 -right-1 text-[8px] font-bold text-amber-400 leading-none">
-                                  E
+                                <span className="hidden sm:block text-[8px] font-bold text-amber-400 leading-none">
+                                  {tf.requiredPlan}
                                 </span>
                               )}
                             </Button>
@@ -202,7 +216,7 @@ const TradeReplay = () => {
                           <TooltipContent side="bottom">
                             <div className="flex items-center gap-1.5">
                               <PlanBadge plan={tf.requiredPlan} size="sm" />
-                              <span className="text-xs">required</span>
+                              <span className="text-xs">required — click to upgrade</span>
                             </div>
                           </TooltipContent>
                         )}

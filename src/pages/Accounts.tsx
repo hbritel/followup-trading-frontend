@@ -76,6 +76,7 @@ import { cn } from '@/lib/utils';
 import { brokerService, type ConnectBrokerRequest, type BrokerConnectionResponse } from '@/services/broker.service';
 import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
+import PageError from '@/components/ui/page-error';
 
 // --- Helpers ---
 const formatBrokerName = (brokerType: string): string => {
@@ -389,6 +390,7 @@ const Accounts = () => {
   const [manualAccountOpen, setManualAccountOpen] = useState(false);
   const [manualName, setManualName] = useState('');
   const [manualAccountType, setManualAccountType] = useState<string>('REAL');
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   // --- Form state for linking ---
   const [newBrokerType, setNewBrokerType] = useState('');
@@ -409,6 +411,7 @@ const Accounts = () => {
     isLoading,
     isError,
     error,
+    refetch: refetchAccounts,
   } = useQuery({
     queryKey: ['broker-connections'],
     queryFn: brokerService.getConnections,
@@ -469,6 +472,7 @@ const Accounts = () => {
       } else {
         toast({ title: t('accounts.connectionFailed'), description: t('accounts.connectionFailedDescription'), variant: 'destructive' });
       }
+      setInlineError(err.message || t('accounts.connectionFailedDescription'));
     },
   });
 
@@ -997,16 +1001,30 @@ const Accounts = () => {
           )}
         </div>
 
-        {/* Error State */}
+        {/* Error State - account list load failure */}
         {isError && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5 shrink-0" />
-                <span>{t('accounts.failedToLoadAccounts', { error: (error as Error)?.message || t('accounts.unknownError') })}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <PageError
+            title={t('accounts.failedToLoadAccounts', 'Failed to load accounts')}
+            message={(error as Error)?.message || 'Could not connect to the server. Check your connection and try again.'}
+            onRetry={refetchAccounts}
+          />
+        )}
+
+        {/* Inline mutation error */}
+        {inlineError && !isError && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+              <span className="text-destructive">{inlineError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setInlineError(null)}
+              className="text-destructive/70 hover:text-destructive text-xs underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
 
         {/* Accounts List */}
@@ -1018,6 +1036,18 @@ const Accounts = () => {
           <CardContent>
             {isLoading ? (
               <AccountsListSkeleton count={3} />
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <AlertTriangle className="h-10 w-10 text-destructive/50 mb-3" />
+                <p className="font-medium text-sm text-destructive">Failed to load accounts. Check your connection.</p>
+                <button
+                  type="button"
+                  onClick={() => refetchAccounts()}
+                  className="mt-3 text-xs text-primary underline hover:no-underline"
+                >
+                  Retry
+                </button>
+              </div>
             ) : accounts.length === 0 ? (
               renderEmptyState()
             ) : (

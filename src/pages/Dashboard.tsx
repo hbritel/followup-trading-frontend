@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BarChart2,
@@ -6,6 +6,7 @@ import {
   PercentIcon,
   TrendingUp,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePageFilter } from '@/contexts/page-filters-context';
 import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTrades } from '@/hooks/useTrades';
@@ -20,6 +21,7 @@ import AccountSelector from '@/components/dashboard/AccountSelector';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import { DashboardSkeleton } from '@/components/skeletons';
 import { useDashboardSummary } from '@/hooks/useAdvancedMetrics';
+import PageError from '@/components/ui/page-error';
 // TODO: re-enable once real-time positions are ready
 // import OpenPositionsPanel from '@/components/dashboard/OpenPositionsPanel';
 
@@ -60,10 +62,12 @@ const Dashboard = () => {
   useLiveTrades();
   useLiveAlerts();
 
-  const { data: analytics, isLoading: analyticsLoading } = useAnalytics(
+  const queryClient = useQueryClient();
+
+  const { data: analytics, isLoading: analyticsLoading, isError: analyticsError } = useAnalytics(
     accountIds, dateRange.startDate, dateRange.endDate
   );
-  const { data: tradesResponse, isLoading: tradesLoading } = useTrades({
+  const { data: tradesResponse, isLoading: tradesLoading, isError: tradesError } = useTrades({
     page: 0,
     size: 10,
     accountIds: accountIds
@@ -74,6 +78,24 @@ const Dashboard = () => {
 
   const trades = tradesResponse?.content || [];
   const isLoading = analyticsLoading || tradesLoading;
+  const isError = analyticsError || tradesError;
+
+  // Show a "taking longer than expected" banner after 15 s of loading
+  const [isSlowLoad, setIsSlowLoad] = useState(false);
+  useEffect(() => {
+    if (!isLoading) {
+      setIsSlowLoad(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsSlowLoad(true), 15000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    queryClient.invalidateQueries({ queryKey: ['trades'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+  };
 
   // Build sparkline from backend-computed cumulative equity
   const equitySparkline: number[] = React.useMemo(() => {
@@ -96,9 +118,26 @@ const Dashboard = () => {
     });
   }, [analytics]);
 
+  if (isError && !isLoading) {
+    return (
+      <DashboardLayout pageTitle={t('pages.dashboard')}>
+        <PageError
+          title="Failed to load dashboard data"
+          message="We could not fetch your trading data. Please check your connection and try again."
+          onRetry={handleRetry}
+        />
+      </DashboardLayout>
+    );
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout pageTitle={t('pages.dashboard')}>
+        {isSlowLoad && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-700 dark:text-amber-300">
+            <span>Taking longer than expected. Your data is on its way...</span>
+          </div>
+        )}
         <DashboardSkeleton />
       </DashboardLayout>
     );

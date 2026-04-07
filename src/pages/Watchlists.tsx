@@ -144,7 +144,6 @@ const Watchlists = () => {
   const handleAddSymbol = (data: SymbolFormValues) => {
     if (!effectiveActiveId) return;
 
-    setOpenAddSymbolDialog(false);
     addItemMutation.mutate(
       {
         watchlistId: effectiveActiveId,
@@ -160,6 +159,7 @@ const Watchlists = () => {
       },
       {
         onSuccess: () => {
+          setOpenAddSymbolDialog(false);
           toast({
             title: t('watchlists.symbolAdded'),
             description: t('watchlists.symbolHasBeenAdded', { symbol: data.symbol.toUpperCase() }),
@@ -350,6 +350,7 @@ const Watchlists = () => {
         onAddSymbol={handleAddSymbol}
         onCancelDelete={() => setOpenDeleteWatchlistDialog(false)}
         onConfirmDelete={handleDeleteWatchlist}
+        isPendingAddSymbol={addItemMutation.isPending}
       />
     </DashboardLayout>
   );

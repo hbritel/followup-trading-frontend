@@ -20,7 +20,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useSymbolSearch } from '@/hooks/useSymbolSearch';
 import { cn } from '@/lib/utils';
-import { Search, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Bell, ChevronDown, Mail, Smartphone } from 'lucide-react';
+import { Search, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Bell, ChevronDown, Mail, Smartphone, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -46,9 +46,10 @@ export interface SymbolFormValues {
 
 interface SymbolFormProps {
   onSubmit: (data: SymbolFormValues) => void;
+  isPending?: boolean;
 }
 
-const SymbolForm: React.FC<SymbolFormProps> = ({ onSubmit }) => {
+const SymbolForm: React.FC<SymbolFormProps> = ({ onSubmit, isPending = false }) => {
   const { t } = useTranslation();
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [symbolInput, setSymbolInput] = useState('');
@@ -347,7 +348,19 @@ const SymbolForm: React.FC<SymbolFormProps> = ({ onSubmit }) => {
         </Collapsible>
 
         <DialogFooter>
-          <Button type="submit">{t('watchlists.addSymbol')}</Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('common.saving', 'Adding...')}
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                {t('watchlists.addSymbol')}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </form>
     </Form>
