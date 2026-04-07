@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import PageSkeleton from '@/components/ui/page-skeleton';
+import PageError from '@/components/ui/page-error';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
 import { useInsights, useDismissInsight } from '@/hooks/useInsights';
@@ -59,7 +61,7 @@ const Insights = () => {
   const navigate = useNavigate();
 
   // AI Insights data
-  const { data: insights, isLoading } = useInsights();
+  const { data: insights, isLoading, isError: insightsError, refetch: refetchInsights } = useInsights();
   const dismissInsight = useDismissInsight();
   const { toast } = useToast();
   const { data: digest, isLoading: digestLoading, isError: digestError } = useWeeklyDigest();
@@ -298,7 +300,14 @@ const Insights = () => {
   };
 
   const renderInsightsContent = () => {
-    if (isLoading) return renderLoadingSkeleton();
+    if (isLoading) return <PageSkeleton variant="cards" cardCount={3} />;
+    if (insightsError) return (
+      <PageError
+        title="Failed to load insights"
+        message="Could not fetch your trading insights. Please try again."
+        onRetry={refetchInsights}
+      />
+    );
     if (activeInsights.length === 0) return renderEmptyState();
     return <div className="space-y-4">{activeInsights.map(renderInsightCard)}</div>;
   };
@@ -328,10 +337,6 @@ const Insights = () => {
                 className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
               />
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 mb-4">
-            <h1 className="text-2xl font-bold text-gradient animate-fade-in">{t('pages.insights')}</h1>
           </div>
 
           {/* KPI Summary Strip — always visible above tabs */}

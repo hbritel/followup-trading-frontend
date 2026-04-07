@@ -1,5 +1,6 @@
 
 import { useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PlanGatedSection from '@/components/subscription/PlanGatedSection';
@@ -23,8 +24,12 @@ import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/Da
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import { useDayOfWeekPerformance, useHourOfDayPerformance } from '@/hooks/useTimeMetrics';
-import { Info } from 'lucide-react';
+import { Info, BarChart2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import PageSkeleton from '@/components/ui/page-skeleton';
+import PageError from '@/components/ui/page-error';
 
 const COLORS = ['#1E40AF', '#dc2626'];
 
@@ -32,8 +37,40 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Reusable contextual empty state for statistics charts/tables
+const StatEmptyState = ({
+  icon: Icon = BarChart2,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) => (
+  <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+    <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center">
+      <Icon className="h-6 w-6 text-muted-foreground" />
+    </div>
+    <div>
+      <p className="font-medium text-sm">{title}</p>
+      <p className="text-xs text-muted-foreground mt-1 max-w-[280px]">{description}</p>
+    </div>
+    {actionLabel && onAction && (
+      <Button size="sm" variant="outline" onClick={onAction} className="mt-1">
+        {actionLabel}
+      </Button>
+    )}
+  </div>
+);
+
 const Statistics = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('statistics', 'accountId', 'all');
   const [datePreset, setDatePreset] = useDefaultDatePreset('statistics');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('statistics', 'customStart', null);
@@ -67,6 +104,14 @@ const Statistics = () => {
   );
 
   const isLoading = analyticsLoading || summaryLoading || dowLoading || hodLoading;
+  const isError = (analytics === undefined && !analyticsLoading) || (summary === undefined && !summaryLoading);
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['day-of-week-performance'] });
+    queryClient.invalidateQueries({ queryKey: ['hour-of-day-performance'] });
+  };
 
   // Map API data to chart format
   const tradeDayData = (dayOfWeekData ?? []).map(d => ({
@@ -165,6 +210,26 @@ const Statistics = () => {
       </Tooltip>
     </TooltipProvider>
   );
+
+  if (isLoading) {
+    return (
+      <DashboardLayout pageTitle={t('pages.statistics')}>
+        <PageSkeleton variant="cards" cardCount={4} />
+      </DashboardLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <DashboardLayout pageTitle={t('pages.statistics')}>
+        <PageError
+          title="Failed to load statistics"
+          message="Could not fetch your trading statistics. Please try again."
+          onRetry={handleRetry}
+        />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout pageTitle={t('pages.statistics')}>
@@ -328,8 +393,13 @@ const Statistics = () => {
                   <Skeleton className="h-40 w-40 rounded-full" />
                 </div>
               ) : totalTrades === 0 ? (
-                <div className="h-full flex items-center justify-center text-muted-foreground">
-                  {t('statistics.noTradesForPeriod')}
+                <div className="h-full flex items-center justify-center">
+                  <StatEmptyState
+                    title={t('statistics.noTradesForPeriod', 'No trades for this period')}
+                    description={t('statistics.noTradesHint', 'Try a wider date range or add trades to see your distribution.')}
+                    actionLabel={t('statistics.viewAllTrades', 'View all trades')}
+                    onAction={() => navigate('/trades')}
+                  />
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -437,7 +507,12 @@ const Statistics = () => {
                     {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
                   </div>
                 ) : bestSessions.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+                  <StatEmptyState
+                    title={t('statistics.noSessionData', 'No session data')}
+                    description={t('statistics.noSessionDataDesc', 'No trades found for this period. Try a wider date range or add trades.')}
+                    actionLabel={t('statistics.viewAllTrades', 'View all trades')}
+                    onAction={() => navigate('/trades')}
+                  />
                 ) : (
                   <div className="space-y-4">
                     {bestSessions.map((s) => (
@@ -469,7 +544,12 @@ const Statistics = () => {
                     {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
                   </div>
                 ) : worstSessions.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t('statistics.noTradesForPeriod')}</div>
+                  <StatEmptyState
+                    title={t('statistics.noSessionData', 'No session data')}
+                    description={t('statistics.noSessionDataDesc', 'No trades found for this period. Try a wider date range or add trades.')}
+                    actionLabel={t('statistics.viewAllTrades', 'View all trades')}
+                    onAction={() => navigate('/trades')}
+                  />
                 ) : (
                   <div className="space-y-4">
                     {worstSessions.map((s) => (

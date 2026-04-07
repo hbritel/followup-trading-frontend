@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
 interface TradeColumnFilterProps {
   visibleColumns: Record<string, boolean>;
@@ -12,6 +13,7 @@ interface TradeColumnFilterProps {
   onApply: () => void;
   onReset: () => void;
   onSaveDefault?: () => void;
+  isSavingDefault?: boolean;
 }
 
 const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
@@ -19,7 +21,8 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
   onChange,
   onApply,
   onReset,
-  onSaveDefault
+  onSaveDefault,
+  isSavingDefault = false,
 }) => {
   const { t } = useTranslation();
 
@@ -66,8 +69,15 @@ const TradeColumnFilter: React.FC<TradeColumnFilterProps> = ({
       <div className="flex justify-between">
         <div>
           {onSaveDefault && (
-            <Button variant="secondary" onClick={onSaveDefault}>
-              {t('trades.setAsDefault', 'Set as Default')}
+            <Button variant="secondary" onClick={onSaveDefault} disabled={isSavingDefault}>
+              {isSavingDefault ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('common.saving', 'Saving...')}
+                </>
+              ) : (
+                t('trades.setAsDefault', 'Save Defaults')
+              )}
             </Button>
           )}
         </div>

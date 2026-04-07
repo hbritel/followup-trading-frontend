@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Newspaper,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   CheckCircle2,
   Lock,
+  ArrowUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -441,6 +442,9 @@ const FeedOnboarding: React.FC<{ onSourceChange?: () => void }> = ({ onSourceCha
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+const MAX_FEED_ITEMS = 200;
+const BACK_TO_TOP_PAGE_THRESHOLD = 3; // show "back to top" after 3 pages loaded
+
 const SocialFeed: React.FC = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -449,6 +453,8 @@ const SocialFeed: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('ALL');
   const [page, setPage] = useState(0);
   const [allItems, setAllItems] = useState<MarketFeedItemDto[]>([]);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const feedTopRef = useRef<HTMLDivElement>(null);
 
   const isDiscoverMode = activeTab === 'DISCOVER';
   const feedCategory = isDiscoverMode ? 'ALL' : activeTab as MarketFeedCategory;
@@ -459,14 +465,25 @@ const SocialFeed: React.FC = () => {
   // Only fetch feed when not in discover mode
   const { data, isLoading, isFetching, isError, refetch, dataUpdatedAt } = useMarketFeed(feedCategory, page);
 
-  // Accumulate items across pages; reset when category or data changes at page 0
+  // Accumulate items across pages with a max cap; reset when category or data changes at page 0
   useEffect(() => {
     if (page === 0) {
       setAllItems(data?.items ?? []);
     } else if (data?.items) {
-      setAllItems((prev) => [...prev, ...data.items]);
+      setAllItems((prev) => {
+        const combined = [...prev, ...data.items];
+        // Cap at MAX_FEED_ITEMS — remove oldest (front) when exceeded
+        return combined.length > MAX_FEED_ITEMS
+          ? combined.slice(combined.length - MAX_FEED_ITEMS)
+          : combined;
+      });
     }
   }, [data, page]);
+
+  // Show "back to top" button after 3 pages of content
+  useEffect(() => {
+    setShowBackToTop(page >= BACK_TO_TOP_PAGE_THRESHOLD);
+  }, [page]);
 
   // Reset pagination on tab change — only if actually changing
   const handleTabChange = (tab: ActiveTab) => {
@@ -617,7 +634,7 @@ const SocialFeed: React.FC = () => {
         <div className="flex gap-6 items-start">
 
           {/* ── Feed area ── */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0" ref={feedTopRef}>
 
             {/* DISCOVER tab — always shows onboarding/recommendations */}
             {isDiscoverMode && (
@@ -721,6 +738,32 @@ const SocialFeed: React.FC = () => {
                 </Button>
               </div>
             )}
+
+            {/* End of feed indicator */}
+            {!isDiscoverMode && !isLoading && !isError && allItems.length > 0 && !hasMore && (
+              <div className="flex flex-col items-center justify-center gap-2 mt-8 py-6 border-t border-border/40">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {t('marketFeed.endOfFeed', "You've reached the end")}
+                </p>
+                <p className="text-xs text-muted-foreground/60">
+                  {t('marketFeed.endOfFeedDesc', 'Refresh to load new items or check back later.')}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 gap-2"
+                  onClick={() => {
+                    setPage(0);
+                    setAllItems([]);
+                    refetch();
+                  }}
+                  disabled={isFetching}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+                  {t('common.refresh', 'Refresh')}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* ── Desktop sidebar ── */}
@@ -732,6 +775,24 @@ const SocialFeed: React.FC = () => {
         </div>
 
       </PageTransition>
+
+      {/* Floating "Back to top" button — shown after 3+ pages */}
+      {showBackToTop && !isDiscoverMode && (
+        <button
+          type="button"
+          onClick={() => {
+            feedTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          className={cn(
+            'fixed bottom-6 right-6 z-50 flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium shadow-lg transition-all duration-200',
+            'bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          )}
+          aria-label={t('common.backToTop', 'Back to top')}
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+          {t('common.backToTop', 'Back to top')}
+        </button>
+      )}
     </DashboardLayout>
   );
 };

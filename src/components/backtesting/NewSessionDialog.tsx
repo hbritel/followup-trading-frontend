@@ -62,6 +62,9 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
 
+  // Touched state — only show errors after user has interacted with the field
+  const [touched, setTouched] = useState({ name: false, symbol: false, startDate: false, endDate: false });
+
   // Yahoo Finance date limits per timeframe (range-based, not absolute)
   const { minDate, maxDate, maxRangeDays } = useMemo(() => {
     const today = new Date();
@@ -114,6 +117,8 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
   }, []);
 
   const handleSubmit = () => {
+    // Mark all required fields as touched to show validation errors
+    setTouched({ name: true, symbol: true, startDate: true, endDate: true });
     if (!name || !symbol || !startDate || !endDate) return;
     onSubmit({
       name,
@@ -133,12 +138,29 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
     setStartDate(undefined);
     setEndDate(undefined);
     setInitialCapital('10000');
+    setTouched({ name: false, symbol: false, startDate: false, endDate: false });
   };
 
-  const isValid = name && symbol && startDate && endDate;
+  const isValid = !!(name && symbol && startDate && endDate);
+
+  // Per-field error visibility (only after touch)
+  const errors = {
+    name: touched.name && !name,
+    symbol: touched.symbol && !symbol,
+    startDate: touched.startDate && !startDate,
+    endDate: touched.endDate && !endDate,
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // Reset touched state when dialog closes so validation doesn't linger
+      setTouched({ name: false, symbol: false, startDate: false, endDate: false });
+    }
+    onOpenChange(open);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('backtesting.newSession')}</DialogTitle>
@@ -148,7 +170,10 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
         <div className="space-y-4 py-2">
           {/* Icon + Session Name */}
           <div className="space-y-2">
-            <Label>{t('backtesting.sessionName')}</Label>
+            <Label>
+              {t('backtesting.sessionName')}
+              <span className="text-destructive ml-1">*</span>
+            </Label>
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -181,22 +206,29 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
                 </PopoverContent>
               </Popover>
               <Input
-                className="flex-1"
+                className={cn('flex-1', errors.name && 'border-destructive focus-visible:ring-destructive')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, name: true }))}
                 placeholder={t('backtesting.sessionNamePlaceholder')}
               />
             </div>
+            {errors.name && (
+              <p className="text-xs text-destructive">{t('backtesting.nameRequired', 'Session name is required')}</p>
+            )}
           </div>
 
           {/* Symbol with autocomplete */}
           <div className="space-y-2">
-            <Label>{t('backtesting.symbol')}</Label>
+            <Label>
+              {t('backtesting.symbol')}
+              <span className="text-destructive ml-1">*</span>
+            </Label>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 ref={inputRef}
-                className="pl-8"
+                className={cn('pl-8', errors.symbol && 'border-destructive focus-visible:ring-destructive')}
                 value={symbol}
                 onChange={(e) => {
                   const val = e.target.value.toUpperCase();
@@ -205,6 +237,7 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
                   if (!name) setName(`${val} Backtest`);
                 }}
                 onFocus={() => { if (symbol.length >= 2) setShowSuggestions(true); }}
+                onBlur={() => setTouched((prev) => ({ ...prev, symbol: true }))}
                 placeholder={t('backtesting.symbolPlaceholder')}
                 autoComplete="off"
               />
@@ -236,6 +269,9 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
                 </div>
               )}
             </div>
+            {errors.symbol && (
+              <p className="text-xs text-destructive">{t('backtesting.symbolRequired', 'Symbol is required')}</p>
+            )}
           </div>
 
           {/* Strategy + Timeframe in a row */}
@@ -272,10 +308,21 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
           {/* Date Range */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>{t('backtesting.startDate')}</Label>
+              <Label>
+                {t('backtesting.startDate')}
+                <span className="text-destructive ml-1">*</span>
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !startDate && 'text-muted-foreground')}>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !startDate && 'text-muted-foreground',
+                      errors.startDate && 'border-destructive',
+                    )}
+                    onBlur={() => setTouched((prev) => ({ ...prev, startDate: true }))}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {startDate ? format(startDate, 'yyyy-MM-dd') : t('backtesting.pickDate')}
                   </Button>
@@ -284,19 +331,36 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(d) => {
+                      setStartDate(d);
+                      setTouched((prev) => ({ ...prev, startDate: true }));
+                    }}
                     disabled={(date) => date < minDate || date > maxDate}
                     defaultMonth={minDate > new Date(2020, 0, 1) ? minDate : undefined}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {errors.startDate && (
+                <p className="text-xs text-destructive">{t('backtesting.startDateRequired', 'Start date is required')}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label>{t('backtesting.endDate')}</Label>
+              <Label>
+                {t('backtesting.endDate')}
+                <span className="text-destructive ml-1">*</span>
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !endDate && 'text-muted-foreground')}>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !endDate && 'text-muted-foreground',
+                      errors.endDate && 'border-destructive',
+                    )}
+                    onBlur={() => setTouched((prev) => ({ ...prev, endDate: true }))}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? format(endDate, 'yyyy-MM-dd') : t('backtesting.pickDate')}
                   </Button>
@@ -305,13 +369,19 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(d) => {
+                      setEndDate(d);
+                      setTouched((prev) => ({ ...prev, endDate: true }));
+                    }}
                     disabled={(date) => date < (startDate ?? minDate) || date > maxEndDate}
                     defaultMonth={startDate ?? (minDate > new Date(2020, 0, 1) ? minDate : undefined)}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {errors.endDate && (
+                <p className="text-xs text-destructive">{t('backtesting.endDateRequired', 'End date is required')}</p>
+              )}
             </div>
           </div>
 
@@ -332,7 +402,7 @@ const NewSessionDialog: React.FC<NewSessionDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>{t('common.cancel')}</Button>
           <Button onClick={handleSubmit} disabled={!isValid || isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('backtesting.createSession')}

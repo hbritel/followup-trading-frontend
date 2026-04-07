@@ -5,7 +5,7 @@ import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, AlertTriangle, BookOpen, X, Info } from 'lucide-react';
+import { Plus, Columns, Search, AlertTriangle, BookOpen, X, Info, Loader2 } from 'lucide-react';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useSubscription } from '@/hooks/useSubscription';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -30,6 +30,8 @@ import TradeDetailDialog from '@/components/trades/TradeDetailDialog';
 import { tradeService } from '@/services/trade.service';
 import { userService } from '@/services/user.service';
 import { TradeTableSkeleton } from '@/components/skeletons';
+import ErrorBoundary from '@/components/ui/error-boundary';
+import PageError from '@/components/ui/page-error';
 
 /** Format a Date to YYYY-MM-DD */
 const toISODate = (d: Date): string => {
@@ -237,6 +239,7 @@ const Trades = () => {
 
   // --- UI state ---
   const [importOpen, setImportOpen] = useState(false);
+  const [isSavingColumns, setIsSavingColumns] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(loadColumnDefaults);
   const [showColumnFilter, setShowColumnFilter] = useState(false);
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
@@ -277,16 +280,25 @@ const Trades = () => {
   const handleResetColumnVisibility = () => {
     setVisibleColumns(loadColumnDefaults());
   };
-  const handleSaveColumnDefaults = () => {
+  const handleSaveColumnDefaults = async () => {
+    setIsSavingColumns(true);
     const json = JSON.stringify(visibleColumns);
     saveColumnDefaultsToLocalStorage(visibleColumns);
-    userService.updateUserPreferences({ tradeColumnDefaults: json }).catch(() => {
-      /* server save failed — localStorage still has it */
-    });
-    toast({
-      title: t('trades.columnDefaultsSaved', 'Column defaults saved'),
-      description: t('trades.columnDefaultsSavedDesc', 'Your column preferences will be remembered.'),
-    });
+    try {
+      await userService.updateUserPreferences({ tradeColumnDefaults: json });
+      toast({
+        title: t('trades.columnDefaultsSaved', 'Column preferences saved'),
+        description: t('trades.columnDefaultsSavedDesc', 'Your column preferences will be remembered across sessions.'),
+      });
+    } catch {
+      toast({
+        title: t('common.error', 'Error'),
+        description: t('trades.columnDefaultsSaveFailed', 'Failed to save preferences to server. Local changes were kept.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingColumns(false);
+    }
   };
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -372,6 +384,7 @@ const Trades = () => {
               onApply={() => setShowColumnFilter(false)}
               onReset={handleResetColumnVisibility}
               onSaveDefault={handleSaveColumnDefaults}
+              isSavingDefault={isSavingColumns}
             />
           </Card>
         )}
@@ -443,6 +456,15 @@ const Trades = () => {
 
         {/* Trades table */}
         {!isLoading && !isError && totalElements > 0 && (
+          <ErrorBoundary
+            fallback={
+              <PageError
+                title="Failed to render trades"
+                message="An unexpected error occurred while displaying your trades."
+                onRetry={() => queryClient.invalidateQueries({ queryKey: ['trades'] })}
+              />
+            }
+          >
           <div className="glass-card rounded-2xl w-full overflow-hidden">
             <TradesTableWrapper
               trades={enrichedTrades}
@@ -461,6 +483,7 @@ const Trades = () => {
               highlightTradeId={highlightTradeId}
             />
           </div>
+          </ErrorBoundary>
         )}
       </PageTransition>
 
