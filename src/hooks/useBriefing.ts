@@ -3,14 +3,14 @@ import { coachService } from '@/services/coach.service';
 import type { BriefingResponseDto } from '@/types/dto';
 import { toast } from 'sonner';
 
-const BRIEFING_KEY = ['ai', 'briefing', 'today'];
+const briefingKey = (accountId?: string) => ['ai', 'briefing', 'today', accountId ?? 'all'];
 
-export const useBriefing = () => {
+export const useBriefing = (accountId?: string) => {
   return useQuery<BriefingResponseDto | null>({
-    queryKey: BRIEFING_KEY,
+    queryKey: briefingKey(accountId),
     queryFn: async () => {
       try {
-        const res = await coachService.getTodayBriefing();
+        const res = await coachService.getTodayBriefing(accountId);
         return res.data;
       } catch (err: unknown) {
         // 404 means no briefing for today — return null
@@ -24,15 +24,15 @@ export const useBriefing = () => {
   });
 };
 
-export const useGenerateBriefing = () => {
+export const useGenerateBriefing = (accountId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await coachService.generateBriefing();
+      const res = await coachService.generateBriefing(accountId);
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData<BriefingResponseDto | null>(BRIEFING_KEY, data);
+      queryClient.setQueryData<BriefingResponseDto | null>(briefingKey(accountId), data);
     },
     onError: () => {
       toast.error('Failed to generate briefing. Please try again.');

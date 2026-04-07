@@ -49,9 +49,13 @@ const SimpleMarkdown: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-const SessionDebriefCard: React.FC = () => {
-  const { data: debrief, isLoading } = useDebrief();
-  const { mutate: generate, isPending: isGenerating } = useGenerateDebrief();
+interface SessionDebriefCardProps {
+  accountId?: string;
+}
+
+const SessionDebriefCard: React.FC<SessionDebriefCardProps> = ({ accountId }) => {
+  const { data: debrief, isLoading } = useDebrief(accountId);
+  const { mutate: generate, isPending: isGenerating } = useGenerateDebrief(accountId);
 
   if (isLoading) {
     return (

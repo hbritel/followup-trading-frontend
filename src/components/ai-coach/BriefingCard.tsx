@@ -40,9 +40,13 @@ const renderInline = (text: string): string => {
   return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 };
 
-const BriefingCard: React.FC = () => {
-  const { data: briefing, isLoading } = useBriefing();
-  const { mutate: generate, isPending: isGenerating } = useGenerateBriefing();
+interface BriefingCardProps {
+  accountId?: string;
+}
+
+const BriefingCard: React.FC<BriefingCardProps> = ({ accountId }) => {
+  const { data: briefing, isLoading } = useBriefing(accountId);
+  const { mutate: generate, isPending: isGenerating } = useGenerateBriefing(accountId);
 
   if (isLoading) {
     return (

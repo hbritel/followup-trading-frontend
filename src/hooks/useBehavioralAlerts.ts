@@ -6,17 +6,17 @@ import { useWebSocket } from '@/providers/WebSocketProvider';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 
-const ALERTS_KEY = ['ai', 'coach', 'alerts'];
+const alertsKey = (accountId?: string) => ['ai', 'coach', 'alerts', accountId ?? 'all'];
 
-export const useBehavioralAlerts = () => {
+export const useBehavioralAlerts = (accountId?: string) => {
   const queryClient = useQueryClient();
   const { subscribe } = useWebSocket();
   const { user } = useAuth();
 
   const query = useQuery<BehavioralAlertResponseDto[]>({
-    queryKey: ALERTS_KEY,
+    queryKey: alertsKey(accountId),
     queryFn: async () => {
-      const res = await coachService.getActiveAlerts();
+      const res = await coachService.getActiveAlerts(accountId);
       return res.data;
     },
     staleTime: 2 * 60 * 1000,
@@ -27,15 +27,15 @@ export const useBehavioralAlerts = () => {
     if (!user?.id) return;
     const topic = `/topic/users/${user.id}/coach`;
     const unsubscribe = subscribe(topic, () => {
-      void queryClient.invalidateQueries({ queryKey: ALERTS_KEY });
+      void queryClient.invalidateQueries({ queryKey: alertsKey(accountId) });
     });
     return unsubscribe;
-  }, [user?.id, subscribe, queryClient]);
+  }, [user?.id, subscribe, queryClient, accountId]);
 
   return query;
 };
 
-export const useDismissAlert = () => {
+export const useDismissAlert = (accountId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -43,7 +43,7 @@ export const useDismissAlert = () => {
       return id;
     },
     onSuccess: (id) => {
-      queryClient.setQueryData<BehavioralAlertResponseDto[]>(ALERTS_KEY, (prev) =>
+      queryClient.setQueryData<BehavioralAlertResponseDto[]>(alertsKey(accountId), (prev) =>
         prev ? prev.filter((a) => a.id !== id) : []
       );
     },

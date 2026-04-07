@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface TiltGaugeProps {
   compact?: boolean;
+  accountId?: string;
 }
 
 const getColor = (score: number): string => {
@@ -20,8 +21,8 @@ const getStrokeColor = (score: number): string => {
   return '#ef4444';
 };
 
-const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false }) => {
-  const { data, isLoading } = useTiltScore();
+const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId }) => {
+  const { data, isLoading } = useTiltScore(accountId);
 
   const score = data?.score ?? 0;
   const label = data?.thresholdLabel ?? 'GREEN';

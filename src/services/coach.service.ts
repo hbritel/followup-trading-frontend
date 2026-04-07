@@ -8,38 +8,45 @@ import type {
   DisclaimerStatusDto,
 } from '@/types/dto';
 
+/** Builds a query string with an optional accountId parameter appended. */
+const withAccount = (base: string, accountId?: string): string => {
+  if (!accountId) return base;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}accountId=${accountId}`;
+};
+
 export const coachService = {
   // Alerts
-  getActiveAlerts: () =>
-    apiClient.get<BehavioralAlertResponseDto[]>('/ai/coach/alerts?status=active'),
-  getTodayAlerts: () =>
-    apiClient.get<BehavioralAlertResponseDto[]>('/ai/coach/alerts/today'),
+  getActiveAlerts: (accountId?: string) =>
+    apiClient.get<BehavioralAlertResponseDto[]>(withAccount('/ai/coach/alerts?status=active', accountId)),
+  getTodayAlerts: (accountId?: string) =>
+    apiClient.get<BehavioralAlertResponseDto[]>(withAccount('/ai/coach/alerts/today', accountId)),
   dismissAlert: (id: string) =>
     apiClient.post(`/ai/coach/alerts/${id}/dismiss`),
-  getSessionSummary: () =>
-    apiClient.get<SessionSummaryResponseDto>('/ai/coach/session-summary'),
+  getSessionSummary: (accountId?: string) =>
+    apiClient.get<SessionSummaryResponseDto>(withAccount('/ai/coach/session-summary', accountId)),
 
   // Tilt
-  getTiltScore: () =>
-    apiClient.get<TiltScoreResponseDto>('/ai/coach/tilt-score'),
+  getTiltScore: (accountId?: string) =>
+    apiClient.get<TiltScoreResponseDto>(withAccount('/ai/coach/tilt-score', accountId)),
   getTiltHistory: (from: string, to: string) =>
     apiClient.get<TiltScoreResponseDto[]>(`/ai/coach/tilt-history?from=${from}&to=${to}`),
 
   // Briefing
-  getTodayBriefing: () =>
-    apiClient.get<BriefingResponseDto>('/ai/briefing/today'),
+  getTodayBriefing: (accountId?: string) =>
+    apiClient.get<BriefingResponseDto>(withAccount('/ai/briefing/today', accountId)),
   getBriefings: (from: string, to: string) =>
     apiClient.get<BriefingResponseDto[]>(`/ai/briefings?from=${from}&to=${to}`),
-  generateBriefing: () =>
-    apiClient.post<BriefingResponseDto>('/ai/briefing/generate'),
+  generateBriefing: (accountId?: string) =>
+    apiClient.post<BriefingResponseDto>(withAccount('/ai/briefing/generate', accountId)),
 
   // Debrief
-  getLatestDebrief: () =>
-    apiClient.get<SessionDebriefResponseDto>('/ai/debrief/latest'),
+  getLatestDebrief: (accountId?: string) =>
+    apiClient.get<SessionDebriefResponseDto>(withAccount('/ai/debrief/latest', accountId)),
   getDebriefs: (from: string, to: string) =>
     apiClient.get<SessionDebriefResponseDto[]>(`/ai/debriefs?from=${from}&to=${to}`),
-  generateDebrief: () =>
-    apiClient.post<SessionDebriefResponseDto>('/ai/debrief/generate'),
+  generateDebrief: (accountId?: string) =>
+    apiClient.post<SessionDebriefResponseDto>(withAccount('/ai/debrief/generate', accountId)),
 
   // Disclaimer
   getDisclaimerStatus: () =>

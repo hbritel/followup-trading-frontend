@@ -4,8 +4,12 @@ import { useBehavioralAlerts } from '@/hooks/useBehavioralAlerts';
 import { Skeleton } from '@/components/ui/skeleton';
 import BehavioralAlertCard from './BehavioralAlertCard';
 
-const BehavioralAlertsList: React.FC = () => {
-  const { data: alerts, isLoading, isError } = useBehavioralAlerts();
+interface BehavioralAlertsListProps {
+  accountId?: string;
+}
+
+const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId }) => {
+  const { data: alerts, isLoading, isError } = useBehavioralAlerts(accountId);
 
   return (
     <div className="glass-card rounded-2xl p-6 space-y-4">
