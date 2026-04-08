@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 // ---- Minimal markdown renderer (same approach as ChatMessage.tsx) ----
 
 const parseInline = (text: string, keyPrefix: string): React.ReactNode[] => {
@@ -72,9 +72,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PageSkeleton from '@/components/ui/page-skeleton';
 import PageError from '@/components/ui/page-error';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
+import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles, RefreshCw, ExternalLink, Loader2, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { useInsights, useDismissInsight } from '@/hooks/useInsights';
-import { useWeeklyDigest, useGenerateWeeklyDigest } from '@/hooks/useWeeklyDigest';
+import { useWeeklyDigest, useGenerateWeeklyDigest, useDigestHistory } from '@/hooks/useWeeklyDigest';
 import { useToast } from '@/hooks/use-toast';
 import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { usePageFilter } from '@/contexts/page-filters-context';
@@ -125,11 +125,22 @@ const Insights = () => {
   const { data: digest, isLoading: digestLoading, isError: digestError } = useWeeklyDigest();
   const generateDigest = useGenerateWeeklyDigest();
 
+  // Digest history state
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyPage, setHistoryPage] = useState(0);
+  const HISTORY_PAGE_SIZE = 5;
+  const { data: digestHistory, isLoading: historyLoading } = useDigestHistory(historyPage, HISTORY_PAGE_SIZE);
+
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('insights', 'accountId', 'all');
   const { accountIds } = useAccountFilter(selectedAccountId);
   const [datePreset, setDatePreset] = useDefaultDatePreset('insights');
   const [customStart, setCustomStart] = usePageFilter<Date | null>('insights', 'customStart', null);
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('insights', 'customEnd', null);
+
+  // Resolve accountId for digest generation
+  const resolvedAccountId = selectedAccountId && selectedAccountId !== 'all' && selectedAccountId !== 'all-real' && selectedAccountId !== 'all-demo'
+    ? selectedAccountId
+    : undefined;
 
   const toISODate = (d: Date): string => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -157,6 +168,10 @@ const Insights = () => {
         });
       },
     });
+  };
+
+  const handleGenerateDigest = () => {
+    generateDigest.mutate(resolvedAccountId);
   };
 
   // ---- Render helpers ----
@@ -283,6 +298,33 @@ const Insights = () => {
     </div>
   );
 
+  const renderDigestCard = (d: { id: string; content: string; weekStart: string; weekEnd: string; generatedAt: string }, isLatest = false) => (
+    <Card key={d.id} className={`glass-card rounded-2xl transition-all duration-500 ${isLatest ? 'animate-in fade-in-0 slide-in-from-bottom-2' : ''}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base text-gradient-primary">
+            {t('ai.digest', 'Weekly Digest')}
+          </CardTitle>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
+            <span>
+              <span className="label-caps mr-1">Week:</span>
+              {new Date(d.weekStart).toLocaleDateString()} &ndash; {new Date(d.weekEnd).toLocaleDateString()}
+            </span>
+            <span>
+              <span className="label-caps mr-1">Generated:</span>
+              {new Date(d.generatedAt).toLocaleDateString()} {new Date(d.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-6">
+        <div className="text-sm text-muted-foreground leading-relaxed">
+          {renderMarkdown(d.content)}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   const renderDigestContent = () => {
     if (digestError) {
       return (
@@ -297,6 +339,21 @@ const Insights = () => {
         </div>
       );
     }
+
+    // Show generating spinner
+    if (generateDigest.isPending) {
+      return (
+        <Card className="glass-card rounded-2xl">
+          <CardContent className="flex flex-col items-center gap-3 py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+            <p className="text-sm text-muted-foreground animate-pulse">
+              Generating your weekly digest...
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
     if (digestLoading) {
       return (
         <Card className="glass-card rounded-2xl">
@@ -310,34 +367,11 @@ const Insights = () => {
         </Card>
       );
     }
+
     if (digest) {
-      return (
-        <Card className="glass-card rounded-2xl">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base text-gradient-primary">
-                {t('ai.digest', 'Weekly Digest')}
-              </CardTitle>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
-                <span>
-                  <span className="label-caps mr-1">Week:</span>
-                  {new Date(digest.weekStart).toLocaleDateString()} &ndash; {new Date(digest.weekEnd).toLocaleDateString()}
-                </span>
-                <span>
-                  <span className="label-caps mr-1">Generated:</span>
-                  {new Date(digest.generatedAt).toLocaleDateString()} {new Date(digest.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-6">
-            <div className="text-sm text-muted-foreground leading-relaxed">
-              {renderMarkdown(digest.content)}
-            </div>
-          </CardContent>
-        </Card>
-      );
+      return renderDigestCard(digest, true);
     }
+
     return (
       <div className="text-center py-12">
         <Sparkles className="h-12 w-12 text-amber-400/40 mx-auto mb-4" />
@@ -346,13 +380,73 @@ const Insights = () => {
           {t('ai.noDigestDescription', 'Generate your first weekly trading digest to get AI-powered insights.')}
         </p>
         <Button
-          onClick={() => generateDigest.mutate()}
+          onClick={handleGenerateDigest}
           disabled={generateDigest.isPending}
           className="gap-2"
         >
           <Sparkles className="h-4 w-4" />
           {t('ai.generateDigest', 'Generate Digest')}
         </Button>
+      </div>
+    );
+  };
+
+  const renderDigestHistory = () => {
+    if (!showHistory) return null;
+
+    return (
+      <div className="space-y-3 mt-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+            <History className="h-4 w-4" />
+            Previous Digests
+          </h3>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
+              disabled={historyPage === 0 || historyLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground tabular-nums px-1">
+              Page {historyPage + 1}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setHistoryPage((p) => p + 1)}
+              disabled={!digestHistory || digestHistory.length < HISTORY_PAGE_SIZE || historyLoading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {historyLoading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <Card key={i} className="glass-card rounded-2xl">
+                <CardContent className="p-4 space-y-2">
+                  <Skeleton className="h-3 w-32" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : digestHistory && digestHistory.length > 0 ? (
+          <div className="space-y-3">
+            {digestHistory.map((d) => renderDigestCard(d))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No previous digests found.
+          </p>
+        )}
       </div>
     );
   };
@@ -446,21 +540,42 @@ const Insights = () => {
                     </h2>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {t('ai.digestDescription', 'AI-generated summary of your trading week')}
+                      {resolvedAccountId && (
+                        <span className="ml-1 text-amber-500 font-medium">(filtered by account)</span>
+                      )}
                     </p>
                   </div>
-                  <Button
-                    onClick={() => generateDigest.mutate()}
-                    disabled={generateDigest.isPending || digestError}
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${generateDigest.isPending ? 'animate-spin' : ''}`} />
-                    {t('ai.generateDigest', 'Generate Digest')}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {digest && (
+                      <Button
+                        onClick={() => setShowHistory((v) => !v)}
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-muted-foreground"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                        {showHistory ? 'Hide History' : 'History'}
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleGenerateDigest}
+                      disabled={generateDigest.isPending || digestError}
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {generateDigest.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      {t('ai.generateDigest', 'Generate Digest')}
+                    </Button>
+                  </div>
                 </div>
 
                 {renderDigestContent()}
+                {renderDigestHistory()}
               </section>
             </PlanGatedSection>
           </TabsContent>
