@@ -31,11 +31,7 @@ const Login = () => {
         try {
             // Appeler la fonction login du contexte
             await login(emailOrUsername, password);
-            // La navigation est gérée par le contexte en cas de succès (vers dashboard ou MFA)
-            toast({ // Optionnel: Afficher un message de succès si non MFA
-                title: "Login initiated",
-                description: "Redirecting...",
-            });
+            // Navigation is handled by auth context (to dashboard or MFA)
         } catch (error) {
             console.error('Login component error:', error);
             // Utiliser getErrorMessage pour un message plus clair

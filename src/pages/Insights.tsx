@@ -25,7 +25,8 @@ const parseInline = (text: string, keyPrefix: string): React.ReactNode[] => {
   return parts;
 };
 
-const renderMarkdown = (text: string): React.ReactNode[] => {
+const renderMarkdown = (text: string | null | undefined): React.ReactNode[] => {
+  if (!text) return [];
   const lines = text.split('\n');
   const nodes: React.ReactNode[] = [];
   lines.forEach((line, idx) => {
