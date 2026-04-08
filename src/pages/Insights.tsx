@@ -1,4 +1,61 @@
 import React, { useMemo } from 'react';
+// ---- Minimal markdown renderer (same approach as ChatMessage.tsx) ----
+
+const parseInline = (text: string, keyPrefix: string): React.ReactNode[] => {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<React.Fragment key={`${keyPrefix}-t-${lastIndex}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
+    }
+    if (match[2] !== undefined) {
+      parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold">{match[2]}</strong>);
+    } else if (match[3] !== undefined) {
+      parts.push(<em key={`${keyPrefix}-i-${match.index}`} className="italic">{match[3]}</em>);
+    } else if (match[4] !== undefined) {
+      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="rounded bg-black/10 dark:bg-white/10 px-1 py-0.5 font-mono text-xs">{match[4]}</code>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<React.Fragment key={`${keyPrefix}-te`}>{text.slice(lastIndex)}</React.Fragment>);
+  }
+  return parts;
+};
+
+const renderMarkdown = (text: string): React.ReactNode[] => {
+  const lines = text.split('\n');
+  const nodes: React.ReactNode[] = [];
+  lines.forEach((line, idx) => {
+    const isBullet = /^[\s]*[-*]\s/.test(line);
+    const isHeading3 = /^###\s/.test(line);
+    const isHeading2 = /^##\s/.test(line);
+    const isHeading1 = /^#\s/.test(line);
+    let content = line;
+    if (isBullet) content = line.replace(/^[\s]*[-*]\s/, '');
+    else if (isHeading3) content = line.replace(/^###\s/, '');
+    else if (isHeading2) content = line.replace(/^##\s/, '');
+    else if (isHeading1) content = line.replace(/^#\s/, '');
+    const inline = parseInline(content, `md-${idx}`);
+    if (isBullet) {
+      nodes.push(<li key={`li-${idx}`} className="ml-4 list-disc">{inline}</li>);
+    } else if (isHeading1) {
+      nodes.push(<p key={`h1-${idx}`} className="font-bold text-base mt-2">{inline}</p>);
+    } else if (isHeading2) {
+      nodes.push(<p key={`h2-${idx}`} className="font-semibold text-sm mt-2">{inline}</p>);
+    } else if (isHeading3) {
+      nodes.push(<p key={`h3-${idx}`} className="font-semibold text-sm mt-1">{inline}</p>);
+    } else if (line.trim() === '') {
+      nodes.push(<br key={`br-${idx}`} />);
+    } else {
+      nodes.push(<span key={`s-${idx}`}>{inline}</span>);
+      if (idx < lines.length - 1) nodes.push(<br key={`bra-${idx}`} />);
+    }
+  });
+  return nodes;
+};
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -151,7 +208,7 @@ const Insights = () => {
           </div>
         </CardHeader>
         <CardContent className="pb-3">
-          <p className="text-sm text-muted-foreground mb-3">{insight.description}</p>
+          <div className="text-sm text-muted-foreground mb-3 leading-relaxed">{renderMarkdown(insight.description)}</div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
               <span>
@@ -160,7 +217,7 @@ const Insights = () => {
               </span>
               <span>
                 <span className="label-caps mr-1">{t('insights.generatedAt')}:</span>
-                {new Date(insight.generatedAt).toLocaleDateString()}
+                {new Date(insight.generatedAt).toLocaleDateString()} {new Date(insight.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -267,15 +324,15 @@ const Insights = () => {
                 </span>
                 <span>
                   <span className="label-caps mr-1">Generated:</span>
-                  {new Date(digest.generatedAt).toLocaleDateString()}
+                  {new Date(digest.generatedAt).toLocaleDateString()} {new Date(digest.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="pb-6">
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {digest.content}
-            </p>
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {renderMarkdown(digest.content)}
+            </div>
           </CardContent>
         </Card>
       );
