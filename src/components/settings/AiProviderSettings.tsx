@@ -35,16 +35,18 @@ const PROVIDER_TYPES = [
   { value: 'OPENAI_COMPATIBLE', label: 'OpenAI Compatible' },
   { value: 'GEMINI', label: 'Google Gemini' },
   { value: 'ANTHROPIC', label: 'Anthropic Claude' },
+  { value: 'OPENROUTER', label: 'OpenRouter' },
 ];
 
 const NEEDS_BASE_URL = ['OLLAMA', 'OPENAI_COMPATIBLE'];
-const NEEDS_API_KEY = ['OPENAI_COMPATIBLE', 'GEMINI', 'ANTHROPIC'];
+const NEEDS_API_KEY = ['OPENAI_COMPATIBLE', 'GEMINI', 'ANTHROPIC', 'OPENROUTER'];
 
 const DEFAULT_MODELS: Record<string, string> = {
   OLLAMA: 'llama3',
   OPENAI_COMPATIBLE: 'gpt-4o-mini',
   GEMINI: 'gemini-1.5-pro',
   ANTHROPIC: 'claude-3-haiku-20240307',
+  OPENROUTER: 'google/gemma-3-1b-it:free',
 };
 
 const AiProviderSettings: React.FC = () => {

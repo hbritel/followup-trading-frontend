@@ -770,10 +770,7 @@ export interface AiDigestResponseDto {
 
 export interface AiAnalysisResponseDto {
   tradeId: string;
-  summary: string;
-  strengths: string[];
-  improvements: string[];
-  riskAssessment: string;
+  analysis: string;
   generatedAt: string;
 }
 

@@ -117,7 +117,7 @@ const SessionDebriefCard: React.FC<SessionDebriefCardProps> = ({ accountId }) =>
                 </span>
               )}
               {debrief.winRate !== undefined && (
-                <span>Win rate: <strong className="text-foreground">{(debrief.winRate * 100).toFixed(0)}%</strong></span>
+                <span>Win rate: <strong className="text-foreground">{debrief.winRate.toFixed(0)}%</strong></span>
               )}
             </div>
           </div>

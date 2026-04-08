@@ -17,10 +17,7 @@ export interface AiDigestResponse {
 
 export interface AiAnalysisResponse {
   tradeId: string;
-  summary: string;
-  strengths: string[];
-  improvements: string[];
-  riskAssessment: string;
+  analysis: string;
   generatedAt: string;
 }
 
@@ -40,33 +37,41 @@ const sendChatMessage = async (message: string): Promise<Response> => {
   });
 };
 
-const getWeeklyDigest = async (): Promise<AiDigestResponse> => {
-  const response = await apiClient.get<AiDigestResponse>('/ai/digest');
+const getLatestDigest = async (): Promise<AiDigestResponse | null> => {
+  const response = await apiClient.get<AiDigestResponse>('/ai/digest/latest');
+  // 204 No Content → null
+  return response.status === 204 ? null : response.data;
+};
+
+const getDigestHistory = async (page = 0, size = 10): Promise<AiDigestResponse[]> => {
+  const response = await apiClient.get<AiDigestResponse[]>(`/ai/digest/history?page=${page}&size=${size}`);
   return response.data;
 };
 
-const generateWeeklyDigest = async (): Promise<AiDigestResponse> => {
-  const response = await apiClient.post<AiDigestResponse>('/ai/digest/generate');
+const generateWeeklyDigest = async (accountId?: string): Promise<AiDigestResponse> => {
+  const params = accountId ? `?accountId=${accountId}` : '';
+  const response = await apiClient.post<AiDigestResponse>(`/ai/digest/generate${params}`);
   return response.data;
 };
 
 const analyzeTradeById = async (tradeId: string): Promise<AiAnalysisResponse> => {
-  const response = await apiClient.post<AiAnalysisResponse>(`/ai/trades/${tradeId}/analyze`);
+  const response = await apiClient.post<AiAnalysisResponse>(`/ai/analyze/${tradeId}`);
   return response.data;
 };
 
 const getChatHistory = async (): Promise<AiChatMessageResponse[]> => {
-  const response = await apiClient.get<AiChatMessageResponse[]>('/ai/chat/history');
+  const response = await apiClient.get<AiChatMessageResponse[]>('/ai/history');
   return response.data;
 };
 
 const clearChatHistory = async (): Promise<void> => {
-  await apiClient.delete('/ai/chat/history');
+  await apiClient.delete('/ai/history');
 };
 
 export const aiService = {
   sendChatMessage,
-  getWeeklyDigest,
+  getLatestDigest,
+  getDigestHistory,
   generateWeeklyDigest,
   analyzeTradeById,
   getChatHistory,

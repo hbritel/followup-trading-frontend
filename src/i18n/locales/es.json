@@ -243,7 +243,8 @@
     "social": "Social",
     "socialFeed": "Feed",
     "marketplace": "Mercado",
-    "traders": "Traders"
+    "traders": "Traders",
+    "aiCoach": "Coach IA"
   },
   "pages": {
     "dashboard": "Panel",
@@ -1821,7 +1822,13 @@
     "suggestion1": "Cuales son mis patrones de trading mas fuertes?",
     "suggestion2": "Analiza mi rendimiento esta semana",
     "suggestion3": "Por que pierdo los viernes?",
-    "suggestion4": "Cual es mi tamano de posicion optimo?"
+    "suggestion4": "Cual es mi tamano de posicion optimo?",
+    "messagesToday": "mensajes hoy",
+    "dailyLimitReached": "Limite diario de mensajes IA alcanzado.",
+    "freePlanNote": "Actualiza al plan Starter o superior para usar el coach IA.",
+    "limitReachedPlaceholder": "Limite diario alcanzado. Actualiza para mas mensajes.",
+    "unavailable": "Funciones IA no disponibles",
+    "unavailableDescription": "El servicio IA no esta habilitado en este servidor. Contacta a tu administrador para activarlo."
   },
   "import": {
     "title": "Importar trades",

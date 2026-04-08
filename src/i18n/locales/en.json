@@ -246,7 +246,8 @@
     "social": "Social",
     "socialFeed": "Feed",
     "marketplace": "Marketplace",
-    "traders": "Traders"
+    "traders": "Traders",
+    "aiCoach": "AI Coach"
   },
   "pages": {
     "dashboard": "Dashboard",
@@ -1990,7 +1991,13 @@
     "suggestion1": "What are my strongest trading patterns?",
     "suggestion2": "Analyze my performance this week",
     "suggestion3": "Why do I lose on Fridays?",
-    "suggestion4": "What's my optimal position size?"
+    "suggestion4": "What's my optimal position size?",
+    "messagesToday": "messages today",
+    "dailyLimitReached": "Daily AI message limit reached.",
+    "freePlanNote": "Upgrade to Starter or higher to use the AI coach.",
+    "limitReachedPlaceholder": "Daily limit reached. Upgrade for more messages.",
+    "unavailable": "AI features unavailable",
+    "unavailableDescription": "The AI service is not enabled on this server. Contact your administrator to enable it."
   },
   "import": {
     "title": "Import Trades",
