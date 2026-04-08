@@ -1,19 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { aiService } from '@/services/ai.service';
+import { aiService, type AiDigestResponse } from '@/services/ai.service';
 import { AxiosError } from 'axios';
 
 const DIGEST_KEY = ['ai', 'digest'];
 
+/**
+ * Fetches the latest weekly digest. Does NOT auto-fetch on mount to avoid
+ * triggering expensive AI generation on every page load (the backend GET
+ * endpoint always regenerates). Data is populated only via generateWeeklyDigest
+ * or from cache.
+ */
 export const useWeeklyDigest = () => {
-  return useQuery({
+  return useQuery<AiDigestResponse | null>({
     queryKey: DIGEST_KEY,
-    queryFn: () => aiService.getWeeklyDigest(),
-    staleTime: 30 * 60 * 1000, // 30 minutes — digest changes rarely
+    queryFn: () => null,
+    staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: false, // don't retry — 404 means AI is disabled on the server
-    enabled: false, // don't auto-fetch — AI is gated behind app.ai.enabled; trigger manually via generate
+    retry: false,
+    enabled: false,
   });
 };
 

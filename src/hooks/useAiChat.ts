@@ -31,7 +31,7 @@ export const useAiChat = (): UseAiChatReturn => {
       setMessages(
         history.map((msg) => ({
           id: msg.id,
-          role: msg.role,
+          role: (msg.role?.toLowerCase() ?? 'assistant') as 'user' | 'assistant',
           content: msg.content,
           createdAt: msg.createdAt,
         })),

@@ -17,10 +17,7 @@ export interface AiDigestResponse {
 
 export interface AiAnalysisResponse {
   tradeId: string;
-  summary: string;
-  strengths: string[];
-  improvements: string[];
-  riskAssessment: string;
+  analysis: string;
   generatedAt: string;
 }
 
@@ -51,17 +48,17 @@ const generateWeeklyDigest = async (): Promise<AiDigestResponse> => {
 };
 
 const analyzeTradeById = async (tradeId: string): Promise<AiAnalysisResponse> => {
-  const response = await apiClient.post<AiAnalysisResponse>(`/ai/trades/${tradeId}/analyze`);
+  const response = await apiClient.post<AiAnalysisResponse>(`/ai/analyze/${tradeId}`);
   return response.data;
 };
 
 const getChatHistory = async (): Promise<AiChatMessageResponse[]> => {
-  const response = await apiClient.get<AiChatMessageResponse[]>('/ai/chat/history');
+  const response = await apiClient.get<AiChatMessageResponse[]>('/ai/history');
   return response.data;
 };
 
 const clearChatHistory = async (): Promise<void> => {
-  await apiClient.delete('/ai/chat/history');
+  await apiClient.delete('/ai/history');
 };
 
 export const aiService = {
