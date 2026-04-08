@@ -3,32 +3,49 @@ import { toast } from 'sonner';
 import { aiService, type AiDigestResponse } from '@/services/ai.service';
 import { AxiosError } from 'axios';
 
-const DIGEST_KEY = ['ai', 'digest'];
+const DIGEST_KEY = ['ai', 'digest', 'latest'];
+const DIGEST_HISTORY_KEY = ['ai', 'digest', 'history'];
 
 /**
- * Fetches the latest weekly digest. Does NOT auto-fetch on mount to avoid
- * triggering expensive AI generation on every page load (the backend GET
- * endpoint always regenerates). Data is populated only via generateWeeklyDigest
- * or from cache.
+ * Fetches the latest saved digest from the server.
+ * Auto-fetches on mount — returns null if no digest exists yet.
  */
 export const useWeeklyDigest = () => {
   return useQuery<AiDigestResponse | null>({
     queryKey: DIGEST_KEY,
-    queryFn: () => null,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    queryFn: () => aiService.getLatestDigest(),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: false,
-    enabled: false,
   });
 };
 
+/**
+ * Fetches paginated digest history.
+ */
+export const useDigestHistory = (page = 0, size = 10) => {
+  return useQuery<AiDigestResponse[]>({
+    queryKey: [...DIGEST_HISTORY_KEY, page, size],
+    queryFn: () => aiService.getDigestHistory(page, size),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+};
+
+/**
+ * Generates a new weekly digest (with optional account filter).
+ * On success, updates the latest digest cache and invalidates history.
+ */
 export const useGenerateWeeklyDigest = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => aiService.generateWeeklyDigest(),
+    mutationFn: (accountId?: string) => aiService.generateWeeklyDigest(accountId),
     onSuccess: (data) => {
-      queryClient.setQueryData(DIGEST_KEY, data);
+      queryClient.setQueryData<AiDigestResponse | null>(DIGEST_KEY, data);
+      queryClient.invalidateQueries({ queryKey: DIGEST_HISTORY_KEY });
+      // Also invalidate insights since digest is stored as AI_DIGEST insight
+      queryClient.invalidateQueries({ queryKey: ['insights'] });
       toast.success('Weekly digest generated successfully.');
     },
     onError: (error) => {
