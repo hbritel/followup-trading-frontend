@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -71,6 +72,7 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
   onCustomStartChange,
   onCustomEndChange,
 }) => {
+  const { t, i18n } = useTranslation();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const isCustom = preset === 'custom';
 
@@ -88,13 +90,13 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
   }, [onPresetChange, onCustomStartChange, onCustomEndChange]);
 
   const formatDateShort = (d: Date) =>
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    d.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
 
   const customLabel = isCustom && customStart && customEnd
     ? `${formatDateShort(customStart)} - ${formatDateShort(customEnd)}`
     : isCustom && customStart
-      ? `From ${formatDateShort(customStart)}`
-      : 'Custom';
+      ? t('dashboard.fromDate', { date: formatDateShort(customStart) })
+      : t('dashboard.custom');
 
   return (
     <div className="flex items-center gap-2">
@@ -135,7 +137,7 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
           <PopoverContent className="w-auto p-0" align="end">
             <div className="flex gap-0">
               <div className="border-r p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Start Date</p>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t('dashboard.startDate')}</p>
                 <SimpleCalendar
                   selected={customStart ?? undefined}
                   onSelect={(date) => {
@@ -152,7 +154,7 @@ const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
                 />
               </div>
               <div className="p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">End Date</p>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t('dashboard.endDate')}</p>
                 <SimpleCalendar
                   selected={customEnd ?? undefined}
                   month={endMonth}

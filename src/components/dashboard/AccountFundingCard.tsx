@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -23,9 +24,9 @@ interface AccountFundingCardProps {
   isLoading?: boolean;
 }
 
-const fmt = (value: number | undefined | null): string => {
+const fmt = (value: number | undefined | null, locale = 'en-US'): string => {
   if (value == null) return '$0.00';
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
@@ -84,6 +85,8 @@ const AccountFundingCard: React.FC<AccountFundingCardProps> = ({
   dashboardSummary,
   isLoading = false,
 }) => {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const totalDeposits = dashboardSummary?.totalDeposits ?? 0;
   const totalWithdrawals = dashboardSummary?.totalWithdrawals ?? 0;
   const netFunding = dashboardSummary?.netFunding ?? 0;
@@ -103,10 +106,10 @@ const AccountFundingCard: React.FC<AccountFundingCardProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">
-              Account Funding
+              {t('dashboard.accountFunding')}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Deposits, withdrawals & real P&L
+              {t('dashboard.depositsWithdrawalsDesc')}
             </CardDescription>
           </div>
           {!isLoading && (
@@ -127,42 +130,42 @@ const AccountFundingCard: React.FC<AccountFundingCardProps> = ({
       <CardContent className="px-4 sm:px-6 py-4 sm:py-6">
         <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3">
           <FundingMetric
-            label="Total Deposits"
-            value={fmt(totalDeposits)}
+            label={t('dashboard.totalDeposits')}
+            value={fmt(totalDeposits, locale)}
             icon={ArrowDownToLine}
             color="profit"
             isLoading={isLoading}
           />
           <FundingMetric
-            label="Total Withdrawals"
-            value={fmt(totalWithdrawals)}
+            label={t('dashboard.totalWithdrawals')}
+            value={fmt(totalWithdrawals, locale)}
             icon={ArrowUpFromLine}
             color="loss"
             isLoading={isLoading}
           />
           <FundingMetric
-            label="Net Funding"
-            value={fmt(netFunding)}
+            label={t('dashboard.netFunding')}
+            value={fmt(netFunding, locale)}
             icon={Banknote}
             color="primary"
             isLoading={isLoading}
           />
           <FundingMetric
-            label="Trading P&L"
-            value={`${realizedPnl >= 0 ? '+' : ''}${fmt(realizedPnl)}`}
+            label={t('dashboard.tradingPnl')}
+            value={`${realizedPnl >= 0 ? '+' : ''}${fmt(realizedPnl, locale)}`}
             icon={TrendingUp}
             color={pnlColor}
             isLoading={isLoading}
           />
           <FundingMetric
-            label="Account Balance"
-            value={fmt(accountBalance)}
+            label={t('dashboard.accountBalance')}
+            value={fmt(accountBalance, locale)}
             icon={Wallet}
             color="primary"
             isLoading={isLoading}
           />
           <FundingMetric
-            label="Return on Investment"
+            label={t('dashboard.returnOnInvestment')}
             value={`${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`}
             icon={Percent}
             color={roiColor}

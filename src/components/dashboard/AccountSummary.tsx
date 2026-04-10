@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Calculator,
   CreditCard,
@@ -75,7 +76,7 @@ const StatItem = ({
       )}
       {previousValue && !isLoading && (
         <span className="text-xs mt-1 text-muted-foreground">
-          Prev: {previousValue}
+          {previousValue}
         </span>
       )}
       {changePercentage && !isLoading && (
@@ -102,6 +103,7 @@ interface AccountSummaryProps {
 }
 
 const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }: AccountSummaryProps) => {
+  const { t } = useTranslation();
 
   if (!analytics) return null;
 
@@ -131,37 +133,37 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
   // Portfolio risk level derived from max drawdown (date-filtered)
   // Drawdown 0% = no risk, 50%+ = max risk on the scale
   const riskLevel = maxDrawdownPercent != null ? Math.min(Math.abs(maxDrawdownPercent), 100) : 0;
-  const riskLabel = riskLevel <= 10 ? 'Low Risk' : riskLevel <= 25 ? 'Medium Risk' : 'High Risk';
+  const riskLabel = riskLevel <= 10 ? t('dashboard.lowRisk') : riskLevel <= 25 ? t('dashboard.mediumRisk') : t('dashboard.highRisk');
 
   // Performance label derived from Sharpe ratio
   const perfLabel = sharpeRatio != null
-    ? (sharpeRatio >= 2 ? 'Excellent' : sharpeRatio >= 1 ? 'Above Average' : sharpeRatio >= 0 ? 'Average' : 'Below Average')
-    : 'Calculating...';
+    ? (sharpeRatio >= 2 ? t('dashboard.excellent') : sharpeRatio >= 1 ? t('dashboard.aboveAverage') : sharpeRatio >= 0 ? t('dashboard.average') : t('dashboard.belowAverage'))
+    : t('dashboard.calculating');
 
   const accountMetrics = [
     {
-      title: 'Realized P&L',
+      title: t('dashboard.realizedPnl'),
       value: `${totalProfitLoss >= 0 ? '+' : ''}$${totalProfitLoss.toFixed(2)}`,
       icon: <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />,
-      description: 'Total realized profit/loss',
+      description: t('dashboard.totalRealizedDesc'),
     },
     {
-      title: 'Total Trades',
+      title: t('stats.totalTrades'),
       value: totalTrades,
       icon: <Calculator className="h-4 w-4 sm:h-5 sm:w-5" />,
-      description: 'Total combined trades',
+      description: t('dashboard.totalCombinedTrades'),
     },
     {
-      title: 'Win Rate',
+      title: t('stats.winRate'),
       value: `${winRate.toFixed(1)}%`,
       icon: <Percent className="h-4 w-4 sm:h-5 sm:w-5" />,
-      description: 'Percentage of winning trades',
+      description: t('dashboard.winningPercentage'),
     },
     {
-      title: 'W/L Ratio',
+      title: t('dashboard.wlRatio'),
       value: `${winLossRatio.toFixed(2)}:1`,
       icon: <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />,
-      description: 'Win to Loss sequence',
+      description: t('dashboard.wlRatioDesc'),
     }
   ];
 
@@ -170,8 +172,8 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
         <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200/50 dark:border-white/5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Account Summary</CardTitle>
-              <CardDescription className="text-muted-foreground">Overview of your trading account</CardDescription>
+              <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">{t('dashboard.accountSummary')}</CardTitle>
+              <CardDescription className="text-muted-foreground">{t('dashboard.accountSummaryDesc')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -192,7 +194,7 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
             <div className="p-4 sm:p-5 border border-slate-200/50 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-white/5 backdrop-blur-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Assessment</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('dashboard.riskAssessment')}</h3>
                   {metricsLoading ? (
                     <Skeleton className="h-7 w-24 mt-1" />
                   ) : (
@@ -203,7 +205,7 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
               </div>
               <div className="mt-4 sm:mt-5">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">Portfolio Risk Level</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('dashboard.portfolioRiskLevel')}</span>
                   {metricsLoading ? (
                     <Skeleton className="h-4 w-8" />
                   ) : (
@@ -217,7 +219,7 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
             <div className="p-4 sm:p-5 border border-slate-200/50 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-white/5 backdrop-blur-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Performance Metrics</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('dashboard.performanceMetrics')}</h3>
                   {metricsLoading ? (
                     <Skeleton className="h-7 w-28 mt-1" />
                   ) : (
@@ -228,13 +230,13 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
               </div>
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4">
                 <StatItem
-                  label="Sharpe Ratio"
+                  label={t('dashboard.sharpeRatio')}
                   value={sharpeDisplay}
                   isLoading={metricsLoading}
                   trend={sharpeTrend}
                 />
                 <StatItem
-                  label="Max Drawdown"
+                  label={t('dashboard.maxDrawdown')}
                   value={drawdownDisplay}
                   isLoading={metricsLoading}
                   trend={drawdownTrend}
@@ -248,6 +250,7 @@ const AccountSummary = ({ analytics, dashboardSummary, metricsLoading = false }:
 };
 
 export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard }) => {
+  const { t } = useTranslation();
   if (!analytics) return null;
 
   const {
@@ -265,14 +268,14 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
   return (
     <Card className="glass-card animate-slide-up" style={{ animationDelay: '0.1s' }}>
       <CardHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200/50 dark:border-white/5">
-        <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Trade Statistics</CardTitle>
-        <CardDescription className="text-muted-foreground">Key performance indicators</CardDescription>
+        <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">{t('dashboard.tradeStatistics')}</CardTitle>
+        <CardDescription className="text-muted-foreground">{t('dashboard.kpi')}</CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6 py-4 sm:py-6 pb-6 sm:pb-8">
         <div className="space-y-5 sm:space-y-6">
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Winning Trades</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('dashboard.winningTrades')}</span>
               <span className="text-sm font-bold text-profit dark:text-glow">{winRate.toFixed(1)}% ({winningTrades})</span>
             </div>
             <Progress value={winRate} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-profit/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--profit),0.5)]" />
@@ -280,7 +283,7 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
 
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Win/Loss Ratio</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('dashboard.winLossRatio')}</span>
               <span className="text-sm font-bold text-foreground dark:text-white">{winLossRatio.toFixed(2)}:1</span>
             </div>
             <Progress value={Math.min(100, (winLossRatio / 5) * 100)} className="h-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/5" indicatorClassName="bg-primary/80 shadow-sm dark:shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
@@ -288,7 +291,7 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
 
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Long P&L</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('dashboard.longPnl')}</span>
               <span className={cn("text-sm font-bold font-mono", longProfitLoss >= 0 ? "text-profit" : "text-loss")}>
                 ${longProfitLoss.toFixed(2)}
               </span>
@@ -298,7 +301,7 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
 
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Short P&L</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('dashboard.shortPnl')}</span>
               <span className={cn("text-sm font-bold font-mono", shortProfitLoss >= 0 ? "text-profit" : "text-loss")}>
                 ${shortProfitLoss.toFixed(2)}
               </span>
@@ -308,12 +311,12 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
 
           <div className="pt-4 flex justify-between border-t border-slate-200/50 dark:border-white/10 mt-2">
             <StatItem
-              label="Best Trade"
+              label={t('dashboard.bestTrade')}
               value={`$${bestTrade.toFixed(2)}`}
               trend={bestTrade >= 0 ? "up" : "down"}
             />
             <StatItem
-              label="Worst Trade"
+              label={t('dashboard.worstTrade')}
               value={`$${worstTrade.toFixed(2)}`}
               trend={worstTrade >= 0 ? "up" : "down"}
               className="items-end text-right"
@@ -322,7 +325,7 @@ export const TradeStatistics = ({ analytics }: { analytics?: AnalyticsDashboard 
 
           <div className="pt-4 border-t border-slate-200/50 dark:border-white/10 mt-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Fees Paid</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('dashboard.totalFeesPaid')}</span>
               <span className="text-sm font-mono tracking-tight text-loss">
                 ${totalFees.toFixed(2)}
               </span>

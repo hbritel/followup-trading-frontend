@@ -171,7 +171,11 @@ const Insights = () => {
   };
 
   const handleGenerateDigest = () => {
-    generateDigest.mutate(resolvedAccountId);
+    generateDigest.mutate({
+      accountId: resolvedAccountId,
+      startDate,
+      endDate,
+    });
   };
 
   // ---- Render helpers ----
@@ -298,27 +302,31 @@ const Insights = () => {
     </div>
   );
 
-  const renderDigestCard = (d: { id: string; content: string; weekStart: string; weekEnd: string; generatedAt: string }, isLatest = false) => (
-    <Card key={d.id} className={`glass-card rounded-2xl transition-all duration-500 ${isLatest ? 'animate-in fade-in-0 slide-in-from-bottom-2' : ''}`}>
-      <CardHeader className="pb-3">
+  const renderDigestCard = (d: { id: string; content: string; weekStart: string; weekEnd: string; generatedAt: string }, isLatest = false, compact = false) => (
+    <Card
+      key={d.id}
+      className={`glass-card rounded-2xl transition-all duration-500 ${isLatest ? 'animate-in fade-in-0 slide-in-from-bottom-3 zoom-in-[0.97]' : ''}`}
+      style={isLatest ? { animationDuration: '600ms', animationFillMode: 'both' } : undefined}
+    >
+      <CardHeader className={compact ? 'pb-2 pt-3 px-4' : 'pb-3'}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base text-gradient-primary">
+          <CardTitle className={`text-gradient-primary ${compact ? 'text-sm' : 'text-base'}`}>
             {t('ai.digest', 'Weekly Digest')}
           </CardTitle>
           <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
             <span>
-              <span className="label-caps mr-1">Week:</span>
+              <span className="label-caps mr-1">{t('ai.week', 'Semaine')} :</span>
               {new Date(d.weekStart).toLocaleDateString()} &ndash; {new Date(d.weekEnd).toLocaleDateString()}
             </span>
             <span>
-              <span className="label-caps mr-1">Generated:</span>
+              <span className="label-caps mr-1">{t('ai.generatedLabel', 'Généré')} :</span>
               {new Date(d.generatedAt).toLocaleDateString()} {new Date(d.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pb-6">
-        <div className="text-sm text-muted-foreground leading-relaxed">
+      <CardContent className={compact ? 'pb-3 px-4' : 'pb-6'}>
+        <div className={`text-sm text-muted-foreground leading-relaxed ${compact ? 'line-clamp-4' : ''}`}>
           {renderMarkdown(d.content)}
         </div>
       </CardContent>
@@ -340,15 +348,36 @@ const Insights = () => {
       );
     }
 
-    // Show generating spinner
+    // Show generating skeleton with shimmer animation
     if (generateDigest.isPending) {
       return (
-        <Card className="glass-card rounded-2xl">
-          <CardContent className="flex flex-col items-center gap-3 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
-            <p className="text-sm text-muted-foreground animate-pulse">
-              Generating your weekly digest...
-            </p>
+        <Card className="glass-card rounded-2xl overflow-hidden">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <Sparkles className="h-6 w-6 text-amber-400 animate-pulse" />
+                <div className="absolute inset-0 animate-ping">
+                  <Sparkles className="h-6 w-6 text-amber-400/30" />
+                </div>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground animate-pulse">
+                {t('ai.generating', 'Generating your weekly digest...')}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400/60" />
+              <span className="text-xs text-muted-foreground/60">
+                {t('ai.generatingHint', 'This usually takes 10-30 seconds. You can navigate away — the digest will be saved.')}
+              </span>
+            </div>
           </CardContent>
         </Card>
       );
@@ -399,7 +428,7 @@ const Insights = () => {
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
             <History className="h-4 w-4" />
-            Previous Digests
+            {t('ai.previousDigests', 'Résumés précédents')}
           </h3>
           <div className="flex items-center gap-1">
             <Button
@@ -439,12 +468,12 @@ const Insights = () => {
             ))}
           </div>
         ) : digestHistory && digestHistory.length > 0 ? (
-          <div className="space-y-3">
-            {digestHistory.map((d) => renderDigestCard(d))}
+          <div className="space-y-2">
+            {digestHistory.map((d) => renderDigestCard(d, false, true))}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
-            No previous digests found.
+            {t('ai.noPreviousDigests', 'Aucun résumé précédent.')}
           </p>
         )}
       </div>
@@ -491,8 +520,13 @@ const Insights = () => {
             </div>
           </div>
 
-          {/* KPI Summary Strip — always visible above tabs */}
-          <KpiStrip activeInsightCount={activeInsights.length} />
+          {/* KPI Summary Strip — always visible above tabs, respects filters */}
+          <KpiStrip
+            activeInsightCount={activeInsights.length}
+            startDate={startDate}
+            endDate={endDate}
+            accountId={accountIds}
+          />
 
           <Tabs defaultValue="performance" className="w-full">
             <TabsList className="mb-4">
@@ -511,25 +545,9 @@ const Insights = () => {
             <PerformanceMetrics startDate={startDate} endDate={endDate} accountIds={accountIds} />
           </TabsContent>
 
-          {/* ---- Tab 2: AI Insights + Weekly Digest ---- */}
+          {/* ---- Tab 2: Weekly Digest + AI Insights ---- */}
           <TabsContent value="ai" className="space-y-6">
-            {/* AI Insight cards — patterns and risk warnings are advanced */}
-            <section aria-label={t('insights.aiInsights', 'AI Insights')}>
-              <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg font-semibold text-gradient-primary">{t('insights.aiInsights', 'AI Insights')}</h2>
-                {activeInsights.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {activeInsights.length}
-                  </Badge>
-                )}
-              </div>
-              <PlanGatedSection requiredPlan="PRO" feature="AI Insights — patterns and risk warnings">
-                {renderInsightsContent()}
-              </PlanGatedSection>
-            </section>
-
-            {/* Weekly Digest */}
+            {/* Weekly Digest — shown first so "Generate" button is always accessible */}
             <PlanGatedSection requiredPlan="PRO" feature="AI Digest">
               <section aria-label={t('ai.digest', 'Weekly Digest')} className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -540,8 +558,10 @@ const Insights = () => {
                     </h2>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {t('ai.digestDescription', 'AI-generated summary of your trading week')}
-                      {resolvedAccountId && (
-                        <span className="ml-1 text-amber-500 font-medium">(filtered by account)</span>
+                      {(resolvedAccountId || startDate) && (
+                        <span className="ml-1 text-amber-500 font-medium">
+                          ({resolvedAccountId ? t('ai.filteredByAccount', 'filtré par compte') : ''}{resolvedAccountId && startDate ? ', ' : ''}{startDate ? t('ai.filteredByDate', 'filtré par période') : ''})
+                        </span>
                       )}
                     </p>
                   </div>
@@ -554,7 +574,7 @@ const Insights = () => {
                         className="gap-1.5 text-muted-foreground"
                       >
                         <History className="h-3.5 w-3.5" />
-                        {showHistory ? 'Hide History' : 'History'}
+                        {showHistory ? t('ai.hideHistory', 'Masquer l\'historique') : t('ai.showHistory', 'Historique')}
                       </Button>
                     )}
                     <Button
@@ -578,6 +598,22 @@ const Insights = () => {
                 {renderDigestHistory()}
               </section>
             </PlanGatedSection>
+
+            {/* AI Insight cards — patterns and risk warnings */}
+            <section aria-label={t('insights.aiInsights', 'AI Insights')}>
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="h-5 w-5 text-amber-400" />
+                <h2 className="text-lg font-semibold text-gradient-primary">{t('insights.aiInsights', 'AI Insights')}</h2>
+                {activeInsights.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {activeInsights.length}
+                  </Badge>
+                )}
+              </div>
+              <PlanGatedSection requiredPlan="PRO" feature="AI Insights — patterns and risk warnings">
+                {renderInsightsContent()}
+              </PlanGatedSection>
+            </section>
           </TabsContent>
         </Tabs>
       </PageTransition>

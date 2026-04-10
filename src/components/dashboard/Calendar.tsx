@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardContent,
@@ -39,6 +40,7 @@ interface TradingCalendarProps {
 }
 
 const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
+  const { t, i18n } = useTranslation();
   const [date, setDate] = React.useState<Date>(new Date());
   const [month, setMonth] = React.useState<Date>(new Date());
   const [tradePage, setTradePage] = React.useState(0);
@@ -107,22 +109,22 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
     );
   };
 
-  const selectedDateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const selectedDateLabel = date.toLocaleDateString(i18n.language, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <Card className="glass-card animate-slide-up flex flex-col" style={{ animationDelay: '0.3s' }}>
       <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold tracking-tight">Trading Calendar</CardTitle>
-            <CardDescription className="text-muted-foreground">Your trading activity for {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">{t('dashboard.tradingCalendar')}</CardTitle>
+            <CardDescription className="text-muted-foreground">{t('dashboard.activityForMonth', { month: month.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' }) })}</CardDescription>
           </div>
           <div className="text-xs font-medium flex gap-2">
             <Badge variant="outline" className="bg-profit/10 border-profit/30 text-profit">
-              Win
+              {t('dashboard.win')}
             </Badge>
             <Badge variant="outline" className="bg-loss/10 border-loss/30 text-loss">
-              Loss
+              {t('dashboard.loss')}
             </Badge>
           </div>
         </div>
@@ -147,7 +149,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
 
           <div className="border-t border-slate-200/50 dark:border-white/10 pt-4">
             <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-              Selected: {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
             </h3>
 
             {selectedDateTrade ? (

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowDown, 
@@ -43,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { Trade } from '@/components/trades/TradesTableWrapper';
 
 const TradeTable = ({ trades }: { trades: Trade[] }) => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -113,11 +115,11 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
       <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold tracking-tight">Trade History</CardTitle>
-            <CardDescription className="text-muted-foreground">Your recent trading activity</CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">{t('dashboard.tradeHistory')}</CardTitle>
+            <CardDescription className="text-muted-foreground">{t('dashboard.recentTradingActivity')}</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigate('/trades')} className="h-8 text-xs">
-            View All
+            {t('dashboard.viewAll')}
           </Button>
         </div>
       </CardHeader>
@@ -128,31 +130,31 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
               <TableRow className="border-slate-200/50 dark:border-white/5 hover:bg-transparent">
                 <TableHead className="w-[100px] cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('symbol')}>
                   <div className="flex items-center gap-1">
-                    Symbol
+                    {t('trades.symbol')}
                     {getSortIcon('symbol')}
                   </div>
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('entryDate')}>
                   <div className="flex items-center gap-1">
-                    Open Time
+                    {t('dashboard.openTime')}
                     {getSortIcon('entryDate')}
                   </div>
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('exitDate')}>
                   <div className="flex items-center gap-1">
-                    Close Time
+                    {t('dashboard.closeTime')}
                     {getSortIcon('exitDate')}
                   </div>
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('direction')}>
                   <div className="flex items-center gap-1">
-                    Position
+                    {t('dashboard.position')}
                     {getSortIcon('direction')}
                   </div>
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground dark:hover:text-white transition-colors text-right text-xs uppercase tracking-wider font-semibold text-muted-foreground" onClick={() => handleSort('profit')}>
                   <div className="flex items-center gap-1 justify-end">
-                    P&L
+                    {t('dashboard.pnl')}
                     {getSortIcon('profit')}
                   </div>
                 </TableHead>
@@ -168,7 +170,7 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
-                    {trade.entryDate ? new Date(trade.entryDate).toLocaleString(undefined, {
+                    {trade.entryDate ? new Date(trade.entryDate).toLocaleString(i18n.language, {
                       year: '2-digit',
                       month: '2-digit',
                       day: '2-digit',
@@ -177,7 +179,7 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
                     }) : '-'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
-                    {trade.exitDate ? new Date(trade.exitDate).toLocaleString(undefined, {
+                    {trade.exitDate ? new Date(trade.exitDate).toLocaleString(i18n.language, {
                       year: '2-digit',
                       month: '2-digit',
                       day: '2-digit',
@@ -218,20 +220,20 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
                       <DropdownMenuContent align="end" className="glass-panel border-slate-200/50 dark:border-white/10">
                         <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          {t('common.edit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                           <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
+                          {t('dashboard.duplicate')}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="cursor-pointer focus:bg-slate-200 dark:focus:bg-white/10 focus:text-foreground dark:focus:text-white">
                           <ExternalLink className="mr-2 h-4 w-4" />
-                          View Details
+                          {t('dashboard.viewDetails')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-200/50 dark:bg-white/10" />
                         <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -244,9 +246,11 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
 
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5 flex-shrink-0 mt-auto">
           <div className="text-xs text-muted-foreground">
-            Showing <span className="font-medium text-foreground dark:text-white">{trades.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
-            <span className="font-medium text-foreground dark:text-white">{Math.min(currentPage * itemsPerPage, trades.length)}</span> of{' '}
-            <span className="font-medium text-foreground dark:text-white">{trades.length}</span> trades
+            {t('dashboard.showingTrades', {
+              from: trades.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0,
+              to: Math.min(currentPage * itemsPerPage, trades.length),
+              total: trades.length,
+            })}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -271,7 +275,7 @@ const TradeTable = ({ trades }: { trades: Trade[] }) => {
               <span className="sr-only">Previous page</span>
             </Button>
             <div className="text-xs font-medium px-2">
-              Page {currentPage} / {totalPages}
+              {t('dashboard.pageOf', { current: currentPage, total: totalPages })}
             </div>
             <Button
               variant="outline"

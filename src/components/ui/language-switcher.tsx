@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
+import apiClient from "@/services/apiClient";
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation();
@@ -19,8 +20,14 @@ export function LanguageSwitcher() {
     { code: "es", label: "Español" },
   ];
 
-  const changeLanguage = (lng: string) => {
+  const changeLanguage = async (lng: string) => {
     i18n.changeLanguage(lng);
+    // Sync language preference to backend so AI responses use the same locale
+    try {
+      await apiClient.put('/users/me/preferences', { language: lng });
+    } catch {
+      // Non-critical — UI language still changed, backend sync failed silently
+    }
   };
 
   const currentLanguage = languages.find((l) => l.code === i18n.language) || languages[0];

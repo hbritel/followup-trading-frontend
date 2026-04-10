@@ -80,74 +80,74 @@ export const TradesTable: React.FC<TradesTableProps> = ({
   };
 
   return (
-    <div className="w-full">
-      <Table className="min-w-max">
+    <div className="w-full overflow-x-auto">
+      <Table className="min-w-[1200px] table-fixed">
         <TableHeader>
           <TableRow>
             {visibleColumns.symbol && (
-              <TableHead className="label-caps">{t('trades.symbol')}</TableHead>
+              <TableHead className="label-caps w-[90px]">{t('trades.symbol')}</TableHead>
             )}
             {visibleColumns.type && (
-              <TableHead className="label-caps">{t('trades.type')}</TableHead>
+              <TableHead className="label-caps w-[70px]">{t('trades.type')}</TableHead>
             )}
             {visibleColumns.status && (
-              <TableHead className="label-caps">{t('trades.status')}</TableHead>
+              <TableHead className="label-caps w-[80px]">{t('trades.status')}</TableHead>
             )}
             {visibleColumns.accountType && (
-              <TableHead className="label-caps">{t('trades.accountType', 'Account Type')}</TableHead>
+              <TableHead className="label-caps w-[70px]">{t('trades.accountType', 'Account Type')}</TableHead>
             )}
             {visibleColumns.entryDate && (
-              <TableHead className="label-caps">{t('trades.entryDate')}</TableHead>
+              <TableHead className="label-caps w-[110px]">{t('trades.entryDate')}</TableHead>
             )}
             {visibleColumns.exitDate && (
-              <TableHead className="label-caps">{t('trades.exitDate')}</TableHead>
+              <TableHead className="label-caps w-[110px]">{t('trades.exitDate')}</TableHead>
             )}
             {visibleColumns.entryPrice && (
-              <TableHead className="label-caps text-right">{t('trades.entryPrice')}</TableHead>
+              <TableHead className="label-caps text-right w-[100px]">{t('trades.entryPrice')}</TableHead>
             )}
             {visibleColumns.exitPrice && (
-              <TableHead className="label-caps text-right">{t('trades.exitPrice')}</TableHead>
+              <TableHead className="label-caps text-right w-[100px]">{t('trades.exitPrice')}</TableHead>
             )}
             {visibleColumns.stopLoss && (
-              <TableHead className="label-caps text-right">{t('trades.stopLoss')}</TableHead>
+              <TableHead className="label-caps text-right w-[90px]">{t('trades.stopLoss')}</TableHead>
             )}
             {visibleColumns.takeProfit && (
-              <TableHead className="label-caps text-right">{t('trades.takeProfit')}</TableHead>
+              <TableHead className="label-caps text-right w-[90px]">{t('trades.takeProfit')}</TableHead>
             )}
             {visibleColumns.quantity && (
-              <TableHead className="label-caps text-right">{t('trades.quantity')}</TableHead>
+              <TableHead className="label-caps text-right w-[70px]">{t('trades.quantity')}</TableHead>
             )}
             {visibleColumns.balance && (
-              <TableHead className="label-caps text-right">Balance</TableHead>
+              <TableHead className="label-caps text-right w-[90px]">{t('trades.balance', 'Balance')}</TableHead>
             )}
             {visibleColumns.profit && (
-              <TableHead className="label-caps text-right">{t('trades.profit')}</TableHead>
+              <TableHead className="label-caps text-right w-[100px]">{t('trades.profit')}</TableHead>
             )}
             {visibleColumns.profitPercentage && (
-              <TableHead className="label-caps text-right">{t('trades.profitPercentage')}</TableHead>
+              <TableHead className="label-caps text-right w-[70px]">{t('trades.profitPercentage')}</TableHead>
             )}
             {visibleColumns.fees && (
-              <TableHead className="label-caps text-right">{t('trades.fees')}</TableHead>
+              <TableHead className="label-caps text-right w-[70px]">{t('trades.fees')}</TableHead>
             )}
             {visibleColumns.currency && (
-              <TableHead className="label-caps">Currency</TableHead>
+              <TableHead className="label-caps w-[60px]">{t('trades.currency', 'Currency')}</TableHead>
             )}
             {visibleColumns.strategy && (
-              <TableHead className="label-caps">{t('trades.strategy')}</TableHead>
+              <TableHead className="label-caps w-[100px]">{t('trades.strategy')}</TableHead>
             )}
             {visibleColumns.notes && (
-              <TableHead className="label-caps">{t('trades.notes')}</TableHead>
+              <TableHead className="label-caps w-[120px]">{t('trades.notes')}</TableHead>
             )}
             {visibleColumns.tags && (
-              <TableHead className="label-caps">{t('trades.tags')}</TableHead>
+              <TableHead className="label-caps w-[100px]">{t('trades.tags')}</TableHead>
             )}
             {visibleColumns.createdAt && (
-              <TableHead className="label-caps">{t('trades.createdAt')}</TableHead>
+              <TableHead className="label-caps w-[100px]">{t('trades.createdAt')}</TableHead>
             )}
             {visibleColumns.updatedAt && (
-              <TableHead className="label-caps">{t('trades.updatedAt')}</TableHead>
+              <TableHead className="label-caps w-[100px]">{t('trades.updatedAt')}</TableHead>
             )}
-            <TableHead className="label-caps text-right">{t('common.actions')}</TableHead>
+            <TableHead className="label-caps text-right w-[60px]">{t('common.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Area,
   AreaChart,
@@ -24,24 +25,24 @@ import { Info } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { AnalyticsDashboard } from '@/services/trade.service';
 
-const formatDate = (dateStr: string, isSingleDay = false) => {
+const formatDate = (dateStr: string, isSingleDay = false, locale = 'en-US') => {
   const date = new Date(dateStr);
   if (isSingleDay) {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
     });
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric'
   });
 };
 
-const formatDateFull = (dateStr: string) => {
+const formatDateFull = (dateStr: string, locale = 'en-US') => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -53,11 +54,11 @@ const formatCurrency = (value: number) => {
   return `$${value.toFixed(2)}`;
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, locale }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="glass-panel p-3 rounded-lg border border-slate-200/50 dark:border-white/10 shadow-xl backdrop-blur-md">
-        <p className="text-xs font-semibold text-muted-foreground mb-1 font-mono">{formatDateFull(label)}</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-1 font-mono">{formatDateFull(label, locale)}</p>
         {payload.map((entry: any, index: number) => (
           <div key={`item-${index}`} className="flex items-center gap-2 text-sm">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
@@ -65,7 +66,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               {entry.name}:
             </span>
             <span className="font-mono font-bold text-foreground dark:text-white">
-              {entry.name === 'Equity' || entry.name === 'Daily P&L'
+              {entry.dataKey === 'equity' || entry.dataKey === 'pnl'
                 ? formatCurrency(entry.value)
                 : entry.value}
             </span>
@@ -118,8 +119,10 @@ interface PerformanceChartProps {
 }
 
 const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const isSingleDay = (analytics?.equityCurve?.length ?? 0) <= 1;
-  const tickFormat = (d: string) => formatDate(d, isSingleDay);
+  const tickFormat = (d: string) => formatDate(d, isSingleDay, locale);
 
   const { performanceData, volumeData } = React.useMemo(() => {
     if (!analytics || !analytics.equityCurve || analytics.equityCurve.length === 0) {
@@ -150,12 +153,12 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
           <div className="flex items-center gap-2">
             <div>
               <div className="flex items-center">
-                <CardTitle className="text-lg font-semibold tracking-tight text-gradient">Performance</CardTitle>
+                <CardTitle className="text-lg font-semibold tracking-tight text-gradient">{t('dashboard.performance')}</CardTitle>
                 <InfoBubble>
-                  Shows your cumulative equity curve over time. Each point represents the running total of all realized P&L from closed trades.
+                  {t('dashboard.equityInfoBubble')}
                 </InfoBubble>
               </div>
-              <CardDescription className="text-muted-foreground">Cumulative performance over time</CardDescription>
+              <CardDescription className="text-muted-foreground">{t('dashboard.cumulativePerformance')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -163,7 +166,7 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
           <div className="h-[300px] px-2">
             {performanceData.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                No trading activity in this period
+                {t('dashboard.noTradingActivity')}
               </div>
             ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -196,7 +199,7 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
                   domain={['dataMin - 100', 'dataMax + 100']}
                 />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.4} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                <Tooltip content={<CustomTooltip locale={locale} />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }} />
                 <Area
                   type="monotone"
                   dataKey="equity"
@@ -204,7 +207,7 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorEquity)"
-                  name="Equity"
+                  name={t('dashboard.equity')}
                   animationDuration={1500}
                 />
               </AreaChart>
@@ -218,20 +221,20 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
         <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5">
           <div>
             <div className="flex items-center">
-              <CardTitle className="text-lg font-semibold tracking-tight text-gradient">Daily P&L</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight text-gradient">{t('dashboard.dailyPnl')}</CardTitle>
               <InfoBubble>
-                Displays your daily profit and loss from closed trades. Green bars represent profitable days, red bars represent losing days. Switch to the Volume tab to see the number of trades executed each day.
+                {t('dashboard.dailyPnlInfoBubble')}
               </InfoBubble>
             </div>
-            <CardDescription className="text-muted-foreground">Profit and loss by day</CardDescription>
+            <CardDescription className="text-muted-foreground">{t('dashboard.profitAndLossByDay')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="p-0 pt-6">
           <Tabs defaultValue="pnl">
             <div className="px-6 mb-4">
               <TabsList className="bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/5 w-full justify-start p-1 h-auto">
-                <TabsTrigger value="pnl" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:shadow-none text-xs h-8">P&L</TabsTrigger>
-                <TabsTrigger value="volume" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:shadow-none text-xs h-8">Volume</TabsTrigger>
+                <TabsTrigger value="pnl" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:shadow-none text-xs h-8">{t('dashboard.pnl')}</TabsTrigger>
+                <TabsTrigger value="volume" className="flex-1 data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm dark:data-[state=active]:shadow-none text-xs h-8">{t('dashboard.volume')}</TabsTrigger>
               </TabsList>
             </div>
 
@@ -256,10 +259,10 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                     tickMargin={10}
                   />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.2)' }} />
+                  <Tooltip content={<CustomTooltip locale={locale} />} cursor={{ fill: 'hsl(var(--muted)/0.2)' }} />
                   <Bar
                     dataKey="pnl"
-                    name="Daily P&L"
+                    name={t('dashboard.dailyPnl')}
                     animationDuration={1500}
                     radius={[2, 2, 2, 2]}
                     fillOpacity={0.8}
@@ -291,10 +294,10 @@ const PerformanceChart = ({ analytics }: PerformanceChartProps) => {
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                     tickMargin={10}
                   />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.2)' }} />
+                  <Tooltip content={<CustomTooltip locale={locale} />} cursor={{ fill: 'hsl(var(--muted)/0.2)' }} />
                   <Bar
                     dataKey="volume"
-                    name="Trade Volume"
+                    name={t('dashboard.tradeVolume')}
                     fill="hsl(var(--primary))"
                     fillOpacity={0.6}
                     radius={[2, 2, 0, 0]}
