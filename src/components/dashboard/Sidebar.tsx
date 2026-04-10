@@ -74,8 +74,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       label: t('sidebar.analysis'),
       items: [
         { href: '/playbook', label: t('sidebar.playbook'), icon: BookOpenIcon },
-        { href: '/insights', label: t('sidebar.insights'), icon: LineChartIcon },
-        { href: '/ai-coach', label: t('sidebar.aiCoach', 'AI Coach'), icon: BrainIcon },
+        { href: '/insights', label: t('sidebar.insights'), icon: LineChartIcon, requiredPlan: 'STARTER' as const },
+        { href: '/ai-coach', label: t('sidebar.aiCoach', 'AI Coach'), icon: BrainIcon, featureKey: 'ai_chat', requiredPlan: 'STARTER' as const },
         { href: '/performance', label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: '/statistics', label: t('sidebar.statistics'), icon: PieChartIcon },
         { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon, requiredPlan: 'PRO' as const },
