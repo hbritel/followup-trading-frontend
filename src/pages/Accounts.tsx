@@ -1369,6 +1369,7 @@ const Accounts = () => {
                       <SelectValue placeholder={t('accounts.selectSyncFrequency')} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="REALTIME">{t('accounts.realtime')}</SelectItem>
                       <SelectItem value="EVERY_5_MINUTES">{t('accounts.every5Minutes')}</SelectItem>
                       <SelectItem value="EVERY_15_MINUTES">{t('accounts.every15Minutes')}</SelectItem>
                       <SelectItem value="EVERY_30_MINUTES">{t('accounts.every30Minutes')}</SelectItem>
