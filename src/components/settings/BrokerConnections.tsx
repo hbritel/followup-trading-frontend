@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useNavigate } from 'react-router-dom';
@@ -60,6 +60,7 @@ import {
   useDisconnectBroker,
   useSyncConnection,
   useTestConnection,
+  useAllowedSyncFrequencies,
 } from '@/hooks/useBrokers';
 import type { BrokerResponse, BrokerConnectionResponse, CredentialField } from '@/services/broker.service';
 
@@ -107,16 +108,14 @@ interface ConnectDialogProps {
 
 function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps) {
   const { t } = useTranslation();
-  const { currentPlan } = useFeatureFlags();
   const [selectedProtocol, setSelectedProtocol] = useState<string | undefined>(undefined);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [displayName, setDisplayName] = useState('');
 
-  // Default sync frequency based on current plan
-  const defaultSyncFrequency = useMemo(() => {
-    const allowed = SYNC_FREQUENCIES_BY_PLAN[currentPlan] ?? ['MONTHLY'];
-    return allowed[0]; // Highest allowed for the plan (first in list is best)
-  }, [currentPlan]);
+  const { data: allowedFrequencies } = useAllowedSyncFrequencies();
+
+  // Default to the first (highest) frequency allowed by the user's plan
+  const defaultSyncFrequency = allowedFrequencies?.[0] ?? 'MONTHLY';
 
   const effectiveProtocol = selectedProtocol || broker?.defaultProtocol;
 
@@ -555,35 +554,8 @@ const PLAN_SYNC_LABEL: Record<string, string> = {
   ELITE: 'Real-time sync',
 };
 
-// Frequencies available per plan (subset available for selection)
-const SYNC_FREQUENCIES_BY_PLAN: Record<string, string[]> = {
-  FREE: ['MONTHLY'],
-  STARTER: ['WEEKLY', 'MONTHLY'],
-  PRO: ['DAILY', 'WEEKLY', 'MONTHLY'],
-  ELITE: ['EVERY_5_MINUTES', 'EVERY_15_MINUTES', 'EVERY_30_MINUTES', 'HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY'],
-};
-
-const ALL_SYNC_FREQUENCIES = [
-  'EVERY_5_MINUTES',
-  'EVERY_15_MINUTES',
-  'EVERY_30_MINUTES',
-  'HOURLY',
-  'DAILY',
-  'WEEKLY',
-  'MONTHLY',
-];
-
-const SYNC_FREQUENCY_PLAN_REQUIRED: Record<string, string> = {
-  EVERY_5_MINUTES: 'ELITE',
-  EVERY_15_MINUTES: 'ELITE',
-  EVERY_30_MINUTES: 'ELITE',
-  HOURLY: 'ELITE',
-  DAILY: 'PRO',
-  WEEKLY: 'STARTER',
-  MONTHLY: 'FREE',
-};
-
 const SYNC_FREQUENCY_LABELS: Record<string, string> = {
+  REALTIME: 'Real-time',
   EVERY_5_MINUTES: 'Every 5 minutes',
   EVERY_15_MINUTES: 'Every 15 minutes',
   EVERY_30_MINUTES: 'Every 30 minutes',

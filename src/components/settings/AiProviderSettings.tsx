@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain, Sparkles, Power } from 'lucide-react';
+import { aiSettingsService } from '@/services/ai-settings.service';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +34,7 @@ import type { UserAiConfigRequestDto, AiProviderTestResultDto } from '@/types/dt
 import { cn } from '@/lib/utils';
 
 const PROVIDER_TYPES = [
+  { value: 'OPENROUTER', label: 'OpenRouter (200+ models, free tier available)' },
   { value: 'OLLAMA', label: 'Ollama (local)' },
   { value: 'OPENAI_COMPATIBLE', label: 'OpenAI Compatible' },
   { value: 'GEMINI', label: 'Google Gemini' },
@@ -42,6 +46,7 @@ const NEEDS_BASE_URL = ['OLLAMA', 'OPENAI_COMPATIBLE'];
 const NEEDS_API_KEY = ['OPENAI_COMPATIBLE', 'GEMINI', 'ANTHROPIC', 'OPENROUTER'];
 
 const DEFAULT_MODELS: Record<string, string> = {
+  OPENROUTER: 'google/gemma-3-1b-it:free',
   OLLAMA: 'llama3',
   OPENAI_COMPATIBLE: 'gpt-4o-mini',
   GEMINI: 'gemini-1.5-pro',
@@ -54,6 +59,24 @@ const AiProviderSettings: React.FC = () => {
   const { mutate: save, isPending: isSaving } = useSaveAiConfig();
   const { mutate: remove, isPending: isRemoving } = useDeleteAiConfig();
   const { mutate: test, isPending: isTesting } = useTestAiConfig();
+
+  const queryClient = useQueryClient();
+
+  // Fetch which provider is actually being used right now
+  const { data: activeProvider } = useQuery({
+    queryKey: ['ai-provider', 'active'],
+    queryFn: () => aiSettingsService.getActiveProvider().then((r: any) => r.data),
+    staleTime: 30_000,
+  });
+
+  // Toggle custom provider on/off
+  const { mutate: toggleActive, isPending: isToggling } = useMutation({
+    mutationFn: (active: boolean) => aiSettingsService.toggleActive(active).then(r => r.data),
+    onSuccess: (data) => {
+      queryClient.setQueryData<UserAiConfigResponseDto | null>(['settings', 'ai-provider'], data);
+      queryClient.invalidateQueries({ queryKey: ['ai-provider', 'active'] });
+    },
+  });
 
   const [providerType, setProviderType] = useState('OLLAMA');
   const [baseUrl, setBaseUrl] = useState('http://localhost:11434');
@@ -128,19 +151,69 @@ const AiProviderSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Active provider status banner */}
+      <div className="glass-card rounded-2xl p-4">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            'flex items-center justify-center w-10 h-10 rounded-full',
+            activeProvider?.usingByok
+              ? 'bg-blue-100 dark:bg-blue-900/30'
+              : 'bg-primary/10'
+          )}>
+            {activeProvider?.usingByok ? (
+              <Brain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <Sparkles className="h-5 w-5 text-primary" />
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold">
+              Currently using: {activeProvider?.displayName ?? 'Loading...'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {activeProvider?.usingByok
+                ? 'You are using your own AI model.'
+                : activeProvider?.platformProviderInfo ?? 'Platform default model'}
+            </p>
+          </div>
+          {config && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Label htmlFor="byok-toggle" className="text-xs text-muted-foreground">
+                {config.active ? 'Custom AI active' : 'Using FollowUp Trading AI'}
+              </Label>
+              <Switch
+                id="byok-toggle"
+                checked={config.active}
+                onCheckedChange={(checked) => toggleActive(checked)}
+                disabled={isToggling}
+              />
+            </div>
+          )}
+        </div>
+        {activeProvider?.fallbackUsed && (
+          <div className="mt-3 flex gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 dark:text-amber-200">
+              {activeProvider.fallbackReason}
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Info notice */}
       <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
         <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-amber-800 dark:text-amber-200">
-          When using your own AI provider, your trading data summaries are sent to the endpoint you configure.
-          Make sure you trust the provider.
+          Configure your own AI provider below, or use the default <strong>FollowUp Trading AI</strong> (no configuration needed).
+          When using your own provider, your trading data summaries are sent to the endpoint you configure.
         </p>
       </div>
 
+      {(!config || config.active) && (
       <div className="glass-card rounded-2xl p-6 space-y-5">
         <div className="flex items-center gap-2 mb-2">
           <Brain className="h-5 w-5 text-primary" />
-          <h3 className="text-base font-semibold">AI Provider Configuration</h3>
+          <h3 className="text-base font-semibold">Custom AI Provider (Optional)</h3>
           {config?.active && (
             <span className="ml-auto text-xs bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 rounded-full px-2 py-0.5 font-medium">
               Active
@@ -316,6 +389,7 @@ const AiProviderSettings: React.FC = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Delete confirmation */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
