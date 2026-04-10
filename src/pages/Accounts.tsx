@@ -74,6 +74,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { brokerService, type ConnectBrokerRequest, type BrokerConnectionResponse } from '@/services/broker.service';
+import { useAllowedSyncFrequencies } from '@/hooks/useBrokers';
 import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
 import PageError from '@/components/ui/page-error';
@@ -405,6 +406,9 @@ const Accounts = () => {
   const [editSyncFrequency, setEditSyncFrequency] = useState('');
   const [editEnabled, setEditEnabled] = useState(true);
   const [editAccountType, setEditAccountType] = useState<string>('REAL');
+
+  // --- Allowed sync frequencies from the user's subscription plan ---
+  const { data: allowedFrequencies } = useAllowedSyncFrequencies();
 
   // --- Queries ---
   const {
@@ -1369,15 +1373,11 @@ const Accounts = () => {
                       <SelectValue placeholder={t('accounts.selectSyncFrequency')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="REALTIME">{t('accounts.realtime')}</SelectItem>
-                      <SelectItem value="EVERY_5_MINUTES">{t('accounts.every5Minutes')}</SelectItem>
-                      <SelectItem value="EVERY_15_MINUTES">{t('accounts.every15Minutes')}</SelectItem>
-                      <SelectItem value="EVERY_30_MINUTES">{t('accounts.every30Minutes')}</SelectItem>
-                      <SelectItem value="HOURLY">{t('accounts.hourly')}</SelectItem>
-                      <SelectItem value="DAILY">{t('accounts.daily')}</SelectItem>
-                      <SelectItem value="WEEKLY">{t('accounts.weekly')}</SelectItem>
-                      <SelectItem value="MONTHLY">{t('accounts.monthly')}</SelectItem>
-                      <SelectItem value="MANUAL">{t('accounts.manual')}</SelectItem>
+                      {(allowedFrequencies ?? [editSyncFrequency].filter(Boolean)).map((freq) => (
+                        <SelectItem key={freq} value={freq}>
+                          {getSyncFrequencyLabel(freq)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

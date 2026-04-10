@@ -192,4 +192,13 @@ export const brokerService = {
         const response = await apiClient.get<string[]>('/broker-connections/supported');
         return response.data;
     },
+
+    /**
+     * Get allowed sync frequencies for the current user's subscription plan.
+     * GET /api/v1/subscription/allowed-sync-frequencies
+     */
+    getAllowedSyncFrequencies: async (): Promise<string[]> => {
+        const response = await apiClient.get<string[]>('/subscription/allowed-sync-frequencies');
+        return response.data;
+    },
 };

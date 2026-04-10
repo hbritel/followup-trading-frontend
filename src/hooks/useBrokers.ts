@@ -107,3 +107,15 @@ export const useTestConnection = () => {
     mutationFn: (connectionId: string) => brokerService.testConnection(connectionId),
   });
 };
+
+/**
+ * Fetch allowed sync frequencies for the current user's subscription plan.
+ * GET /api/v1/subscription/allowed-sync-frequencies
+ */
+export const useAllowedSyncFrequencies = () => {
+  return useQuery<string[]>({
+    queryKey: ['allowed-sync-frequencies'],
+    queryFn: brokerService.getAllowedSyncFrequencies,
+    staleTime: 5 * 60 * 1000, // 5 min cache — plan changes are infrequent
+  });
+};
