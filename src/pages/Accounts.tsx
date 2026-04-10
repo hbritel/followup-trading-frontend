@@ -364,6 +364,7 @@ const Accounts = () => {
 
   const getSyncFrequencyLabel = (freq: string) => {
     const key = {
+      'REALTIME': 'accounts.realtime',
       'EVERY_5_MINUTES': 'accounts.every5Minutes',
       'EVERY_15_MINUTES': 'accounts.every15Minutes',
       'EVERY_30_MINUTES': 'accounts.every30Minutes',
