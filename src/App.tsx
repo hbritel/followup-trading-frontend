@@ -62,6 +62,7 @@ import { FeatureFlagsProvider } from '@/contexts/feature-flags-context';
 import { FeatureGate } from '@/components/guards/FeatureGate';
 import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
+import PlanChangeListener from '@/components/subscription/PlanChangeListener';
 
 function App() {
   useFingerprint();
@@ -94,6 +95,7 @@ function App() {
                     path="/"
                     element={
                       <WebSocketProvider>
+                        <PlanChangeListener />
                         <ProtectedRoute />
                       </WebSocketProvider>
                     }
