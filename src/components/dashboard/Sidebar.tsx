@@ -132,7 +132,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       <div className="mx-3 border-b border-slate-200 dark:border-white/5 flex-shrink-0" />
 
       {/* Nav groups — scrollable */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10">
+      <div className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10">
         <nav className="grid gap-y-0 px-2">
           {sidebarGroups.map((group, groupIndex) => {
             const isCollapsed = !!collapsed[groupIndex];
@@ -184,7 +184,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                             onClick={onNavigate}
                             aria-current={isActive ? 'page' : undefined}
                             className={[
-                              'relative flex items-center gap-x-2 rounded-xl py-2.5',
+                              'relative flex items-center gap-x-2 rounded-xl py-2.5 min-w-0',
                               'justify-start px-2.5',
                               'text-sm font-medium transition-all duration-200',
                               dimmed

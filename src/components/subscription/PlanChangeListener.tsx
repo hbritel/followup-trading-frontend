@@ -32,7 +32,7 @@ export default function PlanChangeListener() {
     if (!user?.id) return;
 
     const unsubscribe = subscribe(
-      `/topic/plan-changed/${user.id}`,
+      `/topic/users/${user.id}/plan-changed`,
       (message) => {
         try {
           const data = JSON.parse(message.body) as PlanChangedNotification;
