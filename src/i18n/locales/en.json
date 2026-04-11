@@ -2778,5 +2778,19 @@
     "totalPnl": "Total P&L",
     "avgRR": "Avg R:R",
     "totalTrades": "Total Trades"
+  },
+  "calendar": {
+    "noTrades": "No trades on this date",
+    "selectDate": "Select a date with trades to view details",
+    "result": "Result",
+    "trades": "Trades",
+    "noTradeDetails": "No trade details available",
+    "tradesFor": "Trades for {{date}}",
+    "tradesExecuted": "{{count}} trade(s) executed",
+    "showing": "Showing {{from}} to {{to}} of {{total}} trades",
+    "page": "Page {{current}} / {{total}}",
+    "symbol": "Symbol",
+    "time": "Time",
+    "position": "Position"
   }
 }

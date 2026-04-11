@@ -196,10 +196,10 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
               <div className="px-6 py-3 flex items-center justify-between flex-shrink-0">
                 <div>
                   <h3 className="text-sm font-semibold tracking-tight text-foreground dark:text-white">
-                    Trades for {selectedDateLabel}
+                    {t('calendar.tradesFor', 'Trades for {{date}}', { date: selectedDateLabel })}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {dayTotalTrades} trade{dayTotalTrades !== 1 ? 's' : ''} executed
+                    {t('calendar.tradesExecuted', '{{count}} trade(s) executed', { count: dayTotalTrades })}
                   </p>
                 </div>
               </div>
@@ -214,10 +214,10 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                     <Table>
                       <TableHeader className="bg-slate-100 dark:bg-white/5 sticky top-0 z-10">
                         <TableRow className="border-slate-200/50 dark:border-white/5 hover:bg-transparent">
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Symbol</TableHead>
-                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">Time</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Position</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">P&L</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.symbol', 'Symbol')}</TableHead>
+                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.time', 'Time')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.position', 'Position')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -260,9 +260,11 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   {/* Pagination footer — matches Trade History style */}
                   <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5 flex-shrink-0">
                     <div className="text-xs text-muted-foreground">
-                      Showing <span className="font-medium text-foreground dark:text-white">{tradePage * TRADES_PER_PAGE + 1}</span> to{' '}
-                      <span className="font-medium text-foreground dark:text-white">{Math.min((tradePage + 1) * TRADES_PER_PAGE, dayTotalTrades)}</span> of{' '}
-                      <span className="font-medium text-foreground dark:text-white">{dayTotalTrades}</span> trades
+                      {t('calendar.showing', 'Showing {{from}} to {{to}} of {{total}} trades', {
+                        from: tradePage * TRADES_PER_PAGE + 1,
+                        to: Math.min((tradePage + 1) * TRADES_PER_PAGE, dayTotalTrades),
+                        total: dayTotalTrades,
+                      })}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground" disabled={tradePage === 0} onClick={() => setTradePage(0)}>
@@ -272,7 +274,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <div className="text-xs font-medium px-2">
-                        Page {tradePage + 1} / {dayTotalPages}
+                        {t('calendar.page', 'Page {{current}} / {{total}}', { current: tradePage + 1, total: dayTotalPages })}
                       </div>
                       <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground" disabled={tradePage >= dayTotalPages - 1} onClick={() => setTradePage(p => p + 1)}>
                         <ChevronRight className="h-4 w-4" />
@@ -285,13 +287,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                 </>
               ) : (
                 <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
-                  No trade details available
+                  {t('calendar.noTradeDetails', 'No trade details available')}
                 </div>
               )}
             </>
           ) : (
             <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm py-6">
-              Select a date with trades to view details
+              {t('calendar.selectDate', 'Select a date with trades to view details')}
             </div>
           )}
         </div>

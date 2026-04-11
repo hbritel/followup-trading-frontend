@@ -117,6 +117,9 @@ export interface UserPreferencesDto {
 
     // --- NOTIFICATION BADGE ---
     showNotificationBadge: boolean;
+
+    // --- CALENDAR ---
+    weekStartDay?: 'sunday' | 'monday' | null; // Default: monday for most locales
 }
 
 export interface TotpVerifyRequestDto {

@@ -2364,5 +2364,19 @@
     "totalPnl": "P&L Total",
     "avgRR": "R:R Promedio",
     "totalTrades": "Total Trades"
+  },
+  "calendar": {
+    "noTrades": "Sin trades en esta fecha",
+    "selectDate": "Selecciona una fecha con trades para ver los detalles",
+    "result": "Resultado",
+    "trades": "Trades",
+    "noTradeDetails": "No hay detalles de trade disponibles",
+    "tradesFor": "Trades del {{date}}",
+    "tradesExecuted": "{{count}} trade(s) ejecutado(s)",
+    "showing": "Mostrando {{from}} a {{to}} de {{total}} trades",
+    "page": "Página {{current}} / {{total}}",
+    "symbol": "Símbolo",
+    "time": "Hora",
+    "position": "Posición"
   }
 }
