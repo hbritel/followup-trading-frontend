@@ -31,7 +31,9 @@ import {
   MoreHorizontal,
   Link as LinkIcon,
   Shield,
+  Lock,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -715,13 +717,34 @@ const Accounts = () => {
     return (
       <div
         key={account.id}
-        className="group relative overflow-hidden rounded-xl border bg-card shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-pointer"
-        onClick={() => handleViewAccount(account.id)}
+        className={cn(
+          'group relative overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-200',
+          account.suspendedByPlan
+            ? 'opacity-60 cursor-default'
+            : 'hover:shadow-md hover:border-primary/30 cursor-pointer',
+        )}
+        onClick={() => { if (!account.suspendedByPlan) handleViewAccount(account.id); }}
         role="button"
         tabIndex={0}
-        aria-label={`${getAccountTitle(account)} - ${getStatusLabel(account.status, t, account.enabled)}`}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleViewAccount(account.id); } }}
+        aria-label={`${getAccountTitle(account)} - ${account.suspendedByPlan ? t('accounts.suspended', 'Suspended') : getStatusLabel(account.status, t, account.enabled)}`}
+        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !account.suspendedByPlan) { e.preventDefault(); handleViewAccount(account.id); } }}
       >
+        {/* Suspended-by-plan overlay */}
+        {account.suspendedByPlan && (
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center z-10">
+            <div className="flex flex-col items-center gap-2 text-center px-4">
+              <Lock className="h-5 w-5 text-amber-400" />
+              <p className="text-sm font-medium text-amber-400">{t('accounts.accountSuspended', 'Account suspended')}</p>
+              <p className="text-xs text-muted-foreground">{t('accounts.upgradeToReactivate', 'Upgrade your plan to reactivate')}</p>
+              <Link to="/pricing" onClick={(e) => e.stopPropagation()}>
+                <button className="mt-1 inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                  {t('subscription.viewPlans', 'View plans')}
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Status accent line */}
         <div className={cn(
           'absolute top-0 left-0 right-0 h-0.5 rounded-t-xl transition-all',

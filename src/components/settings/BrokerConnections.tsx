@@ -51,6 +51,7 @@ import {
   Lock,
   ArrowUpCircle,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import {
   useBrokers,
@@ -353,13 +354,31 @@ function BrokerCard({
     return key[freq] ? t(key[freq]) : freq;
   };
 
+  const isSuspended = connection?.suspendedByPlan === true;
+
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={`relative overflow-hidden${isSuspended ? ' opacity-60' : ''}`}>
+      {/* Suspended-by-plan overlay */}
+      {isSuspended && (
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-2 text-center px-4">
+            <Lock className="h-5 w-5 text-amber-400" />
+            <p className="text-sm font-medium text-amber-400">{t('accounts.accountSuspended', 'Account suspended')}</p>
+            <p className="text-xs text-muted-foreground">{t('accounts.upgradeToReactivate', 'Upgrade your plan to reactivate')}</p>
+            <Link to="/pricing">
+              <button className="mt-1 inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                {t('subscription.viewPlans', 'View plans')}
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Subtle top border for connected brokers */}
-      {isConnected && (
+      {isConnected && !isSuspended && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-500" />
       )}
-      {connection?.status === 'ERROR' && (
+      {connection?.status === 'ERROR' && !isSuspended && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-red-500" />
       )}
 

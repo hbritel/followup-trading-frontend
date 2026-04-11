@@ -2,6 +2,7 @@ import React from 'react';
 import { useBrokerConnections } from '@/hooks/useBrokers';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { Lock } from 'lucide-react';
 
 interface AccountSelectorProps {
   value: string;
@@ -14,9 +15,15 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
 
   const { data: connections, isLoading } = useBrokerConnections();
 
-  // Only show accounts that are currently connected
+  // Only show accounts that are currently connected (including suspended ones so users can see them as disabled)
   const connectedAccounts = React.useMemo(
     () => connections?.filter(c => c.status === 'CONNECTED') || [],
+    [connections],
+  );
+
+  // Suspended accounts are shown as disabled items in the dropdown
+  const suspendedAccounts = React.useMemo(
+    () => connections?.filter(c => c.suspendedByPlan) || [],
     [connections],
   );
 
@@ -95,6 +102,28 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
                   </SelectItem>
                 ))}
               </SelectGroup>
+            )}
+
+            {suspendedAccounts.length > 0 && (
+              <>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel className="flex items-center gap-1.5 text-amber-400 text-xs">
+                    <Lock className="h-3 w-3" />
+                    {t('accounts.suspendedAccounts', 'Suspended accounts')}
+                  </SelectLabel>
+                  {suspendedAccounts.map(account => (
+                    <SelectItem
+                      key={account.id}
+                      value={account.id}
+                      disabled
+                      className="pl-8 opacity-50 cursor-not-allowed"
+                    >
+                      {buildLabel(account)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </>
             )}
           </>
         ) : (

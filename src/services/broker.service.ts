@@ -14,6 +14,7 @@ export interface BrokerConnectionResponse {
     status: string;
     syncFrequency: string;
     enabled: boolean;
+    suspendedByPlan: boolean;
     lastSyncTime: string | null;
     createdAt: string;
     updatedAt: string;
