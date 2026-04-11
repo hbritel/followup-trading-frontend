@@ -105,7 +105,7 @@ function App() {
                     <Route path="/daily-journal" element={<DailyJournal />} />
                     <Route path="/calendar" element={<Calendar />} />
                     <Route path="/playbook" element={<Playbook />} />
-                    <Route path="/insights" element={<Insights />} />
+                    <Route path="/insights" element={<FeatureGate requiredPlan="STARTER"><Insights /></FeatureGate>} />
                     <Route path="/performance" element={<Performance />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/watchlists" element={<Watchlists />} />
@@ -118,14 +118,14 @@ function App() {
                     <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay" requiredPlan="PRO"><TradeReplay /></FeatureGate>} />
                     <Route path="/administration" element={<Administration />} />
                     <Route path="/alerts" element={<FeatureGate featureKey="alerts" requiredPlan="STARTER"><Alerts /></FeatureGate>} />
-                    <Route path="/risk-metrics" element={<RiskMetrics />} />
+                    <Route path="/risk-metrics" element={<FeatureGate requiredPlan="PRO"><RiskMetrics /></FeatureGate>} />
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/tax-reporting" element={<FeatureGate featureKey="tax_reporting" requiredPlan="PRO"><TaxReporting /></FeatureGate>} />
                     <Route path="/prop-firm" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmHub /></FeatureGate>} />
                     <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
-                    <Route path="/ai-coach" element={<AiCoach />} />
+                    <Route path="/ai-coach" element={<FeatureGate featureKey="ai_chat" requiredPlan="STARTER"><AiCoach /></FeatureGate>} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />

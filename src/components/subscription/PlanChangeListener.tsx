@@ -45,6 +45,7 @@ export default function PlanChangeListener() {
           // Invalidate all subscription-related caches immediately
           queryClient.invalidateQueries({ queryKey: ['subscription'] });
           queryClient.invalidateQueries({ queryKey: ['feature-flags'] });
+          queryClient.invalidateQueries({ queryKey: ['broker-connections'] });
         } catch (e) {
           console.error('[PlanChangeListener] Failed to parse plan change notification:', e);
         }
