@@ -120,6 +120,10 @@ export interface UserPreferencesDto {
 
     // --- CALENDAR ---
     weekStartDay?: 'sunday' | 'monday' | null; // Default: monday for most locales
+
+    // --- AI COACHING NOTIFICATIONS ---
+    briefingReminderEnabled?: boolean;
+    debriefReminderEnabled?: boolean;
 }
 
 export interface TotpVerifyRequestDto {

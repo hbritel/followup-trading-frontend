@@ -2106,7 +2106,15 @@
     "previousDigests": "Résumés précédents",
     "noPreviousDigests": "Aucun résumé précédent.",
     "week": "Semaine",
-    "generatedLabel": "Généré"
+    "generatedLabel": "Généré",
+    "streakTitle": "Série Coach",
+    "streakDays": "Série de {{count}} jours",
+    "streakStart": "Commencez votre série aujourd'hui !",
+    "streakKeepUp": "Continuez comme ça !",
+    "scoreHistoryTitle": "Scores de Session",
+    "scoreHistoryEmpty": "Complétez un débrief pour voir vos scores",
+    "scoreAvg": "Moy",
+    "scoreLast": "Dernier"
   },
   "import": {
     "title": "Importer des trades",

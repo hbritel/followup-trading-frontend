@@ -729,6 +729,38 @@ const Settings = () => {
                                             />
                                         </div>
                                     </div>
+
+                                    {/* AI Coaching */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">{t('settings.aiCoaching', 'AI Coaching')}</p>
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Brain className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.briefingReminder', 'Morning Briefing Reminder')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.briefingReminderDesc', 'Get a reminder to check your AI briefing each morning')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.briefingReminderEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('briefingReminderEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Brain className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.debriefReminder', 'Evening Debrief Reminder')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.debriefReminderDesc', 'Get a reminder to review your trading session')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.debriefReminderEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('debriefReminderEnabled', checked)}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                             </>

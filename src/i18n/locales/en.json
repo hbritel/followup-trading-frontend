@@ -2089,7 +2089,15 @@
     "psychologyEmpty": "Log emotions on your trades to see patterns",
     "winRate": "Win Rate",
     "avgPnl": "Avg P&L",
-    "moodLogged": "Mood logged!"
+    "moodLogged": "Mood logged!",
+    "streakTitle": "Coaching Streak",
+    "streakDays": "{{count}} day streak",
+    "streakStart": "Start your streak today!",
+    "streakKeepUp": "Keep it up!",
+    "scoreHistoryTitle": "Session Scores",
+    "scoreHistoryEmpty": "Complete a session debrief to see your scores",
+    "scoreAvg": "Avg",
+    "scoreLast": "Last"
   },
   "import": {
     "title": "Import Trades",
