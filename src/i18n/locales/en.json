@@ -118,7 +118,9 @@
     "refresh": "Refresh",
     "retry": "Retry",
     "close": "Close",
-    "errorLoadingData": "Failed to load data"
+    "errorLoadingData": "Failed to load data",
+    "previous": "Previous",
+    "skip": "Skip"
   },
   "error": {
     "error": "Error"
@@ -2097,7 +2099,19 @@
     "scoreHistoryTitle": "Session Scores",
     "scoreHistoryEmpty": "Complete a session debrief to see your scores",
     "scoreAvg": "Avg",
-    "scoreLast": "Last"
+    "scoreLast": "Last",
+    "tourWelcomeTitle": "Your AI Trading Coach",
+    "tourWelcomeDesc": "Get personalized trading insights, real-time coaching, and behavioral analysis powered by AI. Let's explore what your coach can do.",
+    "tourChatTitle": "Ask Your Coach Anything",
+    "tourChatDesc": "Ask questions about your trading patterns, get strategy advice, or analyze your recent performance. Your coach knows your trading history.",
+    "tourWorkflowTitle": "Daily Trading Ritual",
+    "tourWorkflowDesc": "Start each day with a Morning Briefing, log your emotions during trading, and end with a Session Debrief. Building this habit is key to improvement.",
+    "tourTiltTitle": "Stay in Control",
+    "tourTiltDesc": "Your Tilt Score monitors your emotional state in real-time. Behavioral alerts warn you when you're overtrading, revenge trading, or breaking your rules.",
+    "tourProgressTitle": "Measure Your Growth",
+    "tourProgressDesc": "Watch your session scores improve over time, build coaching streaks, and discover how your emotions correlate with your trading performance.",
+    "tourGetStarted": "Get Started",
+    "tourHelp": "How it works"
   },
   "import": {
     "title": "Import Trades",

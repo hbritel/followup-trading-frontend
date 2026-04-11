@@ -113,7 +113,9 @@
     "refresh": "Actualizar",
     "retry": "Reintentar",
     "close": "Cerrar",
-    "errorLoadingData": "Error al cargar los datos"
+    "errorLoadingData": "Error al cargar los datos",
+    "previous": "Anterior",
+    "skip": "Omitir"
   },
   "error": {
     "error": "Error"
@@ -1899,7 +1901,19 @@
     "freePlanNote": "Actualiza al plan Starter o superior para usar el coach IA.",
     "limitReachedPlaceholder": "Limite diario alcanzado. Actualiza para mas mensajes.",
     "unavailable": "Funciones IA no disponibles",
-    "unavailableDescription": "El servicio IA no esta habilitado en este servidor. Contacta a tu administrador para activarlo."
+    "unavailableDescription": "El servicio IA no esta habilitado en este servidor. Contacta a tu administrador para activarlo.",
+    "tourWelcomeTitle": "Tu Coach de Trading con IA",
+    "tourWelcomeDesc": "Obtén análisis personalizados, coaching en tiempo real y análisis conductual impulsado por IA. Exploremos lo que tu coach puede hacer.",
+    "tourChatTitle": "Pregunta lo que Quieras",
+    "tourChatDesc": "Pregunta sobre tus patrones de trading, obtén consejos estratégicos o analiza tu rendimiento reciente. Tu coach conoce tu historial de trading.",
+    "tourWorkflowTitle": "Ritual Diario de Trading",
+    "tourWorkflowDesc": "Comienza cada día con un Briefing Matutino, registra tus emociones durante el trading y termina con un Debrief de Sesión. Construir este hábito es clave para mejorar.",
+    "tourTiltTitle": "Mantén el Control",
+    "tourTiltDesc": "Tu Tilt Score monitorea tu estado emocional en tiempo real. Las alertas conductuales te avisan cuando estás sobreoperando, haciendo trading de venganza o rompiendo tus reglas.",
+    "tourProgressTitle": "Mide tu Crecimiento",
+    "tourProgressDesc": "Observa cómo mejoran tus puntuaciones de sesión, construye rachas de coaching y descubre cómo tus emociones se correlacionan con tu rendimiento.",
+    "tourGetStarted": "Empezar",
+    "tourHelp": "Cómo funciona"
   },
   "import": {
     "title": "Importar trades",

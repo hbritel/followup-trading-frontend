@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDisclaimer } from '@/hooks/useDisclaimer';
@@ -12,9 +12,11 @@ import CoachStreak from '@/components/ai-coach/CoachStreak';
 import ScoreHistory from '@/components/ai-coach/ScoreHistory';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import InlineChat from '@/components/ai/InlineChat';
+import CoachTour from '@/components/ai-coach/CoachTour';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles, Heart } from 'lucide-react';
+import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles, Heart, HelpCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import {
   Sheet,
@@ -54,6 +56,15 @@ const AiCoach: React.FC = () => {
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [emotionOpen, setEmotionOpen] = useState(false);
   const [debriefOpen, setDebriefOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem('ai-coach-tour-seen');
+    if (!seen && disclaimerStatus?.accepted) {
+      setTourOpen(true);
+      localStorage.setItem('ai-coach-tour-seen', 'true');
+    }
+  }, [disclaimerStatus?.accepted]);
 
   const accountId =
     selectedAccount &&
@@ -84,11 +95,22 @@ const AiCoach: React.FC = () => {
               </p>
             </div>
           </div>
-          <AccountSelector
-            value={selectedAccount}
-            onChange={setSelectedAccount}
-            className="w-[200px]"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTourOpen(true)}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              title={t('ai.tourHelp', 'How it works')}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+            <AccountSelector
+              value={selectedAccount}
+              onChange={setSelectedAccount}
+              className="w-[200px]"
+            />
+          </div>
         </div>
 
         {/* Mobile: Tab switcher */}
@@ -313,6 +335,9 @@ const AiCoach: React.FC = () => {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Onboarding Tour */}
+        <CoachTour open={tourOpen} onClose={() => setTourOpen(false)} />
       </div>
     </DashboardLayout>
   );

@@ -118,7 +118,9 @@
     "refresh": "Actualiser",
     "retry": "Reessayer",
     "close": "Fermer",
-    "errorLoadingData": "Échec du chargement des données"
+    "errorLoadingData": "Échec du chargement des données",
+    "previous": "Précédent",
+    "skip": "Passer"
   },
   "error": {
     "error": "Erreur"
@@ -2114,7 +2116,19 @@
     "scoreHistoryTitle": "Scores de Session",
     "scoreHistoryEmpty": "Complétez un débrief pour voir vos scores",
     "scoreAvg": "Moy",
-    "scoreLast": "Dernier"
+    "scoreLast": "Dernier",
+    "tourWelcomeTitle": "Votre Coach IA de Trading",
+    "tourWelcomeDesc": "Obtenez des analyses personnalisées, un coaching en temps réel et une analyse comportementale propulsée par l'IA. Découvrons ce que votre coach peut faire.",
+    "tourChatTitle": "Posez vos Questions",
+    "tourChatDesc": "Interrogez votre coach sur vos patterns de trading, obtenez des conseils stratégiques ou analysez vos performances récentes. Votre coach connaît votre historique.",
+    "tourWorkflowTitle": "Rituel Quotidien de Trading",
+    "tourWorkflowDesc": "Commencez chaque journée par un Briefing Matinal, loggez vos émotions pendant le trading, et terminez par un Débrief de Session. Construire cette habitude est la clé de l'amélioration.",
+    "tourTiltTitle": "Gardez le Contrôle",
+    "tourTiltDesc": "Votre Score Tilt surveille votre état émotionnel en temps réel. Les alertes comportementales vous avertissent quand vous overtradez, faites du revenge trading, ou enfreignez vos règles.",
+    "tourProgressTitle": "Mesurez votre Progression",
+    "tourProgressDesc": "Observez vos scores de session s'améliorer au fil du temps, construisez des séries de coaching, et découvrez comment vos émotions corrèlent avec vos performances.",
+    "tourGetStarted": "Commencer",
+    "tourHelp": "Comment ça marche"
   },
   "import": {
     "title": "Importer des trades",
