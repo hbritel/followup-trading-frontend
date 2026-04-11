@@ -2,11 +2,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AxiosError } from 'axios';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, AlertCircle, Loader2, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
@@ -60,8 +61,9 @@ const Watchlists = () => {
   const [openAddSymbolDialog, setOpenAddSymbolDialog] = useState(false);
   const [openDeleteWatchlistDialog, setOpenDeleteWatchlistDialog] = useState(false);
 
-  // Resolve active watchlist: use selected or fall back to first
-  const effectiveActiveId = activeWatchlist || (watchlists.length > 0 ? watchlists[0].id : '');
+  // Resolve active watchlist: use selected or fall back to first non-suspended watchlist
+  const firstNonSuspendedId = watchlists.find((w) => !w.suspendedByPlan)?.id ?? (watchlists.length > 0 ? watchlists[0].id : '');
+  const effectiveActiveId = activeWatchlist || firstNonSuspendedId;
 
   const activeWatchlistData = watchlists.find(
     (watchlist) => watchlist.id === effectiveActiveId
@@ -316,21 +318,35 @@ const Watchlists = () => {
             onDeleteWatchlist={openDeleteDialog}
           />
 
-          <WatchlistContent
-            title={activeWatchlistData?.name || t('watchlists.title')}
-            description={activeWatchlistData?.description || t('watchlists.description')}
-            items={activeItems}
-            onEditClick={() => {
-              if (activeWatchlistData) {
-                openEditDialog(activeWatchlistData);
-              }
-            }}
-            onAddSymbolClick={() => setOpenAddSymbolDialog(true)}
-            onRemoveItem={handleRemoveItem}
-            onCreateAlert={handleCreateAlertFromItem}
-            isAdding={addItemMutation.isPending}
-            isCreatingAlert={createAlertMutation.isPending}
-          />
+          <div className="relative lg:col-span-3">
+            <WatchlistContent
+              title={activeWatchlistData?.name || t('watchlists.title')}
+              description={activeWatchlistData?.description || t('watchlists.description')}
+              items={activeItems}
+              onEditClick={() => {
+                if (activeWatchlistData) {
+                  openEditDialog(activeWatchlistData);
+                }
+              }}
+              onAddSymbolClick={() => setOpenAddSymbolDialog(true)}
+              onRemoveItem={handleRemoveItem}
+              onCreateAlert={handleCreateAlertFromItem}
+              isAdding={addItemMutation.isPending}
+              isCreatingAlert={createAlertMutation.isPending}
+            />
+            {activeWatchlistData?.suspendedByPlan && (
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] rounded-2xl flex items-center justify-center z-10">
+                <div className="flex flex-col items-center gap-2 text-center px-4">
+                  <Lock className="h-5 w-5 text-amber-400" />
+                  <p className="text-sm font-medium text-amber-400">{t('watchlists.suspendedTitle', 'Watchlist suspended')}</p>
+                  <p className="text-xs text-muted-foreground">{t('watchlists.suspendedDesc', 'Upgrade your plan to access this watchlist')}</p>
+                  <Link to="/pricing">
+                    <Button variant="outline" size="sm">{t('subscription.viewPlans', 'View plans')}</Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         )}
       </PageTransition>

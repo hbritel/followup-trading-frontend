@@ -456,6 +456,7 @@ export interface WatchlistResponseDto {
   description: string | null;
   icon: string | null;
   items: WatchlistItemResponseDto[];
+  suspendedByPlan: boolean;
   createdAt: string;
   updatedAt: string;
 }
