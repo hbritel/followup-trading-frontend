@@ -16,18 +16,22 @@ export const useCoachStreak = () => {
       const from = thirtyDaysAgo.toISOString().split('T')[0];
       const to = new Date().toISOString().split('T')[0];
 
-      const [briefings, debriefs] = await Promise.all([
+      const [briefingsResp, debriefsResp] = await Promise.all([
         coachService.getBriefings(from, to),
         coachService.getDebriefs(from, to),
       ]);
 
+      // Extract data arrays from Axios responses
+      const briefings = Array.isArray(briefingsResp) ? briefingsResp : (briefingsResp as any)?.data ?? [];
+      const debriefs = Array.isArray(debriefsResp) ? debriefsResp : (debriefsResp as any)?.data ?? [];
+
       // Collect all unique dates where user engaged
       const engagedDates = new Set<string>();
-      briefings.forEach((b) => {
+      briefings.forEach((b: any) => {
         const d = b.briefingDate?.split('T')[0];
         if (d) engagedDates.add(d);
       });
-      debriefs.forEach((d) => {
+      debriefs.forEach((d: any) => {
         const s = d.sessionDate?.split('T')[0];
         if (s) engagedDates.add(s);
       });

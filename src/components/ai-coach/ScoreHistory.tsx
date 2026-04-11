@@ -125,7 +125,10 @@ const ScoreHistory: React.FC = () => {
 
   const { data: debriefs = [], isLoading } = useQuery<SessionDebriefResponseDto[]>({
     queryKey: ['debriefs-history', thirtyDaysAgo, today],
-    queryFn: () => coachService.getDebriefs(thirtyDaysAgo, today),
+    queryFn: async () => {
+      const resp = await coachService.getDebriefs(thirtyDaysAgo, today);
+      return Array.isArray(resp) ? resp : (resp as any)?.data ?? [];
+    },
     staleTime: 10 * 60 * 1000,
   });
 
