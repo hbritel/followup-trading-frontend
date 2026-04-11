@@ -2065,7 +2065,19 @@
     "freePlanNote": "Upgrade to Starter or higher to use the AI coach.",
     "limitReachedPlaceholder": "Daily limit reached. Upgrade for more messages.",
     "unavailable": "AI features unavailable",
-    "unavailableDescription": "The AI service is not enabled on this server. Contact your administrator to enable it."
+    "unavailableDescription": "The AI service is not enabled on this server. Contact your administrator to enable it.",
+    "coachTitle": "AI Trading Coach",
+    "coachSubtitle": "Your personal trading mentor",
+    "chatTitle": "Chat with your AI Coach",
+    "tiltScore": "Tilt Score",
+    "dailyWorkflow": "Daily Workflow",
+    "morningBriefing": "Morning Briefing",
+    "briefingDesc": "AI analysis before you trade",
+    "sessionDebrief": "Session Debrief",
+    "debriefDesc": "Review your trading session",
+    "disclaimer": "AI-generated insights are for informational purposes only. Not financial advice.",
+    "tabChat": "Chat",
+    "tabCoach": "Coach"
   },
   "import": {
     "title": "Import Trades",
