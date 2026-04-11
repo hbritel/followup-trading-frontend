@@ -118,7 +118,11 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
   // Default to the first (highest) frequency allowed by the user's plan
   const defaultSyncFrequency = allowedFrequencies?.[0] ?? 'MONTHLY';
 
-  const effectiveProtocol = selectedProtocol || broker?.defaultProtocol;
+  // Filter out deprecated MT5_BRIDGE protocol
+  const availableProtocols = (broker?.supportedProtocols ?? []).filter(p => p.protocol !== 'MT5_BRIDGE');
+
+  // Auto-select single protocol when available
+  const effectiveProtocol = selectedProtocol || (availableProtocols.length === 1 ? availableProtocols[0].protocol : broker?.defaultProtocol);
 
   const { data: schema, isLoading: schemaLoading } = useCredentialSchema(
     broker?.code || null,
@@ -203,8 +207,8 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Protocol selector (only if broker supports more than one) */}
-          {broker && broker.supportedProtocols.length > 1 && (
+          {/* Protocol selector (only if multiple protocols available after filtering) */}
+          {broker && availableProtocols.length > 1 && (
             <div className="space-y-2">
               <Label>{t('settings.connectionProtocol', 'Connection Protocol')}</Label>
               <Select
@@ -215,7 +219,7 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {broker.supportedProtocols.map(p => (
+                  {availableProtocols.map(p => (
                     <SelectItem key={p.protocol} value={p.protocol}>
                       {p.displayName}
                     </SelectItem>

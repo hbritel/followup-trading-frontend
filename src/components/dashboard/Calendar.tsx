@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePreferences } from '@/contexts/preferences-context';
 import {
   Card,
   CardContent,
@@ -41,6 +42,8 @@ interface TradingCalendarProps {
 
 const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
   const { t, i18n } = useTranslation();
+  const { preferences } = usePreferences();
+  const weekStartsOn: 0 | 1 = preferences?.weekStartDay === 'sunday' ? 0 : 1;
   const [date, setDate] = React.useState<Date>(new Date());
   const [month, setMonth] = React.useState<Date>(new Date());
   const [tradePage, setTradePage] = React.useState(0);
@@ -144,6 +147,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                 DayContent: renderDay
               }}
               disabled={{ after: new Date() }}
+              weekStartsOn={weekStartsOn}
             />
           </div>
 
@@ -155,7 +159,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
             {selectedDateTrade ? (
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-foreground dark:text-white">Result</span>
+                  <span className="text-sm font-medium text-foreground dark:text-white">{t('calendar.result', 'Result')}</span>
                   <Badge variant={selectedDateTrade.result === 'win' ? 'default' : 'destructive'} className={cn(
                     "capitalize shadow-[0_0_10px_rgba(0,0,0,0.2)]",
                     selectedDateTrade.result === 'win' ? "bg-profit hover:bg-profit/90 text-black font-bold" : "bg-loss hover:bg-loss/90 text-white font-bold"
@@ -164,7 +168,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center mt-3">
-                  <span className="text-sm font-medium text-foreground dark:text-white">P&L</span>
+                  <span className="text-sm font-medium text-foreground dark:text-white">P&amp;L</span>
                   <span className={cn(
                     "text-xl font-bold font-mono tracking-tight",
                     selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"
@@ -173,13 +177,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
-                  <span className="text-sm font-medium text-muted-foreground">Trades</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('calendar.trades', 'Trades')}</span>
                   <span className="text-sm font-medium text-foreground dark:text-white">{selectedDateTrade.tradesCount}</span>
                 </div>
               </div>
             ) : (
               <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-                <p className="text-sm">No trades on this date</p>
+                <p className="text-sm">{t('calendar.noTrades', 'No trades on this date')}</p>
               </div>
             )}
           </div>

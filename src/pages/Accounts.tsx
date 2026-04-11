@@ -431,9 +431,11 @@ const Accounts = () => {
   });
 
   const selectedBroker = availableBrokers?.find(b => b.code === newBrokerType);
-  const supportedProtocols = selectedBroker?.supportedProtocols ?? [];
+  // Filter out deprecated MT5_BRIDGE protocol
+  const supportedProtocols = (selectedBroker?.supportedProtocols ?? []).filter(p => p.protocol !== 'MT5_BRIDGE');
   const hasMultipleProtocols = supportedProtocols.length > 1;
-  const effectiveProtocol = selectedProtocol || selectedBroker?.defaultProtocol;
+  // Auto-select single protocol when available
+  const effectiveProtocol = selectedProtocol || (supportedProtocols.length === 1 ? supportedProtocols[0].protocol : selectedBroker?.defaultProtocol);
 
   const { data: credentialSchema, isLoading: schemaLoading } = useQuery({
     queryKey: ['credential-schema', newBrokerType, effectiveProtocol],
