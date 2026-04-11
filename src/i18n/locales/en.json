@@ -872,6 +872,11 @@
     "earningsAnnouncementsDesc": "Get notified about upcoming earnings reports",
     "accountActivity": "Account Activity",
     "accountActivityDesc": "Receive notifications about account logins and changes",
+    "aiCoaching": "AI Coaching",
+    "briefingReminder": "Morning Briefing Reminder",
+    "briefingReminderDesc": "Get a reminder to check your AI briefing each morning",
+    "debriefReminder": "Evening Debrief Reminder",
+    "debriefReminderDesc": "Get a reminder to review your trading session",
     "trustedDevices": "Trusted Devices",
     "apiKeys": "API Keys",
     "generateApiKey": "Generate API Key",
@@ -2077,7 +2082,14 @@
     "debriefDesc": "Review your trading session",
     "disclaimer": "AI-generated insights are for informational purposes only. Not financial advice.",
     "tabChat": "Chat",
-    "tabCoach": "Coach"
+    "tabCoach": "Coach",
+    "logEmotion": "Log Emotion",
+    "emotionDesc": "Track your trading mindset",
+    "psychologyTitle": "Emotion vs Performance",
+    "psychologyEmpty": "Log emotions on your trades to see patterns",
+    "winRate": "Win Rate",
+    "avgPnl": "Avg P&L",
+    "moodLogged": "Mood logged!"
   },
   "import": {
     "title": "Import Trades",

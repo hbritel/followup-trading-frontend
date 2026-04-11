@@ -7,17 +7,32 @@ import TiltGauge from '@/components/ai-coach/TiltGauge';
 import BriefingCard from '@/components/ai-coach/BriefingCard';
 import BehavioralAlertsList from '@/components/ai-coach/BehavioralAlertsList';
 import SessionDebriefCard from '@/components/ai-coach/SessionDebriefCard';
+import PsychologyCorrelation from '@/components/ai-coach/PsychologyCorrelation';
+import CoachStreak from '@/components/ai-coach/CoachStreak';
+import ScoreHistory from '@/components/ai-coach/ScoreHistory';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import InlineChat from '@/components/ai/InlineChat';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles } from 'lucide-react';
+import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles, Heart } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+
+const DAILY_EMOTIONS = [
+  { emoji: '😌', label: 'Calm', value: 'CALM' },
+  { emoji: '💪', label: 'Confident', value: 'CONFIDENT' },
+  { emoji: '😰', label: 'Stressed', value: 'STRESSED' },
+  { emoji: '🤯', label: 'FOMO', value: 'FOMO' },
+  { emoji: '😤', label: 'Revenge', value: 'REVENGE' },
+  { emoji: '🎯', label: 'Disciplined', value: 'DISCIPLINED' },
+  { emoji: '😨', label: 'Fearful', value: 'FEARFUL' },
+  { emoji: '🤑', label: 'Euphoric', value: 'EUPHORIC' },
+] as const;
 
 const PageSkeleton: React.FC = () => (
   <DashboardLayout pageTitle="AI Coach">
@@ -37,6 +52,7 @@ const AiCoach: React.FC = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [mobileTab, setMobileTab] = useState<'chat' | 'coach'>('chat');
   const [briefingOpen, setBriefingOpen] = useState(false);
+  const [emotionOpen, setEmotionOpen] = useState(false);
   const [debriefOpen, setDebriefOpen] = useState(false);
 
   const accountId =
@@ -139,6 +155,9 @@ const AiCoach: React.FC = () => {
               </div>
             </div>
 
+            {/* Coaching Streak */}
+            <CoachStreak />
+
             {/* Daily Workflow — 3 steps */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
@@ -168,6 +187,27 @@ const AiCoach: React.FC = () => {
 
                 <button
                   type="button"
+                  onClick={() => setEmotionOpen(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/50 transition-colors text-left group"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                    <Heart className="h-4 w-4 text-purple-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      {t('ai.logEmotion', 'Log Emotion')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('ai.emotionDesc', 'Track your trading mindset')}
+                    </p>
+                  </div>
+                  <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    Now →
+                  </span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setDebriefOpen(true)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent/50 transition-colors text-left group"
                 >
@@ -189,8 +229,14 @@ const AiCoach: React.FC = () => {
               </div>
             </div>
 
+            {/* Session Score History */}
+            <ScoreHistory />
+
             {/* Behavioral Alerts — compact */}
             <BehavioralAlertsList accountId={accountId} />
+
+            {/* Psychology Correlation */}
+            <PsychologyCorrelation />
 
             {/* Disclaimer — small at bottom */}
             <p className="text-[10px] text-muted-foreground/50 text-center px-4 pb-2">
@@ -213,6 +259,42 @@ const AiCoach: React.FC = () => {
             </SheetHeader>
             <div className="mt-4">
               <BriefingCard accountId={accountId} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Emotion Sheet */}
+        <Sheet open={emotionOpen} onOpenChange={setEmotionOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-purple-400" />
+                {t('ai.logEmotion', 'Log Emotion')}
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {t('ai.emotionDesc', 'Track your trading mindset')}
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {DAILY_EMOTIONS.map((em) => (
+                  <button
+                    key={em.value}
+                    type="button"
+                    onClick={() => {
+                      toast({
+                        title: t('ai.moodLogged', 'Mood logged!'),
+                        description: `${em.emoji} ${em.label}`,
+                      });
+                      setEmotionOpen(false);
+                    }}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-background hover:border-purple-400/50 hover:bg-purple-500/5 transition-all group"
+                  >
+                    <span className="text-2xl group-hover:scale-110 transition-transform">{em.emoji}</span>
+                    <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">{em.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </SheetContent>
         </Sheet>
