@@ -17,7 +17,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({ value, onChange, clas
 
   // Only show accounts that are currently connected (including suspended ones so users can see them as disabled)
   const connectedAccounts = React.useMemo(
-    () => connections?.filter(c => c.status === 'CONNECTED') || [],
+    () => connections?.filter(c => c.status === 'CONNECTED' && !c.suspendedByPlan) || [],
     [connections],
   );
 
