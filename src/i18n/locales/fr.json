@@ -2797,7 +2797,7 @@
     "avgRR": "R:R Moyen",
     "totalTrades": "Total Trades"
   },
-  "calendar": {
+  "tradingCal": {
     "noTrades": "Aucun trade ce jour",
     "selectDate": "Sélectionnez une date avec des trades pour voir les détails",
     "result": "Résultat",

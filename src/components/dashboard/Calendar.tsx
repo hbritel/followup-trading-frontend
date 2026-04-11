@@ -159,7 +159,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
             {selectedDateTrade ? (
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-foreground dark:text-white">{t('calendar.result', 'Result')}</span>
+                  <span className="text-sm font-medium text-foreground dark:text-white">{t('tradingCal.result', 'Result')}</span>
                   <Badge variant={selectedDateTrade.result === 'win' ? 'default' : 'destructive'} className={cn(
                     "capitalize shadow-[0_0_10px_rgba(0,0,0,0.2)]",
                     selectedDateTrade.result === 'win' ? "bg-profit hover:bg-profit/90 text-black font-bold" : "bg-loss hover:bg-loss/90 text-white font-bold"
@@ -177,13 +177,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
-                  <span className="text-sm font-medium text-muted-foreground">{t('calendar.trades', 'Trades')}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('tradingCal.trades', 'Trades')}</span>
                   <span className="text-sm font-medium text-foreground dark:text-white">{selectedDateTrade.tradesCount}</span>
                 </div>
               </div>
             ) : (
               <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-                <p className="text-sm">{t('calendar.noTrades', 'No trades on this date')}</p>
+                <p className="text-sm">{t('tradingCal.noTrades', 'No trades on this date')}</p>
               </div>
             )}
           </div>
@@ -196,10 +196,10 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
               <div className="px-6 py-3 flex items-center justify-between flex-shrink-0">
                 <div>
                   <h3 className="text-sm font-semibold tracking-tight text-foreground dark:text-white">
-                    {t('calendar.tradesFor', 'Trades for {{date}}', { date: selectedDateLabel })}
+                    {t('tradingCal.tradesFor', 'Trades for {{date}}', { date: selectedDateLabel })}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('calendar.tradesExecuted', '{{count}} trade(s) executed', { count: dayTotalTrades })}
+                    {t('tradingCal.tradesExecuted', '{{count}} trade(s) executed', { count: dayTotalTrades })}
                   </p>
                 </div>
               </div>
@@ -214,9 +214,9 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                     <Table>
                       <TableHeader className="bg-slate-100 dark:bg-white/5 sticky top-0 z-10">
                         <TableRow className="border-slate-200/50 dark:border-white/5 hover:bg-transparent">
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.symbol', 'Symbol')}</TableHead>
-                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.time', 'Time')}</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('calendar.position', 'Position')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.symbol', 'Symbol')}</TableHead>
+                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.time', 'Time')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.position', 'Position')}</TableHead>
                           <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -260,7 +260,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   {/* Pagination footer — matches Trade History style */}
                   <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5 flex-shrink-0">
                     <div className="text-xs text-muted-foreground">
-                      {t('calendar.showing', 'Showing {{from}} to {{to}} of {{total}} trades', {
+                      {t('tradingCal.showing', 'Showing {{from}} to {{to}} of {{total}} trades', {
                         from: tradePage * TRADES_PER_PAGE + 1,
                         to: Math.min((tradePage + 1) * TRADES_PER_PAGE, dayTotalTrades),
                         total: dayTotalTrades,
@@ -274,7 +274,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <div className="text-xs font-medium px-2">
-                        {t('calendar.page', 'Page {{current}} / {{total}}', { current: tradePage + 1, total: dayTotalPages })}
+                        {t('tradingCal.page', 'Page {{current}} / {{total}}', { current: tradePage + 1, total: dayTotalPages })}
                       </div>
                       <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground" disabled={tradePage >= dayTotalPages - 1} onClick={() => setTradePage(p => p + 1)}>
                         <ChevronRight className="h-4 w-4" />
@@ -287,13 +287,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                 </>
               ) : (
                 <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
-                  {t('calendar.noTradeDetails', 'No trade details available')}
+                  {t('tradingCal.noTradeDetails', 'No trade details available')}
                 </div>
               )}
             </>
           ) : (
             <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm py-6">
-              {t('calendar.selectDate', 'Select a date with trades to view details')}
+              {t('tradingCal.selectDate', 'Select a date with trades to view details')}
             </div>
           )}
         </div>

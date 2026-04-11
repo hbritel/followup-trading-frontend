@@ -2779,7 +2779,7 @@
     "avgRR": "Avg R:R",
     "totalTrades": "Total Trades"
   },
-  "calendar": {
+  "tradingCal": {
     "noTrades": "No trades on this date",
     "selectDate": "Select a date with trades to view details",
     "result": "Result",
