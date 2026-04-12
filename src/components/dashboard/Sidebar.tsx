@@ -185,7 +185,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                             aria-current={isActive ? 'page' : undefined}
                             className={[
                               'relative flex items-center gap-x-2 rounded-xl py-2.5 min-w-0 w-full',
-                              'justify-start px-2.5',
+                              'justify-start pl-2.5 pr-1.5',
                               'text-sm font-medium transition-all duration-200',
                               dimmed
                                 ? 'opacity-60 text-muted-foreground border border-transparent'
@@ -218,12 +218,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                               <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-muted-foreground/40" title={t('featureGate.unavailable', 'Feature disabled')} />
                             )}
                             {planLocked && hasRequiredPlan && (
-                              <span className={[
-                                'flex-shrink-0 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded-full border leading-none',
-                                item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' :
-                                item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
-                                'text-primary bg-primary/10 border-primary/20',
-                              ].join(' ')}>
+                              <span
+                                title={`Requires ${(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()} plan`}
+                                className={[
+                                  'flex-shrink-0 whitespace-nowrap text-[9px] font-semibold px-1.5 py-0.5 rounded-md border leading-none',
+                                  item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' :
+                                  item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
+                                  'text-primary bg-primary/10 border-primary/20',
+                                ].join(' ')}
+                              >
                                 {(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()}+
                               </span>
                             )}
