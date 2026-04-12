@@ -10,7 +10,7 @@ import SessionDebriefCard from '@/components/ai-coach/SessionDebriefCard';
 import PsychologyCorrelation from '@/components/ai-coach/PsychologyCorrelation';
 import CoachStreak from '@/components/ai-coach/CoachStreak';
 import ScoreHistory from '@/components/ai-coach/ScoreHistory';
-import AccountSelector from '@/components/dashboard/AccountSelector';
+// Account filtering removed — AI Coach aggregates all accounts automatically
 import InlineChat from '@/components/ai/InlineChat';
 import CoachTour from '@/components/ai-coach/CoachTour';
 import { useTranslation } from 'react-i18next';
@@ -51,7 +51,6 @@ const PageSkeleton: React.FC = () => (
 const AiCoach: React.FC = () => {
   const { t } = useTranslation();
   const { data: disclaimerStatus, isLoading: disclaimerLoading } = useDisclaimer();
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [mobileTab, setMobileTab] = useState<'chat' | 'coach'>('chat');
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [emotionOpen, setEmotionOpen] = useState(false);
@@ -65,14 +64,6 @@ const AiCoach: React.FC = () => {
       localStorage.setItem('ai-coach-tour-seen', 'true');
     }
   }, [disclaimerStatus?.accepted]);
-
-  const accountId =
-    selectedAccount &&
-    selectedAccount !== 'all' &&
-    selectedAccount !== 'all-real' &&
-    selectedAccount !== 'all-demo'
-      ? selectedAccount
-      : undefined;
 
   if (disclaimerLoading) return <PageSkeleton />;
   if (!disclaimerStatus?.accepted) return <DisclaimerModal />;
@@ -105,11 +96,6 @@ const AiCoach: React.FC = () => {
             >
               <HelpCircle className="h-4 w-4" />
             </Button>
-            <AccountSelector
-              value={selectedAccount}
-              onChange={setSelectedAccount}
-              className="w-[200px]"
-            />
           </div>
         </div>
 
@@ -173,7 +159,7 @@ const AiCoach: React.FC = () => {
                 <Sparkles className="h-4 w-4 text-amber-400" />
               </div>
               <div className="flex justify-center">
-                <TiltGauge accountId={accountId} compact={false} />
+                <TiltGauge accountId={undefined} compact={false} />
               </div>
             </div>
 
@@ -255,7 +241,7 @@ const AiCoach: React.FC = () => {
             <ScoreHistory />
 
             {/* Behavioral Alerts — compact */}
-            <BehavioralAlertsList accountId={accountId} />
+            <BehavioralAlertsList accountId={undefined} />
 
             {/* Psychology Correlation */}
             <PsychologyCorrelation />
@@ -280,7 +266,7 @@ const AiCoach: React.FC = () => {
               </SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <BriefingCard accountId={accountId} />
+              <BriefingCard accountId={undefined} />
             </div>
           </SheetContent>
         </Sheet>
@@ -331,7 +317,7 @@ const AiCoach: React.FC = () => {
               </SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <SessionDebriefCard accountId={accountId} />
+              <SessionDebriefCard accountId={undefined} />
             </div>
           </SheetContent>
         </Sheet>
