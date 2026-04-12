@@ -2,8 +2,9 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { fr, es, enUS } from "date-fns/locale";
+import { fr, es, enUS, format } from "date-fns/locale";
 import type { Locale } from "date-fns";
+import { format as formatDate } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -29,6 +30,11 @@ function Calendar({
   const { i18n } = useTranslation();
   const locale = LOCALE_MAP[i18n.language] ?? enUS;
 
+  // Localize month caption in dropdown using date-fns
+  const formatMonthCaption = (month: Date): string => {
+    return formatDate(month, "LLLL", { locale });
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -37,6 +43,7 @@ function Calendar({
       toYear={toYear}
       locale={locale}
       weekStartsOn={weekStartsOn}
+      formatters={{ formatMonthCaption }}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
