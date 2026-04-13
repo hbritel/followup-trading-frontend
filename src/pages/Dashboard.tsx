@@ -57,9 +57,8 @@ const Dashboard = () => {
     : computeDateRange(datePreset);
 
   // Live WebSocket subscriptions — gracefully degrade when WS is offline
+  // useLiveTrades() and useLivePortfolio() are now mounted globally in GlobalLiveListeners
   useLivePrices();
-  useLivePortfolio();
-  useLiveTrades();
   useLiveAlerts();
 
   const queryClient = useQueryClient();
