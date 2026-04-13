@@ -13,15 +13,15 @@ interface MarketSession {
   city: string;
   timezone: string;
   flag: string;
-  openHour: number;  // UTC hour when market opens
-  closeHour: number; // UTC hour when market closes
+  localOpen: number;   // Local hour when market opens (in the market's own timezone)
+  localClose: number;  // Local hour when market closes
 }
 
 const SESSIONS: MarketSession[] = [
-  { id: 'tokyo',   city: 'Tokyo',    timezone: 'Asia/Tokyo',       flag: '🇯🇵', openHour: 0,  closeHour: 9  },
-  { id: 'london',  city: 'London',   timezone: 'Europe/London',    flag: '🇬🇧', openHour: 8,  closeHour: 16 },
-  { id: 'paris',   city: 'Paris',    timezone: 'Europe/Paris',     flag: '🇫🇷', openHour: 8,  closeHour: 16 },
-  { id: 'newyork', city: 'New York', timezone: 'America/New_York', flag: '🇺🇸', openHour: 13, closeHour: 21 },
+  { id: 'tokyo',   city: 'Tokyo',    timezone: 'Asia/Tokyo',       flag: '🇯🇵', localOpen: 9,  localClose: 15 },
+  { id: 'london',  city: 'London',   timezone: 'Europe/London',    flag: '🇬🇧', localOpen: 8,  localClose: 16 },
+  { id: 'paris',   city: 'Paris',    timezone: 'Europe/Paris',     flag: '🇫🇷', localOpen: 9,  localClose: 17 },
+  { id: 'newyork', city: 'New York', timezone: 'America/New_York', flag: '🇺🇸', localOpen: 9,  localClose: 16 },
 ];
 
 function getTimeInTimezone(tz: string): string {
@@ -33,19 +33,33 @@ function getTimeInTimezone(tz: string): string {
   }).format(new Date());
 }
 
-function isMarketOpen(session: MarketSession): boolean {
+/** Get the current hour and day-of-week in a given timezone. */
+function getLocalTime(tz: string): { hour: number; minute: number; day: number } {
   const now = new Date();
-  const utcHour = now.getUTCHours();
-  const day = now.getUTCDay(); // 0=Sun, 6=Sat
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hour: 'numeric',
+    minute: 'numeric',
+    weekday: 'short',
+    hour12: false,
+  }).formatToParts(now);
 
-  // Markets closed on weekends
+  const hour = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
+  const dayStr = parts.find(p => p.type === 'weekday')?.value ?? '';
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const day = dayMap[dayStr] ?? new Date().getDay();
+
+  return { hour, minute, day };
+}
+
+function isMarketOpen(session: MarketSession): boolean {
+  const { hour, day } = getLocalTime(session.timezone);
+
+  // Markets closed on weekends (in the market's local timezone)
   if (day === 0 || day === 6) return false;
 
-  if (session.openHour < session.closeHour) {
-    return utcHour >= session.openHour && utcHour < session.closeHour;
-  }
-  // Crosses midnight (e.g., Tokyo)
-  return utcHour >= session.openHour || utcHour < session.closeHour;
+  return hour >= session.localOpen && hour < session.localClose;
 }
 
 function getActiveSessionLabel(sessions: MarketSession[]): string {
