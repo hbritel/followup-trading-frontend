@@ -1,12 +1,19 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Plus, BookOpen } from 'lucide-react';
+import { Loader2, Plus, BookOpen, Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StrategyList from '@/components/playbook/StrategyList';
 import StrategyForm from '@/components/playbook/StrategyForm';
 import StrategyDetail from '@/components/playbook/StrategyDetail';
+import PlaybookSuggestionsPanel from '@/components/playbook/PlaybookSuggestionsPanel';
 import { useStrategyStats, useDeleteStrategy } from '@/hooks/useStrategies';
 import { useToast } from '@/hooks/use-toast';
 import type { StrategyStatsDto, StrategyResponseDto } from '@/types/dto';
@@ -129,6 +136,30 @@ const Playbook = () => {
               {t('playbook.newStrategy')}
             </Button>
           </div>
+        </div>
+
+        {/* AI Suggestions */}
+        <div className="space-y-2 animate-fade-in" style={{ animationDelay: '60ms' }}>
+          <div className="flex items-center gap-1.5">
+            <h2 className="sr-only">{t('playbook.aiSuggestions')}</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                    <span>{t('playbook.aiSuggestionsInfo')}</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p>{t('playbook.aiSuggestionsInfo')}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <PlaybookSuggestionsPanel />
         </div>
 
         {/* Content */}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Flame } from 'lucide-react';
+import { Flame, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useCoachStreak } from '@/hooks/useCoachStreak';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const CoachStreak: React.FC = () => {
   const { t } = useTranslation();
@@ -38,9 +39,19 @@ const CoachStreak: React.FC = () => {
 
   return (
     <div className="glass-card rounded-2xl p-4">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-        {t('ai.streakTitle', 'Coaching Streak')}
-      </h3>
+      <div className="flex items-center gap-1.5 mb-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          {t('ai.streakTitle', 'Coaching Streak')}
+        </h3>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+          </TooltipTrigger>
+          <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
+            {t('ai.streakInfo', 'Tracks consecutive days you engaged with the AI coach (briefing, debrief, or chat). Consistency builds discipline.')}
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className="flex items-center gap-3 mb-3">
         <Flame className={cn('h-7 w-7 flex-shrink-0', flameColor)} />

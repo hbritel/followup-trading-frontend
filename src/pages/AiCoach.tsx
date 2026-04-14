@@ -10,31 +10,39 @@ import SessionDebriefCard from '@/components/ai-coach/SessionDebriefCard';
 import PsychologyCorrelation from '@/components/ai-coach/PsychologyCorrelation';
 import CoachStreak from '@/components/ai-coach/CoachStreak';
 import ScoreHistory from '@/components/ai-coach/ScoreHistory';
-// Account filtering removed — AI Coach aggregates all accounts automatically
+import AccountSelector from '@/components/dashboard/AccountSelector';
+import { useAccountFilter } from '@/hooks/useAccountFilter';
 import InlineChat from '@/components/ai/InlineChat';
 import CoachTour from '@/components/ai-coach/CoachTour';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles, Heart, HelpCircle } from 'lucide-react';
+import { Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles, Heart, HelpCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-const DAILY_EMOTIONS = [
-  { emoji: '😌', label: 'Calm', value: 'CALM' },
-  { emoji: '💪', label: 'Confident', value: 'CONFIDENT' },
-  { emoji: '😰', label: 'Stressed', value: 'STRESSED' },
-  { emoji: '🤯', label: 'FOMO', value: 'FOMO' },
-  { emoji: '😤', label: 'Revenge', value: 'REVENGE' },
-  { emoji: '🎯', label: 'Disciplined', value: 'DISCIPLINED' },
-  { emoji: '😨', label: 'Fearful', value: 'FEARFUL' },
-  { emoji: '🤑', label: 'Euphoric', value: 'EUPHORIC' },
-] as const;
+
+const InfoTip: React.FC<{ text: string }> = ({ text }) => (
+  <Tooltip delayDuration={200}>
+    <TooltipTrigger asChild>
+      <button type="button" className="inline-flex">
+        <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="left" align="start" className="max-w-[250px] text-xs leading-relaxed">
+      {text}
+    </TooltipContent>
+  </Tooltip>
+);
 
 const PageSkeleton: React.FC = () => (
   <DashboardLayout pageTitle="AI Coach">
@@ -56,6 +64,8 @@ const AiCoach: React.FC = () => {
   const [emotionOpen, setEmotionOpen] = useState(false);
   const [debriefOpen, setDebriefOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState('all');
+  const { accountId } = useAccountFilter(selectedAccount);
 
   useEffect(() => {
     const seen = localStorage.getItem('ai-coach-tour-seen');
@@ -150,16 +160,26 @@ const AiCoach: React.FC = () => {
               mobileTab !== 'coach' && 'hidden lg:block',
             )}
           >
+            {/* Account filter */}
+            <AccountSelector
+              value={selectedAccount}
+              onChange={setSelectedAccount}
+              className="w-full"
+            />
+
             {/* Tilt Score — prominent */}
             <div className="glass-card rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  {t('ai.tiltScore', 'Tilt Score')}
-                </h3>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    {t('ai.tiltScore', 'Tilt Score')}
+                  </h3>
+                  <InfoTip text={t('ai.tiltScoreInfo', 'Measures emotional/impulsive trading risk (0-100). Based on 6 factors: consecutive losses, trade frequency spikes, position size escalation, time between losses, session drawdown, and off-hours trading. GREEN (0-30) = calm, YELLOW (31-60) = monitor, ORANGE (61-80) = caution, RED (81+) = stop trading.')} />
+                </div>
                 <Sparkles className="h-4 w-4 text-amber-400" />
               </div>
               <div className="flex justify-center">
-                <TiltGauge accountId={undefined} compact={false} />
+                <TiltGauge accountId={accountId} compact={false} />
               </div>
             </div>
 
@@ -241,7 +261,7 @@ const AiCoach: React.FC = () => {
             <ScoreHistory />
 
             {/* Behavioral Alerts — compact */}
-            <BehavioralAlertsList accountId={undefined} />
+            <BehavioralAlertsList accountId={accountId} />
 
             {/* Psychology Correlation */}
             <PsychologyCorrelation />
@@ -266,12 +286,12 @@ const AiCoach: React.FC = () => {
               </SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <BriefingCard accountId={undefined} />
+              <BriefingCard accountId={accountId} />
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* Emotion Sheet */}
+        {/* Emotion Sheet — guides user to log emotions on recent trades */}
         <Sheet open={emotionOpen} onOpenChange={setEmotionOpen}>
           <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
@@ -282,26 +302,30 @@ const AiCoach: React.FC = () => {
             </SheetHeader>
             <div className="mt-6 space-y-4">
               <p className="text-sm text-muted-foreground">
-                {t('ai.emotionDesc', 'Track your trading mindset')}
+                {t('ai.emotionGuide', 'Emotions are logged per trade to correlate your mindset with outcomes. Open any trade from the Trades page and use the Psychology tab to log how you felt.')}
               </p>
-              <div className="grid grid-cols-4 gap-2">
-                {DAILY_EMOTIONS.map((em) => (
-                  <button
-                    key={em.value}
-                    type="button"
-                    onClick={() => {
-                      toast({
-                        title: t('ai.moodLogged', 'Mood logged!'),
-                        description: `${em.emoji} ${em.label}`,
-                      });
-                      setEmotionOpen(false);
-                    }}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-background hover:border-purple-400/50 hover:bg-purple-500/5 transition-all group"
-                  >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">{em.emoji}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">{em.label}</span>
-                  </button>
-                ))}
+              <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/10">
+                <p className="text-xs font-medium text-purple-400 mb-2">
+                  {t('ai.emotionHowTo', 'How to log emotions')}
+                </p>
+                <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                  <li>{t('ai.emotionStep1', 'Go to the Trades page')}</li>
+                  <li>{t('ai.emotionStep2', 'Click on any trade to open details')}</li>
+                  <li>{t('ai.emotionStep3', 'Scroll to the Psychology section')}</li>
+                  <li>{t('ai.emotionStep4', 'Select your emotion and save')}</li>
+                </ol>
+              </div>
+              <div className="text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEmotionOpen(false);
+                    window.location.href = '/trades';
+                  }}
+                >
+                  {t('ai.goToTrades', 'Go to Trades')} →
+                </Button>
               </div>
             </div>
           </SheetContent>
@@ -317,7 +341,7 @@ const AiCoach: React.FC = () => {
               </SheetTitle>
             </SheetHeader>
             <div className="mt-4">
-              <SessionDebriefCard accountId={undefined} />
+              <SessionDebriefCard accountId={accountId} />
             </div>
           </SheetContent>
         </Sheet>

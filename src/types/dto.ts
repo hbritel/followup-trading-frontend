@@ -896,6 +896,8 @@ export interface SubscriptionDto {
   monthlyPriceUsd: number;
   annualMonthlyPriceUsd: number;
   usage: UsageDto;
+  dunningStep?: number;
+  gracePeriodEndsAt?: string;
 }
 
 export interface PlanDto {
@@ -1138,6 +1140,7 @@ export interface BehavioralAlertResponseDto {
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
   dismissed: boolean;
   triggerTradeId?: string;
+  connectionId?: string;
   createdAt: string;
 }
 
@@ -1146,6 +1149,7 @@ export interface TiltScoreResponseDto {
   factors: string;
   scoreDate: string;
   thresholdLabel: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+  connectionId?: string;
 }
 
 export interface BriefingResponseDto {
@@ -1237,4 +1241,172 @@ export interface SessionSummaryResponseDto {
   todayWinRate: number;
   activeAlertCount: number;
   tiltScore: number;
+}
+
+// ── Admin Billing DTOs ───────────────────────────────────────────────────────
+
+export interface AdminRevenueDto {
+  mrr: number;
+  arr: number;
+  revenue30d: number;
+  revenue60d: number;
+  revenue90d: number;
+}
+
+export interface AdminInvoiceDto {
+  id: string;
+  customerEmail: string;
+  status: string;
+  amount: number;
+  currency: string;
+  createdAt: string;
+  invoicePdfUrl: string;
+}
+
+export interface AdminTaxLineDto {
+  jurisdiction: string;
+  country: string;
+  taxRate: number;
+  amountCollected: number;
+  currency: string;
+}
+
+export interface AdminDunningUserDto {
+  userId: string;
+  email: string;
+  plan: string;
+  dunningStep: number;
+  gracePeriodEndsAt: string;
+  daysRemaining: number;
+}
+
+export interface AdminCouponDto {
+  id: string;
+  percentOff?: number;
+  amountOff?: number;
+  currency?: string;
+  duration: string;
+  maxRedemptions?: number;
+  timesRedeemed: number;
+  valid: boolean;
+}
+
+export interface AdminMetricsDto {
+  churnRate: number;
+  conversionRate: number;
+  arpu: number;
+  estimatedLtv: number;
+  totalPaidUsers: number;
+  totalFreeUsers: number;
+}
+
+export interface PlaybookSuggestionDto {
+  id: string;
+  userId: string;
+  strategyId?: string;
+  type: 'PREMATURE_EXIT' | 'STOP_TOO_WIDE' | 'STOP_TOO_TIGHT' | 'BEST_TIME_FILTER' | 'SYMBOL_FOCUS';
+  title: string;
+  description: string;
+  currentBehavior: string;
+  suggestedAction: string;
+  expectedImprovement: number;
+  confidence: number;
+  sampleSize: number;
+  status: 'PENDING' | 'APPLIED' | 'DISMISSED';
+  appliedAt?: string;
+  dismissedAt?: string;
+  createdAt: string;
+}
+
+export interface TradePlanRequestDto {
+  symbol: string;
+  direction: 'LONG' | 'SHORT';
+  entryPrice: number;
+  stopLoss: number;
+  takeProfit: number;
+  strategyId?: string;
+  plannedEntryTime?: string;
+}
+
+export interface TradePlanFactorDto {
+  value: number;
+  score: number;
+  weight: number;
+  sampleSize: number;
+  label: string;
+}
+
+export interface TradePlanScoreResponseDto {
+  score: number;
+  insufficientData: boolean;
+  sampleSize: number;
+  confidence: number;
+  riskRewardRatio: number;
+  suggestedSize: number;
+  factors: Record<string, TradePlanFactorDto>;
+  warnings: string[];
+}
+
+// --- Public Profile / Social ---
+
+export interface VerifiedProfileDto {
+  username: string;
+  bio?: string;
+  isVerified: boolean;
+  showRealPnl: boolean;
+  showSymbols: boolean;
+  showStrategies: boolean;
+  showEquityCurve: boolean;
+  totalTrades: number;
+  winRate?: number;
+  totalReturnPercent?: number;
+  profitFactor?: number;
+  sharpeRatio?: number;
+  tradingDayCount: number;
+  bestMonthPercent?: number;
+  worstMonthPercent?: number;
+  verificationHash?: string;
+  lastVerifiedAt?: string;
+  createdAt: string;
+}
+
+export interface CreateProfileRequestDto {
+  username: string;
+  bio?: string;
+}
+
+export interface UpdateProfileRequestDto {
+  bio?: string;
+  showRealPnl?: boolean;
+  showSymbols?: boolean;
+  showStrategies?: boolean;
+  showEquityCurve?: boolean;
+}
+
+export interface EquityCurvePointDto {
+  date: string;
+  value: number;
+}
+
+// --- Leaderboard ---
+
+export interface LeaderboardEntryDto {
+  rank: number;
+  username: string;
+  level: string;
+  xp: number;
+  badgeCount: number;
+  winRate?: number;
+  sharpeRatio?: number;
+  criteriaValue: number;
+  criteriaLabel: string;
+  isVerified: boolean;
+}
+
+export interface LeaderboardResponseDto {
+  type: string;
+  entries: LeaderboardEntryDto[];
+  totalEntries: number;
+  page: number;
+  size: number;
 }

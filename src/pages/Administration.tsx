@@ -85,6 +85,7 @@ import {
   ArrowUpCircle,
   Users2,
   Calendar,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -120,6 +121,7 @@ import { promoService, type PromoCodeDto, type PromoUsageDto } from '@/services/
 import { useAuth } from '@/contexts/auth-context';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import BillingTab from '@/components/admin/BillingTab';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -2599,6 +2601,10 @@ const Administration = () => {
               <Tag className="h-4 w-4" />
               {t('admin.promotions', 'Promotions')}
             </TabsTrigger>
+            <TabsTrigger value="billing" className="gap-2">
+              <Wallet className="h-4 w-4" />
+              {t('admin.billing', 'Billing')}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <ToggleLeft className="h-4 w-4" />
               {t('admin.system', 'System')}
@@ -2629,6 +2635,10 @@ const Administration = () => {
             <PromotionsTab />
           </TabsContent>
 
+
+          <TabsContent value="billing" className="mt-6">
+            <BillingTab />
+          </TabsContent>
           <TabsContent value="system" className="mt-6">
             <FeatureFlagsTab />
           </TabsContent>

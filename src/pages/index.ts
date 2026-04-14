@@ -23,6 +23,7 @@ export { default as HomePage } from './HomePage';
 export { default as Badges } from './Badges';
 export { default as Leaderboard } from './Leaderboard';
 export { default as PublicProfile } from './PublicProfile';
+export { default as PublicTraderProfile } from './PublicTraderProfile';
 export { default as Pricing } from './Pricing';
 export { default as PaymentSuccess } from './PaymentSuccess';
 export { default as PaymentCanceled } from './PaymentCanceled';

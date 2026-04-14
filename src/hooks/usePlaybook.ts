@@ -1,0 +1,51 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { playbookService } from '@/services/playbook.service';
+import { toast } from 'sonner';
+
+const PLAYBOOK_KEY = ['ai', 'playbook', 'suggestions'];
+
+export const usePlaybookSuggestions = (status?: string) => {
+  return useQuery({
+    queryKey: [...PLAYBOOK_KEY, status],
+    queryFn: () => playbookService.getSuggestions(status),
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useGeneratePlaybook = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => playbookService.generate(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+      toast.success('Playbook suggestions generated.');
+    },
+    onError: () => {
+      toast.error('Failed to generate playbook suggestions. Please try again.');
+    },
+  });
+};
+
+export const useApplySuggestion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => playbookService.apply(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+      toast.success('Suggestion applied to your playbook.');
+    },
+    onError: () => {
+      toast.error('Failed to apply suggestion. Please try again.');
+    },
+  });
+};
+
+export const useDismissSuggestion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => playbookService.dismiss(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+    },
+  });
+};

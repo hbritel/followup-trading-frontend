@@ -1,8 +1,9 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Loader2, RefreshCw, TrendingUp, Star, AlertTriangle } from 'lucide-react';
+import { Loader2, RefreshCw, TrendingUp, Star, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDebrief, useGenerateDebrief } from '@/hooks/useDebrief';
 import { cn } from '@/lib/utils';
 
@@ -27,22 +28,56 @@ const ScoreCircle: React.FC<{ score: number }> = ({ score }) => {
   );
 };
 
+const formatInline = (text: string): string =>
+  text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
 const SimpleMarkdown: React.FC<{ text: string }> = ({ text }) => {
+  // Strip SESSION_SCORE lines and horizontal rules before rendering
+  const cleaned = text
+    .replace(/^SESSION_SCORE:\s*\d+\s*$/gim, '')
+    .replace(/^---+\s*$/gm, '')
+    .trim();
+
   return (
-    <div className="space-y-1 text-sm text-foreground">
-      {text.split('\n').map((line, i) => {
-        if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-          const content = line.trim().slice(2);
+    <div className="space-y-1.5 text-sm text-foreground">
+      {cleaned.split('\n').map((line, i) => {
+        const trimmed = line.trim();
+
+        // Headings → styled as section titles
+        if (trimmed.startsWith('## ')) {
+          return (
+            <h4 key={i} className="text-xs font-bold uppercase tracking-wider text-muted-foreground pt-2 first:pt-0">
+              {trimmed.replace(/^#+\s*/, '')}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith('# ')) {
+          return (
+            <h3 key={i} className="text-sm font-bold text-foreground pt-2 first:pt-0">
+              {trimmed.replace(/^#+\s*/, '')}
+            </h3>
+          );
+        }
+
+        // Bullet points
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          const content = trimmed.slice(2);
           return (
             <div key={i} className="flex gap-2">
-              <span className="text-muted-foreground mt-0.5">•</span>
-              <span dangerouslySetInnerHTML={{ __html: content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+              <span className="text-muted-foreground mt-0.5 flex-shrink-0">•</span>
+              <span dangerouslySetInnerHTML={{ __html: formatInline(content) }} />
             </div>
           );
         }
-        if (!line.trim()) return <div key={i} className="h-1" />;
+
+        // Empty lines
+        if (!trimmed) return <div key={i} className="h-1" />;
+
+        // Regular paragraphs
         return (
-          <p key={i} dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <p key={i} dangerouslySetInnerHTML={{ __html: formatInline(trimmed) }} />
         );
       })}
     </div>
@@ -78,6 +113,14 @@ const SessionDebriefCard: React.FC<SessionDebriefCardProps> = ({ accountId }) =>
               ? `Session Debrief — ${format(new Date(debrief.sessionDate), 'MMM d, yyyy')}`
               : 'Session Debrief'}
           </h3>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+            </TooltipTrigger>
+            <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
+              AI-generated post-session review. Scores discipline (1-10), highlights strengths and areas for improvement, and provides a recommendation for tomorrow. Based on today's closed trades.
+            </TooltipContent>
+          </Tooltip>
         </div>
         <Button
           variant="ghost"

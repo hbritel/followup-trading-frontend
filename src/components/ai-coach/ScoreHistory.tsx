@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
 import { coachService } from '@/services/coach.service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SessionDebriefResponseDto } from '@/types/dto';
 
 const WIDTH = 300;
@@ -165,9 +166,19 @@ const ScoreHistory: React.FC = () => {
   return (
     <div className="glass-card rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          {t('ai.scoreHistoryTitle', 'Session Scores')}
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            {t('ai.scoreHistoryTitle', 'Session Scores')}
+          </h3>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+            </TooltipTrigger>
+            <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
+              {t('ai.scoreHistoryInfo', 'AI rates each session 1-10 based on discipline, not just P&L. Factors: trade plan adherence, position sizing, emotional control, and risk management.')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <TrendingUp className="h-4 w-4 text-muted-foreground/60" />
       </div>
 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTiltScore } from '@/hooks/useTiltScore';
+import { useAccountLabel } from '@/hooks/useAccountLabel';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface TiltGaugeProps {
@@ -23,9 +25,11 @@ const getStrokeColor = (score: number): string => {
 
 const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId }) => {
   const { data, isLoading } = useTiltScore(accountId);
+  const getAccountLabelFn = useAccountLabel();
 
   const score = data?.score ?? 0;
   const label = data?.thresholdLabel ?? 'GREEN';
+  const accountLabel = getAccountLabelFn(data?.connectionId);
 
   const size = compact ? 40 : 96;
   const strokeWidth = compact ? 3 : 7;
@@ -99,6 +103,14 @@ const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId }) => 
         >
           {label}
         </span>
+      )}
+      {!compact && accountLabel && (
+        <Badge
+          variant="outline"
+          className="text-[10px] px-1.5 py-0 h-4 font-medium text-muted-foreground border-border/60 mt-0.5"
+        >
+          {accountLabel}
+        </Badge>
       )}
     </div>
   );

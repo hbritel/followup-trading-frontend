@@ -69,7 +69,7 @@ import {
 
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
-import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
+import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
 import UsageDashboard from "@/components/subscription/UsageDashboard";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
 

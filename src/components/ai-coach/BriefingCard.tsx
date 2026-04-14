@@ -5,39 +5,55 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBriefing, useGenerateBriefing } from '@/hooks/useBriefing';
 
-/** Minimal inline markdown renderer — handles **bold** and bullet lists */
+const formatInline = (text: string): string =>
+  text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+/** Markdown renderer — handles headings, **bold**, *italic*, bullets, and cleans raw artifacts */
 const SimpleMarkdown: React.FC<{ text: string }> = ({ text }) => {
-  const lines = text.split('\n');
+  const cleaned = text
+    .replace(/^---+\s*$/gm, '')
+    .trim();
+
   return (
-    <div className="space-y-1 text-sm text-foreground">
-      {lines.map((line, i) => {
-        // Bullet point
-        if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-          const content = line.trim().slice(2);
+    <div className="space-y-1.5 text-sm text-foreground">
+      {cleaned.split('\n').map((line, i) => {
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith('## ')) {
+          return (
+            <h4 key={i} className="text-xs font-bold uppercase tracking-wider text-muted-foreground pt-2 first:pt-0">
+              {trimmed.replace(/^#+\s*/, '')}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith('# ')) {
+          return (
+            <h3 key={i} className="text-sm font-bold text-foreground pt-2 first:pt-0">
+              {trimmed.replace(/^#+\s*/, '')}
+            </h3>
+          );
+        }
+
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          const content = trimmed.slice(2);
           return (
             <div key={i} className="flex gap-2">
-              <span className="text-muted-foreground mt-0.5">•</span>
-              <span dangerouslySetInnerHTML={{ __html: renderInline(content) }} />
+              <span className="text-muted-foreground mt-0.5 flex-shrink-0">•</span>
+              <span dangerouslySetInnerHTML={{ __html: formatInline(content) }} />
             </div>
           );
         }
-        // Empty line
-        if (!line.trim()) return <div key={i} className="h-1" />;
-        // Normal paragraph
+
+        if (!trimmed) return <div key={i} className="h-1" />;
+
         return (
-          <p
-            key={i}
-            dangerouslySetInnerHTML={{ __html: renderInline(line) }}
-          />
+          <p key={i} dangerouslySetInnerHTML={{ __html: formatInline(trimmed) }} />
         );
       })}
     </div>
   );
-};
-
-const renderInline = (text: string): string => {
-  // **bold** → <strong>bold</strong>
-  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 };
 
 interface BriefingCardProps {

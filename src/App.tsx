@@ -40,6 +40,7 @@ import {
   Badges,
   Leaderboard,
   PublicProfile,
+  PublicTraderProfile,
   Pricing,
   PaymentSuccess,
   PaymentCanceled,
@@ -138,6 +139,7 @@ function App() {
                   <Route path="/payment/canceled" element={<PaymentCanceled />} />
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/p/:username" element={<PublicProfile />} />
+                  <Route path="/trader/:username" element={<PublicTraderProfile />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />
