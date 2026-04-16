@@ -153,8 +153,8 @@ const Playbook = () => {
                     <span>{t('playbook.aiSuggestionsInfo')}</span>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p>{t('playbook.aiSuggestionsInfo')}</p>
+                <TooltipContent side="bottom" className="max-w-sm text-xs leading-relaxed">
+                  <p>{t('playbook.aiSuggestionsTooltip')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

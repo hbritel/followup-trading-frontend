@@ -7,9 +7,19 @@ import {
   Timer,
   Target,
   TrendingUp,
+  Undo2,
+  Trash2,
+  Info,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { PlaybookSuggestionDto } from '@/types/dto';
 
@@ -38,30 +48,51 @@ const CONFIDENCE_STYLES: Record<string, string> = {
   LOW: 'bg-red-500/15 text-red-400 ring-red-500/20',
 };
 
+const CONFIDENCE_I18N_KEYS: Record<string, string> = {
+  HIGH: 'playbook.confidenceHigh',
+  MEDIUM: 'playbook.confidenceMedium',
+  LOW: 'playbook.confidenceLow',
+};
+
 interface PlaybookSuggestionCardProps {
   readonly suggestion: PlaybookSuggestionDto;
   readonly onApply: (id: string) => void;
   readonly onDismiss: (id: string) => void;
+  readonly onUnapply?: (id: string) => void;
+  readonly onDelete?: (id: string) => void;
   readonly canApply: boolean;
   readonly isPending: boolean;
+  readonly accountLabelMap?: ReadonlyMap<string, string>;
 }
 
 const PlaybookSuggestionCard: React.FC<PlaybookSuggestionCardProps> = ({
   suggestion,
   onApply,
   onDismiss,
+  onUnapply,
+  onDelete,
   canApply,
   isPending,
+  accountLabelMap,
 }) => {
   const { t } = useTranslation();
   const Icon = TYPE_ICONS[suggestion.type];
   const confidenceLevel = getConfidenceLevel(suggestion.confidence);
 
+  const accountScopeLabel = React.useMemo(() => {
+    const ids = suggestion.accountIds;
+    if (!ids || ids.length === 0) return t('accounts.allAccounts', 'All Accounts');
+    if (!accountLabelMap) return ids.length === 1 ? ids[0] : `${ids.length} accounts`;
+    const names = ids.map((id) => accountLabelMap.get(id) ?? id);
+    return names.join(', ');
+  }, [suggestion.accountIds, accountLabelMap, t]);
+
   const isActionable = suggestion.status === 'PENDING';
+  const improvement = suggestion.expectedImprovement ?? 0;
   const improvementFormatted =
-    suggestion.expectedImprovement >= 0
-      ? `+$${suggestion.expectedImprovement.toFixed(2)}`
-      : `-$${Math.abs(suggestion.expectedImprovement).toFixed(2)}`;
+    improvement >= 0
+      ? `+$${improvement.toFixed(2)}`
+      : `-$${Math.abs(improvement).toFixed(2)}`;
 
   return (
     <div
@@ -83,14 +114,24 @@ const PlaybookSuggestionCard: React.FC<PlaybookSuggestionCardProps> = ({
             <h4 className="text-sm font-semibold leading-tight truncate">
               {suggestion.title}
             </h4>
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
-                CONFIDENCE_STYLES[confidenceLevel],
-              )}
-            >
-              {confidenceLevel}
-            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset cursor-help',
+                      CONFIDENCE_STYLES[confidenceLevel],
+                    )}
+                  >
+                    {confidenceLevel}
+                    <Info className="h-2.5 w-2.5 opacity-60" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p>{t(CONFIDENCE_I18N_KEYS[confidenceLevel])}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </div>
@@ -106,7 +147,7 @@ const PlaybookSuggestionCard: React.FC<PlaybookSuggestionCardProps> = ({
       </p>
 
       {/* Metrics row */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-4 mb-3">
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-400">
           <TrendingUp className="h-3.5 w-3.5" />
           {improvementFormatted}
@@ -117,6 +158,14 @@ const PlaybookSuggestionCard: React.FC<PlaybookSuggestionCardProps> = ({
 
         <span className="text-[11px] text-muted-foreground">
           {t('playbook.basedOn', { count: suggestion.sampleSize })}
+        </span>
+      </div>
+
+      {/* Account scope */}
+      <div className="flex items-center gap-1.5 mb-4">
+        <Wallet className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+        <span className="text-[11px] text-muted-foreground truncate" title={accountScopeLabel}>
+          {accountScopeLabel}
         </span>
       </div>
 
@@ -146,6 +195,48 @@ const PlaybookSuggestionCard: React.FC<PlaybookSuggestionCardProps> = ({
             onClick={() => onDismiss(suggestion.id)}
           >
             {t('playbook.dismiss')}
+          </Button>
+        </div>
+      )}
+
+      {/* Undo + Delete for applied cards */}
+      {suggestion.status === 'APPLIED' && (
+        <div className="flex items-center gap-2 pt-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground gap-1.5"
+            disabled={isPending}
+            onClick={() => onUnapply?.(suggestion.id)}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            {t('playbook.undo', 'Undo')}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive/70 hover:text-destructive gap-1.5"
+            disabled={isPending}
+            onClick={() => onDelete?.(suggestion.id)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t('common.delete', 'Delete')}
+          </Button>
+        </div>
+      )}
+
+      {/* Delete for dismissed cards */}
+      {suggestion.status === 'DISMISSED' && (
+        <div className="flex items-center gap-2 pt-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive/70 hover:text-destructive gap-1.5"
+            disabled={isPending}
+            onClick={() => onDelete?.(suggestion.id)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {t('common.delete', 'Delete')}
           </Button>
         </div>
       )}

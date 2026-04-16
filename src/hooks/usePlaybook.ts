@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { playbookService } from '@/services/playbook.service';
+import type { PlaybookSuggestionDto } from '@/types/dto';
 import { toast } from 'sonner';
 
 const PLAYBOOK_KEY = ['ai', 'playbook', 'suggestions'];
@@ -14,8 +15,8 @@ export const usePlaybookSuggestions = (status?: string) => {
 
 export const useGeneratePlaybook = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => playbookService.generate(),
+  return useMutation<PlaybookSuggestionDto[], Error, string[] | undefined>({
+    mutationFn: (accountIds) => playbookService.generate(accountIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
       toast.success('Playbook suggestions generated.');
@@ -46,6 +47,34 @@ export const useDismissSuggestion = () => {
     mutationFn: (id: string) => playbookService.dismiss(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+    },
+  });
+};
+
+export const useUnapplySuggestion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => playbookService.unapply(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+      toast.success('Suggestion unapplied.');
+    },
+    onError: () => {
+      toast.error('Failed to unapply suggestion. Please try again.');
+    },
+  });
+};
+
+export const useDeleteSuggestion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => playbookService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAYBOOK_KEY });
+      toast.success('Suggestion deleted.');
+    },
+    onError: () => {
+      toast.error('Failed to delete suggestion. Please try again.');
     },
   });
 };

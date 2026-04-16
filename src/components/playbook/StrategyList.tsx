@@ -29,9 +29,9 @@ const formatCurrency = (value: number) => {
   return `${prefix}$${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+const formatPercent = (value: number | null | undefined) => value != null ? `${value.toFixed(1)}%` : '—';
 
-const formatDecimal = (value: number) => value.toFixed(2);
+const formatDecimal = (value: number | null | undefined) => value != null ? value.toFixed(2) : '—';
 
 const StatCell: React.FC<{ label: string; value: string; color?: string }> = ({ label, value, color }) => (
   <div className="flex flex-col gap-0.5">
