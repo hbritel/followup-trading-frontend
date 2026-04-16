@@ -4,7 +4,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Sparkles, Send, Trash2, Lock } from 'lucide-react';
+import { Sparkles, Send, Trash2, Lock, X, RotateCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -34,12 +34,14 @@ const InlineChat: React.FC<InlineChatProps> = ({ className }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentPlan } = useFeatureFlags();
-  const { messages, isStreaming, sendMessage, loadHistory, clearHistory } =
+  const { messages, isStreaming, sendMessage, loadHistory, clearHistory, cancelPending } =
     useAiChat();
   const [inputValue, setInputValue] = useState('');
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
 
   // Fetch subscription usage for AI message counter
   const { data: subscription } = useQuery<SubscriptionDto>({
@@ -67,9 +69,16 @@ const InlineChat: React.FC<InlineChatProps> = ({ className }) => {
     }
   }, [historyLoaded, loadHistory]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change — throttled via rAF to avoid jank during streaming
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRafRef.current) return; // already scheduled
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      const container = messagesContainerRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
   }, [messages]);
 
   // Auto-resize textarea
@@ -141,7 +150,7 @@ const InlineChat: React.FC<InlineChatProps> = ({ className }) => {
 
       {/* Messages area */}
       <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+        <div ref={messagesContainerRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
           {isEmpty ? (
             <div className="flex flex-1 flex-col justify-center">
               <div className="mb-4 text-center">
@@ -154,17 +163,13 @@ const InlineChat: React.FC<InlineChatProps> = ({ className }) => {
             </div>
           ) : (
             <>
-              {messages.map((msg, index) => {
-                const isLastAssistant =
-                  index === messages.length - 1 && msg.role === 'assistant';
-                return (
-                  <ChatMessage
-                    key={msg.id}
-                    message={msg}
-                    isStreaming={isLastAssistant && isStreaming}
-                  />
-                );
-              })}
+              {messages.map((msg) => (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  isStreaming={msg.role === 'assistant' && msg.pending === true}
+                />
+              ))}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -195,14 +200,48 @@ const InlineChat: React.FC<InlineChatProps> = ({ className }) => {
             </div>
           ) : (
             <>
-              {isStreaming && (
-                <p className="mb-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <Sparkles className="h-3 w-3 animate-pulse text-amber-400" />
-                    {t('ai.streaming', 'Thinking...')}
-                  </span>
-                </p>
-              )}
+              {isStreaming && (() => {
+                const pendingMsg = [...messages].reverse().find((m) => m.pending === true);
+                const userMsg = pendingMsg?.sourceUserMessage;
+                const handleCancel = () => {
+                  if (pendingMsg) cancelPending(pendingMsg.id);
+                };
+                const handleRetry = () => {
+                  if (!pendingMsg || !userMsg) return;
+                  cancelPending(pendingMsg.id);
+                  void sendMessage(userMsg);
+                };
+                return (
+                  <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-500/5 px-2.5 py-1.5 border border-amber-500/10">
+                    <Sparkles className="h-3 w-3 animate-pulse text-amber-400 shrink-0" />
+                    <span className="flex-1 text-xs text-muted-foreground">
+                      {t('ai.preparingResponse', 'Your coach is preparing a response — you can navigate away, it will be ready when you return.')}
+                    </span>
+                    {userMsg && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-amber-400"
+                        onClick={handleRetry}
+                        aria-label={t('ai.retry', 'Retry')}
+                        title={t('ai.retry', 'Retry')}
+                      >
+                        <RotateCw className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      onClick={handleCancel}
+                      aria-label={t('ai.cancel', 'Cancel')}
+                      title={t('ai.cancel', 'Cancel')}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                );
+              })()}
               {showUsageCounter && (
                 <div className="mb-2 flex justify-end">
                   <UsageLimitIndicator

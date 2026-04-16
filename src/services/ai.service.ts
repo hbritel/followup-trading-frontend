@@ -29,6 +29,14 @@ export interface DigestJobResponse {
   createdAt: string;
 }
 
+export interface ChatJobResponse {
+  jobId: string;
+  status: 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED';
+  content: string | null;
+  error: string | null;
+  createdAt: string;
+}
+
 export interface GenerateDigestParams {
   accountId?: string;
   startDate?: string;
@@ -104,6 +112,23 @@ const clearChatHistory = async (): Promise<void> => {
   await apiClient.delete('/ai/history');
 };
 
+// ---- Async chat (survives client disconnect) ----
+
+const startChatJob = async (message: string): Promise<ChatJobResponse> => {
+  const response = await apiClient.post<ChatJobResponse>('/ai/chat/start', { message });
+  return response.data;
+};
+
+const getChatJobStatus = async (jobId: string): Promise<ChatJobResponse> => {
+  const response = await apiClient.get<ChatJobResponse>(`/ai/chat/jobs/${jobId}`);
+  return response.data;
+};
+
+const getPendingChatJobs = async (): Promise<ChatJobResponse[]> => {
+  const response = await apiClient.get<ChatJobResponse[]>('/ai/chat/pending');
+  return response.data;
+};
+
 export const aiService = {
   sendChatMessage,
   getLatestDigest,
@@ -114,4 +139,7 @@ export const aiService = {
   analyzeTradeById,
   getChatHistory,
   clearChatHistory,
+  startChatJob,
+  getChatJobStatus,
+  getPendingChatJobs,
 };

@@ -21,6 +21,7 @@ export const useBriefing = (accountId?: string) => {
       }
     },
     staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

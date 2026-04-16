@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 const alertsKey = (accountId?: string) => ['ai', 'coach', 'alerts', accountId ?? 'all'];
 
-export const useBehavioralAlerts = (accountId?: string) => {
+export const useBehavioralAlerts = (accountId?: string, enableRealtime: boolean = true) => {
   const queryClient = useQueryClient();
   const { subscribe } = useWebSocket();
   const { user } = useAuth();
@@ -20,17 +20,18 @@ export const useBehavioralAlerts = (accountId?: string) => {
       return res.data;
     },
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  // Real-time updates via WebSocket
+  // Real-time updates via WebSocket — opt-in via enableRealtime flag
   useEffect(() => {
-    if (!user?.id) return;
+    if (!enableRealtime || !user?.id) return;
     const topic = `/topic/users/${user.id}/coach`;
     const unsubscribe = subscribe(topic, () => {
       void queryClient.invalidateQueries({ queryKey: alertsKey(accountId) });
     });
     return unsubscribe;
-  }, [user?.id, subscribe, queryClient, accountId]);
+  }, [enableRealtime, user?.id, subscribe, queryClient, accountId]);
 
   return query;
 };

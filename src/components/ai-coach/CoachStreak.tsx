@@ -12,10 +12,10 @@ const CoachStreak: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="glass-card rounded-2xl p-4">
-        <Skeleton className="h-4 w-32 mb-3" />
-        <Skeleton className="h-8 w-24 mb-2" />
-        <Skeleton className="h-3 w-40" />
+      <div>
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-6 w-24 mb-2" />
+        <Skeleton className="h-2 w-full" />
       </div>
     );
   }
@@ -38,30 +38,30 @@ const CoachStreak: React.FC = () => {
       : t('ai.streakStart', 'Start your streak today!');
 
   return (
-    <div className="glass-card rounded-2xl p-4">
-      <div className="flex items-center gap-1.5 mb-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+    <div>
+      <div className="flex items-center gap-1.5 mb-2">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {t('ai.streakTitle', 'Coaching Streak')}
         </h3>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
           </TooltipTrigger>
-          <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
+          <TooltipContent side="bottom" align="center" sideOffset={4} avoidCollisions className="max-w-[280px] text-xs leading-relaxed z-50">
             {t('ai.streakInfo', 'Tracks consecutive days you engaged with the AI coach (briefing, debrief, or chat). Consistency builds discipline.')}
           </TooltipContent>
         </Tooltip>
       </div>
 
-      <div className="flex items-center gap-3 mb-3">
-        <Flame className={cn('h-7 w-7 flex-shrink-0', flameColor)} />
+      <div className="flex items-center gap-2.5 mb-2">
+        <Flame className={cn('h-5 w-5 flex-shrink-0', flameColor)} />
         <div>
-          <p className="text-2xl font-bold leading-none">
+          <p className="text-base font-bold leading-none">
             {streak > 0
               ? t('ai.streakDays', '{{count}} day streak', { count: streak })
               : '0'}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{motivationText}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{motivationText}</p>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ const CoachStreak: React.FC = () => {
       </div>
       <div className="flex justify-between mt-1">
         <span className="text-[10px] text-muted-foreground/50">
-          {t('common.daysAgoLabel', '6d ago')}
+          {t('timeAgo.daysAgo', { count: 6, defaultValue: '6d ago' })}
         </span>
         <span className="text-[10px] text-muted-foreground/50">
           {t('common.today', 'Today')}

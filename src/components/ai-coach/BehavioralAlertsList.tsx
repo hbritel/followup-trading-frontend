@@ -1,5 +1,6 @@
 import React from 'react';
 import { BellRing, CheckCircle, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useBehavioralAlerts } from '@/hooks/useBehavioralAlerts';
 import { useAccountLabel } from '@/hooks/useAccountLabel';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,23 +9,28 @@ import BehavioralAlertCard from './BehavioralAlertCard';
 
 interface BehavioralAlertsListProps {
   accountId?: string;
+  /** If false, disables WebSocket real-time updates (default: true) */
+  enableRealtime?: boolean;
 }
 
-const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId }) => {
-  const { data: alerts, isLoading, isError } = useBehavioralAlerts(accountId);
+const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId, enableRealtime = true }) => {
+  const { t } = useTranslation();
+  const { data: alerts, isLoading, isError } = useBehavioralAlerts(accountId, enableRealtime);
   const getAccountLabel = useAccountLabel();
 
   return (
-    <div className="glass-card rounded-2xl p-6 space-y-4">
+    <div className="glass-card rounded-2xl p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <BellRing className="h-5 w-5 text-primary" />
-        <h3 className="text-base font-semibold">Behavioral Alerts</h3>
-        <Tooltip>
+        <BellRing className="h-4 w-4 text-primary" />
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {t('ai.behavioralAlertsTitle', 'Behavioral Alerts')}
+        </h3>
+        <Tooltip delayDuration={200}>
           <TooltipTrigger asChild>
             <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
           </TooltipTrigger>
-          <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
-            Automatic alerts triggered after each sync. Detects: revenge trading, overtrading, position size escalation, tilt state, off-hours trading, losing symbols, and daily loss limit approaches.
+          <TooltipContent side="bottom" align="center" sideOffset={4} avoidCollisions className="max-w-[280px] text-xs leading-relaxed z-50">
+            {t('ai.behavioralAlertsInfo')}
           </TooltipContent>
         </Tooltip>
         {alerts && alerts.length > 0 && (
@@ -36,22 +42,22 @@ const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId }
 
       {isLoading && (
         <div className="space-y-2">
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
         </div>
       )}
 
       {isError && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Failed to load alerts.
+        <p className="text-xs text-muted-foreground text-center py-3">
+          {t('ai.alertsLoadFailed')}
         </p>
       )}
 
       {!isLoading && !isError && alerts && alerts.length === 0 && (
-        <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <CheckCircle className="h-8 w-8 text-green-500/60" />
-          <p className="text-sm text-muted-foreground">
-            No active alerts. Trading patterns look good.
+        <div className="flex items-center gap-2 py-3 justify-center">
+          <CheckCircle className="h-4 w-4 text-green-500/60" />
+          <p className="text-xs text-muted-foreground">
+            {t('ai.noActiveAlerts')}
           </p>
         </div>
       )}

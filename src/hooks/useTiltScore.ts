@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 
 const tiltKey = (accountId?: string) => ['ai', 'coach', 'tilt', accountId ?? 'all'];
 
-export const useTiltScore = (accountId?: string) => {
+export const useTiltScore = (accountId?: string, enableRealtime: boolean = true) => {
   const queryClient = useQueryClient();
   const { subscribe } = useWebSocket();
   const { user } = useAuth();
@@ -26,17 +26,18 @@ export const useTiltScore = (accountId?: string) => {
       }
     },
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  // Real-time tilt updates
+  // Real-time tilt updates — opt-in via enableRealtime flag
   useEffect(() => {
-    if (!user?.id) return;
+    if (!enableRealtime || !user?.id) return;
     const topic = `/topic/users/${user.id}/tilt`;
     const unsubscribe = subscribe(topic, () => {
       void queryClient.invalidateQueries({ queryKey: tiltKey(accountId) });
     });
     return unsubscribe;
-  }, [user?.id, subscribe, queryClient, accountId]);
+  }, [enableRealtime, user?.id, subscribe, queryClient, accountId]);
 
   return query;
 };

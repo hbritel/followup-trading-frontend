@@ -174,7 +174,7 @@ const ScoreHistory: React.FC = () => {
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
             </TooltipTrigger>
-            <TooltipContent side="left" align="start" className="max-w-[250px] text-xs">
+            <TooltipContent side="bottom" align="center" sideOffset={4} avoidCollisions className="max-w-[280px] text-xs leading-relaxed z-50">
               {t('ai.scoreHistoryInfo', 'AI rates each session 1-10 based on discipline, not just P&L. Factors: trade plan adherence, position sizing, emotional control, and risk management.')}
             </TooltipContent>
           </Tooltip>
