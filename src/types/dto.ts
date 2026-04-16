@@ -962,15 +962,21 @@ export interface UserFollowDto {
 export interface SharedStrategyDto {
   id: string;
   userId: string;
-  username: string;
-  level: string;
+  creatorUsername: string;
   title: string;
   description: string;
-  strategyData: Record<string, unknown>;
+  strategyData: Record<string, unknown> | null;
   likes: number;
   copies: number;
-  isLiked: boolean;
+  likedByMe: boolean;
   createdAt: string;
+  historicalWinRate: number | null;
+  historicalProfitFactor: number | null;
+  tradeCount: number;
+  avgRMultiple: number | null;
+  suitableMarkets: string | null;
+  price: number | null;
+  purchasedByMe: boolean;
 }
 
 export interface FeedItemDto {
@@ -988,6 +994,7 @@ export interface ShareStrategyRequestDto {
   title: string;
   description: string;
   strategyId: string;
+  suitableMarkets?: string;
 }
 
 // --- Tax Reporting types ---
@@ -1313,6 +1320,7 @@ export interface PlaybookSuggestionDto {
   confidence: number;
   sampleSize: number;
   status: 'PENDING' | 'APPLIED' | 'DISMISSED';
+  accountIds?: string[];
   appliedAt?: string;
   dismissedAt?: string;
   createdAt: string;
@@ -1324,8 +1332,10 @@ export interface TradePlanRequestDto {
   entryPrice: number;
   stopLoss: number;
   takeProfit: number;
+  quantity?: number;
   strategyId?: string;
   plannedEntryTime?: string;
+  accountId?: string;
 }
 
 export interface TradePlanFactorDto {
@@ -1409,4 +1419,206 @@ export interface LeaderboardResponseDto {
   totalEntries: number;
   page: number;
   size: number;
+}
+
+// ── Mentor / Copy-Trading DTOs ──────────────────────────────
+
+export interface MentorInstanceDto {
+  id: string;
+  brandName: string;
+  logoUrl?: string;
+  primaryColor: string;
+  description?: string;
+  inviteCode: string;
+  maxStudents: number;
+  currentStudents: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MentorStudentDto {
+  studentUserId: string;
+  username: string;
+  shareMetrics: boolean;
+  shareTrades: boolean;
+  sharePsychology: boolean;
+  joinedAt: string;
+}
+
+export interface CreateInstanceRequestDto {
+  brandName: string;
+  description?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}
+
+export interface JoinInstanceRequestDto {
+  inviteCode: string;
+}
+
+export interface UpdateSharingRequestDto {
+  shareMetrics?: boolean;
+  shareTrades?: boolean;
+  sharePsychology?: boolean;
+}
+
+// Study Groups (Phase 3E)
+export type GroupType = 'OPEN' | 'INVITE_ONLY' | 'MENTOR_LED';
+export type GroupRole = 'OWNER' | 'MODERATOR' | 'MEMBER';
+
+export interface StudyGroupDto {
+  id: string;
+  name: string;
+  description: string | null;
+  ownerUsername: string;
+  type: GroupType;
+  maxMembers: number;
+  memberCount: number;
+  inviteCode: string | null;
+  isActive: boolean;
+  createdAt: string;
+  isMember: boolean;
+}
+
+export interface GroupMemberDto {
+  id: string;
+  userId: string;
+  username: string;
+  role: GroupRole;
+  joinedAt: string;
+}
+
+export interface CreateGroupRequestDto {
+  name: string;
+  description?: string;
+  type: GroupType;
+}
+
+// ── Prop Firm B2B (Phase 5.1) ─────────────────────────────────────
+
+export interface PropFirmTenantDto {
+  id: string;
+  firmCode: string;
+  firmName: string;
+  adminEmail: string;
+  apiKey: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  isActive: boolean;
+  maxTraders: number;
+  createdAt: string;
+}
+
+export interface TraderSummaryDto {
+  userId: string;
+  username: string;
+  label: string | null;
+  winRate: number | null;
+  totalReturn: number | null;
+  maxDrawdown: number | null;
+  tradeCount: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export interface PropFirmDashboardDto {
+  activeTraders: number;
+  passedEvaluations: number;
+  failedEvaluations: number;
+  avgWinRate: number | null;
+  avgDrawdown: number | null;
+  topPerformers: TraderSummaryDto[];
+  atRiskTraders: TraderSummaryDto[];
+}
+
+export interface AddTraderRequestDto {
+  userId: string;
+  label?: string;
+}
+
+// --- Options Spreads (Phase 6.1) ---
+
+export type SpreadType =
+  | 'VERTICAL_CALL'
+  | 'VERTICAL_PUT'
+  | 'STRADDLE'
+  | 'STRANGLE'
+  | 'IRON_CONDOR'
+  | 'IRON_BUTTERFLY'
+  | 'BUTTERFLY_CALL'
+  | 'BUTTERFLY_PUT'
+  | 'CALENDAR'
+  | 'DIAGONAL'
+  | 'COVERED_CALL'
+  | 'PROTECTIVE_PUT'
+  | 'COLLAR'
+  | 'CUSTOM';
+
+export type SpreadStatus = 'OPEN' | 'CLOSED' | 'EXPIRED';
+
+export interface SpreadLegDto {
+  id: string;
+  tradeId: string;
+  legType: 'LONG_CALL' | 'SHORT_CALL' | 'LONG_PUT' | 'SHORT_PUT' | 'STOCK';
+  strike: number;
+  quantity: number;
+  premium: number | null;
+  sortOrder: number;
+}
+
+export interface OptionSpreadDto {
+  id: string;
+  spreadType: SpreadType;
+  underlying: string;
+  expirationDate: string | null;
+  netPremium: number | null;
+  maxProfit: number | null;
+  maxLoss: number | null;
+  breakevenLow: number | null;
+  breakevenHigh: number | null;
+  realizedPnl: number | null;
+  status: SpreadStatus;
+  detectedAt: string;
+  legs: SpreadLegDto[];
+}
+
+// --- Developer API (Phase 6.4) ---
+
+export interface DeveloperApiKeyDto {
+  id: string;
+  name: string;
+  apiKey: string;
+  scopes: string;
+  rateLimit: number;
+  isActive: boolean;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreatedDto extends DeveloperApiKeyDto {
+  secret: string;
+}
+
+export interface CreateApiKeyRequestDto {
+  name: string;
+  scopes: string;
+}
+
+// --- Strategy Purchases (Phase 6.5) ---
+
+export interface StrategyPurchaseDto {
+  id: string;
+  sharedStrategyId: string;
+  buyerId: string;
+  sellerId: string;
+  price: number;
+  platformFee: number;
+  sellerPayout: number;
+  status: string;
+  purchasedAt: string;
+}
+
+export interface EarningsDto {
+  totalEarnings: number;
+  pendingPayout: number;
+  totalSales: number;
 }

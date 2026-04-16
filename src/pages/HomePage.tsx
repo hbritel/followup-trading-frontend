@@ -148,17 +148,18 @@ const FAQS = [
 // ── Component ───────────────────────────────────────────────────────────────
 
 const HomePage = () => {
+  // All hooks MUST be called before any early return (Rules of Hooks).
   const { isAuthenticated, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [billingAnnual, setBillingAnnual] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { t } = useTranslation();
 
   // Redirect authenticated users to the dashboard — avoids rendering app-shell
   // components (WebSocketProvider etc.) in the public landing page context.
   if (!isLoading && isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-  const [billingAnnual, setBillingAnnual] = useState(true);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { t } = useTranslation();
 
   const navLinks = [
     { href: '#features', label: t('landing.features', 'Features') },

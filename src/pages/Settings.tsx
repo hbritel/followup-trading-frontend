@@ -72,6 +72,11 @@ import NotificationPreferences from "@/components/notifications/NotificationPref
 import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
 import UsageDashboard from "@/components/subscription/UsageDashboard";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
+import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
+import MyMentorSettings from "@/components/settings/MyMentorSettings";
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useMyMentorInstance } from '@/hooks/useMentor';
+import { Users as UsersIcon, GraduationCap } from 'lucide-react';
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -109,6 +114,10 @@ const Settings = () => {
 
     // --- États MFA ---
     const {user, isLoading: isAuthLoading, confirmMfaSetup, disableMfa} = useAuth();
+    const { hasPlan } = useFeatureFlags();
+    const { data: myMentorInstance } = useMyMentorInstance();
+    const isTeamPlan = hasPlan('TEAM');
+    const isInMentorInstance = !!myMentorInstance;
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -402,6 +411,18 @@ const Settings = () => {
                             <Brain className="h-4 w-4" />
                             {t("settings.aiProvider", "AI Provider")}
                         </TabsTrigger>
+                        {isTeamPlan && (
+                            <TabsTrigger value="mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                                <UsersIcon className="h-4 w-4" />
+                                {t("settings.mentor", "Mentor")}
+                            </TabsTrigger>
+                        )}
+                        {isInMentorInstance && (
+                            <TabsTrigger value="my-mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                                <GraduationCap className="h-4 w-4" />
+                                {t("settings.myMentor", "My Mentor")}
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     {/* ========== GENERAL TAB ========== */}
@@ -950,6 +971,20 @@ const Settings = () => {
                     <TabsContent value="ai-provider" className="space-y-6">
                         <AiProviderSettings />
                     </TabsContent>
+
+                    {/* ========== MENTOR TAB (TEAM plan) ========== */}
+                    {isTeamPlan && (
+                        <TabsContent value="mentor" className="space-y-6">
+                            <MentorInstanceSettings />
+                        </TabsContent>
+                    )}
+
+                    {/* ========== MY MENTOR TAB (student) ========== */}
+                    {isInMentorInstance && (
+                        <TabsContent value="my-mentor" className="space-y-6">
+                            <MyMentorSettings />
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
 

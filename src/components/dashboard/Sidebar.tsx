@@ -12,7 +12,9 @@ import {
   Brain as BrainIcon,
   Calendar as CalendarIcon,
   ChevronDown as ChevronDownIcon,
+  Code as CodeIcon,
   FileText as FileTextIcon,
+  Layers as LayersIcon,
   LineChart as LineChartIcon,
   List as ListIcon,
   Lock as LockIcon,
@@ -28,6 +30,10 @@ import {
   AlertTriangle as AlertTriangleIcon,
   Calculator as CalculatorIcon,
   Target as TargetIcon,
+  Users as UsersIcon,
+  ShoppingBag as ShoppingBagIcon,
+  UsersRound as UsersRoundIcon,
+  Building as BuildingIcon,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -79,6 +85,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/performance', label: t('sidebar.performance'), icon: BarChart2Icon },
         { href: '/statistics', label: t('sidebar.statistics'), icon: PieChartIcon },
         { href: '/risk-metrics', label: t('sidebar.riskMetrics', 'Risk Metrics'), icon: AlertTriangleIcon, requiredPlan: 'PRO' as const },
+        { href: '/options', label: t('sidebar.options', 'Options'), icon: LayersIcon, requiredPlan: 'PRO' as const },
         { href: '/watchlists', label: t('sidebar.watchlists'), icon: ListIcon },
         { href: '/alerts', label: t('sidebar.alerts'), icon: BellRingIcon, featureKey: 'alerts', requiredPlan: 'STARTER' as const },
         { href: '/backtesting', label: t('sidebar.backtesting'), icon: RefreshCcwIcon, featureKey: 'backtesting', requiredPlan: 'PRO' as const },
@@ -91,7 +98,14 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       label: t('sidebar.propFirm', 'Prop Firm'),
       items: [
         { href: '/prop-firm', label: t('sidebar.propFirmTracker', 'Evaluations'), icon: TargetIcon, featureKey: 'prop_firm', requiredPlan: 'STARTER' as const },
+        { href: '/propfirm-admin', label: t('sidebar.propFirmAdmin', 'Prop Firm Admin'), icon: BuildingIcon, requiredPlan: 'ELITE' as const },
       ],
+    },
+    {
+      label: t('sidebar.mentor', 'Mentor'),
+      items: [
+        ...(hasPlan('TEAM') ? [{ href: '/mentor/dashboard', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const }] : []),
+      ].filter(Boolean),
     },
     {
       label: t('sidebar.social'),
@@ -99,12 +113,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/badges', label: t('sidebar.achievements', 'Achievements'), icon: TrophyIcon },
         { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
         { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
+        { href: '/marketplace', label: t('sidebar.marketplace', 'Marketplace'), icon: ShoppingBagIcon },
+        { href: '/study-groups', label: t('sidebar.studyGroups', 'Study Groups'), icon: UsersRoundIcon, requiredPlan: 'ELITE' as const },
       ],
     },
     {
       label: t('sidebar.account'),
       items: [
         { href: '/accounts', label: t('sidebar.accounts'), icon: WalletIcon },
+        { href: '/developer', label: t('sidebar.developer', 'Developer API'), icon: CodeIcon, requiredPlan: 'ELITE' as const },
         ...(isAdmin ? [{ href: '/administration', label: t('sidebar.administration'), icon: ShieldIcon }] : []),
       ],
     },
@@ -134,7 +151,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       {/* Nav groups — scrollable */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10">
         <nav className="grid gap-y-0 px-2">
-          {sidebarGroups.map((group, groupIndex) => {
+          {sidebarGroups.filter(g => g.items.length > 0).map((group, groupIndex) => {
             const isCollapsed = !!collapsed[groupIndex];
             return (
               <div key={group.label}>

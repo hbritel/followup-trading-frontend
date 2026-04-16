@@ -13,7 +13,7 @@ interface MarketSession {
   city: string;
   timezone: string;
   flag: string;
-  localOpen: number;   // Local hour when market opens (in the market's own timezone)
+  localOpen: number;   // Local hour when market opens
   localClose: number;  // Local hour when market closes
 }
 
@@ -33,7 +33,7 @@ function getTimeInTimezone(tz: string): string {
   }).format(new Date());
 }
 
-/** Get the current hour and day-of-week in a given timezone. */
+/** Get the current hour, minute, and day-of-week in a given timezone. */
 function getLocalTime(tz: string): { hour: number; minute: number; day: number } {
   const now = new Date();
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -55,17 +55,101 @@ function getLocalTime(tz: string): { hour: number; minute: number; day: number }
 
 function isMarketOpen(session: MarketSession): boolean {
   const { hour, day } = getLocalTime(session.timezone);
-
-  // Markets closed on weekends (in the market's local timezone)
   if (day === 0 || day === 6) return false;
-
   return hour >= session.localOpen && hour < session.localClose;
+}
+
+/** Returns time remaining info for a session */
+function getTimeRemaining(session: MarketSession): {
+  open: boolean;
+  label: string;      // e.g. "Closes in 2h 14m" or "Opens in 45m"
+  minutesLeft: number; // minutes until the next event (close or open)
+  progress: number;    // 0-1, how far through the session (only meaningful when open)
+  isWeekend: boolean;
+} {
+  const { hour, minute, day } = getLocalTime(session.timezone);
+  const currentMinutes = hour * 60 + minute;
+  const openMinutes = session.localOpen * 60;
+  const closeMinutes = session.localClose * 60;
+  const sessionLength = closeMinutes - openMinutes;
+  const isWeekend = day === 0 || day === 6;
+
+  if (isWeekend) {
+    // Calculate minutes until Monday open
+    const daysUntilMonday = day === 0 ? 1 : 2; // Sun→Mon=1, Sat→Mon=2
+    const minutesUntilOpen = daysUntilMonday * 24 * 60 + (openMinutes - currentMinutes);
+    return {
+      open: false,
+      label: formatCountdown(minutesUntilOpen, true),
+      minutesLeft: minutesUntilOpen,
+      progress: 0,
+      isWeekend: true,
+    };
+  }
+
+  const open = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+
+  if (open) {
+    const remaining = closeMinutes - currentMinutes;
+    const elapsed = currentMinutes - openMinutes;
+    return {
+      open: true,
+      label: formatCountdown(remaining, false),
+      minutesLeft: remaining,
+      progress: sessionLength > 0 ? elapsed / sessionLength : 0,
+      isWeekend: false,
+    };
+  }
+
+  // Market closed — calculate time until next open
+  if (currentMinutes < openMinutes) {
+    // Before open today
+    const remaining = openMinutes - currentMinutes;
+    return {
+      open: false,
+      label: formatCountdown(remaining, true),
+      minutesLeft: remaining,
+      progress: 0,
+      isWeekend: false,
+    };
+  }
+
+  // After close today — next open is tomorrow (or Monday if Friday)
+  const isFriday = day === 5;
+  const daysUntilNext = isFriday ? 3 : 1;
+  const remaining = daysUntilNext * 24 * 60 - currentMinutes + openMinutes;
+  return {
+    open: false,
+    label: formatCountdown(remaining, true),
+    minutesLeft: remaining,
+    progress: 0,
+    isWeekend: false,
+  };
+}
+
+function formatCountdown(totalMinutes: number, isUntilOpen: boolean): string {
+  if (totalMinutes <= 0) return '';
+
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+
+  let time: string;
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    time = remHours > 0 ? `${days}d ${remHours}h` : `${days}d`;
+  } else if (hours > 0) {
+    time = `${hours}h ${mins.toString().padStart(2, '0')}m`;
+  } else {
+    time = `${mins}m`;
+  }
+
+  return time;
 }
 
 function getActiveSessionLabel(sessions: MarketSession[]): string {
   const active = sessions.filter(isMarketOpen);
   if (active.length === 0) return 'Closed';
-  // Show short codes for active sessions
   const codes: Record<string, string> = {
     tokyo: 'TYO',
     london: 'LDN',
@@ -89,7 +173,7 @@ export default function MarketClocks() {
   const { t } = useTranslation();
   const [now, setNow] = useState(new Date());
 
-  // Update every 30 seconds (don't need per-second precision for this)
+  // Update every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(interval);
@@ -99,7 +183,7 @@ export default function MarketClocks() {
     return SESSIONS.map(session => ({
       ...session,
       time: getTimeInTimezone(session.timezone),
-      open: isMarketOpen(session),
+      ...getTimeRemaining(session),
     }));
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -132,7 +216,7 @@ export default function MarketClocks() {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className="w-64 p-0" sideOffset={8}>
+      <PopoverContent align="center" className="w-72 p-0" sideOffset={8}>
         <div className="px-4 py-3 border-b border-border/50">
           <h4 className="text-sm font-semibold">{t('marketClocks.title', 'Market Sessions')}</h4>
           {overlap && (
@@ -144,30 +228,61 @@ export default function MarketClocks() {
             <div
               key={session.id}
               className={cn(
-                'flex items-center justify-between px-3 py-2 rounded-lg transition-colors',
+                'px-3 py-2.5 rounded-lg transition-colors',
                 session.open ? 'bg-emerald-500/5' : '',
               )}
             >
-              <div className="flex items-center gap-2.5">
-                <span className="text-base leading-none">{session.flag}</span>
-                <span className={cn(
-                  'text-sm font-medium',
-                  session.open ? 'text-foreground' : 'text-muted-foreground',
-                )}>
-                  {session.city}
-                </span>
+              {/* Row 1: flag + city + time + dot */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base leading-none">{session.flag}</span>
+                  <span className={cn(
+                    'text-sm font-medium',
+                    session.open ? 'text-foreground' : 'text-muted-foreground',
+                  )}>
+                    {session.city}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    'text-sm font-mono tabular-nums',
+                    session.open ? 'text-foreground' : 'text-muted-foreground/70',
+                  )}>
+                    {session.time}
+                  </span>
+                  <span className={cn(
+                    'h-2 w-2 rounded-full',
+                    session.open ? 'bg-emerald-500' : 'bg-muted-foreground/30',
+                  )} />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  'text-sm font-mono tabular-nums',
-                  session.open ? 'text-foreground' : 'text-muted-foreground/70',
-                )}>
-                  {session.time}
-                </span>
-                <span className={cn(
-                  'h-2 w-2 rounded-full',
-                  session.open ? 'bg-emerald-500' : 'bg-muted-foreground/30',
-                )} />
+
+              {/* Row 2: countdown + progress bar */}
+              <div className="flex items-center gap-2 mt-1.5 ml-7">
+                {session.open ? (
+                  <>
+                    {/* Progress bar showing session elapsed */}
+                    <div className="flex-1 h-1 rounded-full bg-muted/50 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-500/60 transition-all duration-1000"
+                        style={{ width: `${Math.min(session.progress * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono tabular-nums text-emerald-400 shrink-0">
+                      {t('marketClocks.closesIn', 'closes in')} {session.label}
+                    </span>
+                  </>
+                ) : (
+                  <span className={cn(
+                    'text-[10px] font-mono tabular-nums',
+                    session.isWeekend ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
+                  )}>
+                    {session.isWeekend
+                      ? `${t('marketClocks.weekend', 'weekend')} · ${t('marketClocks.opensIn', 'opens in')} ${session.label}`
+                      : `${t('marketClocks.opensIn', 'opens in')} ${session.label}`
+                    }
+                  </span>
+                )}
               </div>
             </div>
           ))}
