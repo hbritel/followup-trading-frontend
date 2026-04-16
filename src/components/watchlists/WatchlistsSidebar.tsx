@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PlusCircle, Edit2, Trash2, List } from 'lucide-react';
+import { PlusCircle, Edit2, Trash2, List, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,7 @@ const WatchlistsSidebar: React.FC<WatchlistsSidebarProps> = ({
       <CardContent className="space-y-1.5">
         {watchlists.map((watchlist) => {
           const isActive = activeWatchlist === watchlist.id;
+          const isSuspended = watchlist.suspendedByPlan;
           return (
             <div
               key={watchlist.id}
@@ -45,7 +46,8 @@ const WatchlistsSidebar: React.FC<WatchlistsSidebarProps> = ({
                 'group flex items-center justify-between rounded-xl px-3 py-2.5 cursor-pointer transition-colors',
                 isActive
                   ? 'bg-primary/10 border border-primary/20'
-                  : 'hover:bg-muted/50'
+                  : 'hover:bg-muted/50',
+                isSuspended && 'opacity-50'
               )}
               onClick={() => onSelectWatchlist(watchlist.id)}
             >
@@ -61,10 +63,15 @@ const WatchlistsSidebar: React.FC<WatchlistsSidebarProps> = ({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className={cn(
-                    'text-sm font-medium truncate',
-                    isActive && 'text-primary'
-                  )}>{watchlist.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    {isSuspended && (
+                      <Lock className="h-3 w-3 text-amber-400 flex-shrink-0" />
+                    )}
+                    <p className={cn(
+                      'text-sm font-medium truncate',
+                      isActive && 'text-primary'
+                    )}>{watchlist.name}</p>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {t('watchlists.symbolCount', { count: watchlist.items.length })}
                   </p>

@@ -113,7 +113,9 @@
     "refresh": "Actualizar",
     "retry": "Reintentar",
     "close": "Cerrar",
-    "errorLoadingData": "Error al cargar los datos"
+    "errorLoadingData": "Error al cargar los datos",
+    "previous": "Anterior",
+    "skip": "Omitir"
   },
   "error": {
     "error": "Error"
@@ -262,7 +264,15 @@
     "accountManagement": "Gestión de cuentas",
     "settings": "Configuración",
     "administration": "Administración",
-    "taxReporting": "Declaraciones fiscales"
+    "taxReporting": "Declaraciones fiscales",
+    "insightsTitle": "Análisis e Información",
+    "insightsDescription": "Adéntrate en tu rendimiento de trading y descubre patrones procesables."
+  },
+  "marketClocks": {
+    "title": "Sesiones de mercado",
+    "closesIn": "cierra en",
+    "opensIn": "abre en",
+    "weekend": "fin de semana"
   },
   "dashboard": {
     "welcomeBack": "Bienvenido de nuevo",
@@ -596,7 +606,9 @@
     "riskWarning": "Alerta de riesgo",
     "improvement": "Mejora",
     "milestone": "Hito",
-    "actionable": "Accionable"
+    "actionable": "Accionable",
+    "patternsAndAlerts": "Patrones y Alertas",
+    "patternsDescription": "Patrones recurrentes y senales de riesgo detectadas en tus datos de trading."
   },
   "admin": {
     "administration": "Administración",
@@ -801,6 +813,11 @@
     "earningsAnnouncementsDesc": "Recibir notificaciones sobre próximos informes de resultados",
     "accountActivity": "Actividad de la cuenta",
     "accountActivityDesc": "Recibir notificaciones sobre inicios de sesión y cambios en la cuenta",
+    "aiCoaching": "Coaching con IA",
+    "briefingReminder": "Recordatorio de Briefing Matutino",
+    "briefingReminderDesc": "Reciba un recordatorio para consultar su briefing de IA cada mañana",
+    "debriefReminder": "Recordatorio de Debrief Nocturno",
+    "debriefReminderDesc": "Reciba un recordatorio para revisar su sesión de trading",
     "trustedDevices": "Dispositivos de confianza",
     "apiKeys": "Claves API",
     "generateApiKey": "Generar clave API",
@@ -1878,13 +1895,36 @@
     "clearHistory": "Borrar historial",
     "suggestedQuestions": "Preguntas sugeridas",
     "streaming": "Pensando...",
+    "preparingResponse": "Tu coach esta preparando una respuesta — puedes navegar, estara lista a tu regreso.",
+    "responseReady": "Tu Coach IA tiene una respuesta lista",
+    "resumingResponse": "Reanudando la respuesta de tu coach...",
     "noMessages": "Comienza una conversacion con tu entrenador de trading IA",
     "digest": "Resumen semanal",
+    "digestOnDemand": "Analisis a demanda",
     "digestDescription": "Resumen generado por IA de tu semana de trading",
-    "generateDigest": "Generar resumen",
+    "generateDigest": "Generar un analisis",
+    "generateDigestShort": "Generar",
     "analyzeTrade": "Analisis IA",
-    "noDigest": "Sin resumen aun",
-    "noDigestDescription": "Genera tu primer resumen semanal para obtener insights de IA.",
+    "noDigest": "Sin analisis aun",
+    "noDigestDescription": "Genera tu primer analisis IA para obtener insights sobre tu rendimiento de trading.",
+    "latestAnalysis": "Ultimo analisis",
+    "generating": "Generando tu analisis...",
+    "generatingHint": "Esto suele tardar 10-30 segundos. Puedes navegar — el analisis se guardara.",
+    "week": "Semana",
+    "generatedLabel": "Generado",
+    "filteredByAccount": "filtrado por cuenta",
+    "filteredByDate": "filtrado por periodo",
+    "showHistory": "Historial",
+    "hideHistory": "Ocultar historial",
+    "previousDigests": "Analisis anteriores",
+    "noPreviousDigests": "Sin analisis anteriores.",
+    "sectionKeyMetrics": "Metricas clave",
+    "sectionTrends": "Analisis de tendencias",
+    "sectionImprovements": "Mejoras para la proxima semana",
+    "sectionStrengths": "Fortalezas a consolidar",
+    "generateNewAnalysis": "Nuevo analisis",
+    "historyWeekly": "Semanal",
+    "historyOnDemand": "A demanda",
     "suggestion1": "Cuales son mis patrones de trading mas fuertes?",
     "suggestion2": "Analiza mi rendimiento esta semana",
     "suggestion3": "Por que pierdo los viernes?",
@@ -1894,7 +1934,31 @@
     "freePlanNote": "Actualiza al plan Starter o superior para usar el coach IA.",
     "limitReachedPlaceholder": "Limite diario alcanzado. Actualiza para mas mensajes.",
     "unavailable": "Funciones IA no disponibles",
-    "unavailableDescription": "El servicio IA no esta habilitado en este servidor. Contacta a tu administrador para activarlo."
+    "unavailableDescription": "El servicio IA no esta habilitado en este servidor. Contacta a tu administrador para activarlo.",
+    "tourWelcomeTitle": "Tu Coach de Trading con IA",
+    "tourWelcomeDesc": "Obtén análisis personalizados, coaching en tiempo real y análisis conductual impulsado por IA. Exploremos lo que tu coach puede hacer.",
+    "tourChatTitle": "Pregunta lo que Quieras",
+    "tourChatDesc": "Pregunta sobre tus patrones de trading, obtén consejos estratégicos o analiza tu rendimiento reciente. Tu coach conoce tu historial de trading.",
+    "tourWorkflowTitle": "Ritual Diario de Trading",
+    "tourWorkflowDesc": "Comienza cada día con un Briefing Matutino, registra tus emociones durante el trading y termina con un Debrief de Sesión. Construir este hábito es clave para mejorar.",
+    "tourTiltTitle": "Mantén el Control",
+    "tourTiltDesc": "Tu Tilt Score monitorea tu estado emocional en tiempo real. Las alertas conductuales te avisan cuando estás sobreoperando, haciendo trading de venganza o rompiendo tus reglas.",
+    "tourProgressTitle": "Mide tu Crecimiento",
+    "tourProgressDesc": "Observa cómo mejoran tus puntuaciones de sesión, construye rachas de coaching y descubre cómo tus emociones se correlacionan con tu rendimiento.",
+    "tourGetStarted": "Empezar",
+    "tourHelp": "Cómo funciona",
+    "behavioralAlertsTitle": "Alertas de Comportamiento",
+    "behavioralAlertsInfo": "Alertas automaticas tras cada sincronizacion. Detecta: revenge trading, sobreoperacion, escalada de tamano, tilt, trading fuera de horario, y limite de perdida diaria.",
+    "noActiveAlerts": "Sin alertas activas. Tus patrones de trading se ven bien.",
+    "alertsLoadFailed": "Error al cargar las alertas.",
+    "debriefInfo": "La IA califica tu sesion de 1 a 10 en disciplina, no solo P&L. Factores: adherencia al plan, tamano de posicion, control emocional, gestion de riesgo.",
+    "debriefStrengths": "Fortalezas",
+    "debriefImprovements": "Areas de Mejora",
+    "debriefTomorrow": "Para Manana",
+    "debriefEmpty": "Sin debrief de sesion.",
+    "briefingEmpty": "Sin briefing para hoy.",
+    "regenerate": "Regenerar",
+    "generateBtn": "Generar"
   },
   "import": {
     "title": "Importar trades",
@@ -2364,5 +2428,23 @@
     "totalPnl": "P&L Total",
     "avgRR": "R:R Promedio",
     "totalTrades": "Total Trades"
+  },
+  "tradingCal": {
+    "noTrades": "Sin trades en esta fecha",
+    "selectDate": "Selecciona una fecha con trades para ver los detalles",
+    "result": "Resultado",
+    "trades": "Trades",
+    "noTradeDetails": "No hay detalles de trade disponibles",
+    "tradesFor": "Trades del {{date}}",
+    "tradesExecuted": "{{count}} trade(s) ejecutado(s)",
+    "showing": "Mostrando {{from}} a {{to}} de {{total}} trades",
+    "page": "Página {{current}} / {{total}}",
+    "symbol": "Símbolo",
+    "time": "Hora",
+    "position": "Posición"
+  },
+  "commandPalette": {
+    "open": "Abrir paleta de comandos",
+    "searchPlaceholder": "Buscar..."
   }
 }

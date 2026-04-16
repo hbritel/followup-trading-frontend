@@ -5,7 +5,7 @@ import { useDefaultDatePreset } from '@/hooks/useDefaultDatePreset';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTrades } from '@/hooks/useTrades';
-import { Plus, Columns, Search, AlertTriangle, BookOpen, X, Info, Loader2 } from 'lucide-react';
+import { Plus, Columns, Search, AlertTriangle, BookOpen, X, Info, Loader2, Sparkles } from 'lucide-react';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useSubscription } from '@/hooks/useSubscription';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -17,6 +17,7 @@ import { TradesTableWrapper, Trade } from '@/components/trades/TradesTableWrappe
 import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
 import ImportDialog from '@/components/trades/ImportDialog';
+import TradePlanDialog from '@/components/trades/TradePlanDialog';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
@@ -243,6 +244,7 @@ const Trades = () => {
   const [visibleColumns, setVisibleColumns] = useState(loadColumnDefaults);
   const [showColumnFilter, setShowColumnFilter] = useState(false);
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
   const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
 
   // --- Handlers ---
@@ -374,6 +376,7 @@ const Trades = () => {
           visibleColumns={visibleColumns}
           totalElements={totalElements}
           onNewTrade={handleNewTrade}
+          onPlanTrade={() => setPlanOpen(true)}
         />
 
         {showColumnFilter && (
@@ -489,6 +492,7 @@ const Trades = () => {
 
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
+      <TradePlanDialog open={planOpen} onOpenChange={setPlanOpen} />
       <TradeDetailDialog
         trade={viewingTrade}
         open={!!viewingTrade}
@@ -522,6 +526,7 @@ interface FiltersSectionProps {
   visibleColumns: Record<string, boolean>;
   totalElements: number;
   onNewTrade: () => void;
+  onPlanTrade: () => void;
 }
 
 const FiltersSection: React.FC<FiltersSectionProps> = ({
@@ -546,6 +551,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   visibleColumns,
   totalElements,
   onNewTrade,
+  onPlanTrade,
 }) => {
   const { t } = useTranslation();
   return (
@@ -570,6 +576,10 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
               accountFilter={accountFilter}
               totalElements={totalElements}
             />
+          <Button variant="outline" size="sm" onClick={onPlanTrade}>
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            {t('tradePlan.planATrade', 'Plan a Trade')}
+          </Button>
           <Button onClick={onNewTrade}>
             <Plus className="mr-2 h-4 w-4" />
             {t('trades.newTrade')}
@@ -598,6 +608,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('trades.allStatuses')}</SelectItem>
+            <SelectItem value="planned">{t('trades.planned', 'Planned')}</SelectItem>
             <SelectItem value="open">{t('trades.open')}</SelectItem>
             <SelectItem value="closed">{t('trades.closed')}</SelectItem>
             <SelectItem value="pending">{t('trades.pending')}</SelectItem>

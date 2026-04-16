@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DayPicker } from 'react-day-picker';
 import type { DayContentProps } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { fr, es, enUS } from 'date-fns/locale';
+import { usePreferences } from '@/contexts/preferences-context';
+
+const LOCALE_MAP: Record<string, Locale> = { fr, es, en: enUS };
 
 export interface SimpleCalendarProps {
   selected?: Date;
@@ -32,6 +37,11 @@ export function SimpleCalendar({
   renderDay,
   className,
 }: SimpleCalendarProps) {
+  const { i18n } = useTranslation();
+  const { preferences } = usePreferences();
+  const locale = LOCALE_MAP[i18n.language] ?? enUS;
+  const weekStartsOn: 0 | 1 = preferences?.weekStartDay === 'sunday' ? 0 : 1;
+
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState<Date>(month ?? selected ?? today);
 
@@ -47,10 +57,13 @@ export function SimpleCalendar({
   const years: number[] = [];
   for (let y = 2015; y <= today.getFullYear() + 1; y++) years.push(y);
 
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
+  // Localized month names from date-fns locale
+  const months = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(2024, i, 1);
+      return d.toLocaleDateString(i18n.language, { month: 'short' });
+    });
+  }, [i18n.language]);
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newDate = new Date(currentMonth);
@@ -104,6 +117,8 @@ export function SimpleCalendar({
       <DayPicker
         mode="single"
         showOutsideDays
+        locale={locale}
+        weekStartsOn={weekStartsOn}
         selected={selected}
         onSelect={onSelect}
         onDayClick={onDayClick}

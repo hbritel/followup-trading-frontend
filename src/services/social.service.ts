@@ -36,27 +36,43 @@ export const socialService = {
 
   // Strategy marketplace
   getMarketplace: async (sort: 'popular' | 'recent' = 'popular', page = 0, size = 20): Promise<SharedStrategyDto[]> => {
-    const response = await apiClient.get<SharedStrategyDto[]>('/social/marketplace', {
+    const response = await apiClient.get<SharedStrategyDto[]>('/marketplace/strategies', {
       params: { sort, page, size },
     });
     return response.data;
   },
 
   shareStrategy: async (data: ShareStrategyRequestDto): Promise<SharedStrategyDto> => {
-    const response = await apiClient.post<SharedStrategyDto>('/social/marketplace', data);
+    const response = await apiClient.post<SharedStrategyDto>('/marketplace/strategies', data);
     return response.data;
   },
 
-  likeStrategy: async (strategyId: string): Promise<void> => {
-    await apiClient.post(`/social/marketplace/${strategyId}/like`);
-  },
-
-  unlikeStrategy: async (strategyId: string): Promise<void> => {
-    await apiClient.delete(`/social/marketplace/${strategyId}/like`);
+  toggleLike: async (strategyId: string): Promise<{ liked: boolean }> => {
+    const response = await apiClient.post<{ liked: boolean }>(`/marketplace/strategies/${strategyId}/like`);
+    return response.data;
   },
 
   copyStrategy: async (strategyId: string): Promise<void> => {
-    await apiClient.post(`/social/marketplace/${strategyId}/copy`);
+    await apiClient.post(`/marketplace/strategies/${strategyId}/copy`);
+  },
+
+  getMyStrategies: async (): Promise<SharedStrategyDto[]> => {
+    const response = await apiClient.get<SharedStrategyDto[]>('/marketplace/my-strategies');
+    return response.data;
+  },
+
+  getStrategyDetail: async (id: string): Promise<SharedStrategyDto> => {
+    const response = await apiClient.get<SharedStrategyDto>(`/marketplace/strategies/${id}`);
+    return response.data;
+  },
+
+  updateStrategy: async (id: string, data: Partial<ShareStrategyRequestDto>): Promise<SharedStrategyDto> => {
+    const response = await apiClient.put<SharedStrategyDto>(`/marketplace/strategies/${id}`, data);
+    return response.data;
+  },
+
+  deleteStrategy: async (id: string): Promise<void> => {
+    await apiClient.delete(`/marketplace/strategies/${id}`);
   },
 
   // Feed

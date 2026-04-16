@@ -9,7 +9,7 @@ import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 // Types
 // ---------------------------------------------------------------------------
 
-type TradeEventType = 'SYNC_COMPLETE' | 'TRADE_IMPORTED';
+type TradeEventType = 'SYNC_COMPLETE' | 'TRADE_IMPORTED' | 'REALTIME_TRADE';
 
 interface TradeEventMessage {
   type: TradeEventType;
@@ -59,6 +59,11 @@ export const useLiveTrades = (): LiveTradesResult => {
         if (payload.type === 'SYNC_COMPLETE') {
           toast.success(
             `Sync complete: ${payload.tradesImported} trade${payload.tradesImported !== 1 ? 's' : ''} imported`
+          );
+        } else if (payload.type === 'REALTIME_TRADE') {
+          toast.success(
+            `Live: ${payload.tradesImported} trade${payload.tradesImported !== 1 ? 's' : ''} updated`,
+            { duration: 3000 }
           );
         } else if (payload.type === 'TRADE_IMPORTED') {
           toast.info(

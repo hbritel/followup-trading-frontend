@@ -21,10 +21,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Pencil, Save, X, Loader2, Play, ChevronDown, ChevronUp, Brain } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Pencil, Save, X, Loader2, Play, ChevronDown, ChevronUp, Brain, Rocket, Ban, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategies } from '@/hooks/useStrategies';
+import { useExecutePlannedTrade, useCancelPlannedTrade } from '@/hooks/useTradePlan';
 import { TagPicker } from '@/components/trades/TagPicker';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { tradeService } from '@/services/trade.service';
@@ -137,8 +149,15 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
     () => (allStrategies ?? []).filter((s) => s.active),
     [allStrategies],
   );
+  const executeMutation = useExecutePlannedTrade();
+  const cancelPlanMutation = useCancelPlannedTrade();
+
   const [editing, setEditing] = useState(false);
   const [psychologyOpen, setPsychologyOpen] = useState(false);
+  const [executeFormOpen, setExecuteFormOpen] = useState(false);
+  const [execEntry, setExecEntry] = useState('');
+  const [execSl, setExecSl] = useState('');
+  const [execTp, setExecTp] = useState('');
   const [form, setForm] = useState<EditFormState>({
     entryPrice: '', exitPrice: '', quantity: '', entryDate: '', exitDate: '',
     direction: 'LONG', stopLoss: '', takeProfit: '', fees: '', notes: '', strategyId: '', tagIds: [],
@@ -149,6 +168,10 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
     if (trade && open) {
       setForm(initFormFromTrade(trade));
       setEditing(initialEditMode);
+      setExecuteFormOpen(false);
+      setExecEntry(trade.plannedEntryPrice != null ? String(trade.plannedEntryPrice) : String(trade.entryPrice ?? ''));
+      setExecSl(trade.plannedStopLoss != null ? String(trade.plannedStopLoss) : String(trade.stopLoss ?? ''));
+      setExecTp(trade.plannedTakeProfit != null ? String(trade.plannedTakeProfit) : String(trade.takeProfit ?? ''));
     }
   }, [trade, open, initialEditMode]);
 
@@ -207,6 +230,25 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
     setEditing(false);
   };
 
+  const handleExecuteTrade = () => {
+    if (!trade) return;
+    const overrides: Record<string, number> = {};
+    if (execEntry) overrides.entryPrice = Number(execEntry);
+    if (execSl) overrides.stopLoss = Number(execSl);
+    if (execTp) overrides.takeProfit = Number(execTp);
+    executeMutation.mutate(
+      { tradeId: trade.id, overrides: Object.keys(overrides).length > 0 ? overrides : undefined },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  };
+
+  const handleCancelPlan = () => {
+    if (!trade) return;
+    cancelPlanMutation.mutate(trade.id, {
+      onSuccess: () => onOpenChange(false),
+    });
+  };
+
   if (!trade) return null;
 
   const isProfit = (trade.profit ?? 0) >= 0;
@@ -223,9 +265,18 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               <Badge variant={direction === 'LONG' ? 'default' : 'secondary'}>
                 {direction}
               </Badge>
-              <Badge variant={status === 'CLOSED' ? 'outline' : 'default'}>
-                {status}
-              </Badge>
+              {status === 'PLANNED' ? (
+                <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1">
+                  <Target className="h-3 w-3" />
+                  Planned
+                </Badge>
+              ) : status === 'CANCELLED' ? (
+                <Badge variant="destructive">{status}</Badge>
+              ) : (
+                <Badge variant={status === 'CLOSED' ? 'outline' : 'default'}>
+                  {status}
+                </Badge>
+              )}
             </DialogTitle>
             {!editing && (
               <div className="flex items-center gap-1">
@@ -239,16 +290,86 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
                     <Play className="h-4 w-4" />
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" onClick={() => setEditing(true)} title={t('trades.editTrade', 'Edit Trade')}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                {status !== 'CANCELLED' && (
+                  <Button variant="ghost" size="icon" onClick={() => setEditing(true)} title={t('trades.editTrade', 'Edit Trade')}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             )}
           </div>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
-          {/* P&L Section */}
+          {/* PLANNED trade actions */}
+          {status === 'PLANNED' && !editing && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setExecuteFormOpen((prev) => !prev)}
+              >
+                <Rocket className="h-4 w-4 mr-1.5" />
+                {t('trades.execute', 'Execute')}
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="flex-1 border-red-500/40 text-red-600 hover:bg-red-500/10 dark:text-red-400">
+                    <Ban className="h-4 w-4 mr-1.5" />
+                    {t('trades.cancelPlan', 'Cancel Plan')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('trades.cancelPlanConfirmTitle', 'Cancel this trade plan?')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('trades.cancelPlanConfirmDesc', 'This trade will be marked as cancelled and cannot be undone.')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleCancelPlan}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {cancelPlanMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      ) : null}
+                      {t('trades.confirmCancelPlan', 'Yes, cancel plan')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
+          {/* Execute form — pre-filled with planned prices, allows overrides */}
+          {status === 'PLANNED' && executeFormOpen && !editing && (
+            <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-green-700 dark:text-green-400">
+                {t('trades.executeWithOverrides', 'Execute with price overrides')}
+              </h4>
+              <div className="grid grid-cols-3 gap-3">
+                <EditField label={t('trades.entryPrice', 'Entry Price')} id="exec-entry" value={execEntry} onChange={setExecEntry} placeholder="0.00" />
+                <EditField label={t('trades.stopLoss', 'Stop Loss')} id="exec-sl" value={execSl} onChange={setExecSl} placeholder="0.00" />
+                <EditField label={t('trades.takeProfit', 'Take Profit')} id="exec-tp" value={execTp} onChange={setExecTp} placeholder="0.00" />
+              </div>
+              <Button
+                onClick={handleExecuteTrade}
+                disabled={executeMutation.isPending}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                {executeMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Rocket className="h-4 w-4 mr-1.5" />
+                )}
+                {t('trades.confirmExecute', 'Confirm Execution')}
+              </Button>
+            </div>
+          )}
+
+          {/* P&L Section — only show for non-PLANNED trades */}
+          {status !== 'PLANNED' && (
           <div className="rounded-lg border p-4 bg-muted/30">
             <div className="grid grid-cols-2 gap-4">
               <Field
@@ -276,6 +397,77 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               </p>
             )}
           </div>
+          )}
+
+          {/* Plan vs Execution comparison — show for CLOSED trades that had a plan */}
+          {status === 'CLOSED' && trade.plannedEntryPrice != null && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-3">{t('trades.planVsExecution', 'Plan vs Execution')}</h4>
+                <div className="rounded-lg border bg-muted/20 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <th className="text-left p-2.5">&nbsp;</th>
+                        <th className="text-right p-2.5">{t('trades.planned', 'Planned')}</th>
+                        <th className="text-right p-2.5">{t('trades.actual', 'Actual')}</th>
+                        <th className="text-right p-2.5">{t('trades.deviation', 'Deviation')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          label: t('trades.entryPrice', 'Entry Price'),
+                          planned: trade.plannedEntryPrice,
+                          actual: trade.entryPrice,
+                        },
+                        {
+                          label: t('trades.stopLoss', 'Stop Loss'),
+                          planned: trade.plannedStopLoss,
+                          actual: trade.stopLoss,
+                        },
+                        {
+                          label: t('trades.takeProfit', 'Take Profit'),
+                          planned: trade.plannedTakeProfit,
+                          actual: trade.takeProfit,
+                        },
+                      ].map((row) => {
+                        const deviation = row.planned != null && row.actual != null
+                          ? row.actual - row.planned
+                          : null;
+                        return (
+                          <tr key={row.label} className="border-b last:border-0">
+                            <td className="p-2.5 text-muted-foreground">{row.label}</td>
+                            <td className="p-2.5 text-right font-mono tabular-nums">
+                              {row.planned != null ? formatCurrency(row.planned, trade.currency) : '-'}
+                            </td>
+                            <td className="p-2.5 text-right font-mono tabular-nums">
+                              {row.actual != null ? formatCurrency(row.actual, trade.currency) : '-'}
+                            </td>
+                            <td className={cn(
+                              "p-2.5 text-right font-mono tabular-nums font-medium",
+                              deviation != null && deviation > 0 && "text-green-500",
+                              deviation != null && deviation < 0 && "text-red-500",
+                            )}>
+                              {deviation != null
+                                ? `${deviation >= 0 ? '+' : ''}${deviation.toFixed(
+                                    Math.max(
+                                      2,
+                                      (row.planned?.toString().split('.')[1]?.length ?? 2),
+                                    ),
+                                  )}`
+                                : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -422,6 +614,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               ? (allStrategies ?? []).find((s) => s.id === stratId)
               : null;
             if (!selectedStrategy || selectedStrategy.rules.length === 0) return null;
+            if (status === 'PLANNED' || status === 'CANCELLED') return null;
             const tradeStatus: 'OPEN' | 'CLOSED' = trade.status?.toUpperCase() === 'CLOSED' ? 'CLOSED' : 'OPEN';
             return (
               <>

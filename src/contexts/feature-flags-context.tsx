@@ -59,9 +59,9 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ['subscription', 'me'],
     queryFn: fetchSubscription,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     retry: false,
     enabled: isAuthenticated,
   });

@@ -1,62 +1,4 @@
 import React, { useMemo, useState } from 'react';
-// ---- Minimal markdown renderer (same approach as ChatMessage.tsx) ----
-
-const parseInline = (text: string, keyPrefix: string): React.ReactNode[] => {
-  const parts: React.ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<React.Fragment key={`${keyPrefix}-t-${lastIndex}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
-    }
-    if (match[2] !== undefined) {
-      parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold">{match[2]}</strong>);
-    } else if (match[3] !== undefined) {
-      parts.push(<em key={`${keyPrefix}-i-${match.index}`} className="italic">{match[3]}</em>);
-    } else if (match[4] !== undefined) {
-      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="rounded bg-black/10 dark:bg-white/10 px-1 py-0.5 font-mono text-xs">{match[4]}</code>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(<React.Fragment key={`${keyPrefix}-te`}>{text.slice(lastIndex)}</React.Fragment>);
-  }
-  return parts;
-};
-
-const renderMarkdown = (text: string | null | undefined): React.ReactNode[] => {
-  if (!text) return [];
-  const lines = text.split('\n');
-  const nodes: React.ReactNode[] = [];
-  lines.forEach((line, idx) => {
-    const isBullet = /^[\s]*[-*]\s/.test(line);
-    const isHeading3 = /^###\s/.test(line);
-    const isHeading2 = /^##\s/.test(line);
-    const isHeading1 = /^#\s/.test(line);
-    let content = line;
-    if (isBullet) content = line.replace(/^[\s]*[-*]\s/, '');
-    else if (isHeading3) content = line.replace(/^###\s/, '');
-    else if (isHeading2) content = line.replace(/^##\s/, '');
-    else if (isHeading1) content = line.replace(/^#\s/, '');
-    const inline = parseInline(content, `md-${idx}`);
-    if (isBullet) {
-      nodes.push(<li key={`li-${idx}`} className="ml-4 list-disc">{inline}</li>);
-    } else if (isHeading1) {
-      nodes.push(<p key={`h1-${idx}`} className="font-bold text-base mt-2">{inline}</p>);
-    } else if (isHeading2) {
-      nodes.push(<p key={`h2-${idx}`} className="font-semibold text-sm mt-2">{inline}</p>);
-    } else if (isHeading3) {
-      nodes.push(<p key={`h3-${idx}`} className="font-semibold text-sm mt-1">{inline}</p>);
-    } else if (line.trim() === '') {
-      nodes.push(<br key={`br-${idx}`} />);
-    } else {
-      nodes.push(<span key={`s-${idx}`}>{inline}</span>);
-      if (idx < lines.length - 1) nodes.push(<br key={`bra-${idx}`} />);
-    }
-  });
-  return nodes;
-};
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -72,7 +14,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PageSkeleton from '@/components/ui/page-skeleton';
 import PageError from '@/components/ui/page-error';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Lightbulb, X, TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles, RefreshCw, ExternalLink, Loader2, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import {
+  X, TrendingUp, AlertTriangle, Target, Award, BarChart3,
+  Sparkles, ExternalLink, Loader2, ChevronLeft, ChevronRight, History,
+  Calendar, Plus, CheckCircle2, ArrowLeft, Zap,
+} from 'lucide-react';
 import { useInsights, useDismissInsight } from '@/hooks/useInsights';
 import { useWeeklyDigest, useGenerateWeeklyDigest, useDigestHistory } from '@/hooks/useWeeklyDigest';
 import { useToast } from '@/hooks/use-toast';
@@ -83,24 +29,229 @@ import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import type { InsightResponseDto, InsightType, InsightSeverity } from '@/types/dto';
 
-// ---- Insight card config ----
+// ---- P0 FIX: Normalize single-line digest content ----
+// Some LLMs generate everything on one line. This inserts \n before
+// numbered headings, markdown headings, and bullet markers so the
+// line-based parser can work.
 
-const insightTypeConfig: Record<InsightType, { color: string; icon: React.ElementType; badgeClass: string }> = {
-  PATTERN: { color: 'text-blue-500', icon: BarChart3, badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  STREAK: { color: 'text-green-500', icon: TrendingUp, badgeClass: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-  RISK_WARNING: { color: 'text-red-500', icon: AlertTriangle, badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-  IMPROVEMENT: { color: 'text-purple-500', icon: Target, badgeClass: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
-  MILESTONE: { color: 'text-amber-500', icon: Award, badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300' },
-  AI_DIGEST: { color: 'text-amber-400', icon: Sparkles, badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300' },
+const normalizeDigestContent = (raw: string): string => {
+  if (!raw) return raw;
+  // If the content already has multiple lines, leave it alone
+  const lineCount = raw.split('\n').filter((l) => l.trim().length > 0).length;
+  if (lineCount > 3) return raw;
+
+  let text = raw;
+  // Insert \n before numbered headings: "1. Title", "2. Title" etc.
+  text = text.replace(/([.!?:*])\s+(\d+\.\s+[A-ZÀ-Ü])/g, '$1\n\n$2');
+  // Insert \n before markdown headings: "## Title", "# Title"
+  text = text.replace(/([.!?:*])\s+(#{1,3}\s+)/g, '$1\n\n$2');
+  // Insert \n before bullet markers: "* Item" or "- Item" (but not inside words like "re-")
+  text = text.replace(/([.!?:*])\s+([*\-•]\s+\*?\*?[A-ZÀ-Ü])/g, '$1\n$2');
+  // Insert \n before "**Bold Title :" patterns that start a new conceptual item
+  text = text.replace(/([.!?])\s+(\*\*[A-ZÀ-Ü])/g, '$1\n$2');
+  // Insert \n before "---"
+  text = text.replace(/\s+(---)\s+/g, '\n\n$1\n');
+
+  return text;
 };
 
-const severityConfig: Record<InsightSeverity, { label: string; className: string }> = {
-  INFO: { label: 'Info', className: 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300' },
-  WARNING: { label: 'Warning', className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' },
-  CRITICAL: { label: 'Critical', className: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' },
+// ---- Minimal markdown renderer ----
+
+const parseInline = (text: string, keyPrefix: string): React.ReactNode[] => {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<React.Fragment key={`${keyPrefix}-t-${lastIndex}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
+    }
+    if (match[2] !== undefined) {
+      parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold text-foreground/90">{match[2]}</strong>);
+    } else if (match[3] !== undefined) {
+      parts.push(<em key={`${keyPrefix}-i-${match.index}`} className="italic">{match[3]}</em>);
+    } else if (match[4] !== undefined) {
+      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="rounded bg-foreground/[0.08] dark:bg-white/[0.12] px-1.5 py-0.5 font-mono text-xs">{match[4]}</code>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(<React.Fragment key={`${keyPrefix}-te`}>{text.slice(lastIndex)}</React.Fragment>);
+  }
+  return parts;
 };
 
-const insightTypeLabel = (type: InsightType, t: (key: string) => string): string => {
+const renderMarkdown = (text: string | null | undefined): React.ReactNode[] => {
+  if (!text) return [];
+  const lines = text.split('\n');
+  const nodes: React.ReactNode[] = [];
+  lines.forEach((line, idx) => {
+    const isBullet = /^[\s]*[-*•]\s/.test(line);
+    const isHeading = /^#{1,6}\s/.test(line);
+    const headingLevel = isHeading ? (line.match(/^(#+)/)?.[1].length ?? 1) : 0;
+    let content = line;
+    if (isBullet) content = line.replace(/^[\s]*[-*•]\s/, '');
+    else if (isHeading) content = line.replace(/^#{1,6}\s/, '');
+    const inline = parseInline(content, `md-${idx}`);
+    if (isBullet) {
+      nodes.push(<li key={`li-${idx}`} className="ml-4 list-disc text-sm leading-relaxed">{inline}</li>);
+    } else if (isHeading && headingLevel <= 2) {
+      nodes.push(<p key={`h-${idx}`} className="font-bold text-base mt-3 mb-1 text-foreground">{inline}</p>);
+    } else if (isHeading) {
+      nodes.push(<p key={`h-${idx}`} className="font-semibold text-sm mt-2 mb-0.5 text-foreground">{inline}</p>);
+    } else if (line.trim() === '') {
+      nodes.push(<div key={`br-${idx}`} className="h-2" />);
+    } else {
+      nodes.push(<span key={`s-${idx}`} className="text-sm leading-relaxed">{inline}</span>);
+      if (idx < lines.length - 1) nodes.push(<br key={`bra-${idx}`} />);
+    }
+  });
+  return nodes;
+};
+
+// ---- Digest section parser ----
+
+interface DigestSection {
+  title: string;
+  rawLines: string[];
+  type: 'metrics' | 'warning' | 'success' | 'neutral';
+}
+
+const classifySection = (title: string): DigestSection['type'] => {
+  const lower = title.toLowerCase();
+  if (lower.includes('clé') || lower.includes('key') || lower.includes('métrique') || lower.includes('metric') || lower.includes('performance')) {
+    return 'metrics';
+  }
+  if (lower.includes('amélioration') || lower.includes('improvement') || lower.includes('action') || lower.includes('risque') || lower.includes('risk') || lower.includes('déséquilibre') || lower.includes('gestion') || lower.includes('tendance') || lower.includes('trend') || lower.includes('analyse')) {
+    return 'warning';
+  }
+  if (lower.includes('force') || lower.includes('strength') || lower.includes('consolider') || lower.includes('positif') || lower.includes('positive')) {
+    return 'success';
+  }
+  return 'neutral';
+};
+
+const parseDigestSections = (content: string): { sections: DigestSection[]; disclaimer: string | null; preamble: string | null } => {
+  // P0: normalize before parsing
+  const normalized = normalizeDigestContent(content);
+  if (!normalized) return { sections: [], disclaimer: null, preamble: null };
+
+  const lines = normalized.split('\n');
+  const sections: DigestSection[] = [];
+  let currentSection: DigestSection | null = null;
+  let disclaimer: string | null = null;
+  const preambleLines: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip visual separators (---) — they are used between preamble and body,
+    // NOT only as disclaimer markers. Only treat as disclaimer if it's the
+    // LAST --- in the content (after all sections).
+    if (trimmed === '---') {
+      continue;
+    }
+
+    // Detect disclaimer: italic text starting with known patterns at the end
+    if (trimmed && (
+      trimmed.startsWith('*This analysis') || trimmed.startsWith('_This analysis') ||
+      trimmed.startsWith('*This is based') || trimmed.startsWith('*Les analyses') ||
+      trimmed.startsWith('*Cette analyse') || trimmed.startsWith('*AI-generated') ||
+      trimmed.startsWith('_AI-generated')
+    )) {
+      disclaimer = trimmed.replace(/^\*+|\*+$/g, '').replace(/^_+|_+$/g, '').trim();
+      continue;
+    }
+
+    // Detect section headings:
+    // - Numbered: "1. Title" or "#### 1. Title" — but NOT sub-items like "1. **Bold item:**"
+    // - Markdown: "## Title", "### Title", "#### Title"
+    // Strip leading # from lines like "#### 1. Points Clés"
+    const stripped = trimmed.replace(/^#{1,6}\s+/, '');
+    const numberedMatch = stripped.match(/^(\d+)\.\s+(.+)/);
+
+    // A numbered line is a section heading ONLY if:
+    //  - The text after the number starts with a plain letter (not **bold**)
+    //  - OR it came from a markdown heading (#### 1. Title)
+    const isNumberedHeading = numberedMatch &&
+      (stripped !== trimmed || /^\d+\.\s+[A-ZÀ-Ü]/.test(stripped)) &&
+      !numberedMatch[2].startsWith('**');
+
+    const headingMatch = !isNumberedHeading ? trimmed.match(/^(#{1,6})\s+(.+)/) : null;
+
+    if (isNumberedHeading || headingMatch) {
+      const title = isNumberedHeading ? numberedMatch![2] : headingMatch![2];
+      currentSection = { title, rawLines: [], type: classifySection(title) };
+      sections.push(currentSection);
+      continue;
+    }
+
+    if (!currentSection) {
+      if (trimmed) preambleLines.push(trimmed);
+      continue;
+    }
+
+    currentSection.rawLines.push(line);
+  }
+
+  for (const s of sections) {
+    while (s.rawLines.length > 0 && s.rawLines.at(-1)!.trim() === '') {
+      s.rawLines.pop();
+    }
+  }
+
+  return {
+    sections,
+    disclaimer,
+    preamble: preambleLines.length > 0 ? preambleLines.join('\n') : null,
+  };
+};
+
+// ---- Section visual helpers ----
+
+const sectionIcon = (type: DigestSection['type']) => {
+  switch (type) {
+    case 'metrics': return <BarChart3 className="h-4 w-4 text-sky-400" />;
+    case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-400" />;
+    case 'success': return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+    default: return <TrendingUp className="h-4 w-4 text-slate-400" />;
+  }
+};
+
+const sectionBg = (type: DigestSection['type']) => {
+  switch (type) {
+    case 'metrics': return 'bg-sky-500/5 dark:bg-sky-400/5';
+    case 'warning': return 'bg-amber-500/5 dark:bg-amber-400/5';
+    case 'success': return 'bg-emerald-500/5 dark:bg-emerald-400/5';
+    default: return 'bg-slate-500/5 dark:bg-slate-400/5';
+  }
+};
+
+// ---- Insight card config (P3: simplified — icon encodes type, color encodes severity) ----
+
+const insightTypeConfig: Record<InsightType, { icon: React.ElementType; badgeClass: string }> = {
+  PATTERN: { icon: BarChart3, badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
+  STREAK: { icon: TrendingUp, badgeClass: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' },
+  RISK_WARNING: { icon: AlertTriangle, badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
+  IMPROVEMENT: { icon: Target, badgeClass: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' },
+  MILESTONE: { icon: Award, badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
+  AI_DIGEST: { icon: Sparkles, badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
+};
+
+// P3: severity encoded by card border color instead of separate badge
+const severityBorder: Record<InsightSeverity, string> = {
+  INFO: '',
+  WARNING: 'border-amber-500/30 dark:border-amber-400/20',
+  CRITICAL: 'border-red-500/40 dark:border-red-500/30',
+};
+
+const severityOverlay: Record<InsightSeverity, string | null> = {
+  INFO: null,
+  WARNING: null,
+  CRITICAL: 'bg-red-500/5',
+};
+
+const insightTypeLabel = (type: InsightType, t: (key: string, opts?: Record<string, string>) => string): string => {
   const labelMap: Record<InsightType, string> = {
     PATTERN: t('insights.pattern'),
     STREAK: t('insights.streak'),
@@ -112,24 +263,33 @@ const insightTypeLabel = (type: InsightType, t: (key: string) => string): string
   return labelMap[type] ?? type;
 };
 
+const isWeeklyDigest = (d: { weekStart: string; weekEnd: string }): boolean => {
+  const start = new Date(d.weekStart);
+  const end = new Date(d.weekEnd);
+  const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays >= 5 && diffDays <= 8;
+};
+
+type DigestData = { id: string; content: string; weekStart: string; weekEnd: string; generatedAt: string };
+
 // ---- Insights page ----
 
 const Insights = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // AI Insights data
   const { data: insights, isLoading, isError: insightsError, refetch: refetchInsights } = useInsights();
   const dismissInsight = useDismissInsight();
   const { toast } = useToast();
   const { data: digest, isLoading: digestLoading, isError: digestError } = useWeeklyDigest();
   const generateDigest = useGenerateWeeklyDigest();
 
-  // Digest history state
   const [showHistory, setShowHistory] = useState(false);
   const [historyPage, setHistoryPage] = useState(0);
   const HISTORY_PAGE_SIZE = 5;
   const { data: digestHistory, isLoading: historyLoading } = useDigestHistory(historyPage, HISTORY_PAGE_SIZE);
+
+  const [selectedHistoryDigest, setSelectedHistoryDigest] = useState<DigestData | null>(null);
 
   const [selectedAccountId, setSelectedAccountId] = usePageFilter('insights', 'accountId', 'all');
   const { accountIds } = useAccountFilter(selectedAccountId);
@@ -137,14 +297,12 @@ const Insights = () => {
   const [customStart, setCustomStart] = usePageFilter<Date | null>('insights', 'customStart', null);
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('insights', 'customEnd', null);
 
-  // Resolve accountId for digest generation
   const resolvedAccountId = selectedAccountId && selectedAccountId !== 'all' && selectedAccountId !== 'all-real' && selectedAccountId !== 'all-demo'
     ? selectedAccountId
     : undefined;
 
-  const toISODate = (d: Date): string => {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
+  const toISODate = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   const { startDate, endDate } = useMemo(() => {
     if (datePreset === 'custom') {
@@ -156,199 +314,305 @@ const Insights = () => {
     return computeDateRange(datePreset);
   }, [datePreset, customStart, customEnd]);
 
-  const activeInsights = useMemo(() => insights?.filter((i) => !i.dismissed) ?? [], [insights]);
+  // Filter out AI_DIGEST from insight cards (shown in digest section)
+  const activeInsights = useMemo(
+    () => insights?.filter((i) => !i.dismissed && i.type !== 'AI_DIGEST') ?? [],
+    [insights],
+  );
 
   const handleDismiss = (id: string) => {
     dismissInsight.mutate(id, {
       onError: () => {
-        toast({
-          title: t('common.error'),
-          description: t('insights.dismissFailed'),
-          variant: 'destructive',
-        });
+        toast({ title: t('common.error'), description: t('insights.dismissFailed'), variant: 'destructive' });
       },
     });
   };
 
   const handleGenerateDigest = () => {
-    generateDigest.mutate(resolvedAccountId);
+    setSelectedHistoryDigest(null);
+    generateDigest.mutate({ accountId: resolvedAccountId, startDate, endDate });
   };
-
-  // ---- Render helpers ----
 
   const handleViewRelatedTrades = (tradeIds: string[]) => {
     navigate('/trades', { state: { filterTradeIds: tradeIds } });
   };
 
-  const renderInsightCard = (insight: InsightResponseDto) => {
-    const config = insightTypeConfig[insight.type] ?? insightTypeConfig.PATTERN;
-    const IconComponent = config.icon;
-    const severity = severityConfig[insight.severity] ?? severityConfig.INFO;
-    const hasTrades = insight.relatedTradeIds?.length > 0;
-    const isCritical = insight.severity === 'CRITICAL';
+  const displayedDigest: DigestData | null = selectedHistoryDigest ?? digest ?? null;
+
+  // ---- Structured digest rendering ----
+
+  const renderStructuredDigest = (d: DigestData) => {
+    const { sections, disclaimer, preamble } = parseDigestSections(d.content);
+
+    if (sections.length === 0) {
+      return (
+        <div className="space-y-3">
+          <div className="text-sm text-muted-foreground leading-relaxed">
+            {renderMarkdown(preamble || d.content)}
+          </div>
+          {disclaimer && (
+            <p className="text-xs text-muted-foreground/40 italic pt-1">
+              {t('ai.disclaimer', { defaultValue: disclaimer })}
+            </p>
+          )}
+        </div>
+      );
+    }
 
     return (
-      <Card
-        key={insight.id}
-        className={`glass-card rounded-2xl relative ${isCritical ? 'border-red-500/40 dark:border-red-500/30' : ''}`}
-      >
-        {isCritical && (
-          <div className="absolute inset-0 rounded-2xl bg-red-500/5 pointer-events-none" />
+      <div className="space-y-3">
+        {preamble && (
+          <p className="text-xs text-muted-foreground/70 font-medium">{preamble}</p>
         )}
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <IconComponent className={`h-5 w-5 shrink-0 ${config.color}`} />
-              <CardTitle className="text-base truncate text-gradient-primary">{insight.title}</CardTitle>
+
+        {sections.map((section, idx) => (
+          <div key={idx} className={`rounded-xl p-4 ${sectionBg(section.type)}`}>
+            <div className="flex items-center gap-2 mb-2">
+              {sectionIcon(section.type)}
+              <h4 className="text-sm font-semibold text-foreground">{section.title}</h4>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${severity.className}`}>
-                    {severity.label}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-xs">Severity: {severity.label}</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${config.badgeClass}`}>
-                {insightTypeLabel(insight.type, t)}
-              </span>
-              {insight.actionable && (
-                <Badge variant="outline" className="text-xs">
-                  {t('insights.actionable')}
-                </Badge>
-              )}
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {renderMarkdown(section.rawLines.join('\n'))}
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="pb-3">
-          <div className="text-sm text-muted-foreground mb-3 leading-relaxed">{renderMarkdown(insight.description)}</div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
-              <span>
-                <span className="label-caps mr-1">{t('insights.confidence')}:</span>
-                {Math.round(insight.confidence * 100)}%
-              </span>
-              <span>
-                <span className="label-caps mr-1">{t('insights.generatedAt')}:</span>
-                {new Date(insight.generatedAt).toLocaleDateString()} {new Date(insight.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {hasTrades && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleViewRelatedTrades(insight.relatedTradeIds)}
-                  className="h-7 px-2.5 text-xs gap-1"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  {t('insights.viewTrades', `View ${insight.relatedTradeIds.length} trades`, { count: insight.relatedTradeIds.length })}
-                </Button>
-              )}
-              {!insight.dismissed && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDismiss(insight.id)}
-                  disabled={dismissInsight.isPending}
-                  className="h-7 px-2 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  {t('insights.dismiss')}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        ))}
+
+        {disclaimer && (
+          <p className="text-xs text-muted-foreground/40 italic pt-1">
+            {t('ai.disclaimer', { defaultValue: disclaimer })}
+          </p>
+        )}
+      </div>
     );
   };
 
-  const renderLoadingSkeleton = () => (
-    <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-5 rounded" />
-              <Skeleton className="h-5 w-48" />
+  // ---- Digest main card ----
+
+  const renderDigestMainCard = (d: DigestData, isFromHistory = false) => {
+    const weekly = isWeeklyDigest(d);
+
+    return (
+      <div className="space-y-2">
+        {isFromHistory && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedHistoryDigest(null)}
+            className="gap-1.5 text-muted-foreground -ml-2 h-8"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {t('ai.latestAnalysis')}
+          </Button>
+        )}
+
+        <Card
+          className={`glass-card rounded-2xl transition-all duration-500 ${isFromHistory ? '' : 'animate-in fade-in-0 slide-in-from-bottom-3 zoom-in-[0.97]'}`}
+          style={isFromHistory ? undefined : { animationDuration: '600ms', animationFillMode: 'both' }}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${weekly ? 'bg-amber-500/10' : 'bg-sky-500/10'}`}>
+                  {weekly
+                    ? <Sparkles className="h-4 w-4 text-amber-400" />
+                    : <BarChart3 className="h-4 w-4 text-sky-400" />
+                  }
+                </div>
+                <div>
+                  <CardTitle className="text-base text-foreground">
+                    {weekly ? t('ai.digest') : t('ai.digestOnDemand')}
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal mt-0.5">
+                    {weekly ? t('ai.historyWeekly') : t('ai.historyOnDemand')}
+                  </Badge>
+                </div>
+              </div>
+              <div className="text-right text-xs text-muted-foreground font-mono tabular-nums space-y-0.5">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(d.weekStart).toLocaleDateString()} &ndash; {new Date(d.weekEnd).toLocaleDateString()}
+                </div>
+                <div>
+                  {t('ai.generatedLabel')} : {new Date(d.generatedAt).toLocaleDateString()} {new Date(d.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Skeleton className="h-4 w-full mb-2" />
-            <Skeleton className="h-4 w-3/4 mb-3" />
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-3 w-32" />
-            </div>
+          <CardContent className="pb-5">
+            {renderStructuredDigest(d)}
           </CardContent>
         </Card>
-      ))}
+      </div>
+    );
+  };
+
+  // ---- Right sidebar ----
+
+  const historyCount = digestHistory?.length ?? 0;
+
+  const renderGeneratePanel = () => (
+    <div className="space-y-4">
+      <Card className="glass-card rounded-2xl">
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('ai.generateNewAnalysis')}
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {t('ai.digestDescription')}
+            {(resolvedAccountId || startDate) && (
+              <span className="block mt-1 text-amber-500 font-medium text-[11px]">
+                {resolvedAccountId ? t('ai.filteredByAccount') : ''}{resolvedAccountId && startDate ? ' · ' : ''}{startDate ? t('ai.filteredByDate') : ''}
+              </span>
+            )}
+          </p>
+          <Button
+            onClick={handleGenerateDigest}
+            disabled={generateDigest.isPending || digestError}
+            size="sm"
+            className="w-full gap-2"
+          >
+            {generateDigest.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            {t('ai.generateDigest')}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {(digest || historyCount > 0) && (
+        <Card className="glass-card rounded-2xl">
+          <CardContent className="p-4 space-y-3">
+            <button
+              onClick={() => setShowHistory((v) => !v)}
+              className="flex items-center justify-between w-full"
+            >
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <History className="h-4 w-4" />
+                {t('ai.previousDigests')}
+                {/* P2: show count badge for discoverability */}
+                {historyCount > 0 && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">
+                    {historyCount}
+                  </Badge>
+                )}
+              </h3>
+              <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showHistory ? 'rotate-90' : ''}`} />
+            </button>
+
+            {showHistory && (
+              <div className="space-y-2 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                {historyLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="p-2.5 rounded-lg bg-muted/30 space-y-1.5">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : digestHistory && digestHistory.length > 0 ? (
+                  <>
+                    {digestHistory.map((d) => {
+                      const weekly = isWeeklyDigest(d);
+                      const isActive = selectedHistoryDigest?.id === d.id;
+                      return (
+                        <button
+                          key={d.id}
+                          onClick={() => setSelectedHistoryDigest(d)}
+                          className={`w-full text-left p-2.5 rounded-lg transition-colors ${
+                            isActive
+                              ? 'bg-primary/10 ring-1 ring-primary/30'
+                              : 'bg-muted/30 hover:bg-muted/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-0.5">
+                            {weekly
+                              ? <Sparkles className="h-3 w-3 text-amber-400" />
+                              : <BarChart3 className="h-3 w-3 text-sky-400" />
+                            }
+                            <span className="text-xs font-medium text-foreground">
+                              {weekly ? t('ai.historyWeekly') : t('ai.historyOnDemand')}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground font-mono tabular-nums">
+                            {new Date(d.weekStart).toLocaleDateString()} &ndash; {new Date(d.weekEnd).toLocaleDateString()}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/60 mt-0.5 line-clamp-2">
+                            {d.content.replace(/[#*_]/g, '').slice(0, 100)}...
+                          </p>
+                        </button>
+                      );
+                    })}
+                    <div className="flex items-center justify-center gap-1 pt-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6"
+                        onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
+                        disabled={historyPage === 0 || historyLoading}
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="text-[11px] text-muted-foreground tabular-nums px-1">
+                        {historyPage + 1}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6"
+                        onClick={() => setHistoryPage((p) => p + 1)}
+                        disabled={!digestHistory || digestHistory.length < HISTORY_PAGE_SIZE || historyLoading}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    {t('ai.noPreviousDigests')}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
-  const renderEmptyState = () => (
-    <div className="text-center py-12">
-      <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-      <h3 className="text-lg font-medium mb-1">{t('insights.noInsights')}</h3>
-      <p className="text-muted-foreground">{t('insights.noInsightsDescription')}</p>
-    </div>
-  );
-
-  const renderDigestCard = (d: { id: string; content: string; weekStart: string; weekEnd: string; generatedAt: string }, isLatest = false) => (
-    <Card key={d.id} className={`glass-card rounded-2xl transition-all duration-500 ${isLatest ? 'animate-in fade-in-0 slide-in-from-bottom-2' : ''}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base text-gradient-primary">
-            {t('ai.digest', 'Weekly Digest')}
-          </CardTitle>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono tabular-nums">
-            <span>
-              <span className="label-caps mr-1">Week:</span>
-              {new Date(d.weekStart).toLocaleDateString()} &ndash; {new Date(d.weekEnd).toLocaleDateString()}
-            </span>
-            <span>
-              <span className="label-caps mr-1">Generated:</span>
-              {new Date(d.generatedAt).toLocaleDateString()} {new Date(d.generatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-6">
-        <div className="text-sm text-muted-foreground leading-relaxed">
-          {renderMarkdown(d.content)}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // ---- Digest content area ----
 
   const renderDigestContent = () => {
     if (digestError) {
       return (
         <div className="text-center py-10">
           <Sparkles className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <h3 className="text-sm font-medium text-muted-foreground mb-1">
-            {t('ai.unavailable', 'AI features unavailable')}
-          </h3>
-          <p className="text-xs text-muted-foreground/70">
-            {t('ai.unavailableDescription', 'The AI service is not enabled on this server. Contact your administrator to enable it.')}
-          </p>
+          <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('ai.unavailable')}</h3>
+          <p className="text-xs text-muted-foreground/70">{t('ai.unavailableDescription')}</p>
         </div>
       );
     }
 
-    // Show generating spinner
     if (generateDigest.isPending) {
       return (
-        <Card className="glass-card rounded-2xl">
-          <CardContent className="flex flex-col items-center gap-3 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
-            <p className="text-sm text-muted-foreground animate-pulse">
-              Generating your weekly digest...
-            </p>
+        <Card className="glass-card rounded-2xl overflow-hidden">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative">
+                <Sparkles className="h-6 w-6 text-amber-400 animate-pulse" />
+                <div className="absolute inset-0 animate-ping">
+                  <Sparkles className="h-6 w-6 text-amber-400/30" />
+                </div>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground animate-pulse">{t('ai.generating')}</p>
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-11/12" />
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400/60" />
+              <span className="text-xs text-muted-foreground/60">{t('ai.generatingHint')}</span>
+            </div>
           </CardContent>
         </Card>
       );
@@ -361,141 +625,174 @@ const Insights = () => {
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
             <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </CardContent>
         </Card>
       );
     }
 
-    if (digest) {
-      return renderDigestCard(digest, true);
+    if (displayedDigest) {
+      return renderDigestMainCard(displayedDigest, selectedHistoryDigest !== null);
     }
 
     return (
-      <div className="text-center py-12">
-        <Sparkles className="h-12 w-12 text-amber-400/40 mx-auto mb-4" />
-        <h3 className="text-lg font-medium mb-1">{t('ai.noDigest', 'No digest yet')}</h3>
-        <p className="text-muted-foreground text-sm mb-4">
-          {t('ai.noDigestDescription', 'Generate your first weekly trading digest to get AI-powered insights.')}
-        </p>
-        <Button
-          onClick={handleGenerateDigest}
-          disabled={generateDigest.isPending}
-          className="gap-2"
-        >
+      <div className="text-center py-16">
+        <Sparkles className="h-12 w-12 text-amber-400/30 mx-auto mb-4" />
+        <h3 className="text-lg font-medium mb-1">{t('ai.noDigest')}</h3>
+        <p className="text-muted-foreground text-sm mb-5 max-w-md mx-auto">{t('ai.noDigestDescription')}</p>
+        <Button onClick={handleGenerateDigest} disabled={generateDigest.isPending} className="gap-2">
           <Sparkles className="h-4 w-4" />
-          {t('ai.generateDigest', 'Generate Digest')}
+          {t('ai.generateDigest')}
         </Button>
       </div>
     );
   };
 
-  const renderDigestHistory = () => {
-    if (!showHistory) return null;
+  // ---- Insight cards (P3: simplified badges) ----
+
+  const renderInsightCard = (insight: InsightResponseDto) => {
+    const config = insightTypeConfig[insight.type] ?? insightTypeConfig.PATTERN;
+    const IconComponent = config.icon;
+    const hasTrades = insight.relatedTradeIds?.length > 0;
+    const borderClass = severityBorder[insight.severity] ?? '';
+    const overlayClass = severityOverlay[insight.severity];
 
     return (
-      <div className="space-y-3 mt-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-            <History className="h-4 w-4" />
-            Previous Digests
-          </h3>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
-              disabled={historyPage === 0 || historyLoading}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground tabular-nums px-1">
-              Page {historyPage + 1}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setHistoryPage((p) => p + 1)}
-              disabled={!digestHistory || digestHistory.length < HISTORY_PAGE_SIZE || historyLoading}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {historyLoading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <Card key={i} className="glass-card rounded-2xl">
-                <CardContent className="p-4 space-y-2">
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-4/5" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : digestHistory && digestHistory.length > 0 ? (
-          <div className="space-y-3">
-            {digestHistory.map((d) => renderDigestCard(d))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No previous digests found.
-          </p>
+      <Card
+        key={insight.id}
+        className={`glass-card rounded-2xl relative ${borderClass}`}
+      >
+        {overlayClass && (
+          <div className={`absolute inset-0 rounded-2xl ${overlayClass} pointer-events-none`} />
         )}
-      </div>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <IconComponent className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold truncate text-foreground">{insight.title}</CardTitle>
+              {/* P3: actionable shown as small lightning icon instead of badge */}
+              {insight.actionable && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400 fill-amber-400/30" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">{t('insights.actionable')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {/* P3: single type badge — severity encoded by card border */}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0 ${config.badgeClass}`}>
+              {insightTypeLabel(insight.type, t)}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="pb-3">
+          <div className="text-sm text-muted-foreground mb-3 leading-relaxed">{renderMarkdown(insight.description)}</div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+              {Math.round(insight.confidence * 100)}% &middot; {new Date(insight.generatedAt).toLocaleDateString()}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {hasTrades && (
+                <Button size="sm" variant="outline" onClick={() => handleViewRelatedTrades(insight.relatedTradeIds)} className="h-7 px-2.5 text-xs gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  {t('insights.viewTrades', { count: insight.relatedTradeIds.length, defaultValue: `View ${insight.relatedTradeIds.length} trades` })}
+                </Button>
+              )}
+              {!insight.dismissed && (
+                <Button size="sm" variant="ghost" onClick={() => handleDismiss(insight.id)} disabled={dismissInsight.isPending} className="h-7 px-2 text-xs">
+                  <X className="h-3 w-3 mr-1" />
+                  {t('insights.dismiss')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
-  const renderInsightsContent = () => {
-    if (isLoading) return <PageSkeleton variant="cards" cardCount={3} />;
-    if (insightsError) return (
-      <PageError
-        title="Failed to load insights"
-        message="Could not fetch your trading insights. Please try again."
-        onRetry={refetchInsights}
-      />
+  // P1: Insights section — only show when there are active insights
+  const renderInsightsSection = () => {
+    if (isLoading) return (
+      <section aria-label={t('insights.patternsAndAlerts')}>
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">{t('insights.patternsAndAlerts', 'Patterns & Alerts')}</h2>
+        </div>
+        <PageSkeleton variant="cards" cardCount={2} />
+      </section>
     );
-    if (activeInsights.length === 0) return renderEmptyState();
-    return <div className="space-y-4">{activeInsights.map(renderInsightCard)}</div>;
+
+    if (insightsError) return (
+      <section aria-label={t('insights.patternsAndAlerts')}>
+        <PageError title="Failed to load insights" message="Could not fetch your trading insights." onRetry={refetchInsights} />
+      </section>
+    );
+
+    // P1: hide section entirely when empty — no confusing empty placeholder
+    if (activeInsights.length === 0) return null;
+
+    return (
+      <section aria-label={t('insights.patternsAndAlerts')}>
+        <div className="flex items-center gap-2 mb-1">
+          <Target className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">{t('insights.patternsAndAlerts', 'Patterns & Alerts')}</h2>
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-0.5">
+            {activeInsights.length}
+          </Badge>
+        </div>
+        {/* P1: subtitle explaining what this section is */}
+        <p className="text-xs text-muted-foreground mb-4 ml-7">
+          {t('insights.patternsDescription', 'Recurring patterns and risk signals detected in your trading data.')}
+        </p>
+        <PlanGatedSection requiredPlan="PRO" feature="AI Insights">
+          <div className="space-y-3">{activeInsights.map(renderInsightCard)}</div>
+        </PlanGatedSection>
+      </section>
+    );
   };
+
+  // ---- Main render ----
 
   return (
     <DashboardLayout pageTitle={t('pages.insights')}>
       <PageTransition className="max-w-screen-2xl mx-auto space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Insights & Analysis</h1>
-              <p className="text-muted-foreground mt-2">
-                Deep dive into your trading performance and discover actionable patterns.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <DashboardDateFilter
-                preset={datePreset}
-                onPresetChange={setDatePreset}
-                customStart={customStart}
-                customEnd={customEnd}
-                onCustomStartChange={setCustomStart}
-                onCustomEndChange={setCustomEnd}
-              />
-              <AccountSelector
-                value={selectedAccountId}
-                onChange={setSelectedAccountId}
-                className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-              />
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('pages.insightsTitle', 'Insights & Analysis')}</h1>
+            <p className="text-muted-foreground mt-2">
+              {t('pages.insightsDescription', 'Deep dive into your trading performance and discover actionable patterns.')}
+            </p>
           </div>
+          <div className="flex items-center gap-3">
+            <DashboardDateFilter
+              preset={datePreset}
+              onPresetChange={setDatePreset}
+              customStart={customStart}
+              customEnd={customEnd}
+              onCustomStartChange={setCustomStart}
+              onCustomEndChange={setCustomEnd}
+            />
+            <AccountSelector
+              value={selectedAccountId}
+              onChange={setSelectedAccountId}
+              className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            />
+          </div>
+        </div>
 
-          {/* KPI Summary Strip — always visible above tabs */}
-          <KpiStrip activeInsightCount={activeInsights.length} />
+        <KpiStrip
+          activeInsightCount={activeInsights.length}
+          startDate={startDate}
+          endDate={endDate}
+          accountId={accountIds}
+        />
 
-          <Tabs defaultValue="performance" className="w-full">
-            <TabsList className="mb-4">
+        <Tabs defaultValue="performance" className="w-full">
+          <TabsList className="mb-4">
             <TabsTrigger value="performance" className="flex items-center gap-1.5">
               <BarChart3 className="h-3.5 w-3.5" />
               {t('insights.performance', 'Performance')}
@@ -506,78 +803,32 @@ const Insights = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* ---- Tab 1: Performance (Monthly P&L + Strategy Comparison) ---- */}
           <TabsContent value="performance" className="space-y-6">
             <PerformanceMetrics startDate={startDate} endDate={endDate} accountIds={accountIds} />
           </TabsContent>
 
-          {/* ---- Tab 2: AI Insights + Weekly Digest ---- */}
-          <TabsContent value="ai" className="space-y-6">
-            {/* AI Insight cards — patterns and risk warnings are advanced */}
-            <section aria-label={t('insights.aiInsights', 'AI Insights')}>
-              <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg font-semibold text-gradient-primary">{t('insights.aiInsights', 'AI Insights')}</h2>
-                {activeInsights.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 text-xs">
-                    {activeInsights.length}
-                  </Badge>
-                )}
-              </div>
-              <PlanGatedSection requiredPlan="PRO" feature="AI Insights — patterns and risk warnings">
-                {renderInsightsContent()}
-              </PlanGatedSection>
-            </section>
-
-            {/* Weekly Digest */}
+          <TabsContent value="ai" className="space-y-8">
+            {/* AI Digest section */}
             <PlanGatedSection requiredPlan="PRO" feature="AI Digest">
-              <section aria-label={t('ai.digest', 'Weekly Digest')} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gradient-primary flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-amber-400" />
-                      {t('ai.digest', 'Weekly Digest')}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {t('ai.digestDescription', 'AI-generated summary of your trading week')}
-                      {resolvedAccountId && (
-                        <span className="ml-1 text-amber-500 font-medium">(filtered by account)</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {digest && (
-                      <Button
-                        onClick={() => setShowHistory((v) => !v)}
-                        size="sm"
-                        variant="ghost"
-                        className="gap-1.5 text-muted-foreground"
-                      >
-                        <History className="h-3.5 w-3.5" />
-                        {showHistory ? 'Hide History' : 'History'}
-                      </Button>
-                    )}
-                    <Button
-                      onClick={handleGenerateDigest}
-                      disabled={generateDigest.isPending || digestError}
-                      size="sm"
-                      variant="outline"
-                      className="gap-2"
-                    >
-                      {generateDigest.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      )}
-                      {t('ai.generateDigest', 'Generate Digest')}
-                    </Button>
-                  </div>
+              <section aria-label={t('ai.latestAnalysis')}>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-amber-400" />
+                    {selectedHistoryDigest ? t('ai.previousDigests') : t('ai.latestAnalysis')}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">{t('ai.digestDescription')}</p>
                 </div>
 
-                {renderDigestContent()}
-                {renderDigestHistory()}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+                  <div className="min-w-0">{renderDigestContent()}</div>
+                  <div className="hidden lg:block">{renderGeneratePanel()}</div>
+                </div>
+                <div className="lg:hidden mt-4">{renderGeneratePanel()}</div>
               </section>
             </PlanGatedSection>
+
+            {/* P1: Patterns & Alerts — only shown when populated */}
+            {renderInsightsSection()}
           </TabsContent>
         </Tabs>
       </PageTransition>

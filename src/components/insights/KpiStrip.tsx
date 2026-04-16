@@ -70,11 +70,14 @@ const KpiCard: React.FC<KpiCardProps> = ({ label, value, subtext, positive, tool
 
 interface KpiStripProps {
   activeInsightCount?: number;
+  startDate?: string;
+  endDate?: string;
+  accountId?: string | string[];
 }
 
-const KpiStrip: React.FC<KpiStripProps> = ({ activeInsightCount }) => {
+const KpiStrip: React.FC<KpiStripProps> = ({ activeInsightCount, startDate, endDate, accountId }) => {
   const { t } = useTranslation();
-  const { data: summary, isLoading } = useDashboardSummary();
+  const { data: summary, isLoading } = useDashboardSummary(startDate, endDate, accountId);
 
   const winRate = summary?.performanceSummary?.winRate ?? 0;
   const netPnl = summary?.performanceSummary?.totalProfitLoss ?? 0;

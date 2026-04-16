@@ -1,12 +1,18 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { aiService, type AiChatMessageResponse } from '@/services/ai.service';
+import { aiService, type AiChatMessageResponse, type ChatJobResponse } from '@/services/ai.service';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  /** True while the backend is generating this assistant message */
+  pending?: boolean;
+  /** The async job ID, if this is a placeholder for a pending response */
+  jobId?: string;
+  /** Original user message that produced this placeholder (used for retry) */
+  sourceUserMessage?: string;
 }
 
 interface UseAiChatReturn {
@@ -15,7 +21,13 @@ interface UseAiChatReturn {
   sendMessage: (text: string) => Promise<void>;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
+  /** Cancels a pending message locally (stops polling, removes placeholder). */
+  cancelPending: (placeholderId: string) => void;
 }
+
+const POLL_INTERVAL_MS = 2000;
+/** Max wall-clock time a response is allowed to take, measured from backend createdAt. */
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
 const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -23,23 +35,178 @@ const generateId = () =>
 export const useAiChat = (): UseAiChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  /** Per-placeholder timers so we can cancel one job without touching others. */
+  const pollTimersRef = useRef<Map<string, Set<ReturnType<typeof setTimeout>>>>(new Map());
+  /** Placeholders that have been cancelled locally — used to ignore late tick results. */
+  const cancelledRef = useRef<Set<string>>(new Set());
 
+  const clearTimersFor = useCallback((placeholderId: string) => {
+    const timers = pollTimersRef.current.get(placeholderId);
+    if (timers) {
+      timers.forEach((t) => clearTimeout(t));
+      pollTimersRef.current.delete(placeholderId);
+    }
+  }, []);
+
+  const recomputeStreaming = useCallback(() => {
+    setMessages((prev) => {
+      const anyPending = prev.some((m) => m.pending === true);
+      setIsStreaming(anyPending);
+      return prev;
+    });
+  }, []);
+
+  // ---- Polling loop for a single job ----
+  const pollJob = useCallback(
+    (jobId: string, placeholderId: string, createdAtIso: string) => {
+      // Anchor timeout to the actual backend creation time, NOT to poll start time.
+      // Otherwise every page reload would give a stuck job another 5 minutes.
+      const createdAtMs = Date.parse(createdAtIso);
+      const startedAt = Number.isFinite(createdAtMs) ? createdAtMs : Date.now();
+
+      const tick = async () => {
+        if (cancelledRef.current.has(placeholderId)) return;
+
+        try {
+          const job: ChatJobResponse = await aiService.getChatJobStatus(jobId);
+          if (cancelledRef.current.has(placeholderId)) return;
+
+          if (job.status === 'COMPLETED' && job.content) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === placeholderId
+                  ? {
+                      ...msg,
+                      content: job.content ?? '',
+                      pending: false,
+                      jobId: undefined,
+                      sourceUserMessage: undefined,
+                    }
+                  : msg,
+              ),
+            );
+            clearTimersFor(placeholderId);
+            recomputeStreaming();
+            return;
+          }
+
+          if (job.status === 'FAILED') {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === placeholderId
+                  ? {
+                      ...msg,
+                      content: `Sorry, I encountered an error: ${job.error ?? 'Unknown error'}. Please try again.`,
+                      pending: false,
+                      jobId: undefined,
+                    }
+                  : msg,
+              ),
+            );
+            clearTimersFor(placeholderId);
+            recomputeStreaming();
+            toast.error('AI Coach could not generate a response.');
+            return;
+          }
+
+          // Still PENDING or GENERATING → poll again unless timed out.
+          // Elapsed is measured from backend creation, so resuming a stale job
+          // surfaces the timeout immediately rather than waiting another 5 min.
+          if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === placeholderId
+                  ? {
+                      ...msg,
+                      content: 'Response took too long. Please try again.',
+                      pending: false,
+                      jobId: undefined,
+                    }
+                  : msg,
+              ),
+            );
+            clearTimersFor(placeholderId);
+            recomputeStreaming();
+            return;
+          }
+
+          const timer = setTimeout(tick, POLL_INTERVAL_MS);
+          const bucket = pollTimersRef.current.get(placeholderId) ?? new Set();
+          bucket.add(timer);
+          pollTimersRef.current.set(placeholderId, bucket);
+        } catch {
+          // Network error — retry in 5s (double the interval)
+          if (cancelledRef.current.has(placeholderId)) return;
+          const timer = setTimeout(tick, POLL_INTERVAL_MS * 2);
+          const bucket = pollTimersRef.current.get(placeholderId) ?? new Set();
+          bucket.add(timer);
+          pollTimersRef.current.set(placeholderId, bucket);
+        }
+      };
+
+      void tick();
+    },
+    [clearTimersFor, recomputeStreaming],
+  );
+
+  // ---- Cleanup timers on unmount ----
+  useEffect(() => {
+    const timers = pollTimersRef.current;
+    return () => {
+      timers.forEach((bucket) => bucket.forEach((t) => clearTimeout(t)));
+      timers.clear();
+    };
+  }, []);
+
+  const cancelPending = useCallback(
+    (placeholderId: string) => {
+      cancelledRef.current.add(placeholderId);
+      clearTimersFor(placeholderId);
+      setMessages((prev) => prev.filter((msg) => msg.id !== placeholderId));
+      recomputeStreaming();
+    },
+    [clearTimersFor, recomputeStreaming],
+  );
+
+  // ---- Load recent history ----
   const loadHistory = useCallback(async () => {
     try {
       const history: AiChatMessageResponse[] = await aiService.getChatHistory();
-      setMessages(
-        history.map((msg) => ({
-          id: msg.id,
-          role: (msg.role?.toLowerCase() ?? 'assistant') as 'user' | 'assistant',
-          content: msg.content,
-          createdAt: msg.createdAt,
-        })),
-      );
+      const mapped: ChatMessage[] = history.map((msg) => ({
+        id: msg.id,
+        role: (msg.role?.toLowerCase() ?? 'assistant') as 'user' | 'assistant',
+        content: msg.content,
+        createdAt: msg.createdAt,
+      }));
+
+      // Also check for any pending jobs (user navigated away mid-generation)
+      try {
+        const pending: ChatJobResponse[] = await aiService.getPendingChatJobs();
+        if (pending.length > 0) {
+          const placeholders: ChatMessage[] = pending.map((job) => ({
+            id: generateId(),
+            role: 'assistant' as const,
+            content: '',
+            createdAt: job.createdAt,
+            pending: true,
+            jobId: job.jobId,
+          }));
+          setMessages([...mapped, ...placeholders]);
+          setIsStreaming(true);
+          placeholders.forEach((p) => {
+            if (p.jobId) pollJob(p.jobId, p.id, p.createdAt);
+          });
+          return;
+        }
+      } catch {
+        // pending check failed — non-blocking
+      }
+
+      setMessages(mapped);
     } catch {
       // Non-blocking — history load failure is silent on first open
     }
-  }, []);
+  }, [pollJob]);
 
   const clearHistory = useCallback(async () => {
     try {
@@ -50,115 +217,65 @@ export const useAiChat = (): UseAiChatReturn => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isStreaming) return;
+  // ---- Send a message ----
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || isStreaming) return;
 
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: 'user',
-      content: text.trim(),
-      createdAt: new Date().toISOString(),
-    };
+      const trimmed = text.trim();
+      const userMessage: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+      };
 
-    const assistantPlaceholder: ChatMessage = {
-      id: generateId(),
-      role: 'assistant',
-      content: '',
-      createdAt: new Date().toISOString(),
-    };
+      const placeholderId = generateId();
+      const placeholderCreatedAt = new Date().toISOString();
+      const assistantPlaceholder: ChatMessage = {
+        id: placeholderId,
+        role: 'assistant',
+        content: '',
+        createdAt: placeholderCreatedAt,
+        pending: true,
+        sourceUserMessage: trimmed,
+      };
 
-    setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
-    setIsStreaming(true);
+      setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
+      setIsStreaming(true);
 
-    const assistantId = assistantPlaceholder.id;
+      try {
+        const job = await aiService.startChatJob(trimmed);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === placeholderId
+              ? { ...msg, jobId: job.jobId, createdAt: job.createdAt }
+              : msg,
+          ),
+        );
+        pollJob(job.jobId, placeholderId, job.createdAt);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'An unexpected error occurred.';
 
-    try {
-      const response = await aiService.sendChatMessage(text.trim());
-
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === placeholderId
+              ? {
+                  ...msg,
+                  content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+                  pending: false,
+                  jobId: undefined,
+                }
+              : msg,
+          ),
+        );
+        setIsStreaming(false);
+        toast.error('AI Coach is unavailable. Please try again later.');
       }
+    },
+    [isStreaming, pollJob],
+  );
 
-      if (!response.body) {
-        throw new Error('No response body for streaming');
-      }
-
-      const reader = response.body.getReader();
-      readerRef.current = reader;
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        // Keep the last (potentially incomplete) line in the buffer
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith('data:')) continue;
-
-          const dataStr = trimmed.slice(5).trim();
-
-          if (dataStr === '[DONE]') {
-            setIsStreaming(false);
-            readerRef.current = null;
-            return;
-          }
-
-          try {
-            const parsed = JSON.parse(dataStr) as { token?: string };
-            if (parsed.token) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantId
-                    ? { ...msg, content: msg.content + parsed.token }
-                    : msg,
-                ),
-              );
-            }
-          } catch {
-            // Malformed JSON line — skip silently
-          }
-        }
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'An unexpected error occurred.';
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantId
-            ? {
-                ...msg,
-                content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
-              }
-            : msg,
-        ),
-      );
-
-      toast.error('AI Coach is unavailable. Please try again later.');
-    } finally {
-      setIsStreaming(false);
-      readerRef.current = null;
-    }
-  }, [isStreaming]);
-
-  // Cancel any in-progress stream on unmount
-  const cancelStream = useCallback(() => {
-    if (readerRef.current) {
-      readerRef.current.cancel().catch(() => undefined);
-      readerRef.current = null;
-    }
-    setIsStreaming(false);
-  }, []);
-
-  // Expose cancel for cleanup — consumers can call it if needed
-  void cancelStream;
-
-  return { messages, isStreaming, sendMessage, loadHistory, clearHistory };
+  return { messages, isStreaming, sendMessage, loadHistory, clearHistory, cancelPending };
 };

@@ -57,9 +57,8 @@ const Dashboard = () => {
     : computeDateRange(datePreset);
 
   // Live WebSocket subscriptions — gracefully degrade when WS is offline
+  // useLiveTrades() and useLivePortfolio() are now mounted globally in GlobalLiveListeners
   useLivePrices();
-  useLivePortfolio();
-  useLiveTrades();
   useLiveAlerts();
 
   const queryClient = useQueryClient();
@@ -122,8 +121,8 @@ const Dashboard = () => {
     return (
       <DashboardLayout pageTitle={t('pages.dashboard')}>
         <PageError
-          title="Failed to load dashboard data"
-          message="We could not fetch your trading data. Please check your connection and try again."
+          title={t('dashboard.failedToLoad')}
+          message={t('dashboard.fetchError')}
           onRetry={handleRetry}
         />
       </DashboardLayout>
@@ -135,7 +134,7 @@ const Dashboard = () => {
       <DashboardLayout pageTitle={t('pages.dashboard')}>
         {isSlowLoad && (
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-700 dark:text-amber-300">
-            <span>Taking longer than expected. Your data is on its way...</span>
+            <span>{t('dashboard.takingLonger')}</span>
           </div>
         )}
         <DashboardSkeleton />

@@ -51,6 +51,7 @@ import {
   Lock,
   ArrowUpCircle,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import {
   useBrokers,
@@ -117,7 +118,11 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
   // Default to the first (highest) frequency allowed by the user's plan
   const defaultSyncFrequency = allowedFrequencies?.[0] ?? 'MONTHLY';
 
-  const effectiveProtocol = selectedProtocol || broker?.defaultProtocol;
+  // Filter out deprecated MT5_BRIDGE protocol
+  const availableProtocols = (broker?.supportedProtocols ?? []).filter(p => p.protocol !== 'MT5_BRIDGE');
+
+  // Auto-select single protocol when available
+  const effectiveProtocol = selectedProtocol || (availableProtocols.length === 1 ? availableProtocols[0].protocol : broker?.defaultProtocol);
 
   const { data: schema, isLoading: schemaLoading } = useCredentialSchema(
     broker?.code || null,
@@ -202,8 +207,8 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Protocol selector (only if broker supports more than one) */}
-          {broker && broker.supportedProtocols.length > 1 && (
+          {/* Protocol selector (only if multiple protocols available after filtering) */}
+          {broker && availableProtocols.length > 1 && (
             <div className="space-y-2">
               <Label>{t('settings.connectionProtocol', 'Connection Protocol')}</Label>
               <Select
@@ -214,7 +219,7 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {broker.supportedProtocols.map(p => (
+                  {availableProtocols.map(p => (
                     <SelectItem key={p.protocol} value={p.protocol}>
                       {p.displayName}
                     </SelectItem>
@@ -353,13 +358,31 @@ function BrokerCard({
     return key[freq] ? t(key[freq]) : freq;
   };
 
+  const isSuspended = connection?.suspendedByPlan === true;
+
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={`relative overflow-hidden${isSuspended ? ' opacity-60' : ''}`}>
+      {/* Suspended-by-plan overlay */}
+      {isSuspended && (
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-2 text-center px-4">
+            <Lock className="h-5 w-5 text-amber-400" />
+            <p className="text-sm font-medium text-amber-400">{t('accounts.accountSuspended', 'Account suspended')}</p>
+            <p className="text-xs text-muted-foreground">{t('accounts.upgradeToReactivate', 'Upgrade your plan to reactivate')}</p>
+            <Link to="/pricing">
+              <button className="mt-1 inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1 text-xs font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                {t('subscription.viewPlans', 'View plans')}
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Subtle top border for connected brokers */}
-      {isConnected && (
+      {isConnected && !isSuspended && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-500" />
       )}
-      {connection?.status === 'ERROR' && (
+      {connection?.status === 'ERROR' && !isSuspended && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-red-500" />
       )}
 

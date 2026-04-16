@@ -20,6 +20,7 @@ export const useDebrief = (accountId?: string) => {
       }
     },
     staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

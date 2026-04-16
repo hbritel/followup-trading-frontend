@@ -8,6 +8,7 @@ import ShareStrategyDialog from '@/components/social/ShareStrategyDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useMarketplace, useLikeStrategy, useCopyStrategy } from '@/hooks/useSocial';
+import { usePurchaseStrategy } from '@/hooks/useStrategyRevenue';
 import { toast } from '@/hooks/use-toast';
 
 type SortType = 'popular' | 'recent';
@@ -27,13 +28,14 @@ const StrategyMarketplace: React.FC = () => {
     if (!strategies) return [];
     const q = search.trim().toLowerCase();
     if (!q) return strategies;
-    return strategies.filter((s) => s.name.toLowerCase().includes(q));
+    return strategies.filter((s) => s.title.toLowerCase().includes(q));
   }, [strategies, search]);
   const likeMutation = useLikeStrategy();
   const copyMutation = useCopyStrategy();
+  const purchaseMutation = usePurchaseStrategy();
 
-  const handleLike = (strategyId: string, isLiked: boolean) => {
-    likeMutation.mutate({ strategyId, isLiked });
+  const handleLike = (strategyId: string) => {
+    likeMutation.mutate(strategyId);
   };
 
   const handleCopy = async (strategyId: string) => {
@@ -42,6 +44,15 @@ const StrategyMarketplace: React.FC = () => {
       toast({ title: t('social.copySuccess') });
     } catch {
       toast({ title: t('common.error'), description: t('social.copyError'), variant: 'destructive' });
+    }
+  };
+
+  const handlePurchase = async (strategyId: string) => {
+    try {
+      await purchaseMutation.mutateAsync(strategyId);
+      toast({ title: t('social.purchaseSuccess', 'Strategy purchased successfully!') });
+    } catch {
+      toast({ title: t('common.error'), description: t('social.purchaseError', 'Purchase failed. Please try again.'), variant: 'destructive' });
     }
   };
 
@@ -117,8 +128,10 @@ const StrategyMarketplace: React.FC = () => {
                 strategy={strategy}
                 onLike={handleLike}
                 onCopy={handleCopy}
+                onPurchase={handlePurchase}
                 isLikePending={likeMutation.isPending}
                 isCopyPending={copyMutation.isPending}
+                isPurchasePending={purchaseMutation.isPending}
               />
             ))}
           </div>

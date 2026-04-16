@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +66,7 @@ const PLANS = [
       '3 reports/month + CSV export',
       'Market feed & economic calendar',
       '1 year market history',
+      '1 prop firm evaluation',
     ],
     cta: 'startFreeTrial',
     variant: 'outline' as const,
@@ -89,6 +90,7 @@ const PLANS = [
       'Advanced analytics & scheduled reports',
       '5 years market history',
       'Public leaderboard profile',
+      '10 prop firm evaluations',
     ],
     cta: 'startFreeTrial',
     variant: 'default' as const,
@@ -98,7 +100,7 @@ const PLANS = [
     name: 'Elite',
     price: 59.99,
     annual: 47.99,
-    description: 'Unlimited everything for professionals',
+    description: 'Unlimited power for professionals',
     features: [
       'Unlimited broker connections',
       'Unlimited trades',
@@ -110,6 +112,8 @@ const PLANS = [
       'Full tax reporting',
       'All analytics & exports',
       'Unlimited market history',
+      'Real-time sync (<1s)',
+      'Prop firm live tracking (unlimited)',
       'Priority support',
     ],
     cta: 'startFreeTrial',
@@ -144,11 +148,18 @@ const FAQS = [
 // ── Component ───────────────────────────────────────────────────────────────
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
+  // All hooks MUST be called before any early return (Rules of Hooks).
+  const { isAuthenticated, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingAnnual, setBillingAnnual] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { t } = useTranslation();
+
+  // Redirect authenticated users to the dashboard — avoids rendering app-shell
+  // components (WebSocketProvider etc.) in the public landing page context.
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const navLinks = [
     { href: '#features', label: t('landing.features', 'Features') },
@@ -333,14 +344,21 @@ const HomePage = () => {
                   key={plan.name}
                   className={cn(
                     'relative rounded-xl border p-6 flex flex-col transition-all',
-                    plan.popular
-                      ? 'border-primary shadow-lg shadow-primary/10 scale-[1.02]'
-                      : 'border-border hover:border-primary/30',
+                    plan.name === 'Elite'
+                      ? 'border-amber-500/50 shadow-lg shadow-amber-500/10'
+                      : plan.popular
+                        ? 'border-primary shadow-lg shadow-primary/10 scale-[1.02]'
+                        : 'border-border hover:border-primary/30',
                   )}
                 >
                   {plan.popular && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-3">
                       {t('landing.mostPopular', 'Most Popular')}
+                    </Badge>
+                  )}
+                  {plan.name === 'Elite' && (
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] px-3">
+                      {t('landing.mostPowerful', 'Most Powerful')}
                     </Badge>
                   )}
                   <div className="mb-4">
@@ -365,7 +383,14 @@ const HomePage = () => {
                     ))}
                   </ul>
                   <Link to="/auth/signup" className="mt-auto">
-                    <Button variant={plan.variant} className={cn('w-full', plan.popular && 'shadow-md')}>
+                    <Button
+                      variant={plan.variant}
+                      className={cn(
+                        'w-full',
+                        plan.popular && 'shadow-md',
+                        plan.name === 'Elite' && 'bg-gradient-to-r from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 border-0',
+                      )}
+                    >
                       {plan.price === 0
                         ? t('landing.getStartedFree', 'Get Started Free')
                         : t('landing.startFreeTrial', 'Start Free Trial')}

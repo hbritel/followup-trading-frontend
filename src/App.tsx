@@ -40,6 +40,7 @@ import {
   Badges,
   Leaderboard,
   PublicProfile,
+  PublicTraderProfile,
   Pricing,
   PaymentSuccess,
   PaymentCanceled,
@@ -52,6 +53,12 @@ import {
   PropFirmHub,
   PropFirmEvaluationDetail,
   AiCoach,
+  JoinMentor,
+  MentorDashboard,
+  StudyGroups,
+  PropFirmAdmin,
+  OptionSpreads,
+  DeveloperPortal,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -62,6 +69,8 @@ import { FeatureFlagsProvider } from '@/contexts/feature-flags-context';
 import { FeatureGate } from '@/components/guards/FeatureGate';
 import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
+import PlanChangeListener from '@/components/subscription/PlanChangeListener';
+import GlobalLiveListeners from '@/components/live/GlobalLiveListeners';
 
 function App() {
   useFingerprint();
@@ -94,6 +103,8 @@ function App() {
                     path="/"
                     element={
                       <WebSocketProvider>
+                        <PlanChangeListener />
+                        <GlobalLiveListeners />
                         <ProtectedRoute />
                       </WebSocketProvider>
                     }
@@ -103,7 +114,7 @@ function App() {
                     <Route path="/daily-journal" element={<DailyJournal />} />
                     <Route path="/calendar" element={<Calendar />} />
                     <Route path="/playbook" element={<Playbook />} />
-                    <Route path="/insights" element={<Insights />} />
+                    <Route path="/insights" element={<FeatureGate requiredPlan="STARTER"><Insights /></FeatureGate>} />
                     <Route path="/performance" element={<Performance />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/watchlists" element={<Watchlists />} />
@@ -116,24 +127,31 @@ function App() {
                     <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay" requiredPlan="PRO"><TradeReplay /></FeatureGate>} />
                     <Route path="/administration" element={<Administration />} />
                     <Route path="/alerts" element={<FeatureGate featureKey="alerts" requiredPlan="STARTER"><Alerts /></FeatureGate>} />
-                    <Route path="/risk-metrics" element={<RiskMetrics />} />
+                    <Route path="/risk-metrics" element={<FeatureGate requiredPlan="PRO"><RiskMetrics /></FeatureGate>} />
                     <Route path="/badges" element={<Badges />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/tax-reporting" element={<FeatureGate featureKey="tax_reporting" requiredPlan="PRO"><TaxReporting /></FeatureGate>} />
                     <Route path="/prop-firm" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmHub /></FeatureGate>} />
                     <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
-                    <Route path="/ai-coach" element={<AiCoach />} />
+                    <Route path="/ai-coach" element={<FeatureGate featureKey="ai_chat" requiredPlan="STARTER"><AiCoach /></FeatureGate>} />
+                    <Route path="/mentor/dashboard" element={<FeatureGate requiredPlan="TEAM"><MentorDashboard /></FeatureGate>} />
+                    <Route path="/study-groups" element={<FeatureGate requiredPlan="ELITE"><StudyGroups /></FeatureGate>} />
+                    <Route path="/propfirm-admin" element={<FeatureGate requiredPlan="ELITE"><PropFirmAdmin /></FeatureGate>} />
+                    <Route path="/options" element={<FeatureGate requiredPlan="PRO"><OptionSpreads /></FeatureGate>} />
+                    <Route path="/developer" element={<FeatureGate requiredPlan="ELITE"><DeveloperPortal /></FeatureGate>} />
 
                     {/* Redirect from /account to /profile */}
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
                   </Route>
 
                   {/* Public routes — no auth required */}
+                  <Route path="/join/:inviteCode" element={<JoinMentor />} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />
                   <Route path="/payment/canceled" element={<PaymentCanceled />} />
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/p/:username" element={<PublicProfile />} />
+                  <Route path="/trader/:username" element={<PublicTraderProfile />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/contact" element={<Contact />} />

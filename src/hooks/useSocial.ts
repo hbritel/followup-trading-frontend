@@ -6,7 +6,9 @@ const QUERY_KEYS = {
   followers: ['social', 'followers'] as const,
   following: ['social', 'following'] as const,
   traders: (search?: string) => ['social', 'traders', search ?? ''] as const,
-  marketplace: (sort: string) => ['social', 'marketplace', sort] as const,
+  marketplace: (sort: string) => ['marketplace', 'strategies', sort] as const,
+  myStrategies: ['marketplace', 'my-strategies'] as const,
+  strategyDetail: (id: string) => ['marketplace', 'strategies', id] as const,
   feed: ['social', 'feed'] as const,
 };
 
@@ -45,6 +47,25 @@ export const useMarketplace = (sort: 'popular' | 'recent' = 'popular') =>
   useQuery({
     queryKey: QUERY_KEYS.marketplace(sort),
     queryFn: () => socialService.getMarketplace(sort),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+export const useMySharedStrategies = () =>
+  useQuery({
+    queryKey: QUERY_KEYS.myStrategies,
+    queryFn: () => socialService.getMyStrategies(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+export const useStrategyDetail = (id: string) =>
+  useQuery({
+    queryKey: QUERY_KEYS.strategyDetail(id),
+    queryFn: () => socialService.getStrategyDetail(id),
+    enabled: !!id,
     staleTime: 2 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -123,17 +144,16 @@ export const useUnfollow = () => {
 export const useLikeStrategy = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ strategyId, isLiked }: { strategyId: string; isLiked: boolean }) =>
-      isLiked ? socialService.unlikeStrategy(strategyId) : socialService.likeStrategy(strategyId),
-    onMutate: async ({ strategyId, isLiked }) => {
-      await queryClient.cancelQueries({ queryKey: ['social', 'marketplace'] });
-      const previousData = queryClient.getQueriesData({ queryKey: ['social', 'marketplace'] });
+    mutationFn: (strategyId: string) => socialService.toggleLike(strategyId),
+    onMutate: async (strategyId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['marketplace', 'strategies'] });
+      const previousData = queryClient.getQueriesData({ queryKey: ['marketplace', 'strategies'] });
       queryClient.setQueriesData(
-        { queryKey: ['social', 'marketplace'] },
+        { queryKey: ['marketplace', 'strategies'] },
         (old: SharedStrategyDto[] | undefined) =>
           old?.map((s) =>
             s.id === strategyId
-              ? { ...s, isLiked: !isLiked, likes: isLiked ? s.likes - 1 : s.likes + 1 }
+              ? { ...s, likedByMe: !s.likedByMe, likes: s.likedByMe ? s.likes - 1 : s.likes + 1 }
               : s,
           ),
       );
@@ -147,7 +167,7 @@ export const useLikeStrategy = () => {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['social', 'marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace', 'strategies'] });
     },
   });
 };
@@ -158,7 +178,7 @@ export const useCopyStrategy = () => {
     mutationFn: (strategyId: string) => socialService.copyStrategy(strategyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['strategies'] });
-      queryClient.invalidateQueries({ queryKey: ['social', 'marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace', 'strategies'] });
     },
   });
 };
@@ -168,7 +188,19 @@ export const useShareStrategy = () => {
   return useMutation({
     mutationFn: (data: ShareStrategyRequestDto) => socialService.shareStrategy(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['social', 'marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace', 'strategies'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myStrategies });
+    },
+  });
+};
+
+export const useDeleteSharedStrategy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (strategyId: string) => socialService.deleteStrategy(strategyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketplace', 'strategies'] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myStrategies });
     },
   });
 };

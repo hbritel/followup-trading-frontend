@@ -11,6 +11,7 @@ import { OnboardingWizard } from '@/components/onboarding';
 import { useJournalReminder } from '@/hooks/useJournalReminder';
 import { useLiveNotifications } from '@/hooks/useNotifications';
 import JournalReminderPopup from '@/components/notifications/JournalReminderPopup';
+import DunningBanner from '@/components/layout/DunningBanner';
 
 // Importer les composants nécessaires pour le dialogue d'avertissement
 import {
@@ -77,6 +78,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <>
+      <DunningBanner />
       <SidebarProvider defaultOpen={!isMobile}>
         {/* Cinematic Ambient Background */}
         <div className="fixed inset-0 z-[-1] bg-background pointer-events-none overflow-hidden">

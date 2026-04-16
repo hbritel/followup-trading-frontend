@@ -42,6 +42,10 @@ export interface TradeApiResponse {
     updatedAt: string;
     balance?: number;
     accountId?: string;
+    plannedEntryPrice?: number | null;
+    plannedStopLoss?: number | null;
+    plannedTakeProfit?: number | null;
+    plannedEntryTime?: string | null;
 }
 
 export interface PageDto<T> {
@@ -137,6 +141,10 @@ export const mapApiResponseToTrade = (r: TradeApiResponse): Trade => ({
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
     accountId: r.accountId ?? undefined,
+    plannedEntryPrice: r.plannedEntryPrice ?? undefined,
+    plannedStopLoss: r.plannedStopLoss ?? undefined,
+    plannedTakeProfit: r.plannedTakeProfit ?? undefined,
+    plannedEntryTime: r.plannedEntryTime ?? undefined,
 });
 
 // --- Helpers ---

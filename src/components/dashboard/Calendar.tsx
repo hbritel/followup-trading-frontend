@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { usePreferences } from '@/contexts/preferences-context';
 import {
   Card,
   CardContent,
@@ -39,6 +41,9 @@ interface TradingCalendarProps {
 }
 
 const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
+  const { t, i18n } = useTranslation();
+  const { preferences } = usePreferences();
+  const weekStartsOn: 0 | 1 = preferences?.weekStartDay === 'sunday' ? 0 : 1;
   const [date, setDate] = React.useState<Date>(new Date());
   const [month, setMonth] = React.useState<Date>(new Date());
   const [tradePage, setTradePage] = React.useState(0);
@@ -107,22 +112,22 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
     );
   };
 
-  const selectedDateLabel = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const selectedDateLabel = date.toLocaleDateString(i18n.language, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <Card className="glass-card animate-slide-up flex flex-col" style={{ animationDelay: '0.3s' }}>
       <CardHeader className="px-6 py-5 border-b border-slate-200/50 dark:border-white/5 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold tracking-tight">Trading Calendar</CardTitle>
-            <CardDescription className="text-muted-foreground">Your trading activity for {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">{t('dashboard.tradingCalendar')}</CardTitle>
+            <CardDescription className="text-muted-foreground">{t('dashboard.activityForMonth', { month: month.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' }) })}</CardDescription>
           </div>
           <div className="text-xs font-medium flex gap-2">
             <Badge variant="outline" className="bg-profit/10 border-profit/30 text-profit">
-              Win
+              {t('dashboard.win')}
             </Badge>
             <Badge variant="outline" className="bg-loss/10 border-loss/30 text-loss">
-              Loss
+              {t('dashboard.loss')}
             </Badge>
           </div>
         </div>
@@ -142,18 +147,19 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                 DayContent: renderDay
               }}
               disabled={{ after: new Date() }}
+              weekStartsOn={weekStartsOn}
             />
           </div>
 
           <div className="border-t border-slate-200/50 dark:border-white/10 pt-4">
             <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-              Selected: {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })}
             </h3>
 
             {selectedDateTrade ? (
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-foreground dark:text-white">Result</span>
+                  <span className="text-sm font-medium text-foreground dark:text-white">{t('tradingCal.result', 'Result')}</span>
                   <Badge variant={selectedDateTrade.result === 'win' ? 'default' : 'destructive'} className={cn(
                     "capitalize shadow-[0_0_10px_rgba(0,0,0,0.2)]",
                     selectedDateTrade.result === 'win' ? "bg-profit hover:bg-profit/90 text-black font-bold" : "bg-loss hover:bg-loss/90 text-white font-bold"
@@ -162,7 +168,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center mt-3">
-                  <span className="text-sm font-medium text-foreground dark:text-white">P&L</span>
+                  <span className="text-sm font-medium text-foreground dark:text-white">P&amp;L</span>
                   <span className={cn(
                     "text-xl font-bold font-mono tracking-tight",
                     selectedDateTrade.amount > 0 ? "text-profit" : "text-loss"
@@ -171,13 +177,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
-                  <span className="text-sm font-medium text-muted-foreground">Trades</span>
+                  <span className="text-sm font-medium text-muted-foreground">{t('tradingCal.trades', 'Trades')}</span>
                   <span className="text-sm font-medium text-foreground dark:text-white">{selectedDateTrade.tradesCount}</span>
                 </div>
               </div>
             ) : (
               <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-                <p className="text-sm">No trades on this date</p>
+                <p className="text-sm">{t('tradingCal.noTrades', 'No trades on this date')}</p>
               </div>
             )}
           </div>
@@ -190,10 +196,10 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
               <div className="px-6 py-3 flex items-center justify-between flex-shrink-0">
                 <div>
                   <h3 className="text-sm font-semibold tracking-tight text-foreground dark:text-white">
-                    Trades for {selectedDateLabel}
+                    {t('tradingCal.tradesFor', 'Trades for {{date}}', { date: selectedDateLabel })}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {dayTotalTrades} trade{dayTotalTrades !== 1 ? 's' : ''} executed
+                    {t('tradingCal.tradesExecuted', '{{count}} trade(s) executed', { count: dayTotalTrades })}
                   </p>
                 </div>
               </div>
@@ -208,10 +214,10 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                     <Table>
                       <TableHeader className="bg-slate-100 dark:bg-white/5 sticky top-0 z-10">
                         <TableRow className="border-slate-200/50 dark:border-white/5 hover:bg-transparent">
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Symbol</TableHead>
-                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">Time</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Position</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">P&L</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.symbol', 'Symbol')}</TableHead>
+                          <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.time', 'Time')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{t('tradingCal.position', 'Position')}</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wider font-semibold text-muted-foreground text-right">P&amp;L</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -254,9 +260,11 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                   {/* Pagination footer — matches Trade History style */}
                   <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5 flex-shrink-0">
                     <div className="text-xs text-muted-foreground">
-                      Showing <span className="font-medium text-foreground dark:text-white">{tradePage * TRADES_PER_PAGE + 1}</span> to{' '}
-                      <span className="font-medium text-foreground dark:text-white">{Math.min((tradePage + 1) * TRADES_PER_PAGE, dayTotalTrades)}</span> of{' '}
-                      <span className="font-medium text-foreground dark:text-white">{dayTotalTrades}</span> trades
+                      {t('tradingCal.showing', 'Showing {{from}} to {{to}} of {{total}} trades', {
+                        from: tradePage * TRADES_PER_PAGE + 1,
+                        to: Math.min((tradePage + 1) * TRADES_PER_PAGE, dayTotalTrades),
+                        total: dayTotalTrades,
+                      })}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground" disabled={tradePage === 0} onClick={() => setTradePage(0)}>
@@ -266,7 +274,7 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <div className="text-xs font-medium px-2">
-                        Page {tradePage + 1} / {dayTotalPages}
+                        {t('tradingCal.page', 'Page {{current}} / {{total}}', { current: tradePage + 1, total: dayTotalPages })}
                       </div>
                       <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground" disabled={tradePage >= dayTotalPages - 1} onClick={() => setTradePage(p => p + 1)}>
                         <ChevronRight className="h-4 w-4" />
@@ -279,13 +287,13 @@ const TradingCalendar = ({ accountId }: TradingCalendarProps) => {
                 </>
               ) : (
                 <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
-                  No trade details available
+                  {t('tradingCal.noTradeDetails', 'No trade details available')}
                 </div>
               )}
             </>
           ) : (
             <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm py-6">
-              Select a date with trades to view details
+              {t('tradingCal.selectDate', 'Select a date with trades to view details')}
             </div>
           )}
         </div>

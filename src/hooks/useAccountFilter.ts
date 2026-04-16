@@ -18,7 +18,7 @@ export const useAccountFilter = (selectorValue: string) => {
   const { data: connections } = useBrokerConnections();
 
   const connected = useMemo(
-    () => connections?.filter(c => c.status === 'CONNECTED') || [],
+    () => connections?.filter(c => c.status === 'CONNECTED' && !c.suspendedByPlan) || [],
     [connections],
   );
 

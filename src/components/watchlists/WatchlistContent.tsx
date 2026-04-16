@@ -94,7 +94,7 @@ const WatchlistContent: React.FC<WatchlistContentProps> = ({
 
 
   return (
-    <Card className="glass-card rounded-2xl lg:col-span-3">
+    <Card className="glass-card rounded-2xl h-full">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useTranslation } from 'react-i18next';
 import ChatPanel from '@/components/ai/ChatPanel';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
+import MarketClocks from '@/components/dashboard/MarketClocks';
 
 interface NavbarProps {
   onOpenCommandPalette?: () => void;
@@ -85,6 +86,7 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
               {navigator.platform.toUpperCase().includes('MAC') ? '⌘K' : 'Ctrl+K'}
             </kbd>
           </button>
+          <MarketClocks />
         </div>
 
         <div className="ml-auto flex items-center gap-1 md:gap-2">

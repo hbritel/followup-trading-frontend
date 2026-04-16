@@ -49,6 +49,10 @@ export interface Trade {
   balance?: number;
   accountId?: string;
   accountType?: string;
+  plannedEntryPrice?: number;
+  plannedStopLoss?: number;
+  plannedTakeProfit?: number;
+  plannedEntryTime?: string;
 }
 
 export interface TradesTableWrapperProps {

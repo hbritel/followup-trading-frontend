@@ -69,9 +69,14 @@ import {
 
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
-import PublicProfileSettings from "@/components/gamification/PublicProfileSettings";
+import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
 import UsageDashboard from "@/components/subscription/UsageDashboard";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
+import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
+import MyMentorSettings from "@/components/settings/MyMentorSettings";
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useMyMentorInstance } from '@/hooks/useMentor';
+import { Users as UsersIcon, GraduationCap } from 'lucide-react';
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -109,6 +114,10 @@ const Settings = () => {
 
     // --- États MFA ---
     const {user, isLoading: isAuthLoading, confirmMfaSetup, disableMfa} = useAuth();
+    const { hasPlan } = useFeatureFlags();
+    const { data: myMentorInstance } = useMyMentorInstance();
+    const isTeamPlan = hasPlan('TEAM');
+    const isInMentorInstance = !!myMentorInstance;
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -402,6 +411,18 @@ const Settings = () => {
                             <Brain className="h-4 w-4" />
                             {t("settings.aiProvider", "AI Provider")}
                         </TabsTrigger>
+                        {isTeamPlan && (
+                            <TabsTrigger value="mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                                <UsersIcon className="h-4 w-4" />
+                                {t("settings.mentor", "Mentor")}
+                            </TabsTrigger>
+                        )}
+                        {isInMentorInstance && (
+                            <TabsTrigger value="my-mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                                <GraduationCap className="h-4 w-4" />
+                                {t("settings.myMentor", "My Mentor")}
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     {/* ========== GENERAL TAB ========== */}
@@ -729,6 +750,38 @@ const Settings = () => {
                                             />
                                         </div>
                                     </div>
+
+                                    {/* AI Coaching */}
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">{t('settings.aiCoaching', 'AI Coaching')}</p>
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Brain className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.briefingReminder', 'Morning Briefing Reminder')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.briefingReminderDesc', 'Get a reminder to check your AI briefing each morning')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.briefingReminderEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('briefingReminderEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <Brain className="h-4 w-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-sm font-medium">{t('settings.debriefReminder', 'Evening Debrief Reminder')}</p>
+                                                    <p className="text-xs text-muted-foreground">{t('settings.debriefReminderDesc', 'Get a reminder to review your trading session')}</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={preferences?.debriefReminderEnabled ?? false}
+                                                onCheckedChange={(checked) => handleGenericPreferenceChange('debriefReminderEnabled', checked)}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                             </>
@@ -918,6 +971,20 @@ const Settings = () => {
                     <TabsContent value="ai-provider" className="space-y-6">
                         <AiProviderSettings />
                     </TabsContent>
+
+                    {/* ========== MENTOR TAB (TEAM plan) ========== */}
+                    {isTeamPlan && (
+                        <TabsContent value="mentor" className="space-y-6">
+                            <MentorInstanceSettings />
+                        </TabsContent>
+                    )}
+
+                    {/* ========== MY MENTOR TAB (student) ========== */}
+                    {isInMentorInstance && (
+                        <TabsContent value="my-mentor" className="space-y-6">
+                            <MyMentorSettings />
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
 

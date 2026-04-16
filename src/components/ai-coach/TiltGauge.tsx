@@ -1,10 +1,22 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTiltScore } from '@/hooks/useTiltScore';
+import { useAccountLabel } from '@/hooks/useAccountLabel';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+const TILT_LABELS: Record<string, Record<string, string>> = {
+  GREEN:  { en: 'Calm',    fr: 'Calme',     es: 'Calma' },
+  YELLOW: { en: 'Monitor', fr: 'Surveiller', es: 'Monitorear' },
+  ORANGE: { en: 'Caution', fr: 'Prudence',  es: 'Precaución' },
+  RED:    { en: 'Stop',    fr: 'Stop',      es: 'Detener' },
+};
 
 interface TiltGaugeProps {
   compact?: boolean;
   accountId?: string;
+  /** If false, disables WebSocket real-time updates (default: true) */
+  enableRealtime?: boolean;
 }
 
 const getColor = (score: number): string => {
@@ -21,11 +33,16 @@ const getStrokeColor = (score: number): string => {
   return '#ef4444';
 };
 
-const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId }) => {
-  const { data, isLoading } = useTiltScore(accountId);
+const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId, enableRealtime = true }) => {
+  const { i18n } = useTranslation();
+  const { data, isLoading } = useTiltScore(accountId, enableRealtime);
+  const getAccountLabelFn = useAccountLabel();
 
   const score = data?.score ?? 0;
-  const label = data?.thresholdLabel ?? 'GREEN';
+  const rawLabel = data?.thresholdLabel ?? 'GREEN';
+  const lang = i18n.language?.substring(0, 2) ?? 'en';
+  const label = TILT_LABELS[rawLabel]?.[lang] ?? TILT_LABELS[rawLabel]?.en ?? rawLabel;
+  const accountLabel = getAccountLabelFn(data?.connectionId);
 
   const size = compact ? 40 : 96;
   const strokeWidth = compact ? 3 : 7;
@@ -99,6 +116,14 @@ const TiltGauge: React.FC<TiltGaugeProps> = ({ compact = false, accountId }) => 
         >
           {label}
         </span>
+      )}
+      {!compact && accountLabel && (
+        <Badge
+          variant="outline"
+          className="text-[10px] px-1.5 py-0 h-4 font-medium text-muted-foreground border-border/60 mt-0.5"
+        >
+          {accountLabel}
+        </Badge>
       )}
     </div>
   );

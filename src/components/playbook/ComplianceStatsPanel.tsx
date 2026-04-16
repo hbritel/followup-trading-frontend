@@ -104,8 +104,10 @@ const ComplianceStatsPanel: React.FC<ComplianceStatsPanelProps> = ({ strategyId 
     );
   }
 
-  const { overallAdherence, tradesWithComplianceData, totalTrades, adherentWinRate,
-    nonAdherentWinRate, perRuleStats } = stats;
+  const { tradesWithComplianceData, totalTrades, perRuleStats } = stats;
+  const overallAdherence = stats.overallAdherence ?? 0;
+  const adherentWinRate = stats.adherentWinRate ?? 0;
+  const nonAdherentWinRate = stats.nonAdherentWinRate ?? 0;
 
   // Empty state
   if (tradesWithComplianceData === 0) {
