@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { TableActions } from '@/components/trades/TableActions';
 import { formatCurrency, formatDate, formatPercentage, cn } from '@/lib/utils';
+import { Target } from 'lucide-react';
 import { Trade } from './TradesTableWrapper';
 
 interface AdvancedFilters {
@@ -65,6 +66,7 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     switch (status) {
       case 'open': return 'default';
       case 'closed': return 'secondary';
+      case 'planned': return 'outline';
       case 'pending': return 'outline';
       case 'cancelled': return 'destructive';
       default: return 'outline';
@@ -173,9 +175,19 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 )}
                 {visibleColumns.status && (
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(trade.status)}>
-                      {t(`trades.${trade.status}`)}
-                    </Badge>
+                    {trade.status === 'planned' ? (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1"
+                      >
+                        <Target className="h-3 w-3" />
+                        {t('trades.planned', 'Planned')}
+                      </Badge>
+                    ) : (
+                      <Badge variant={getStatusBadgeVariant(trade.status)}>
+                        {t(`trades.${trade.status}`)}
+                      </Badge>
+                    )}
                   </TableCell>
                 )}
                 {visibleColumns.accountType && (

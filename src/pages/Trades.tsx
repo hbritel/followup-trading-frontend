@@ -608,6 +608,7 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('trades.allStatuses')}</SelectItem>
+            <SelectItem value="planned">{t('trades.planned', 'Planned')}</SelectItem>
             <SelectItem value="open">{t('trades.open')}</SelectItem>
             <SelectItem value="closed">{t('trades.closed')}</SelectItem>
             <SelectItem value="pending">{t('trades.pending')}</SelectItem>
