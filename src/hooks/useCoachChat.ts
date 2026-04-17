@@ -26,6 +26,8 @@ interface UseCoachChatState {
   isGenerating: boolean;
   isLoadingHistory: boolean;
   error: string | null;
+  /** Set when the backend returns 402 PLAN_LIMIT_EXCEEDED on send. */
+  isPlanLimitExceeded: boolean;
 }
 
 /**
@@ -47,6 +49,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     isGenerating: false,
     isLoadingHistory: false,
     error: null,
+    isPlanLimitExceeded: false,
   });
 
   /**
@@ -177,7 +180,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       const trimmed = text.trim();
       if (!trimmed || state.isGenerating) return;
 
-      setState((prev) => ({ ...prev, error: null }));
+      setState((prev) => ({ ...prev, error: null, isPlanLimitExceeded: false }));
       try {
         const { data } = await coachChatService.post(
           trimmed,
@@ -197,8 +200,15 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         refreshSubscriptionUsage();
         subscribe(data.assistant.id);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Failed to send message.';
-        setState((prev) => ({ ...prev, error: msg }));
+        const planLimit = Boolean(
+          (e as { isPlanLimitExceeded?: boolean } | null)?.isPlanLimitExceeded,
+        );
+        const msg = planLimit
+          ? "You've hit your daily AI coach limit. Buy a pack or wait until tomorrow."
+          : e instanceof Error
+            ? e.message
+            : 'Failed to send message.';
+        setState((prev) => ({ ...prev, error: msg, isPlanLimitExceeded: planLimit }));
       }
     },
     [state.isGenerating, subscribe, refreshSubscriptionUsage],
@@ -227,6 +237,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         isGenerating: false,
         isLoadingHistory: false,
         error: null,
+        isPlanLimitExceeded: false,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to clear history.';
@@ -258,6 +269,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     isGenerating: state.isGenerating,
     isLoadingHistory: state.isLoadingHistory,
     error: state.error,
+    isPlanLimitExceeded: state.isPlanLimitExceeded,
     send,
     cancel,
     retry,

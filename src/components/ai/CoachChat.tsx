@@ -1,10 +1,34 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Database, RotateCw, Send, Sparkles, X } from 'lucide-react';
+import { Database, Plus, RotateCw, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderChatMarkdown } from '@/lib/chatMarkdown';
 import { useCoachChat, type CoachViewMessage } from '@/hooks/useCoachChat';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
+import AiMessagePackPicker from '@/components/ai/AiMessagePackPicker';
+import apiClient from '@/services/apiClient';
+import type { SubscriptionDto } from '@/types/dto';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
+const AI_PLAN_CAPS: Record<string, number> = {
+  FREE: 0,
+  STARTER: 5,
+  PRO: 30,
+  ELITE: 150,
+};
 
 const SHARE_DATA_STORAGE_KEY = 'coachChat.shareUserData';
 
@@ -22,16 +46,34 @@ interface CoachChatProps {
  */
 const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
   const { t } = useTranslation();
+  const { currentPlan } = useFeatureFlags();
   const {
     messages,
     isGenerating,
     isLoadingHistory,
     error,
+    isPlanLimitExceeded,
     send,
     cancel,
     retry,
     loadHistory,
+    clearHistory,
   } = useCoachChat();
+
+  // Daily AI message usage — counter shown in header for paid plans
+  const { data: subscription } = useQuery<SubscriptionDto>({
+    queryKey: ['subscription', 'me'],
+    queryFn: async () => {
+      const res = await apiClient.get<SubscriptionDto>('/subscription');
+      return res.data;
+    },
+    staleTime: 60 * 1000,
+  });
+  const showUsageCounter =
+    currentPlan === 'STARTER' || currentPlan === 'PRO' || currentPlan === 'ELITE';
+  const aiMessagesToday = subscription?.usage?.aiMessagesToday ?? 0;
+  const aiMessagesMax =
+    subscription?.usage?.aiMessagesMax ?? AI_PLAN_CAPS[currentPlan] ?? 0;
 
   const [input, setInput] = useState('');
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -105,6 +147,68 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
         className,
       )}
     >
+      {/* Header: usage counter + new conversation button ----------------- */}
+      <div className="flex items-center justify-between border-b px-4 py-2.5 flex-shrink-0 gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Sparkles className="h-4 w-4 text-amber-400 shrink-0" />
+          <span className="text-sm font-semibold truncate">
+            {t('ai.chatTitle', 'Chat with your AI Coach')}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {showUsageCounter && (
+            <UsageLimitIndicator
+              used={aiMessagesToday}
+              max={aiMessagesMax}
+              label={t('ai.messagesToday', 'today')}
+              showBar={false}
+              className="flex-row items-center gap-1.5"
+            />
+          )}
+          {messages.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-muted-foreground hover:text-foreground"
+                  aria-label={t('ai.newConversation', 'New conversation')}
+                  title={t('ai.newConversation', 'New conversation')}
+                  disabled={isGenerating}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="text-xs hidden sm:inline">
+                    {t('ai.newConversation', 'New conversation')}
+                  </span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {t('ai.clearConfirmTitle', 'Start a new conversation?')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('ai.clearConfirmBody', 'Your current chat history will be permanently deleted. The coach will no longer have access to previous messages as context.')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    {t('common.cancel', 'Cancel')}
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => void clearHistory()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    {t('ai.clearAndStart', 'Clear & start fresh')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </div>
+
       {/* Message list -------------------------------------------------- */}
       <div
         ref={scrollerRef}
@@ -159,9 +263,21 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
         </div>
       )}
 
-      {error && !isGenerating && !canRetry && (
+      {error && !isGenerating && !canRetry && !isPlanLimitExceeded && (
         <div className="border-t bg-destructive/10 px-4 py-2 text-xs text-destructive">
           {error}
+        </div>
+      )}
+
+      {isPlanLimitExceeded && (
+        <div className="border-t bg-amber-50/50 dark:bg-amber-500/5 px-4 py-3 space-y-3">
+          <p className="text-xs text-amber-900 dark:text-amber-200">
+            {t(
+              'coach.chat.outOfMessages',
+              "You're out of messages today — pick a pack or wait until tomorrow.",
+            )}
+          </p>
+          <AiMessagePackPicker compact />
         </div>
       )}
 
