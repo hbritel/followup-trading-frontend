@@ -34,9 +34,14 @@ export const coachChatService = {
   /**
    * Submits a user turn. Returns the persisted USER message and the
    * placeholder ASSISTANT message; the latter's id is the SSE stream handle.
+   *
+   * @param shareUserData when true, the backend is authorised to attach a
+   *                      compact profile (recent trades, accounts, 30-day
+   *                      stats) to this turn's system prompt. Stateless:
+   *                      the flag is per-request, never stored server-side.
    */
-  post: (text: string) =>
-    apiClient.post<PostCoachMessageResponse>('/coach/messages', { text }),
+  post: (text: string, shareUserData: boolean) =>
+    apiClient.post<PostCoachMessageResponse>('/coach/messages', { text, shareUserData }),
 
   /** Paginated history, newest-first. */
   history: (opts?: { before?: string; limit?: number }) => {

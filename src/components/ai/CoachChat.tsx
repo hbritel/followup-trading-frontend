@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { RotateCw, Send, Sparkles, X } from 'lucide-react';
+import { Database, RotateCw, Send, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderChatMarkdown } from '@/lib/chatMarkdown';
 import { useCoachChat, type CoachViewMessage } from '@/hooks/useCoachChat';
+
+const SHARE_DATA_STORAGE_KEY = 'coachChat.shareUserData';
 
 interface CoachChatProps {
   className?: string;
@@ -33,9 +35,26 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
 
   const [input, setInput] = useState('');
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  // Data-sharing consent: per-turn flag, persisted locally so the user doesn't
+  // have to re-enable it every time. Never stored server-side — the POST body
+  // carries it for exactly one message.
+  const [shareUserData, setShareUserData] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return localStorage.getItem(SHARE_DATA_STORAGE_KEY) === 'true'; }
+    catch { return false; }
+  });
   const scrollerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRafRef = useRef<number | null>(null);
+
+  const toggleShareUserData = useCallback(() => {
+    setShareUserData((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(SHARE_DATA_STORAGE_KEY, String(next)); }
+      catch { /* storage blocked — in-memory only is fine */ }
+      return next;
+    });
+  }, []);
 
   // One-shot history load on mount.
   useEffect(() => {
@@ -60,9 +79,9 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
       const text = input.trim();
       if (!text || isGenerating) return;
       setInput('');
-      send(text);
+      send(text, { shareUserData });
     },
-    [input, isGenerating, send],
+    [input, isGenerating, send, shareUserData],
   );
 
   const onKeyDown = useCallback(
@@ -147,28 +166,63 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
       )}
 
       {/* Composer ------------------------------------------------------ */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-end gap-2 border-t bg-background px-3 py-3"
-      >
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={t('coach.chat.placeholder', 'Ask your coach anything…')}
-          rows={1}
-          className="max-h-40 min-h-[2.5rem] flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        />
-        <Button
-          type="submit"
-          size="icon"
-          disabled={!input.trim() || isGenerating}
-          aria-label={t('coach.chat.send', 'Send')}
+      <div className="border-t bg-background">
+        <div className="flex items-center justify-between px-3 pt-2">
+          <button
+            type="button"
+            onClick={toggleShareUserData}
+            aria-pressed={shareUserData}
+            title={t(
+              'coach.chat.shareData.tooltip',
+              'When on, the coach gets a compact snapshot of your recent trades and stats for this message only. Nothing is stored server-side.',
+            )}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors',
+              shareUserData
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-muted text-muted-foreground hover:bg-muted/50',
+            )}
+          >
+            <Database className="h-3 w-3" />
+            {shareUserData
+              ? t('coach.chat.shareData.on', 'Sharing my data')
+              : t('coach.chat.shareData.off', 'Share my data')}
+          </button>
+          <span className="text-[10px] text-muted-foreground">
+            {shareUserData
+              ? t(
+                  'coach.chat.shareData.hintOn',
+                  'Your last trades are attached to this message.',
+                )
+              : t(
+                  'coach.chat.shareData.hintOff',
+                  'The coach has no access to your trades.',
+                )}
+          </span>
+        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-end gap-2 px-3 py-3 pt-2"
         >
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={t('coach.chat.placeholder', 'Ask your coach anything…')}
+            rows={1}
+            className="max-h-40 min-h-[2.5rem] flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || isGenerating}
+            aria-label={t('coach.chat.send', 'Send')}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
     </div>
   );
 };

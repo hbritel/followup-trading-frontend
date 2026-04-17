@@ -153,15 +153,25 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     }
   }, [pageSize, subscribe]);
 
-  /** Submits a user turn. Returns once the POST returns (fast). */
+  /**
+   * Submits a user turn. Returns once the POST returns (fast).
+   *
+   * @param opts.shareUserData When true, the backend attaches a compact dump
+   *   of the user's recent trades / accounts / 30-day stats to the system
+   *   prompt so the coach can reference concrete numbers. Per-turn flag only —
+   *   no server-side consent is stored.
+   */
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, opts: { shareUserData?: boolean } = {}) => {
       const trimmed = text.trim();
       if (!trimmed || state.isGenerating) return;
 
       setState((prev) => ({ ...prev, error: null }));
       try {
-        const { data } = await coachChatService.post(trimmed);
+        const { data } = await coachChatService.post(
+          trimmed,
+          Boolean(opts.shareUserData),
+        );
         setState((prev) => ({
           ...prev,
           isGenerating: true,
