@@ -209,6 +209,27 @@ apiClient.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // --- 402 Payment Required: plan limit reached on a gated action ---
+        // Backend sends { code: 'PLAN_LIMIT_EXCEEDED', details: { action, currentCount, limit, plan, upgradeUrl } }.
+        // Surface the toast once; let the calling code decide whether to show a
+        // richer in-page upgrade CTA (our AI coach page does exactly that).
+        if (status === 402) {
+            const details = error.response?.data?.details ?? {};
+            const action = typeof details.action === 'string' ? details.action : 'this action';
+            const current = details.currentCount ?? '?';
+            const limit = details.limit ?? '?';
+            toast.error(
+                `You've reached your plan's limit for ${action} (${current}/${limit}). Upgrade or ask support for a bonus.`,
+                { duration: 6000 }
+            );
+            const planErr = Object.assign(new Error('PLAN_LIMIT_EXCEEDED'), {
+                isPlanLimitExceeded: true,
+                planLimitDetails: details,
+                originalError: error,
+            });
+            return Promise.reject(planErr);
+        }
+
         // --- 429 Rate Limited ---
         if (status === 429) {
             const retryAfter = error.response.headers['retry-after'];
