@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   coachChatService,
   streamCoachMessage,
@@ -39,6 +40,7 @@ interface UseCoachChatState {
  */
 export function useCoachChat(opts: { pageSize?: number } = {}) {
   const pageSize = opts.pageSize ?? 50;
+  const queryClient = useQueryClient();
 
   const [state, setState] = useState<UseCoachChatState>({
     messages: [],
@@ -46,6 +48,15 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     isLoadingHistory: false,
     error: null,
   });
+
+  /**
+   * Invalidate the ['subscription', 'me'] query so the "X/Y today" counter
+   * in the chat header refetches. Otherwise the server-side counter bumps
+   * but the frontend keeps displaying the 60s-stale value.
+   */
+  const refreshSubscriptionUsage = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['subscription', 'me'] });
+  }, [queryClient]);
 
   /** Active SSE stream — one at a time (we only stream the tail message). */
   const activeStreamRef = useRef<{ messageId: string; cancel: () => void } | null>(null);
@@ -181,13 +192,16 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
             toViewModel(data.assistant),
           ],
         }));
+        // Bump the usage counter immediately — the user message just got
+        // persisted server-side, so count-today is already +1.
+        refreshSubscriptionUsage();
         subscribe(data.assistant.id);
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Failed to send message.';
         setState((prev) => ({ ...prev, error: msg }));
       }
     },
-    [state.isGenerating, subscribe],
+    [state.isGenerating, subscribe, refreshSubscriptionUsage],
   );
 
   /** Cancels the currently-streaming assistant message, if any. */
@@ -202,6 +216,23 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, []);
+
+  /** Deletes every message on the user's thread and resets local state. */
+  const clearHistory = useCallback(async () => {
+    closeActiveStream();
+    try {
+      await coachChatService.clearThread();
+      setState({
+        messages: [],
+        isGenerating: false,
+        isLoadingHistory: false,
+        error: null,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to clear history.';
+      setState((prev) => ({ ...prev, error: msg }));
+    }
+  }, [closeActiveStream]);
 
   /** Retries the tail message if it's FAILED. */
   const retry = useCallback(async () => {
@@ -231,5 +262,6 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     cancel,
     retry,
     loadHistory,
+    clearHistory,
   };
 }
