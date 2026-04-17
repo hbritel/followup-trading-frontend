@@ -80,9 +80,15 @@ export function renderChatMarkdown(text: string): React.ReactNode {
 /**
  * Parses **bold**, *italic*, and `code` inside a single line.
  *
- * <p>We walk the string character-by-character instead of using a global regex
- * so that overlapping delimiters ({@code **italic bold**} for instance)
- * behave predictably.</p>
+ * <p>Designed to be SAFE on partial / in-flight streamed text: when a marker
+ * has no matching closer yet (e.g. the LLM just emitted {@code **bo} and the
+ * rest is still streaming), we emit the opener verbatim and advance past it,
+ * rather than looping looking for a closer that isn't there yet.</p>
+ *
+ * <p>The previous implementation infinite-looped on an unclosed {@code **}
+ * because {@code findNextSpecial} returned the current index, and the main
+ * loop didn't advance — the tokens array grew until the JS engine threw
+ * "Invalid array length", crashing the chat page during streaming.</p>
  */
 function renderInline(text: string): React.ReactNode {
   const tokens: React.ReactNode[] = [];
@@ -96,8 +102,12 @@ function renderInline(text: string): React.ReactNode {
       if (end > i + 2) {
         tokens.push(<strong key={keyCounter++}>{text.slice(i + 2, end)}</strong>);
         i = end + 2;
-        continue;
+      } else {
+        // Not closed yet — emit the opener literally and move past both chars.
+        tokens.push('**');
+        i += 2;
       }
+      continue;
     }
     // *italic*   (avoid matching a lone '*' that's part of '**')
     if (text[i] === '*' && text[i + 1] !== '*') {
@@ -105,8 +115,11 @@ function renderInline(text: string): React.ReactNode {
       if (end > i + 1) {
         tokens.push(<em key={keyCounter++}>{text.slice(i + 1, end)}</em>);
         i = end + 1;
-        continue;
+      } else {
+        tokens.push('*');
+        i += 1;
       }
+      continue;
     }
     // `code`
     if (text[i] === '`') {
@@ -121,11 +134,16 @@ function renderInline(text: string): React.ReactNode {
           </code>,
         );
         i = end + 1;
-        continue;
+      } else {
+        tokens.push('`');
+        i += 1;
       }
+      continue;
     }
-    // Plain char — coalesce until the next special marker for fewer nodes.
-    const nextSpecial = findNextSpecial(text, i);
+    // Plain char — coalesce up to the NEXT special marker. Crucially we
+    // search from i+1 so progress is guaranteed even when text[i] itself
+    // is a leftover character that no rule above matched.
+    const nextSpecial = findNextSpecial(text, i + 1);
     tokens.push(text.slice(i, nextSpecial));
     i = nextSpecial;
   }
