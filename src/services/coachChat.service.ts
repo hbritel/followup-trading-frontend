@@ -150,8 +150,12 @@ function dispatchSseEvent(raw: string, handlers: CoachStreamHandlers): void {
     if (line.startsWith(':')) continue; // comment
     const colon = line.indexOf(':');
     const field = colon === -1 ? line : line.slice(0, colon);
-    let value = colon === -1 ? '' : line.slice(colon + 1);
-    if (value.startsWith(' ')) value = value.slice(1);
+    // Note: W3C SSE says "strip one leading space after the colon" but Spring's
+    // SseEmitter emits `data:TEXT` with no cosmetic separator. Stripping a space
+    // here would eat the token's own leading space ("  n'ai" → "n'ai") and
+    // collapse every word in a streamed chat reply. We take the value as-is
+    // since we control both ends.
+    const value = colon === -1 ? '' : line.slice(colon + 1);
 
     if (field === 'event') event = value;
     else if (field === 'data') dataLines.push(value);

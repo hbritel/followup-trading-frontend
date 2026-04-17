@@ -3,6 +3,7 @@ import { RotateCw, Send, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { renderChatMarkdown } from '@/lib/chatMarkdown';
 import { useCoachChat, type CoachViewMessage } from '@/hooks/useCoachChat';
 
 interface CoachChatProps {
@@ -194,11 +195,23 @@ const MessageBubble: React.FC<{ message: CoachViewMessage }> = ({ message }) => 
   const showCaret =
     !isUser && (message.status === 'STREAMING' || message.status === 'PENDING');
 
+  // User bubbles stay plain-text (their own input); assistant bubbles get the
+  // small markdown renderer so **bold**, bullets, and numbered lists display.
+  const body = isUser
+    ? message.content
+    : message.content
+      ? renderChatMarkdown(message.content)
+      : showCaret
+        ? '…'
+        : '';
+
   return (
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
       <div
         className={cn(
-          'max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed',
+          // break-words + whitespace-pre-wrap handles unbroken tokens AND
+          // preserves in-line whitespace the model emitted.
+          'max-w-[85%] whitespace-pre-wrap break-words rounded-lg px-3 py-2 text-sm leading-relaxed',
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted text-foreground',
@@ -206,7 +219,7 @@ const MessageBubble: React.FC<{ message: CoachViewMessage }> = ({ message }) => 
           message.status === 'CANCELLED' && 'opacity-60',
         )}
       >
-        {message.content || (showCaret ? '…' : '')}
+        {body}
         {showCaret && message.content && (
           <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-current align-middle opacity-60" />
         )}
