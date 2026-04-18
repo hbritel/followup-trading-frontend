@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   User,
   Sun,
@@ -29,7 +29,6 @@ import { useTheme } from '@/components/providers/theme-provider';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslation } from 'react-i18next';
-import ChatPanel from '@/components/ai/ChatPanel';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MarketClocks from '@/components/dashboard/MarketClocks';
 
@@ -42,7 +41,6 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [chatOpen, setChatOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -94,7 +92,7 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setChatOpen(true)}
+            onClick={() => navigate('/ai-coach')}
             aria-label={t('ai.title', 'AI Trading Coach')}
             title={t('ai.title', 'AI Trading Coach')}
             className="relative text-amber-400 hover:text-amber-300 hover:shadow-[0_0_8px_rgba(251,191,36,0.3)]"
@@ -182,7 +180,6 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         </div>
       </nav>
 
-      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
     </>
   );
 };
