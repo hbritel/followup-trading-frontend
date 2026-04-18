@@ -1514,6 +1514,11 @@
     "syncAllCompleteDescription": "Las {{count}} cuentas se sincronizaron correctamente.",
     "syncAllPartial": "Sincronización parcial",
     "syncAllPartialDescription": "{{success}} cuentas sincronizadas, {{failed}} fallaron.",
+    "syncStarted": "Sincronizando {{account}}…",
+    "syncStartedInitial": "Sincronización inicial de {{account}}…",
+    "syncCompletedSummary": "Sincronización completa: {{count}} trades importados en {{account}}",
+    "syncFailedToast": "Error de sincronización en {{account}}: {{message}}",
+    "liveTradeToast": "Live: {{count}} trade(s) actualizados",
     "noAccounts": "Sin cuentas",
     "noAccountsDescription": "Conecta un broker o crea una cuenta manual para empezar a seguir tus trades.",
     "confirmDisconnect": "¿Desconectar cuenta?",
@@ -1524,7 +1529,9 @@
     "statusPending": "pendiente",
     "statusPaused": "en pausa",
     "statusDisconnected": "desconectada",
-    "statusError": "error"
+    "statusError": "error",
+    "brokerAccountsLabel": "Cuentas broker",
+    "atLimitTooltip": "Limite alcanzado en el plan {{plan}} ({{max}} cuenta(s)). Actualiza para anadir mas cuentas."
   },
   "statistics": {
     "title": "Estadísticas de trading",
