@@ -12,7 +12,7 @@ import CoachStreak from '@/components/ai-coach/CoachStreak';
 import ScoreHistory from '@/components/ai-coach/ScoreHistory';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
-import InlineChat from '@/components/ai/InlineChat';
+import CoachChat from '@/components/ai/CoachChat';
 import CoachTour from '@/components/ai-coach/CoachTour';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -240,7 +240,7 @@ const AiCoach: React.FC = () => {
         {/* Mobile: stacked panels with tab switcher */}
         <div className="lg:hidden flex-1 min-h-0">
           {mobileTab === 'chat' ? (
-            <InlineChat className="h-full" />
+            <CoachChat className="h-full" />
           ) : (
             <div className="h-full overflow-y-auto">
               {coachingPanel}
@@ -251,7 +251,7 @@ const AiCoach: React.FC = () => {
         {/* Desktop: fixed-ratio flex layout (resizable panels disabled to eliminate flickering) */}
         <div className="hidden lg:flex flex-1 min-h-0 gap-3">
           <div className="flex-1 min-w-0">
-            <InlineChat className="h-full" />
+            <CoachChat className="h-full" />
           </div>
           <div className="w-[380px] flex-shrink-0 overflow-y-auto">
             {coachingPanel}

@@ -1,12 +1,5 @@
 import apiClient from './apiClient';
 
-export interface AiChatMessageResponse {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  createdAt: string;
-}
-
 export interface AiDigestResponse {
   id: string;
   content: string;
@@ -29,35 +22,11 @@ export interface DigestJobResponse {
   createdAt: string;
 }
 
-export interface ChatJobResponse {
-  jobId: string;
-  status: 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED';
-  content: string | null;
-  error: string | null;
-  createdAt: string;
-}
-
 export interface GenerateDigestParams {
   accountId?: string;
   startDate?: string;
   endDate?: string;
 }
-
-/**
- * Sends a chat message to the AI coach — returns a raw Response for SSE streaming.
- * Use fetch (not axios) because axios does not support streaming response bodies.
- */
-const sendChatMessage = async (message: string): Promise<Response> => {
-  const token = localStorage.getItem('accessToken');
-  return fetch('/api/v1/ai/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ message }),
-  });
-};
 
 const getLatestDigest = async (): Promise<AiDigestResponse | null> => {
   const response = await apiClient.get<AiDigestResponse>('/ai/digest/latest');
@@ -103,43 +72,11 @@ const analyzeTradeById = async (tradeId: string): Promise<AiAnalysisResponse> =>
   return response.data;
 };
 
-const getChatHistory = async (): Promise<AiChatMessageResponse[]> => {
-  const response = await apiClient.get<AiChatMessageResponse[]>('/ai/history');
-  return response.data;
-};
-
-const clearChatHistory = async (): Promise<void> => {
-  await apiClient.delete('/ai/history');
-};
-
-// ---- Async chat (survives client disconnect) ----
-
-const startChatJob = async (message: string): Promise<ChatJobResponse> => {
-  const response = await apiClient.post<ChatJobResponse>('/ai/chat/start', { message });
-  return response.data;
-};
-
-const getChatJobStatus = async (jobId: string): Promise<ChatJobResponse> => {
-  const response = await apiClient.get<ChatJobResponse>(`/ai/chat/jobs/${jobId}`);
-  return response.data;
-};
-
-const getPendingChatJobs = async (): Promise<ChatJobResponse[]> => {
-  const response = await apiClient.get<ChatJobResponse[]>('/ai/chat/pending');
-  return response.data;
-};
-
 export const aiService = {
-  sendChatMessage,
   getLatestDigest,
   getDigestHistory,
   startDigestGeneration,
   getDigestJobStatus,
   generateWeeklyDigest,
   analyzeTradeById,
-  getChatHistory,
-  clearChatHistory,
-  startChatJob,
-  getChatJobStatus,
-  getPendingChatJobs,
 };

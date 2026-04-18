@@ -71,6 +71,7 @@ import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
 import UsageDashboard from "@/components/subscription/UsageDashboard";
+import AiMessagePackPicker from "@/components/ai/AiMessagePackPicker";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
 import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
 import MyMentorSettings from "@/components/settings/MyMentorSettings";
@@ -965,6 +966,10 @@ const Settings = () => {
                     {/* ========== BILLING TAB ========== */}
                     <TabsContent value="billing" className="space-y-6">
                         <UsageDashboard />
+                        <AiMessagePackPicker
+                            heading="AI coach message packs"
+                            subheading="One-off top-ups for extra coach messages — credited immediately after checkout."
+                        />
                     </TabsContent>
 
                     {/* ========== AI PROVIDER TAB ========== */}
