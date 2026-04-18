@@ -111,8 +111,8 @@ const Pricing: React.FC = () => {
           ? t('pricing.promoAppliedDescription', '{{name}} has been applied to your account.', { name: promoValidation.name })
           : t('pricing.promoAppliedSuccess', 'Your promo code has been successfully applied.'),
       });
-    } catch (err: any) {
-      const message = err?.response?.data?.message ?? t('pricing.promoApplyFailed', 'Failed to apply promo code.');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('pricing.promoApplyFailed', 'Failed to apply promo code.');
       setPromoError(message);
       toast({ title: t('common.error', 'Error'), description: message, variant: 'destructive' });
     } finally {

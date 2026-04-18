@@ -176,9 +176,10 @@ function ConnectBrokerDialog({ broker, open, onOpenChange }: ConnectDialogProps)
         description: `${broker.displayName} ${t('settings.successfullyConnected', 'has been successfully connected.')}`,
       });
       onOpenChange(false);
-    } catch (error: any) {
-      const message = error?.response?.data?.message
-        || error?.message
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } }; message?: string };
+      const message = e?.response?.data?.message
+        || e?.message
         || t('settings.connectionFailed', 'Connection failed. Please check your credentials.');
       toast({
         title: t('settings.connectionError', 'Connection Error'),
@@ -646,10 +647,10 @@ const BrokerConnections = () => {
         title: t('settings.brokerDisconnected', 'Broker Disconnected'),
         description: t('settings.successfullyDisconnected', 'The broker has been disconnected.'),
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: t('settings.error', 'Error'),
-        description: err?.message || t('settings.disconnectFailed', 'Failed to disconnect.'),
+        description: (err as { message?: string })?.message || t('settings.disconnectFailed', 'Failed to disconnect.'),
         variant: 'destructive',
       });
     } finally {
@@ -665,10 +666,10 @@ const BrokerConnections = () => {
         title: t('settings.syncComplete', 'Sync Complete'),
         description: `${t('settings.imported', 'Imported')}: ${result.tradesImported}, ${t('settings.skipped', 'Skipped')}: ${result.tradesSkipped}`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: t('settings.syncFailed', 'Sync Failed'),
-        description: err?.message || t('settings.syncError', 'An error occurred during sync.'),
+        description: (err as { message?: string })?.message || t('settings.syncError', 'An error occurred during sync.'),
         variant: 'destructive',
       });
     } finally {
@@ -687,10 +688,10 @@ const BrokerConnections = () => {
         description: result.message,
         variant: result.success ? undefined : 'destructive',
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: t('settings.testFailed', 'Connection Failed'),
-        description: err?.message || t('settings.testError', 'Could not test connection.'),
+        description: (err as { message?: string })?.message || t('settings.testError', 'Could not test connection.'),
         variant: 'destructive',
       });
     } finally {

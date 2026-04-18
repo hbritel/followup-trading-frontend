@@ -38,7 +38,7 @@ export default function PlanChangeListener() {
           const data = JSON.parse(message.body) as PlanChangedNotification;
           // Handle both "isDowngrade" and "downgrade" (Lombok/Jackson serialization)
           if ('isDowngrade' in data && !('downgrade' in data)) {
-            (data as any).downgrade = (data as any).isDowngrade;
+            (data as unknown as Record<string, unknown>).downgrade = (data as unknown as Record<string, unknown>).isDowngrade;
           }
           setNotification(data);
 

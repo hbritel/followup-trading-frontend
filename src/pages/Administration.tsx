@@ -116,7 +116,7 @@ import {
   useSetUserFeatureOverride,
   useRemoveUserFeatureOverride,
 } from '@/hooks/useAdmin';
-import type { AdminUserDto, AuditLogFilters } from '@/services/admin.service';
+import type { AdminUserDto, AuditLogFilters, DashboardStatsDto, RecentAdminActionDto } from '@/services/admin.service';
 import { promoService, type PromoCodeDto, type PromoUsageDto } from '@/services/promo.service';
 import { useAuth } from '@/contexts/auth-context';
 import { Textarea } from '@/components/ui/textarea';
@@ -973,7 +973,7 @@ function DashboardTab() {
   const { data: topUsers } = useAdminTopUsers(5);
 
   // Fallback to old stats if dashboard-stats endpoint not available yet
-  const stats = ds as any;
+  const stats = ds as DashboardStatsDto | undefined;
 
   if (isLoading) {
     return (
@@ -1215,7 +1215,7 @@ function DashboardTab() {
               <p className="text-[11px] text-muted-foreground">{t('admin.recentActions', 'Recent Admin Actions')}</p>
               {(stats?.recentAdminActions ?? []).length > 0 ? (
                 <div className="space-y-1.5">
-                  {stats.recentAdminActions.map((action: any, i: number) => (
+                  {stats.recentAdminActions.map((action: RecentAdminActionDto, i: number) => (
                     <div key={i} className="flex items-start gap-2 text-[11px]">
                       <span className="text-muted-foreground shrink-0 tabular-nums">{fmtDate(action.timestamp)}</span>
                       <span className="truncate">{action.details}</span>

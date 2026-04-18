@@ -22,17 +22,17 @@ export const useCoachStreak = () => {
       ]);
 
       // Extract data arrays from Axios responses
-      const briefings = Array.isArray(briefingsResp) ? briefingsResp : (briefingsResp as any)?.data ?? [];
-      const debriefs = Array.isArray(debriefsResp) ? debriefsResp : (debriefsResp as any)?.data ?? [];
+      const briefings = Array.isArray(briefingsResp) ? briefingsResp : (briefingsResp as { data?: unknown[] })?.data ?? [];
+      const debriefs = Array.isArray(debriefsResp) ? debriefsResp : (debriefsResp as { data?: unknown[] })?.data ?? [];
 
       // Collect all unique dates where user engaged
       const engagedDates = new Set<string>();
-      briefings.forEach((b: any) => {
-        const d = b.briefingDate?.split('T')[0];
+      briefings.forEach((b: unknown) => {
+        const d = (b as { briefingDate?: string })?.briefingDate?.split('T')[0];
         if (d) engagedDates.add(d);
       });
-      debriefs.forEach((d: any) => {
-        const s = d.sessionDate?.split('T')[0];
+      debriefs.forEach((d: unknown) => {
+        const s = (d as { sessionDate?: string })?.sessionDate?.split('T')[0];
         if (s) engagedDates.add(s);
       });
 

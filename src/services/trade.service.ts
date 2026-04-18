@@ -199,7 +199,7 @@ export const tradeService = {
         if (params?.entryDateTo) searchBody.entryDateTo = params.entryDateTo;
         if (params?.strategyIds?.length) searchBody.strategyIds = params.strategyIds;
 
-        const response = await apiClient.post<any>('/trades/search', searchBody);
+        const response = await apiClient.post<{ trades: unknown[]; totalElements: number; totalPages: number; currentPage: number }>('/trades/search', searchBody);
 
         const mappedContent = (response.data.trades || []).map(mapApiResponseToTrade);
 
@@ -285,7 +285,7 @@ export const tradeService = {
                 ? (Array.isArray(accountIds) ? accountIds : [accountIds])
                 : undefined
         };
-        const response = await apiClient.post<any>('/trades/search', searchBody);
+        const response = await apiClient.post<{ trades: unknown[] }>('/trades/search', searchBody);
         return (response.data.trades || []).map(mapApiResponseToTrade);
     },
 };

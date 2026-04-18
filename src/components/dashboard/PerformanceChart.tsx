@@ -12,6 +12,8 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 import {
   Card,
   CardContent,
@@ -54,12 +56,14 @@ const formatCurrency = (value: number) => {
   return `$${value.toFixed(2)}`;
 };
 
-const CustomTooltip = ({ active, payload, label, locale }: any) => {
+type CustomTooltipProps = TooltipProps<ValueType, NameType> & { locale?: string };
+
+const CustomTooltip = ({ active, payload, label, locale }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="glass-panel p-3 rounded-lg border border-slate-200/50 dark:border-white/10 shadow-xl backdrop-blur-md">
         <p className="text-xs font-semibold text-muted-foreground mb-1 font-mono">{formatDateFull(label, locale)}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index: number) => (
           <div key={`item-${index}`} className="flex items-center gap-2 text-sm">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
             <span className="font-medium text-foreground dark:text-white">

@@ -65,7 +65,7 @@ const AiProviderSettings: React.FC = () => {
   // Fetch which provider is actually being used right now
   const { data: activeProvider } = useQuery({
     queryKey: ['ai-provider', 'active'],
-    queryFn: () => aiSettingsService.getActiveProvider().then((r: any) => r.data),
+    queryFn: () => aiSettingsService.getActiveProvider().then((r: { data: unknown }) => r.data),
     staleTime: 30_000,
   });
 

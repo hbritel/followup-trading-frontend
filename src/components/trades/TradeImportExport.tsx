@@ -98,7 +98,7 @@ function downloadBlob(content: string, filename: string, mimeType: string) {
 }
 
 interface TradeImportExportProps {
-  onImport?: (trades: any[]) => void;
+  onImport?: (trades: unknown[]) => void;
   onOpenImportDialog?: () => void;
   filteredTrades: Trade[];
   visibleColumns: Record<string, boolean>;

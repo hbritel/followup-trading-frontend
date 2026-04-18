@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { sessionService } from '@/services/session.service';
-import type { UserPreferencesDto, ChangePasswordRequestDto } from '@/types/dto';
+import type { UserPreferencesDto, ChangePasswordRequestDto, SessionDto } from '@/types/dto';
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 
@@ -105,8 +105,8 @@ export const useRevokeSession = () => {
       // Optimistic: remove session from cache immediately
       await queryClient.cancelQueries({ queryKey: USER_SESSIONS_KEY });
       const previous = queryClient.getQueryData(USER_SESSIONS_KEY);
-      queryClient.setQueryData(USER_SESSIONS_KEY, (old: any[] | undefined) =>
-        old ? old.filter((s: any) => s.id !== sessionId) : [],
+      queryClient.setQueryData(USER_SESSIONS_KEY, (old: SessionDto[] | undefined) =>
+        old ? old.filter((s: SessionDto) => s.id !== sessionId) : [],
       );
       return { previous };
     },
@@ -128,8 +128,8 @@ export const useRevokeAllOtherSessions = () => {
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: USER_SESSIONS_KEY });
       const previous = queryClient.getQueryData(USER_SESSIONS_KEY);
-      queryClient.setQueryData(USER_SESSIONS_KEY, (old: any[] | undefined) =>
-        old ? old.filter((s: any) => s.isCurrentSession) : [],
+      queryClient.setQueryData(USER_SESSIONS_KEY, (old: SessionDto[] | undefined) =>
+        old ? old.filter((s: SessionDto) => s.isCurrentSession) : [],
       );
       return { previous };
     },

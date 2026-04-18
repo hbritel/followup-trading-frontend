@@ -20,7 +20,7 @@ const ALL_NOTIFICATIONS_KEY = ['notifications'] as const;
 // ---------------------------------------------------------------------------
 
 const isPageResponse = (data: unknown): data is PageResponse<NotificationDto> =>
-  !!data && typeof data === 'object' && Array.isArray((data as any).content);
+  !!data && typeof data === 'object' && Array.isArray((data as Record<string, unknown>).content);
 
 // ---------------------------------------------------------------------------
 // Queries

@@ -57,7 +57,7 @@ const getFingerprint = async (): Promise<string> => {
 };
 
 // Ajoute l'empreinte aux en-têtes de requêtes Axios
-const addFingerprintToRequest = async (config: any): Promise<any> => {
+const addFingerprintToRequest = async (config: import('axios').InternalAxiosRequestConfig): Promise<import('axios').InternalAxiosRequestConfig> => {
     try {
         const fingerprint = await getFingerprint();
         if (!config.headers) {

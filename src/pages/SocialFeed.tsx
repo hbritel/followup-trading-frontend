@@ -26,7 +26,7 @@ import FeedCard from '@/components/marketfeed/FeedCard';
 import { useMarketFeed, useMarketFeedSources, useToggleFeedSource, useDeleteFeedSource, useRecommendedSources, useSubscribeToSource } from '@/hooks/useMarketFeed';
 import { marketFeedService } from '@/services/marketfeed.service';
 import { useQueryClient } from '@tanstack/react-query';
-import type { MarketFeedCategory, MarketFeedItemDto } from '@/types/dto';
+import type { MarketFeedCategory, MarketFeedSource, MarketFeedItemDto } from '@/types/dto';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
@@ -144,7 +144,7 @@ const SourceSettings: React.FC<{ onSourceChange?: () => void }> = ({ onSourceCha
     if (atStarterLimit) return;
     const sourceKey = customType === 'REDDIT' ? customKey.replace(/^r\//, '') : customKey;
     subscribeMutation.mutate(
-      { source: customType, sourceKey, label: customLabel, categories: ['ALL' as any] },
+      { source: customType, sourceKey, label: customLabel, categories: ['ALL' as MarketFeedCategory] },
       { onSuccess: () => { setCustomLabel(''); setCustomKey(''); setShowAddForm(false); } },
     );
   };
@@ -328,10 +328,10 @@ const FeedOnboarding: React.FC<{ onSourceChange?: () => void }> = ({ onSourceCha
   const handleSubscribe = (rec: { source: string; sourceKey: string; label: string; categories: string[] }) => {
     subscribeMutation.mutate(
       {
-        source: rec.source as any,
+        source: rec.source as MarketFeedSource,
         sourceKey: rec.sourceKey,
         label: rec.label,
-        categories: rec.categories as any[],
+        categories: rec.categories as MarketFeedCategory[],
       },
       {
         onSuccess: () => {
@@ -658,7 +658,6 @@ const SocialFeed: React.FC = () => {
                 {isLoading && allItems.length === 0 && (
                   <div className="xl:columns-2 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      // eslint-disable-next-line react/no-array-index-key
                       <FeedCardSkeleton key={i} />
                     ))}
                   </div>
