@@ -357,7 +357,7 @@
     "tradingPnl": "P&L Trading",
     "accountBalance": "Saldo de cuenta",
     "returnOnInvestment": "Retorno de inversión",
-    "tradingCalendar": "Calendario de trading",
+    "tradingCalendar": "Noticias económicas",
     "activityForMonth": "Tu actividad de trading para {{month}}",
     "win": "Ganancia",
     "loss": "Pérdida"
@@ -973,7 +973,7 @@
     "tradesExecutedPlaceholder": "Ingrese el número de operaciones ejecutadas",
     "contentPlaceholder": "Escriba su entrada aquí...",
     "calendar": "Calendario",
-    "calendarDescription": "Vea su calendario de trading",
+    "calendarDescription": "Publicaciones económicas a seguir",
     "pickDate": "Seleccione una fecha",
     "mood": "Estado de ánimo",
     "tags": "Etiquetas",
@@ -1233,11 +1233,11 @@
     "pickDate": "Elegir fecha"
   },
   "calendar": {
-    "tradingCalendar": "Calendario de trading",
-    "description": "Planifique y registre sus actividades de trading",
+    "tradingCalendar": "Noticias económicas",
+    "description": "Publicaciones macro que pueden impactar sus operaciones",
     "addEvent": "Agregar evento",
     "addNewEvent": "Agregar nuevo evento",
-    "addNewEventDescription": "Cree un nuevo evento para su calendario de trading.",
+    "addNewEventDescription": "Añada un evento personal a su calendario.",
     "noEvents": "Ningún evento coincide con sus filtros",
     "upcomingEvents": "Próximos eventos",
     "eventTypesTitle": "Tipos de evento",

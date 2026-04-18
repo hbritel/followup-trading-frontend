@@ -371,7 +371,7 @@
     "tradingPnl": "Trading P&L",
     "accountBalance": "Account Balance",
     "returnOnInvestment": "Return on Investment",
-    "tradingCalendar": "Trading Calendar",
+    "tradingCalendar": "Economic news",
     "activityForMonth": "Your trading activity for {{month}}",
     "win": "Win",
     "loss": "Loss"
@@ -1087,7 +1087,7 @@
     "tradesExecutedPlaceholder": "Enter the number of executed trades",
     "contentPlaceholder": "Write your entry here...",
     "calendar": "Calendar",
-    "calendarDescription": "View your trading calendar",
+    "calendarDescription": "Economic releases to watch",
     "pickDate": "Pick a date",
     "mood": "Mood",
     "tags": "Tags",
@@ -1362,11 +1362,11 @@
     "pickDate": "Pick a date"
   },
   "calendar": {
-    "tradingCalendar": "Trading Calendar",
-    "description": "Plan and track your trading activities",
+    "tradingCalendar": "Economic news",
+    "description": "Macro releases that may impact your trades",
     "addEvent": "Add Event",
     "addNewEvent": "Add New Event",
-    "addNewEventDescription": "Create a new event for your trading calendar.",
+    "addNewEventDescription": "Add a personal event to your calendar.",
     "noEvents": "No events match your filters",
     "upcomingEvents": "Upcoming Events",
     "eventTypesTitle": "Event Types",
