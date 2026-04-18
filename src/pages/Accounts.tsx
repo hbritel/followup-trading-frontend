@@ -32,6 +32,7 @@ import {
   Link as LinkIcon,
   Shield,
   Lock,
+  Gauge,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +81,7 @@ import { useAllowedSyncFrequencies } from '@/hooks/useBrokers';
 import { invalidateDashboardData } from '@/lib/invalidate-dashboard';
 import { AccountsListSkeleton, SummaryCardSkeleton } from '@/components/skeletons';
 import PageError from '@/components/ui/page-error';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 // --- Helpers ---
 const formatBrokerName = (brokerType: string): string => {
@@ -452,6 +454,7 @@ const Accounts = () => {
   const connectionsMax = subscription?.usage?.connectionsMax ?? 1;
   const isUnlimitedConnections = connectionsMax >= 2147483647;
   const isOverConnectionLimit = !isUnlimitedConnections && accounts.length > connectionsMax;
+  const isAtConnectionLimit = !isUnlimitedConnections && accounts.length >= connectionsMax;
 
   // Computed stats
   const activeCount = accounts.filter(a => a.enabled && (a.status === 'CONNECTED' || a.status === 'ACTIVE')).length;
@@ -468,9 +471,11 @@ const Accounts = () => {
         title: t('accounts.accountLinked'),
         description: t('accounts.accountLinkedDescription'),
       });
+      // Backend auto-triggers the first sync via BrokerConnectionService.triggerFirstSync().
+      // Mark the connection as syncing so the row shows a spinner — the WS SYNC_STARTED /
+      // SYNC_COMPLETE messages drive the rest of the UX. No HTTP sync call here.
       if (data && data.id) {
         setSyncingIds(prev => new Set(prev).add(data.id));
-        syncMutation.mutate({ connectionId: data.id, idempotencyKey: crypto.randomUUID() });
       }
     },
     onError: (err: Error & { isRateLimited?: boolean; isServiceUnavailable?: boolean }) => {
@@ -928,12 +933,35 @@ const Accounts = () => {
               </Button>
             )}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  {t('accounts.addAccount')}
-                </Button>
-              </DropdownMenuTrigger>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* span wrapper lets the tooltip show even when the button is disabled */}
+                    <span className="inline-flex">
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" disabled={isAtConnectionLimit}>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          {t('accounts.addAccount')}
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </span>
+                  </TooltipTrigger>
+                  {isAtConnectionLimit && (
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-xs">
+                        {t('accounts.atLimitTooltip', {
+                          plan: subscription?.plan ?? 'FREE',
+                          max: connectionsMax,
+                          defaultValue: 'Plan {{plan}} limit reached ({{max}} account(s)). Upgrade to add more.',
+                        })}
+                      </p>
+                      <a href="/pricing" className="mt-1 block text-xs font-medium text-primary hover:underline">
+                        {t('subscription.upgrade', 'Upgrade')}
+                      </a>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setLinkAccountOpen(true)}>
                   <LinkIcon className="h-4 w-4 mr-2" />
@@ -949,9 +977,10 @@ const Accounts = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {isLoading ? (
             <>
+              <SummaryCardSkeleton />
               <SummaryCardSkeleton />
               <SummaryCardSkeleton />
               <SummaryCardSkeleton />
@@ -1023,6 +1052,27 @@ const Accounts = () => {
                       <p className={cn('text-xl font-bold tabular-nums', errorCount > 0 && 'text-destructive')}>
                         {errorCount > 0 ? errorCount : <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                       </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Plan-based broker-accounts usage card */}
+              <Card className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                      <Gauge className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground">
+                        {t('accounts.brokerAccountsLabel', 'Broker accounts')}
+                      </p>
+                      <UsageLimitIndicator
+                        used={accounts.length}
+                        max={connectionsMax}
+                        showBar
+                      />
                     </div>
                   </div>
                 </CardContent>

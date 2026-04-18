@@ -1650,6 +1650,8 @@
     "activeAccounts": "Actifs",
     "errors": "Erreurs",
     "allHealthy": "Tout OK",
+    "brokerAccountsLabel": "Comptes broker",
+    "atLimitTooltip": "Limite atteinte sur le plan {{plan}} ({{max}} compte(s)). Passe au plan supérieur pour ajouter plus de comptes.",
     "addAccount": "Ajouter un compte",
     "linkBrokerAccount": "Connecter un courtier",
     "dangerZone": "Zone de danger",

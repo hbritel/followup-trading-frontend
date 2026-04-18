@@ -1529,7 +1529,9 @@
     "statusPending": "pendiente",
     "statusPaused": "en pausa",
     "statusDisconnected": "desconectada",
-    "statusError": "error"
+    "statusError": "error",
+    "brokerAccountsLabel": "Cuentas broker",
+    "atLimitTooltip": "Limite alcanzado en el plan {{plan}} ({{max}} cuenta(s)). Actualiza para anadir mas cuentas."
   },
   "statistics": {
     "title": "Estadísticas de trading",

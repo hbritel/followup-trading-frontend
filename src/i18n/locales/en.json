@@ -1667,6 +1667,8 @@
     "activeAccounts": "Active",
     "errors": "Errors",
     "allHealthy": "All Healthy",
+    "brokerAccountsLabel": "Broker accounts",
+    "atLimitTooltip": "Plan {{plan}} limit reached ({{max}} account(s)). Upgrade to add more.",
     "addAccount": "Add Account",
     "linkBrokerAccount": "Link Broker Account",
     "dangerZone": "Danger Zone",
