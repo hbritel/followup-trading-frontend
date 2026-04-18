@@ -955,9 +955,9 @@ const Accounts = () => {
                           defaultValue: 'Plan {{plan}} limit reached ({{max}} account(s)). Upgrade to add more.',
                         })}
                       </p>
-                      <a href="/pricing" className="mt-1 block text-xs font-medium text-primary hover:underline">
+                      <Link to="/pricing" className="mt-1 block text-xs font-medium text-primary hover:underline">
                         {t('subscription.upgrade', 'Upgrade')}
-                      </a>
+                      </Link>
                     </TooltipContent>
                   )}
                 </Tooltip>

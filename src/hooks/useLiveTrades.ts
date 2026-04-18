@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -55,6 +55,13 @@ export const useLiveTrades = (): LiveTradesResult => {
 
   const [lastEvent, setLastEvent] = useState<TradeEventMessage | null>(null);
 
+  // Stash `t` in a ref so the subscription effect doesn't tear down/recreate
+  // when the i18n function identity changes on locale switch.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
   useEffect(() => {
     if (!connected || !user?.id) return;
 
@@ -79,7 +86,7 @@ export const useLiveTrades = (): LiveTradesResult => {
                 ? 'accounts.syncStartedInitial'
                 : 'accounts.syncStarted';
             toast.loading(
-              t(startedKey, { account: label, defaultValue: `Syncing ${label}…` }),
+              tRef.current(startedKey, { account: label, defaultValue: `Syncing ${label}…` }),
               { id: toastId },
             );
             break;
@@ -87,7 +94,7 @@ export const useLiveTrades = (): LiveTradesResult => {
           case 'SYNC_COMPLETE': {
             if (payload.success === false) {
               toast.error(
-                t('accounts.syncFailedToast', {
+                tRef.current('accounts.syncFailedToast', {
                   account: label,
                   message: payload.errorMessage ?? '',
                   defaultValue: `Sync failed for ${label}: ${payload.errorMessage ?? ''}`,
@@ -96,7 +103,7 @@ export const useLiveTrades = (): LiveTradesResult => {
               );
             } else {
               toast.success(
-                t('accounts.syncCompletedSummary', {
+                tRef.current('accounts.syncCompletedSummary', {
                   account: label,
                   count: payload.tradesImported,
                   defaultValue: `Sync complete: ${payload.tradesImported} trades imported on ${label}`,
@@ -109,7 +116,7 @@ export const useLiveTrades = (): LiveTradesResult => {
           case 'REALTIME_TRADE': {
             // Live single-deal push (ELITE) — keep per-deal toast as designed.
             toast.success(
-              t('accounts.liveTradeToast', {
+              tRef.current('accounts.liveTradeToast', {
                 count: payload.tradesImported,
                 defaultValue: `Live: ${payload.tradesImported} trade(s) updated`,
               }),
@@ -128,7 +135,7 @@ export const useLiveTrades = (): LiveTradesResult => {
     });
 
     return unsubscribe;
-  }, [connected, user?.id, subscribe, queryClient, t]);
+  }, [connected, user?.id, subscribe, queryClient]);
 
   return { lastEvent };
 };
