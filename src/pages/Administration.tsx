@@ -122,6 +122,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import BillingTab from '@/components/admin/BillingTab';
+import AiUsageTab from '@/components/admin/AiUsageTab';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -2605,6 +2606,10 @@ const Administration = () => {
               <Wallet className="h-4 w-4" />
               {t('admin.billing', 'Billing')}
             </TabsTrigger>
+            <TabsTrigger value="aiUsage" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              {t('admin.aiUsageTab', 'AI Usage')}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <ToggleLeft className="h-4 w-4" />
               {t('admin.system', 'System')}
@@ -2638,6 +2643,9 @@ const Administration = () => {
 
           <TabsContent value="billing" className="mt-6">
             <BillingTab />
+          </TabsContent>
+          <TabsContent value="aiUsage" className="mt-6">
+            <AiUsageTab />
           </TabsContent>
           <TabsContent value="system" className="mt-6">
             <FeatureFlagsTab />

@@ -1,0 +1,106 @@
+name: Frontend Docker Build & Publish
+
+# Scaffolded pour la future CI/CD (Docker Hub / GHCR → Kubernetes via Terraform/Ansible/Vault).
+# - Sur PR : build uniquement (vérifie que l'image Docker se build bien) — pas de push.
+# - Sur push vers develop/main : build + push vers le registry.
+# - Utilise Dockerfile.prod quand il est présent (build multi-stage + nginx), sinon Dockerfile.
+# - Secrets attendus (à configurer plus tard dans Vault + GitHub Secrets) :
+#     DOCKER_HUB_USERNAME, DOCKER_HUB_TOKEN
+# Tant que ces secrets ne sont pas définis, le push est automatiquement désactivé.
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  IMAGE_NAME: followup-trading-frontend
+
+jobs:
+  docker:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pick Dockerfile
+        id: dockerfile
+        run: |
+          if [[ -f "Dockerfile.prod" ]]; then
+            echo "path=Dockerfile.prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=Dockerfile" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect push capability
+        id: push_capability
+        run: |
+          if [[ -n "${{ secrets.DOCKER_HUB_USERNAME }}" && -n "${{ secrets.DOCKER_HUB_TOKEN }}" && "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to Docker Hub
+        if: steps.push_capability.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKER_HUB_USERNAME || 'local' }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build (and push if allowed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ steps.dockerfile.outputs.path }}
+          push: ${{ steps.push_capability.outputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      # ---------------------------------------------------------------
+      # Points d'ancrage pour la future CI/CD Prod (K8s + Terraform + Vault + Ansible) :
+      #
+      # 1) Scan de vulnérabilités de l'image (Trivy / Grype) avant push
+      # 2) Signature de l'image (cosign) avec clé Vault
+      # 3) Bump du tag d'image dans le repo GitOps (Kustomize/Helm values)
+      # 4) Synchronisation ArgoCD / Flux côté cluster
+      # 5) Invalidation du cache CDN / bucket statique si déploiement edge
+      # ---------------------------------------------------------------

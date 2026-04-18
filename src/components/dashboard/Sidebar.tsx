@@ -97,7 +97,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     {
       label: t('sidebar.propFirm', 'Prop Firm'),
       items: [
-        { href: '/prop-firm', label: t('sidebar.propFirmTracker', 'Evaluations'), icon: TargetIcon, featureKey: 'prop_firm', requiredPlan: 'STARTER' as const },
+        { href: '/prop-firm', label: t('sidebar.propFirmTracker', 'Evaluations'), icon: TargetIcon, featureKey: 'prop_firm', requiredPlan: 'PRO' as const },
         { href: '/propfirm-admin', label: t('sidebar.propFirmAdmin', 'Prop Firm Admin'), icon: BuildingIcon, requiredPlan: 'ELITE' as const },
       ],
     },
