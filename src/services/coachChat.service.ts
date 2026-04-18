@@ -59,6 +59,10 @@ export const coachChatService = {
 
   retry: (messageId: string) =>
     apiClient.post<CoachMessageDto>(`/coach/messages/${messageId}/retry`),
+
+  /** Deletes every message in the user's thread — fresh-start the conversation. */
+  clearThread: () =>
+    apiClient.delete<{ deleted: number }>('/coach/thread/messages'),
 };
 
 // ---- SSE streaming (fetch-based to carry the JWT header) -----------------
