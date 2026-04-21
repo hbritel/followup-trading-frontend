@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Sparkles, RefreshCw, Check, ChevronsUpDown } from 'lucide-react';
+import { Sparkles, RefreshCw, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,17 +10,10 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@/components/ui/collapsible';
-import {
   usePlaybookSuggestions,
   useGeneratePlaybook,
   useApplySuggestion,
   useDismissSuggestion,
-  useUnapplySuggestion,
-  useDeleteSuggestion,
 } from '@/hooks/usePlaybook';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBrokerConnections } from '@/hooks/useBrokers';
@@ -28,20 +21,6 @@ import PlaybookSuggestionCard from './PlaybookSuggestionCard';
 import type { PlaybookSuggestionDto } from '@/types/dto';
 
 const PAID_PLANS = new Set(['STARTER', 'PRO', 'ELITE']);
-
-const groupByStatus = (suggestions: ReadonlyArray<PlaybookSuggestionDto>) => {
-  const pending: PlaybookSuggestionDto[] = [];
-  const applied: PlaybookSuggestionDto[] = [];
-  const dismissed: PlaybookSuggestionDto[] = [];
-
-  for (const s of suggestions) {
-    if (s.status === 'PENDING') pending.push(s);
-    else if (s.status === 'APPLIED') applied.push(s);
-    else dismissed.push(s);
-  }
-
-  return { pending, applied, dismissed } as const;
-};
 
 const SuggestionSkeleton: React.FC = () => (
   <div className="glass-card rounded-2xl border border-white/[0.04] p-5 space-y-3">
@@ -61,44 +40,6 @@ const SuggestionSkeleton: React.FC = () => (
   </div>
 );
 
-interface CollapsibleSectionProps {
-  readonly label: string;
-  readonly count: number;
-  readonly children: React.ReactNode;
-}
-
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-  label,
-  count,
-  children,
-}) => {
-  const [open, setOpen] = React.useState(false);
-
-  if (count === 0) return null;
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <button
-          type="button"
-          className="flex w-full items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-              open ? 'rotate-0' : '-rotate-90'
-            }`}
-          />
-          <span className="font-medium">{label}</span>
-          <span className="ml-auto text-xs tabular-nums opacity-60">
-            {count}
-          </span>
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="pt-2">{children}</CollapsibleContent>
-    </Collapsible>
-  );
-};
-
 const PlaybookSuggestionsPanel: React.FC = () => {
   const { t } = useTranslation();
   const { data: suggestions, isLoading } = usePlaybookSuggestions();
@@ -107,8 +48,6 @@ const PlaybookSuggestionsPanel: React.FC = () => {
   const generateMutation = useGeneratePlaybook();
   const applyMutation = useApplySuggestion();
   const dismissMutation = useDismissSuggestion();
-  const unapplyMutation = useUnapplySuggestion();
-  const deleteMutation = useDeleteSuggestion();
 
   const [selectedAccountIds, setSelectedAccountIds] = React.useState<string[]>([]);
   const [accountPickerOpen, setAccountPickerOpen] = React.useState(false);
@@ -155,33 +94,36 @@ const PlaybookSuggestionsPanel: React.FC = () => {
 
   const currentPlan = subscription?.plan ?? 'FREE';
   const canApply = PAID_PLANS.has(currentPlan);
-  const isMutating =
-    applyMutation.isPending ||
-    dismissMutation.isPending ||
-    unapplyMutation.isPending ||
-    deleteMutation.isPending;
+  const isMutating = applyMutation.isPending || dismissMutation.isPending;
 
-  const { pending, applied, dismissed } = groupByStatus(suggestions ?? []);
-
-  const renderCards = (
-    items: ReadonlyArray<PlaybookSuggestionDto>,
-  ) => (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((s) => (
-        <PlaybookSuggestionCard
-          key={s.id}
-          suggestion={s}
-          onApply={(id) => applyMutation.mutate(id)}
-          onDismiss={(id) => dismissMutation.mutate(id)}
-          onUnapply={(id) => unapplyMutation.mutate(id)}
-          onDelete={(id) => deleteMutation.mutate(id)}
-          canApply={canApply}
-          isPending={isMutating}
-          accountLabelMap={accountLabelMap}
-        />
-      ))}
-    </div>
+  // Only PENDING suggestions are surfaced. APPLIED are already absorbed into
+  // strategies; DISMISSED are a permanent no — neither deserves front-row space.
+  const pending = React.useMemo(
+    () => (suggestions ?? []).filter((s: PlaybookSuggestionDto) => s.status === 'PENDING'),
+    [suggestions],
   );
+
+  const lastGeneratedAt = React.useMemo(() => {
+    const all = suggestions ?? [];
+    if (all.length === 0) return null;
+    const latest = all.reduce((max, s) => {
+      const t = new Date(s.createdAt ?? 0).getTime();
+      return t > max ? t : max;
+    }, 0);
+    return latest > 0 ? new Date(latest) : null;
+  }, [suggestions]);
+
+  const lastGeneratedLabel = React.useMemo(() => {
+    if (!lastGeneratedAt) return null;
+    const diffMs = Date.now() - lastGeneratedAt.getTime();
+    const mins = Math.floor(diffMs / 60_000);
+    if (mins < 1) return t('playbook.lastGeneratedJustNow', 'just now');
+    if (mins < 60) return t('playbook.lastGeneratedMinutes', '{{count}}m ago', { count: mins });
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return t('playbook.lastGeneratedHours', '{{count}}h ago', { count: hours });
+    const days = Math.floor(hours / 24);
+    return t('playbook.lastGeneratedDays', '{{count}}d ago', { count: days });
+  }, [lastGeneratedAt, t]);
 
   return (
     <section aria-labelledby="ai-suggestions-heading" className="space-y-4">
@@ -195,6 +137,11 @@ const PlaybookSuggestionsPanel: React.FC = () => {
           >
             {t('playbook.aiSuggestions')}
           </h2>
+          {lastGeneratedLabel && (
+            <span className="text-xs text-muted-foreground/60 tabular-nums">
+              · {lastGeneratedLabel}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -215,7 +162,6 @@ const PlaybookSuggestionsPanel: React.FC = () => {
               </PopoverTrigger>
               <PopoverContent className="w-64 p-2" align="end">
                 <div className="space-y-1">
-                  {/* "All Accounts" option */}
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
@@ -231,7 +177,6 @@ const PlaybookSuggestionsPanel: React.FC = () => {
 
                   <div className="my-1 h-px bg-border" />
 
-                  {/* Individual accounts */}
                   {connectedAccounts.map((account) => {
                     const isChecked = selectedAccountIds.includes(account.id);
                     return (
@@ -287,7 +232,7 @@ const PlaybookSuggestionsPanel: React.FC = () => {
       )}
 
       {/* Empty state */}
-      {!isLoading && (suggestions ?? []).length === 0 && (
+      {!isLoading && pending.length === 0 && (
         <div className="glass-card rounded-2xl border border-dashed border-white/[0.08] p-8 text-center">
           <Sparkles className="mx-auto h-8 w-8 text-muted-foreground/40 mb-3" />
           <p className="text-sm text-muted-foreground">
@@ -296,27 +241,21 @@ const PlaybookSuggestionsPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Pending suggestions (main focus) */}
-      {!isLoading && pending.length > 0 && renderCards(pending)}
-
-      {/* Applied section */}
-      {!isLoading && applied.length > 0 && (
-        <CollapsibleSection
-          label={t('playbook.applied')}
-          count={applied.length}
-        >
-          {renderCards(applied)}
-        </CollapsibleSection>
-      )}
-
-      {/* Dismissed section */}
-      {!isLoading && dismissed.length > 0 && (
-        <CollapsibleSection
-          label={t('playbook.dismissed')}
-          count={dismissed.length}
-        >
-          {renderCards(dismissed)}
-        </CollapsibleSection>
+      {/* Pending suggestions — the only section that matters */}
+      {!isLoading && pending.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {pending.map((s) => (
+            <PlaybookSuggestionCard
+              key={s.id}
+              suggestion={s}
+              onApply={(id) => applyMutation.mutate(id)}
+              onDismiss={(id) => dismissMutation.mutate(id)}
+              canApply={canApply}
+              isPending={isMutating}
+              accountLabelMap={accountLabelMap}
+            />
+          ))}
+        </div>
       )}
     </section>
   );

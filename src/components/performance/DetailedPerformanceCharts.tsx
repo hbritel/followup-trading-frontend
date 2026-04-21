@@ -29,15 +29,17 @@ import {
 } from '@/hooks/useInsightsMetrics';
 import type { RollingMetric } from '@/types/dto';
 
+// Chart colours drive Recharts fills/strokes. Using HSL token references keeps
+// light + dark themes consistent without conditional logic in components.
 const CHART_COLORS = {
-  profit: '#22c55e',
-  loss: '#ef4444',
-  primary: '#3b82f6',
-  secondary: '#8b5cf6',
-  tertiary: '#f59e0b',
-  grid: 'rgba(255,255,255,0.06)',
-  axis: '#94a3b8',
-  tooltipBg: '#1e293b',
+  profit: 'hsl(var(--profit))',
+  loss: 'hsl(var(--loss))',
+  primary: 'hsl(var(--chart-1))',
+  secondary: 'hsl(var(--chart-6))',
+  tertiary: 'hsl(var(--chart-4))',
+  grid: 'hsl(var(--chart-grid))',
+  axis: 'hsl(var(--chart-axis))',
+  tooltipBg: 'hsl(var(--chart-tooltip-bg))',
 };
 
 const DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -48,9 +50,9 @@ const DAY_LABELS: Record<string, string> = {
 
 const CustomTooltipStyle = {
   backgroundColor: CHART_COLORS.tooltipBg,
-  border: '1px solid rgba(255,255,255,0.1)',
+  border: '1px solid hsl(var(--border))',
   borderRadius: '8px',
-  color: '#f1f5f9',
+  color: 'hsl(var(--foreground))',
   fontSize: '12px',
 };
 
@@ -254,9 +256,11 @@ const DetailedPerformanceCharts: React.FC<Props> = ({ startDate, endDate, accoun
                             return <td key={h} className="p-1"><div className="w-6 h-6 rounded-sm bg-muted/20" /></td>;
                           }
                           const intensity = Math.min(Math.abs(cell.pnl) / 200, 1);
-                          const bg = cell.pnl >= 0
-                            ? `rgba(34,197,94,${0.15 + intensity * 0.65})`
-                            : `rgba(239,68,68,${0.15 + intensity * 0.65})`;
+                          // hsl(var(--profit)|--loss) combined with an alpha
+                          // channel via color-mix stays in sync with the theme.
+                          const alpha = 0.15 + intensity * 0.65;
+                          const base = cell.pnl >= 0 ? 'hsl(var(--profit))' : 'hsl(var(--loss))';
+                          const bg = `color-mix(in oklab, ${base} ${Math.round(alpha * 100)}%, transparent)`;
                           return (
                             <td key={h} className="p-1">
                               <TooltipProvider>

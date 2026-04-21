@@ -4,6 +4,7 @@ export { default as Trades } from './Trades';
 export { default as DailyJournal } from './DailyJournal';
 export { default as Calendar } from './Calendar';
 export { default as Playbook } from './Playbook';
+export { default as StrategyDetailPage } from './StrategyDetailPage';
 export { default as Insights } from './Insights';
 export { default as Performance } from './Performance';
 export { default as Statistics } from './Statistics';

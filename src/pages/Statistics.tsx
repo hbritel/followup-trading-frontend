@@ -31,7 +31,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import PageSkeleton from '@/components/ui/page-skeleton';
 import PageError from '@/components/ui/page-error';
 
-const COLORS = ['#1E40AF', '#dc2626'];
+const COLORS = ['hsl(var(--profit))', 'hsl(var(--loss))'];
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -184,14 +184,16 @@ const Statistics = () => {
     { name: t('statistics.losingTrades'), value: losingTrades },
   ];
 
-  // Build metrics data for progress bars
+  // Key metrics — raw values only. Fictional "targets" (e.g. 70% win rate)
+  // were removed because they were neither user-configurable nor backed by
+  // any benchmark; progress bars tied to imagined goals are misleading.
   const metricsData = [
-    { name: t('insights.winRate'), value: winRate, target: 70, format: '%' },
-    { name: t('insights.profitFactor'), value: profitFactor, target: 2.5, format: 'x' },
-    { name: t('statistics.riskRewardRatio'), value: riskRewardRatio, target: 2.0, format: 'x' },
-    { name: t('statistics.averageWin'), value: averageWin, target: 250, format: '$' },
-    { name: t('statistics.averageLoss'), value: Math.abs(averageLoss), target: 125, format: '$' },
-    { name: t('statistics.maximumDrawdown'), value: maxDrawdown, target: 10, format: '%' },
+    { name: t('insights.winRate'), value: winRate, format: '%' },
+    { name: t('insights.profitFactor'), value: profitFactor, format: 'x' },
+    { name: t('statistics.riskRewardRatio'), value: riskRewardRatio, format: 'x' },
+    { name: t('statistics.averageWin'), value: averageWin, format: '$' },
+    { name: t('statistics.averageLoss'), value: Math.abs(averageLoss), format: '$' },
+    { name: t('statistics.maximumDrawdown'), value: maxDrawdown, format: '%' },
   ];
 
   const formatMetricValue = (value: number, format: string) => {
@@ -234,27 +236,26 @@ const Statistics = () => {
   return (
     <DashboardLayout pageTitle={t('pages.statistics')}>
       <PageTransition className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gradient">{t('statistics.title')}</h1>
-            <p className="text-muted-foreground">{t('statistics.description')}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t('statistics.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('statistics.description')}</p>
           </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <DashboardDateFilter
-            preset={datePreset}
-            onPresetChange={setDatePreset}
-            customStart={customStart}
-            customEnd={customEnd}
-            onCustomStartChange={setCustomStart}
-            onCustomEndChange={setCustomEnd}
-          />
-          <AccountSelector
-            value={selectedAccountId}
-            onChange={setSelectedAccountId}
-            className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          />
+          <div className="flex items-center gap-3">
+            <DashboardDateFilter
+              preset={datePreset}
+              onPresetChange={setDatePreset}
+              customStart={customStart}
+              customEnd={customEnd}
+              onCustomStartChange={setCustomStart}
+              onCustomEndChange={setCustomEnd}
+            />
+            <AccountSelector
+              value={selectedAccountId}
+              onChange={setSelectedAccountId}
+              className="w-48"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -346,8 +347,8 @@ const Statistics = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="glass-card rounded-2xl lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.keyMetrics')}<InfoTip text={t('statistics.keyMetricsTooltip')} /></CardTitle>
-              <CardDescription>{t('statistics.performanceAgainstTarget')}</CardDescription>
+              <CardTitle className="flex items-center gap-1.5">{t('statistics.keyMetrics')}<InfoTip text={t('statistics.keyMetricsTooltip')} /></CardTitle>
+              <CardDescription>{t('statistics.keyMetricsDescription', 'Your headline stats for the selected period.')}</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -360,21 +361,13 @@ const Statistics = () => {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="divide-y divide-border/50">
                   {metricsData.map((metric) => (
-                    <div key={metric.name} className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="label-caps">{metric.name}</span>
-                        <span className="font-mono tabular-nums text-sm">
-                          {formatMetricValue(metric.value, metric.format)}
-                          <span className="text-muted-foreground"> / {t('statistics.target')}: </span>
-                          {formatMetricValue(metric.target, metric.format)}
-                        </span>
-                      </div>
-                      <Progress
-                        value={metric.target !== 0 ? Math.min((metric.value / metric.target) * 100, 100) : 0}
-                        className="h-2"
-                      />
+                    <div key={metric.name} className="flex items-center justify-between py-2.5">
+                      <span className="label-caps">{metric.name}</span>
+                      <span className="text-sm font-semibold tabular-nums">
+                        {formatMetricValue(metric.value, metric.format)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -384,7 +377,7 @@ const Statistics = () => {
 
           <Card className="glass-card rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradeDistribution')}<InfoTip text={t('statistics.tradeDistributionTooltip')} /></CardTitle>
+              <CardTitle className="flex items-center gap-1.5">{t('statistics.tradeDistribution')}<InfoTip text={t('statistics.tradeDistributionTooltip')} /></CardTitle>
               <CardDescription>{t('statistics.winVsLossRatio')}</CardDescription>
             </CardHeader>
             <CardContent className="h-64">
@@ -410,7 +403,6 @@ const Statistics = () => {
                       cy="50%"
                       innerRadius={60}
                       outerRadius={80}
-                      fill="#8884d8"
                       paddingAngle={2}
                       dataKey="value"
                       label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
@@ -437,7 +429,7 @@ const Statistics = () => {
             <TabsContent value="by-day" className="space-y-6">
               <Card className="glass-card rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByDay')}<InfoTip text={t('statistics.performanceByDayTooltip')} /></CardTitle>
+                  <CardTitle className="flex items-center gap-1.5">{t('statistics.tradePerformanceByDay')}<InfoTip text={t('statistics.performanceByDayTooltip')} /></CardTitle>
                   <CardDescription>{t('statistics.winLossDistributionByDay')}</CardDescription>
                 </CardHeader>
                 <CardContent className="h-80">
@@ -456,8 +448,8 @@ const Statistics = () => {
                       <YAxis />
                       <RechartsTooltip />
                       <Legend />
-                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
-                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
+                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="hsl(var(--profit))" />
+                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="hsl(var(--loss))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -467,7 +459,7 @@ const Statistics = () => {
             <TabsContent value="by-time" className="space-y-6">
               <Card className="glass-card rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.tradePerformanceByTime')}<InfoTip text={t('statistics.performanceByTimeTooltip')} /></CardTitle>
+                  <CardTitle className="flex items-center gap-1.5">{t('statistics.tradePerformanceByTime')}<InfoTip text={t('statistics.performanceByTimeTooltip')} /></CardTitle>
                   <CardDescription>{t('statistics.winLossDistributionByTime')}</CardDescription>
                 </CardHeader>
                 <CardContent className="h-80">
@@ -486,8 +478,8 @@ const Statistics = () => {
                       <YAxis />
                       <RechartsTooltip />
                       <Legend />
-                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="#1E40AF" />
-                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="#dc2626" />
+                      <Bar dataKey="wins" name={t('statistics.winningTrades')} stackId="a" fill="hsl(var(--profit))" />
+                      <Bar dataKey="losses" name={t('statistics.losingTrades')} stackId="a" fill="hsl(var(--loss))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -498,7 +490,7 @@ const Statistics = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.bestTradingSessions')}<InfoTip text={t('statistics.bestSessionsTooltip')} /></CardTitle>
+                <CardTitle className="flex items-center gap-1.5">{t('statistics.bestTradingSessions')}<InfoTip text={t('statistics.bestSessionsTooltip')} /></CardTitle>
                 <CardDescription>{t('statistics.highestWinRateSessions')}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -535,7 +527,7 @@ const Statistics = () => {
 
             <Card className="glass-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-gradient flex items-center gap-1.5">{t('statistics.worstTradingSessions')}<InfoTip text={t('statistics.worstSessionsTooltip')} /></CardTitle>
+                <CardTitle className="flex items-center gap-1.5">{t('statistics.worstTradingSessions')}<InfoTip text={t('statistics.worstSessionsTooltip')} /></CardTitle>
                 <CardDescription>{t('statistics.lowestWinRateSessions')}</CardDescription>
               </CardHeader>
               <CardContent>

@@ -21,6 +21,7 @@ import {
   DailyJournal,
   Calendar,
   Playbook,
+  StrategyDetailPage,
   Insights,
   Performance,
   Statistics,
@@ -114,6 +115,7 @@ function App() {
                     <Route path="/daily-journal" element={<DailyJournal />} />
                     <Route path="/calendar" element={<Calendar />} />
                     <Route path="/playbook" element={<Playbook />} />
+                    <Route path="/playbook/:strategyId" element={<StrategyDetailPage />} />
                     <Route path="/insights" element={<FeatureGate requiredPlan="STARTER"><Insights /></FeatureGate>} />
                     <Route path="/performance" element={<Performance />} />
                     <Route path="/statistics" element={<Statistics />} />

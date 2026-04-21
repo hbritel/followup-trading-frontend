@@ -313,10 +313,10 @@ const Reports = () => {
       <PageTransition className="space-y-8">
 
         {/* ── Page header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">{t('reports.title')}</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">{t('reports.description')}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('reports.description')}</p>
           </div>
 
           {/* Monthly usage counter */}

@@ -164,7 +164,7 @@ function resolveKpiValue(
 function resolveKpiClass(kpi: TaxCountryKpi, value: number): string {
   if (kpi.valueClass) return kpi.valueClass;
   if (kpi.signed) return value >= 0 ? 'text-profit' : 'text-loss';
-  return 'text-gradient';
+  return 'text-foreground';
 }
 
 function resolveKpiCardClass(kpi: TaxCountryKpi, value: number): string {
@@ -187,7 +187,7 @@ interface KpiCardProps {
 const KpiCard = ({
   label,
   value,
-  valueClass = 'text-gradient',
+  valueClass = 'text-foreground',
   icon,
   cardClass = '',
   tooltip,
@@ -1142,12 +1142,12 @@ const TaxReporting = () => {
       <PageTransition className="space-y-6">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gradient">
+            <h1 className="text-2xl font-bold tracking-tight">
               {t('tax.title', 'Tax Reporting')}
             </h1>
-            <p className="text-muted-foreground text-sm mt-0.5">
+            <p className="text-sm text-muted-foreground mt-1">
               {t('tax.description', 'Capital gains, tax lots, and jurisdiction-specific filing guidance.')}
             </p>
           </div>
@@ -1155,7 +1155,7 @@ const TaxReporting = () => {
             <AccountSelector
               value={selectedAccountId}
               onChange={setSelectedAccountId}
-              className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              className="w-48"
             />
             <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
               <SelectTrigger className="w-28">

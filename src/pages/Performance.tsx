@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Filter, Info, Loader2, BarChart2 } from 'lucide-react';
+import { Info, Loader2, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -151,20 +151,28 @@ const Performance = () => {
   return (
     <DashboardLayout pageTitle={t('pages.performance')}>
       <PageTransition className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <DashboardDateFilter
-            preset={datePreset}
-            onPresetChange={setDatePreset}
-            customStart={customStart}
-            customEnd={customEnd}
-            onCustomStartChange={setCustomStart}
-            onCustomEndChange={setCustomEnd}
-          />
-          <AccountSelector
-            value={selectedAccountId}
-            onChange={setSelectedAccountId}
-            className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('performance.title', 'Performance')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('performance.description', 'Detailed breakdown of your trading performance')}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <DashboardDateFilter
+              preset={datePreset}
+              onPresetChange={setDatePreset}
+              customStart={customStart}
+              customEnd={customEnd}
+              onCustomStartChange={setCustomStart}
+              onCustomEndChange={setCustomEnd}
+            />
+            <AccountSelector
+              value={selectedAccountId}
+              onChange={setSelectedAccountId}
+              className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -241,18 +249,8 @@ const Performance = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle className="text-gradient flex items-center gap-1.5">{t('insights.performanceAnalysis')}<InfoTip text={t('performance.performanceAnalysisTooltip')} /></CardTitle>
+                  <CardTitle className="flex items-center gap-1.5">{t('insights.performanceAnalysis')}<InfoTip text={t('performance.performanceAnalysisTooltip')} /></CardTitle>
                   <CardDescription>{t('performance.detailedBreakdown')}</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Filter className="mr-2 h-4 w-4" />
-                    {t('common.filter')}
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-2 h-4 w-4" />
-                    {t('common.export')}
-                  </Button>
                 </div>
               </div>
             </CardHeader>
