@@ -2479,6 +2479,87 @@
     "open": "Abrir paleta de comandos",
     "searchPlaceholder": "Buscar..."
   },
+  "propFirm": {
+    "title": "Seguimiento Prop Firm",
+    "subtitle": "Sigue tus challenges de prop firm, supervisa las reglas de cumplimiento y gestiona tu camino hacia una cuenta fondeada.",
+    "requiresPlan": "Seguimiento Prop Firm requiere un plan Pro o superior.",
+    "startEvaluation": "Iniciar evaluación",
+    "myEvaluations": "Mis evaluaciones",
+    "catalog": "Catálogo de Prop Firms",
+    "activeBadge": "{{count}} activa",
+    "searchFirms": "Buscar firms...",
+    "firmCount_one": "{{count}} firm",
+    "firmCount_other": "{{count}} firms",
+    "firmOf": "{{count}} de {{total}}",
+    "filters": {
+      "all": "Todas",
+      "active": "Activas",
+      "passed": "Aprobadas / Fondeadas",
+      "failed": "Fallidas / Expiradas"
+    },
+    "counts": {
+      "active": "{{count}} activa",
+      "passed": "{{count}} aprobada",
+      "failed": "{{count}} fallida"
+    },
+    "empty": {
+      "title": "Aún no hay evaluaciones",
+      "description": "Inicia tu primer challenge de prop firm y sigue tu progreso hacia una cuenta fondeada.",
+      "cta": "Iniciar tu primera evaluación",
+      "browse": "Explorar catálogo",
+      "noMatchFilter": "Ninguna evaluación coincide con el filtro seleccionado.",
+      "showAll": "Mostrar todas las evaluaciones",
+      "catalogEmpty": "Aún no hay prop firms en el catálogo.",
+      "noFirmMatch": "Ninguna firm coincide con «{{query}}».",
+      "clearSearch": "Borrar búsqueda"
+    },
+    "status": {
+      "active": "Activa",
+      "passed": "Aprobada",
+      "failed": "Fallida",
+      "expired": "Expirada",
+      "funded": "Fondeada"
+    },
+    "card": {
+      "phaseStarted": "Fase {{phase}} · Iniciada el {{date}}",
+      "balance": "Saldo",
+      "pnl": "P&L",
+      "drawdown": "Drawdown",
+      "tradingDays_one": "{{count}} día de trading",
+      "tradingDays_other": "{{count}} días de trading",
+      "profitPct": "Beneficio {{value}} %",
+      "lastChecked": "Última verificación: {{label}}",
+      "forceCheck": "Forzar verificación de cumplimiento",
+      "viewAria": "Ver evaluación {{name}}"
+    },
+    "timeAgo": {
+      "justNow": "ahora mismo",
+      "minutes": "hace {{count}} min",
+      "hours": "hace {{count}} h",
+      "days": "hace {{count}} d"
+    },
+    "toast": {
+      "checkSuccessTitle": "Verificación de cumplimiento completada",
+      "checkSuccessDesc": "Todas las reglas han sido reevaluadas con tus últimas operaciones.",
+      "checkFailTitle": "Verificación fallida",
+      "checkFailDesc": "No se pudo ejecutar la verificación de cumplimiento. Inténtalo de nuevo."
+    },
+    "firmCard": {
+      "challengeCount_one": "{{count}} challenge",
+      "challengeCount_other": "{{count}} challenges",
+      "phaseCount_one": "{{count}} fase",
+      "phaseCount_other": "{{count}} fases",
+      "phaseLine": "{{type}} · Fase 1 de {{total}}",
+      "profit": "Beneficio",
+      "maxDd": "DD Máx.",
+      "daily": "Diario",
+      "noPhase": "No hay datos de fase disponibles",
+      "minDaysWithMax": "Mín. {{min}} días de trading · Máx. {{max}}",
+      "minDays": "Mín. {{min}} días de trading",
+      "profitSplit": "hasta {{percent}} % de split",
+      "websiteAria": "Visitar el sitio de {{name}}"
+    }
+  },
   "options": {
     "title": "Spreads de opciones",
     "subtitle": "Estrategias multi-pata de opciones detectadas automáticamente a partir de tus operaciones.",

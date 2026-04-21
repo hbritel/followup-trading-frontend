@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ const FirmLogo: React.FC<{ firm: PropFirmProfile }> = ({ firm }) => {
 };
 
 const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, className }) => {
+  const { t } = useTranslation();
   // Use the first challenge type's phase 1 for metrics display — gives a consistent
   // entry-level snapshot regardless of how many challenge variants the firm offers.
   const firstChallengeType =
@@ -108,8 +110,8 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
           <Badge variant="secondary" className="text-[10px] shrink-0 flex items-center gap-0.5">
             <Layers className="h-2.5 w-2.5" />
             {challengeTypeCount > 0
-              ? `${challengeTypeCount} ${challengeTypeCount === 1 ? 'challenge' : 'challenges'}`
-              : `${firm.phases.length} ${firm.phases.length === 1 ? 'phase' : 'phases'}`}
+              ? t('propFirm.firmCard.challengeCount', { count: challengeTypeCount })
+              : t('propFirm.firmCard.phaseCount', { count: firm.phases.length })}
           </Badge>
         </div>
 
@@ -144,14 +146,19 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
             {/* Sub-label indicating which challenge type / phase the metrics belong to */}
             {firstChallengeType && (
               <p className="text-[10px] text-muted-foreground -mb-2">
-                {firstChallengeType} · Phase 1 of {phasesPerType}
+                {t('propFirm.firmCard.phaseLine', {
+                  type: firstChallengeType,
+                  total: phasesPerType,
+                })}
               </p>
             )}
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
               {phase1.profitTargetPercent != null && (
                 <div className="rounded-xl bg-green-500/8 border border-green-500/15 p-2.5 text-center">
                   <Target className="h-3.5 w-3.5 text-green-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground leading-none mb-1">Profit</p>
+                  <p className="text-[10px] text-muted-foreground leading-none mb-1">
+                    {t('propFirm.firmCard.profit')}
+                  </p>
                   <p className="text-sm font-bold font-mono text-green-400">
                     {phase1.profitTargetPercent}%
                   </p>
@@ -160,7 +167,9 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
               {phase1.maxDrawdownPercent != null && (
                 <div className="rounded-xl bg-red-500/8 border border-red-500/15 p-2.5 text-center">
                   <TrendingDown className="h-3.5 w-3.5 text-red-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground leading-none mb-1">Max DD</p>
+                  <p className="text-[10px] text-muted-foreground leading-none mb-1">
+                    {t('propFirm.firmCard.maxDd')}
+                  </p>
                   <p className="text-sm font-bold font-mono text-red-400">
                     {phase1.maxDrawdownPercent}%
                   </p>
@@ -169,7 +178,9 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
               {phase1.dailyLossLimitPercent != null && (
                 <div className="rounded-xl bg-orange-500/8 border border-orange-500/15 p-2.5 text-center">
                   <AlertTriangle className="h-3.5 w-3.5 text-orange-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground leading-none mb-1">Daily</p>
+                  <p className="text-[10px] text-muted-foreground leading-none mb-1">
+                    {t('propFirm.firmCard.daily')}
+                  </p>
                   <p className="text-sm font-bold font-mono text-orange-400">
                     {phase1.dailyLossLimitPercent}%
                   </p>
@@ -179,7 +190,7 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
           </>
         ) : (
           <p className="text-xs text-muted-foreground text-center py-2">
-            No phase data available
+            {t('propFirm.firmCard.noPhase')}
           </p>
         )}
 
@@ -187,14 +198,18 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
         <div className="flex items-center justify-between gap-2 flex-wrap">
           {phase1 && (
             <p className="text-xs text-muted-foreground">
-              Min. {phase1.minTradingDays} trading days
-              {phase1.maxTradingDays ? ` · Max ${phase1.maxTradingDays}` : ''}
+              {phase1.maxTradingDays
+                ? t('propFirm.firmCard.minDaysWithMax', {
+                    min: phase1.minTradingDays,
+                    max: phase1.maxTradingDays,
+                  })
+                : t('propFirm.firmCard.minDays', { min: phase1.minTradingDays })}
             </p>
           )}
           {profitSplit != null && (
             <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-400">
               <Percent className="h-3 w-3" />
-              up to {profitSplit}% split
+              {t('propFirm.firmCard.profitSplit', { percent: profitSplit })}
             </span>
           )}
         </div>
@@ -207,7 +222,7 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={`Visit ${firm.firmName} website`}
+              aria-label={t('propFirm.firmCard.websiteAria', { name: firm.firmName })}
               onClick={(e) => e.stopPropagation()}
             >
               <Globe className="h-4 w-4" />
@@ -218,7 +233,7 @@ const PropFirmCard: React.FC<PropFirmCardProps> = ({ firm, onStartEvaluation, cl
             className="flex-1 ml-auto"
             onClick={() => onStartEvaluation?.(firm)}
           >
-            Start Evaluation
+            {t('propFirm.startEvaluation')}
           </Button>
         </div>
       </CardContent>

@@ -3159,6 +3159,87 @@
     "removeSuccess": "Trader removed from monitoring",
     "removeConfirm": "Remove this trader from monitoring?"
   },
+  "propFirm": {
+    "title": "Prop Firm Tracker",
+    "subtitle": "Track your prop firm challenges, monitor compliance rules, and manage your funded account journey.",
+    "requiresPlan": "Prop Firm Tracker requires a Pro plan or above.",
+    "startEvaluation": "Start Evaluation",
+    "myEvaluations": "My Evaluations",
+    "catalog": "Prop Firm Catalog",
+    "activeBadge": "{{count}} active",
+    "searchFirms": "Search firms...",
+    "firmCount_one": "{{count}} firm",
+    "firmCount_other": "{{count}} firms",
+    "firmOf": "{{count}} of {{total}}",
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "passed": "Passed / Funded",
+      "failed": "Failed / Expired"
+    },
+    "counts": {
+      "active": "{{count}} active",
+      "passed": "{{count}} passed",
+      "failed": "{{count}} failed"
+    },
+    "empty": {
+      "title": "No evaluations yet",
+      "description": "Start your first prop firm challenge and track your progress toward a funded account.",
+      "cta": "Start your first evaluation",
+      "browse": "Browse catalog",
+      "noMatchFilter": "No evaluations match the selected filter.",
+      "showAll": "Show all evaluations",
+      "catalogEmpty": "No prop firms in the catalog yet.",
+      "noFirmMatch": "No firms match “{{query}}”.",
+      "clearSearch": "Clear search"
+    },
+    "status": {
+      "active": "Active",
+      "passed": "Passed",
+      "failed": "Failed",
+      "expired": "Expired",
+      "funded": "Funded"
+    },
+    "card": {
+      "phaseStarted": "Phase {{phase}} · Started {{date}}",
+      "balance": "Balance",
+      "pnl": "P&L",
+      "drawdown": "Drawdown",
+      "tradingDays_one": "{{count}} trading day",
+      "tradingDays_other": "{{count}} trading days",
+      "profitPct": "Profit {{value}}%",
+      "lastChecked": "Last checked: {{label}}",
+      "forceCheck": "Force compliance check",
+      "viewAria": "View {{name}} evaluation"
+    },
+    "timeAgo": {
+      "justNow": "just now",
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
+    },
+    "toast": {
+      "checkSuccessTitle": "Compliance check complete",
+      "checkSuccessDesc": "All rules have been re-evaluated against your latest trades.",
+      "checkFailTitle": "Force check failed",
+      "checkFailDesc": "Could not run compliance check. Please try again."
+    },
+    "firmCard": {
+      "challengeCount_one": "{{count}} challenge",
+      "challengeCount_other": "{{count}} challenges",
+      "phaseCount_one": "{{count}} phase",
+      "phaseCount_other": "{{count}} phases",
+      "phaseLine": "{{type}} · Phase 1 of {{total}}",
+      "profit": "Profit",
+      "maxDd": "Max DD",
+      "daily": "Daily",
+      "noPhase": "No phase data available",
+      "minDaysWithMax": "Min. {{min}} trading days · Max {{max}}",
+      "minDays": "Min. {{min}} trading days",
+      "profitSplit": "up to {{percent}}% split",
+      "websiteAria": "Visit {{name}} website"
+    }
+  },
   "options": {
     "title": "Option spreads",
     "subtitle": "Multi-leg option strategies auto-detected from your option trades.",

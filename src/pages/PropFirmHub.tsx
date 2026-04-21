@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageTransition from '@/components/ui/page-transition';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,11 +21,11 @@ const REQUIRED_PLAN = 'PRO' as const;
 
 type EvaluationFilter = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'FAILED_EXPIRED';
 
-const FILTER_LABELS: Record<EvaluationFilter, string> = {
-  ALL: 'All',
-  ACTIVE: 'Active',
-  COMPLETED: 'Passed / Funded',
-  FAILED_EXPIRED: 'Failed / Expired',
+const FILTER_KEYS: Record<EvaluationFilter, string> = {
+  ALL: 'propFirm.filters.all',
+  ACTIVE: 'propFirm.filters.active',
+  COMPLETED: 'propFirm.filters.passed',
+  FAILED_EXPIRED: 'propFirm.filters.failed',
 };
 
 const matchesFilter = (ev: PropFirmEvaluation, filter: EvaluationFilter): boolean => {
@@ -60,6 +61,7 @@ const PropFirmHubSkeleton = () => (
 );
 
 const PropFirmHub = () => {
+  const { t } = useTranslation();
   const { data: firms = [], isLoading: firmsLoading } = usePropFirms();
   const { data: evaluations = [], isLoading: evaluationsLoading } = useEvaluations();
 
@@ -112,41 +114,38 @@ const PropFirmHub = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout pageTitle="Prop Firm Tracker">
+      <DashboardLayout pageTitle={t('propFirm.title')}>
         <PropFirmHubSkeleton />
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout pageTitle="Prop Firm Tracker">
+    <DashboardLayout pageTitle={t('propFirm.title')}>
       <PageTransition className="space-y-8">
         {/* Page header */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-gradient">Prop Firm Tracker</h1>
+              <h1 className="text-2xl font-bold text-gradient">{t('propFirm.title')}</h1>
               <PlanBadge plan={REQUIRED_PLAN} size="sm" />
               {activeCount > 0 && (
                 <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
-                  {activeCount} active
+                  {t('propFirm.counts.active', { count: activeCount })}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Track your prop firm challenges, monitor compliance rules, and manage your funded
-              account journey.
-            </p>
+            <p className="text-sm text-muted-foreground">{t('propFirm.subtitle')}</p>
           </div>
           <Button onClick={handleStartNew} className="shrink-0 flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Start Evaluation
+            {t('propFirm.startEvaluation')}
           </Button>
         </div>
 
         <PlanGatedSection
           requiredPlan={REQUIRED_PLAN}
-          feature="Prop Firm Tracker requires a Pro plan or above."
+          feature={t('propFirm.requiresPlan')}
           showBlurredPreview={true}
         >
           {/* My Evaluations */}
@@ -154,13 +153,13 @@ const PropFirmHub = () => {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold">My Evaluations</h2>
+                <h2 className="text-base font-semibold">{t('propFirm.myEvaluations')}</h2>
               </div>
 
               {/* Filter button group — only shown when there are evaluations */}
               {evaluations.length > 0 && (
                 <div className="flex items-center gap-1 rounded-xl border border-border/50 bg-muted/30 p-0.5">
-                  {(Object.keys(FILTER_LABELS) as EvaluationFilter[]).map((key) => (
+                  {(Object.keys(FILTER_KEYS) as EvaluationFilter[]).map((key) => (
                     <button
                       key={key}
                       type="button"
@@ -172,7 +171,7 @@ const PropFirmHub = () => {
                           : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
-                      {FILTER_LABELS[key]}
+                      {t(FILTER_KEYS[key])}
                     </button>
                   ))}
                 </div>
@@ -184,15 +183,15 @@ const PropFirmHub = () => {
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-blue-400" />
-                  {activeCount} active
+                  {t('propFirm.counts.active', { count: activeCount })}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
-                  {passedCount} passed
+                  {t('propFirm.counts.passed', { count: passedCount })}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
-                  {failedCount} failed
+                  {t('propFirm.counts.failed', { count: failedCount })}
                 </span>
               </div>
             )}
@@ -236,19 +235,18 @@ const PropFirmHub = () => {
                   />
                 </svg>
                 <div>
-                  <p className="font-semibold text-base">No evaluations yet</p>
+                  <p className="font-semibold text-base">{t('propFirm.empty.title')}</p>
                   <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                    Start your first prop firm challenge and track your progress toward a funded
-                    account.
+                    {t('propFirm.empty.description')}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button onClick={handleStartNew} className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    Start your first evaluation
+                    {t('propFirm.empty.cta')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={scrollToCatalog}>
-                    Browse catalog
+                    {t('propFirm.empty.browse')}
                   </Button>
                 </div>
               </div>
@@ -256,14 +254,14 @@ const PropFirmHub = () => {
               <div className="glass-card rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-3">
                 <Target className="h-8 w-8 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
-                  No evaluations match the selected filter.
+                  {t('propFirm.empty.noMatchFilter')}
                 </p>
                 <button
                   type="button"
                   onClick={() => setEvalFilter('ALL')}
                   className="text-xs text-primary hover:underline"
                 >
-                  Show all evaluations
+                  {t('propFirm.empty.showAll')}
                 </button>
               </div>
             ) : (
@@ -285,11 +283,11 @@ const PropFirmHub = () => {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold">Prop Firm Catalog</h2>
+                <h2 className="text-base font-semibold">{t('propFirm.catalog')}</h2>
                 <span className="text-xs text-muted-foreground ml-1">
                   {filteredFirms.length === firms.length
-                    ? `${firms.length} ${firms.length === 1 ? 'firm' : 'firms'}`
-                    : `${filteredFirms.length} of ${firms.length}`}
+                    ? t('propFirm.firmCount', { count: firms.length })
+                    : t('propFirm.firmOf', { count: filteredFirms.length, total: firms.length })}
                 </span>
               </div>
 
@@ -299,7 +297,7 @@ const PropFirmHub = () => {
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                   <Input
                     className="h-8 pl-8 w-44 text-xs"
-                    placeholder="Search firms..."
+                    placeholder={t('propFirm.searchFirms')}
                     value={catalogSearch}
                     onChange={(e) => setCatalogSearch(e.target.value)}
                   />
@@ -310,20 +308,20 @@ const PropFirmHub = () => {
             {firms.length === 0 ? (
               <div className="glass-card rounded-2xl p-10 flex flex-col items-center justify-center text-center gap-3">
                 <Trophy className="h-10 w-10 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">No prop firms in the catalog yet.</p>
+                <p className="text-sm text-muted-foreground">{t('propFirm.empty.catalogEmpty')}</p>
               </div>
             ) : filteredFirms.length === 0 ? (
               <div className="glass-card rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-3">
                 <Search className="h-8 w-8 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
-                  No firms match &ldquo;{catalogSearch}&rdquo;.
+                  {t('propFirm.empty.noFirmMatch', { query: catalogSearch })}
                 </p>
                 <button
                   type="button"
                   onClick={() => setCatalogSearch('')}
                   className="text-xs text-primary hover:underline"
                 >
-                  Clear search
+                  {t('propFirm.empty.clearSearch')}
                 </button>
               </div>
             ) : (
