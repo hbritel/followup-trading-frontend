@@ -121,5 +121,11 @@
     "errorLoadingData": "Failed to load data",
     "previous": "Previous",
     "skip": "Skip"
+  },
+  "error": {
+    "error": "Error"
+  },
+  "success": {
+    "success": "Success"
   }
 }
