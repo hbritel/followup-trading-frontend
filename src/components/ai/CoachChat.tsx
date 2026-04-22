@@ -28,6 +28,7 @@ const AI_PLAN_CAPS: Record<string, number> = {
   STARTER: 5,
   PRO: 30,
   ELITE: 150,
+  TEAM: 150,
 };
 
 const SHARE_DATA_STORAGE_KEY = 'coachChat.shareUserData';

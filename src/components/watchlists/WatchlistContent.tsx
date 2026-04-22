@@ -35,6 +35,7 @@ const SYMBOL_LIMITS: Record<string, number> = {
   STARTER: 25,
   PRO: 50,
   ELITE: 2147483647,
+  TEAM: 2147483647,
 };
 
 interface WatchlistContentProps {
