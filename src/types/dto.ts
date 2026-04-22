@@ -1535,6 +1535,13 @@ export interface AddTraderRequestDto {
   label?: string;
 }
 
+export interface CreateTenantRequestDto {
+  firmCode: string;
+  firmName: string;
+  adminEmail: string;
+}
+
+
 // --- Options Spreads (Phase 6.1) ---
 
 export type SpreadType =
@@ -1563,7 +1570,15 @@ export interface SpreadLegDto {
   quantity: number;
   premium: number | null;
   sortOrder: number;
+  delta?: number | null;
+  gamma?: number | null;
+  theta?: number | null;
+  vega?: number | null;
+  impliedVol?: number | null;
+  spotAtEntry?: number | null;
 }
+
+export type SpreadSource = 'AUTO' | 'MANUAL';
 
 export interface OptionSpreadDto {
   id: string;
@@ -1578,7 +1593,59 @@ export interface OptionSpreadDto {
   realizedPnl: number | null;
   status: SpreadStatus;
   detectedAt: string;
+  closedAt?: string | null;
+  source?: SpreadSource;
+  rolledFromId?: string | null;
   legs: SpreadLegDto[];
+}
+
+export interface CreateSpreadLegRequestDto {
+  tradeId: string;
+  legType: SpreadLegDto['legType'];
+  strike: number;
+  quantity: number;
+  premium: number | null;
+  sortOrder?: number;
+}
+
+export interface CreateSpreadRequestDto {
+  spreadType: SpreadType;
+  underlying: string;
+  expirationDate: string | null;
+  legs: CreateSpreadLegRequestDto[];
+}
+
+export interface OptionPortfolioGreeksDto {
+  openSpreadCount: number;
+  legsWithGreeks: number;
+  totalDelta: number | null;
+  totalGamma: number | null;
+  totalTheta: number | null;
+  totalVega: number | null;
+}
+
+export interface OptionSpreadAnalyticsDto {
+  overall: {
+    total: number;
+    openCount: number;
+    closedCount: number;
+    expiredCount: number;
+    totalRealized: number | null;
+    winRate: number | null;
+  };
+  perType: Array<{
+    spreadType: string;
+    count: number;
+    totalPnl: number | null;
+    avgPnl: number | null;
+    winRate: number | null;
+    avgHoldDays: number | null;
+  }>;
+  perUnderlying: Array<{
+    underlying: string;
+    count: number;
+    totalPnl: number | null;
+  }>;
 }
 
 // --- Developer API (Phase 6.4) ---

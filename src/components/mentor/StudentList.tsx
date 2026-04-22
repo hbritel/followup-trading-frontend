@@ -45,7 +45,9 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   };
 
-  if (students.length === 0) {
+  const safeStudents = Array.isArray(students) ? students : [];
+
+  if (safeStudents.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
         {t('mentor.noStudents', 'No students have joined yet.')}
@@ -72,7 +74,7 @@ const StudentList: React.FC<StudentListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {students.map((student) => (
+            {safeStudents.map((student) => (
               <tr
                 key={student.studentUserId}
                 className="border-b border-border/30 hover:bg-muted/30 transition-colors"

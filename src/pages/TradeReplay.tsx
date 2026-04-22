@@ -19,13 +19,19 @@ import {
   Calendar, Hash, DollarSign, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import BacktestChart, { type StaticPriceLine, type StaticMarker } from '@/components/backtesting/BacktestChart';
+// TODO(tradeview-license): request a TradingView Advanced Charts license.
+// Advanced Charts is free for approved trading/journaling platforms and would
+// give us native timezone handling, full indicator support, and a pixel-perfect
+// replay UX. Backend datafeed can reuse `MarketDataService`. Track at
+// https://www.tradingview.com/advanced-charts/ and docs/TODO.md.
+import BacktestChart, { type StaticPriceLine, type StaticMarker, type TradePriceOverlay } from '@/components/backtesting/BacktestChart';
 import TradeReplaySelector, { type TradeReplayFilters } from '@/components/tradereplay/TradeReplaySelector';
 import { useTradeReplay } from '@/hooks/useTradeReplay';
 import { useMarketHistory } from '@/hooks/useMarketHistory';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import PlanBadge from '@/components/subscription/PlanBadge';
 import { useToast } from '@/hooks/use-toast';
+import { utcToChartLocal } from '@/lib/chart/timezone';
 
 // Timeframes: PRO gets 1h, 4h, 1d — ELITE gets all (including 1m, 5m, 15m, 1w)
 const TIMEFRAMES: { value: string; label: string; requiredPlan: 'PRO' | 'ELITE' }[] = [
@@ -58,23 +64,36 @@ const TradeReplay = () => {
     direction: 'all',
   });
 
-  // Timeframe selector — default from backend, user can override
+  // Timeframe selector — default from backend, user can override.
   const [customTimeframe, setCustomTimeframe] = useState<string | null>(null);
   const activeTimeframe = customTimeframe ?? replayData?.interval ?? '15m';
 
-  // Fetch candles with custom timeframe (separate from the replay data)
+  // Decide whether we need to fetch candles on the client. We always fetch when:
+  //   1. the user picked a timeframe different from the server default, OR
+  //   2. the server returned 0 candles (e.g., Yahoo 15m for an intraday trade today).
+  // Otherwise we reuse the candles already embedded in the replay response.
+  const serverCandles = replayData?.candles ?? [];
+  const needsClientFetch = customTimeframe !== null
+    || (replayData != null && serverCandles.length === 0);
   const fromDate = replayData ? new Date(replayData.entryDate).toISOString().split('T')[0] : null;
   const toDate = replayData ? new Date(replayData.exitDate).toISOString().split('T')[0] : null;
   const { data: customCandles, isLoading: candlesLoading } = useMarketHistory(
-    customTimeframe ? replayData?.symbol ?? null : null, // only fetch when user changes TF
-    customTimeframe ?? '15m',
+    needsClientFetch ? replayData?.symbol ?? null : null,
+    activeTimeframe,
     fromDate,
-    toDate
+    toDate,
   );
 
-  // Use custom candles if user changed TF, otherwise use replay data candles
-  const displayCandles = customTimeframe ? (customCandles?.candles ?? []) : (replayData?.candles ?? []);
-  const isChartLoading = isLoading || (customTimeframe && candlesLoading);
+  // Chart displays client-fetched candles whenever the client fetch fired; fall
+  // back to the server-embedded list only when no client fetch is in flight.
+  const rawCandles = needsClientFetch ? (customCandles?.candles ?? []) : serverCandles;
+  // Shift UTC timestamps so the chart axis aligns with the user's local wall-
+  // clock (lightweight-charts renders `Time` as UTC). See lib/chart/timezone.ts.
+  const displayCandles = useMemo(
+    () => rawCandles.map((c) => ({ ...c, timestamp: utcToChartLocal(c.timestamp) })),
+    [rawCandles],
+  );
+  const isChartLoading = isLoading || (needsClientFetch && candlesLoading);
 
   // Static price lines: Entry, Exit, SL, TP
   const staticLines: StaticPriceLine[] = useMemo(() => {
@@ -87,11 +106,15 @@ const TradeReplay = () => {
     ];
   }, [replayData]);
 
-  // Entry/Exit markers on candles
+  // Entry/Exit text labels rendered as bar-anchored markers. The arrow/circle
+  // shapes themselves are not drawn — precise (time, price) dots are drawn by
+  // the trade overlay below (see `tradeOverlay`) so the labels only provide the
+  // price text. Keeping arrow/circle invisible avoids the "exit dot above the
+  // bar" artefact when broker execution price differs from the market candle.
   const staticMarkers: StaticMarker[] = useMemo(() => {
     if (!replayData) return [];
-    const entryTs = Math.floor(new Date(replayData.entryDate).getTime() / 1000);
-    const exitTs = Math.floor(new Date(replayData.exitDate).getTime() / 1000);
+    const entryTs = utcToChartLocal(Math.floor(new Date(replayData.entryDate).getTime() / 1000));
+    const exitTs = utcToChartLocal(Math.floor(new Date(replayData.exitDate).getTime() / 1000));
     const isLong = replayData.direction === 'LONG';
     const dec = replayData.entryPrice > 100 ? 2 : 5;
     return [
@@ -112,11 +135,26 @@ const TradeReplay = () => {
     ];
   }, [replayData]);
 
+  // Price-anchored overlay: dashed line connecting entry → exit at the actual
+  // execution prices. Green when profitable, red otherwise.
+  const tradeOverlay: TradePriceOverlay | undefined = useMemo(() => {
+    if (!replayData) return undefined;
+    const entryTs = utcToChartLocal(Math.floor(new Date(replayData.entryDate).getTime() / 1000));
+    const exitTs = utcToChartLocal(Math.floor(new Date(replayData.exitDate).getTime() / 1000));
+    return {
+      entryTime: entryTs,
+      entryPrice: replayData.entryPrice,
+      exitTime: exitTs,
+      exitPrice: replayData.exitPrice,
+      color: replayData.profitLoss >= 0 ? '#22c55e' : '#ef4444',
+    };
+  }, [replayData]);
+
   // Visible range centered on entry→exit with 20% padding on each side
   const chartVisibleRange = useMemo(() => {
     if (!replayData) return undefined;
-    const entryTs = Math.floor(new Date(replayData.entryDate).getTime() / 1000);
-    const exitTs = Math.floor(new Date(replayData.exitDate).getTime() / 1000);
+    const entryTs = utcToChartLocal(Math.floor(new Date(replayData.entryDate).getTime() / 1000));
+    const exitTs = utcToChartLocal(Math.floor(new Date(replayData.exitDate).getTime() / 1000));
     const duration = Math.max(exitTs - entryTs, 60); // at least 60s
     const padding = Math.max(Math.floor(duration * 0.3), 300); // at least 5 min padding
     return { from: entryTs - padding, to: exitTs + padding };
@@ -231,7 +269,7 @@ const TradeReplay = () => {
             {isChartLoading ? (
               <Skeleton className="w-full h-[500px] rounded-xl" />
             ) : displayCandles.length > 0 ? (
-              <BacktestChart data={displayCandles} staticLines={staticLines} staticMarkers={staticMarkers} visibleRange={chartVisibleRange} height={500} preserveScale={false} />
+              <BacktestChart data={displayCandles} staticLines={staticLines} staticMarkers={staticMarkers} tradeOverlay={tradeOverlay} visibleRange={chartVisibleRange} height={500} preserveScale={false} />
             ) : (
               <Card className="glass-card rounded-2xl">
                 <CardContent className="flex items-center justify-center py-20 text-muted-foreground">

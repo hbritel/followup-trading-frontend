@@ -61,7 +61,7 @@ const riskBadgeClasses: Record<RiskLevel, string> = {
   LOW: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
   MEDIUM: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
   HIGH: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
-  CRITICAL: 'text-red-400 bg-red-500/10 border-red-500/20',
+  CRITICAL: 'text-red-400 bg-red-500/10 border-red-500/20 animate-pulse ring-1 ring-red-500/50',
 };
 
 const riskIconColor: Record<RiskLevel, string> = {
@@ -244,9 +244,10 @@ const PropFirmAdmin: React.FC = () => {
                   {t('propFirmAdmin.topPerformers')}
                 </h2>
                 {dashboard.topPerformers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-6 text-center">
-                    {t('propFirmAdmin.noTraders')}
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
+                    <ArrowUpRight className="w-8 h-8 text-white/10 mb-2" />
+                    <p className="text-sm font-medium text-white/40">{t('propFirmAdmin.noPerformers', 'Performers will appear here')}</p>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -288,9 +289,10 @@ const PropFirmAdmin: React.FC = () => {
                   {t('propFirmAdmin.atRiskTraders')}
                 </h2>
                 {dashboard.atRiskTraders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-6 text-center">
-                    {t('propFirmAdmin.noTraders')}
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
+                    <AlertTriangle className="w-8 h-8 text-white/10 mb-2" />
+                    <p className="text-sm font-medium text-white/40">{t('propFirmAdmin.noAtRisk', 'No traders at risk')}</p>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {dashboard.atRiskTraders.map((trader) => (
@@ -349,13 +351,24 @@ const PropFirmAdmin: React.FC = () => {
               </div>
 
               {sortedTraders.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-12 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Users className="w-7 h-7 text-primary" />
+                <div className="flex flex-col items-center gap-5 py-16 text-center max-w-sm mx-auto">
+                  <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center relative shadow-inner">
+                    <Users className="w-10 h-10 text-primary" />
+                    <Plus className="w-6 h-6 text-white absolute -bottom-2 -right-2 bg-primary rounded-full p-1 ring-4 ring-background" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{t('propFirmAdmin.noTraders')}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{t('propFirmAdmin.noTradersDesc')}</p>
+                    <h3 className="text-xl font-bold text-white mb-2">{t('propFirmAdmin.emptyTitle', 'Build Your Fleet')}</h3>
+                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                      {t('propFirmAdmin.emptyDesc', 'Add your first trader to start monitoring risk, tracking KPI, and managing evaluation accounts.')}
+                    </p>
+                    <Button 
+                      onClick={() => setAddOpen(true)}
+                      className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto shadow-lg shadow-primary/25"
+                      size="lg"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      {t('propFirmAdmin.addFirstTrader', 'Add First Trader')}
+                    </Button>
                   </div>
                 </div>
               ) : (

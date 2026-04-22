@@ -3,6 +3,7 @@ import type {
   PropFirmDashboardDto,
   TraderSummaryDto,
   AddTraderRequestDto,
+  CreateTenantRequestDto,
 } from '@/types/dto';
 
 export const propFirmAdminService = {
@@ -29,5 +30,9 @@ export const propFirmAdminService = {
 
   removeTrader: async (userId: string): Promise<void> => {
     await apiClient.delete(`/propfirm-admin/traders/${userId}`);
+  },
+
+  createTenant: async (data: CreateTenantRequestDto): Promise<void> => {
+    await apiClient.post('/propfirm-admin/tenants', data);
   },
 };

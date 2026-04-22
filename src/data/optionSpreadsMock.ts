@@ -1,4 +1,150 @@
-import type { OptionSpreadDto } from '@/types/dto';
+import type {
+  OptionPortfolioGreeksDto,
+  OptionSpreadAnalyticsDto,
+  OptionSpreadDto,
+  SpreadLegDto,
+} from '@/types/dto';
+
+// ---------------------------------------------------------------------------
+// Mock Greeks helpers — produce plausible values for visual testing only.
+// ---------------------------------------------------------------------------
+
+const GREEK_TEMPLATES: Record<SpreadLegDto['legType'], {
+  delta: number;
+  gamma: number;
+  theta: number;
+  vega: number;
+  iv: number;
+}> = {
+  LONG_CALL:  { delta:  0.52, gamma: 0.018, theta: -0.08, vega: 0.25, iv: 0.28 },
+  SHORT_CALL: { delta: -0.45, gamma: -0.017, theta:  0.07, vega: -0.22, iv: 0.27 },
+  LONG_PUT:   { delta: -0.48, gamma: 0.016, theta: -0.07, vega: 0.23, iv: 0.29 },
+  SHORT_PUT:  { delta:  0.40, gamma: -0.015, theta:  0.06, vega: -0.20, iv: 0.26 },
+  STOCK:      { delta: 1,     gamma: 0,     theta: 0,     vega: 0,    iv: 0 },
+};
+
+function enrichLeg(leg: SpreadLegDto, underlyingSpot: number): SpreadLegDto {
+  const tpl = GREEK_TEMPLATES[leg.legType];
+  if (leg.legType === 'STOCK') {
+    return { ...leg, spotAtEntry: underlyingSpot };
+  }
+  return {
+    ...leg,
+    delta: tpl.delta,
+    gamma: tpl.gamma,
+    theta: tpl.theta,
+    vega: tpl.vega,
+    impliedVol: tpl.iv,
+    spotAtEntry: underlyingSpot,
+  };
+}
+
+const UNDERLYING_SPOT: Record<string, number> = {
+  AAPL: 185.5, MSFT: 412, SPY: 525, NVDA: 905, TSLA: 270, QQQ: 468,
+  GOOGL: 162, AMZN: 187, META: 510,
+};
+
+function enrichSpread(spread: OptionSpreadDto): OptionSpreadDto {
+  const spot = UNDERLYING_SPOT[spread.underlying] ?? 100;
+  return {
+    ...spread,
+    source: spread.source ?? 'AUTO',
+    legs: spread.legs.map((l) => enrichLeg(l, spot)),
+  };
+}
+
+/**
+ * Returns the mock dataset with greeks/source filled in. Safe to call every
+ * render — the original {@link mockOptionSpreads} is not mutated.
+ */
+export function getEnrichedMockSpreads(): OptionSpreadDto[] {
+  return mockOptionSpreads.map(enrichSpread);
+}
+
+/**
+ * Mock portfolio-greeks payload derived from {@link getEnrichedMockSpreads}.
+ */
+export function getMockPortfolioGreeks(): OptionPortfolioGreeksDto {
+  const spreads = getEnrichedMockSpreads().filter((s) => s.status === 'OPEN');
+  let delta = 0, gamma = 0, theta = 0, vega = 0, legs = 0;
+  spreads.forEach((s) => {
+    s.legs.forEach((l) => {
+      if (l.delta != null) { delta += l.delta * l.quantity; legs += 1; }
+      if (l.gamma != null) gamma += l.gamma * l.quantity;
+      if (l.theta != null) theta += l.theta * l.quantity;
+      if (l.vega != null) vega += l.vega * l.quantity;
+    });
+  });
+  return {
+    openSpreadCount: spreads.length,
+    legsWithGreeks: legs,
+    totalDelta: Math.round(delta * 100) / 100,
+    totalGamma: Math.round(gamma * 10000) / 10000,
+    totalTheta: Math.round(theta * 100) / 100,
+    totalVega: Math.round(vega * 100) / 100,
+  };
+}
+
+/**
+ * Mock analytics payload derived from {@link getEnrichedMockSpreads}. Only
+ * CLOSED / EXPIRED spreads contribute to realized metrics.
+ */
+export function getMockAnalytics(): OptionSpreadAnalyticsDto {
+  const all = getEnrichedMockSpreads();
+  const realised = all.filter((s) => s.status !== 'OPEN' && s.realizedPnl != null);
+  const open = all.filter((s) => s.status === 'OPEN').length;
+  const closed = all.filter((s) => s.status === 'CLOSED').length;
+  const expired = all.filter((s) => s.status === 'EXPIRED').length;
+  const totalRealized = realised.reduce((sum, s) => sum + (s.realizedPnl ?? 0), 0);
+  const wins = realised.filter((s) => (s.realizedPnl ?? 0) > 0).length;
+  const winRate = realised.length === 0 ? null : (wins / realised.length) * 100;
+
+  const byType = new Map<string, OptionSpreadDto[]>();
+  realised.forEach((s) => {
+    const arr = byType.get(s.spreadType) ?? [];
+    arr.push(s);
+    byType.set(s.spreadType, arr);
+  });
+  const perType = Array.from(byType.entries()).map(([type, group]) => {
+    const total = group.reduce((sum, s) => sum + (s.realizedPnl ?? 0), 0);
+    const typeWins = group.filter((s) => (s.realizedPnl ?? 0) > 0).length;
+    return {
+      spreadType: type,
+      count: group.length,
+      totalPnl: Math.round(total * 100) / 100,
+      avgPnl: Math.round((total / group.length) * 100) / 100,
+      winRate: Math.round((typeWins / group.length) * 10000) / 100,
+      avgHoldDays: 18,
+    };
+  });
+
+  const byUnderlying = new Map<string, OptionSpreadDto[]>();
+  realised.forEach((s) => {
+    const arr = byUnderlying.get(s.underlying) ?? [];
+    arr.push(s);
+    byUnderlying.set(s.underlying, arr);
+  });
+  const perUnderlying = Array.from(byUnderlying.entries()).map(([u, group]) => ({
+    underlying: u,
+    count: group.length,
+    totalPnl: Math.round(
+      group.reduce((sum, s) => sum + (s.realizedPnl ?? 0), 0) * 100,
+    ) / 100,
+  }));
+
+  return {
+    overall: {
+      total: all.length,
+      openCount: open,
+      closedCount: closed,
+      expiredCount: expired,
+      totalRealized: Math.round(totalRealized * 100) / 100,
+      winRate: winRate == null ? null : Math.round(winRate * 100) / 100,
+    },
+    perType,
+    perUnderlying,
+  };
+}
 
 /**
  * Mock dataset for the Options Spreads page.

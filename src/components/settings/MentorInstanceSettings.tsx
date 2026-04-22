@@ -26,10 +26,10 @@ const MentorInstanceSettings: React.FC = () => {
 
   useEffect(() => {
     if (instance) {
-      setBrandName(instance.brandName);
-      setDescription(instance.description ?? '');
-      setLogoUrl(instance.logoUrl ?? '');
-      setPrimaryColor(instance.primaryColor ?? '#6366f1');
+      setBrandName(instance.brandName || '');
+      setDescription(instance.description || '');
+      setLogoUrl(instance.logoUrl || '');
+      setPrimaryColor(instance.primaryColor || '#6366f1');
     }
   }, [instance]);
 
@@ -138,7 +138,7 @@ const MentorInstanceSettings: React.FC = () => {
           </div>
         </div>
 
-        <Button type="submit" disabled={isPending || !brandName.trim()}>
+        <Button type="submit" disabled={isPending || !brandName?.trim()}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {instance ? t('common.save', 'Save') : t('mentor.createInstance', 'Create')}
         </Button>

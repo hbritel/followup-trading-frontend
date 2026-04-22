@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, memo } from 'react';
 import {
-  createChart, ColorType, CandlestickSeries, HistogramSeries, createSeriesMarkers,
+  createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries,
+  createSeriesMarkers, LineStyle,
 } from 'lightweight-charts';
 import type {
   IChartApi, ISeriesApi, SeriesMarker, Time, IPriceLine,
@@ -32,6 +33,21 @@ export interface StaticMarker {
   text: string;
 }
 
+/**
+ * Renders two price-anchored dots connected by a thin line on the chart. Unlike
+ * {@link StaticMarker} (which is bar-anchored via the lightweight-charts marker
+ * API), the endpoints of this overlay sit at the exact `(time, price)` position
+ * requested — so the dot reflects the actual trade execution price even when
+ * the market-data candle at that moment doesn't touch it.
+ */
+export interface TradePriceOverlay {
+  entryTime: number;
+  entryPrice: number;
+  exitTime: number;
+  exitPrice: number;
+  color: string;
+}
+
 interface BacktestChartProps {
   data: Array<{
     timestamp: number; open: number; high: number; low: number; close: number; volume: number;
@@ -39,6 +55,8 @@ interface BacktestChartProps {
   trades?: ChartTradeLine[];
   staticLines?: StaticPriceLine[];
   staticMarkers?: StaticMarker[];
+  /** Price-anchored entry/exit dots + connector line for a single trade. */
+  tradeOverlay?: TradePriceOverlay;
   /** Optional visible range (epoch seconds). Chart zooms to this range instead of fitContent. */
   visibleRange?: { from: number; to: number };
   height?: number;
@@ -77,7 +95,7 @@ function getThemeColors(dark: boolean) {
 }
 
 const BacktestChart: React.FC<BacktestChartProps> = memo(({
-  data, trades = [], staticLines = [], staticMarkers = [], visibleRange, height = 500, preserveScale = true, onDragSL, onDragTP,
+  data, trades = [], staticLines = [], staticMarkers = [], tradeOverlay, visibleRange, height = 500, preserveScale = true, onDragSL, onDragTP,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -316,6 +334,35 @@ const BacktestChart: React.FC<BacktestChartProps> = memo(({
     markers.sort((a, b) => (a.time as number) - (b.time as number));
     markersPluginRef.current.setMarkers(markers);
   }, [trades, data, staticMarkers]);
+
+  // Trade price overlay — a standalone line series with two points at the exact
+  // (time, price) of entry and exit, so dots land on the real execution prices
+  // even when candles at that moment don't cover them.
+  const overlaySeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  useEffect(() => {
+    if (!chartRef.current) return;
+    // Tear down any previous overlay so props changes replace cleanly.
+    if (overlaySeriesRef.current) {
+      try { chartRef.current.removeSeries(overlaySeriesRef.current); } catch { /* */ }
+      overlaySeriesRef.current = null;
+    }
+    if (!tradeOverlay) return;
+    const series = chartRef.current.addSeries(LineSeries, {
+      color: tradeOverlay.color,
+      lineWidth: 2,
+      lineStyle: LineStyle.Dashed,
+      pointMarkersVisible: true,
+      pointMarkersRadius: 6,
+      crosshairMarkerVisible: false,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    series.setData([
+      { time: tradeOverlay.entryTime as unknown as Time, value: tradeOverlay.entryPrice },
+      { time: tradeOverlay.exitTime as unknown as Time, value: tradeOverlay.exitPrice },
+    ]);
+    overlaySeriesRef.current = series;
+  }, [tradeOverlay]);
 
   // Static price lines (for Trade Replay: entry, exit, SL, TP)
   const staticLinesRef = useRef<IPriceLine[]>([]);
