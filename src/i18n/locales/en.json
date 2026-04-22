@@ -659,7 +659,7 @@
     "aiUsageTab": "AI Usage",
     "aiUsage": {
       "sectionTitle": "AI Coach Usage",
-      "sectionDescription": "Inspect a user\u2019s remaining bonus AI messages or grant a bonus to one or more users.",
+      "sectionDescription": "Inspect a user’s remaining bonus AI messages or grant a bonus to one or more users.",
       "inspectTitle": "User lookup",
       "inspectDescription": "Paste a user UUID to see their remaining AI coach bonus messages.",
       "inspect": "Inspect",
@@ -672,14 +672,14 @@
       "userIdsLabel": "User UUIDs",
       "validCount": "{{count}} valid",
       "invalidCount": "{{count}} invalid ignored",
-      "overflowCount": "{{count}} over the 500 cap \u2014 dropped",
+      "overflowCount": "{{count}} over the 500 cap — dropped",
       "amountLabel": "Amount per user",
       "amountHelp": "Between 1 and 10,000.",
       "reasonLabel": "Reason (optional)",
       "reasonPlaceholder": "e.g. support credit, beta tester, friends & family",
       "grantButton": "Grant bonus",
       "granting": "Granting...",
-      "grantSuccess": "{{amount}} messages granted to {{granted}} users ({{skipped}} skipped \u2014 no subscription)",
+      "grantSuccess": "{{amount}} messages granted to {{granted}} users ({{skipped}} skipped — no subscription)",
       "confirmTitle": "Confirm bonus grant",
       "confirmMessage": "Grant {{amount}} bonus AI messages to {{count}} users? This action is logged and cannot be undone.",
       "cancel": "Cancel",
@@ -1012,7 +1012,10 @@
     "freeNoManualSync": "Manual sync is not available on the Free plan. Upgrade to Starter or higher.",
     "syncCooldown": "Next sync available in {{days}} day(s)",
     "mentor": "Mentor",
-    "myMentor": "My Mentor"
+    "myMentor": "My Mentor",
+    "signedInAs": "Signed in as",
+    "logoutConfirmTitle": "Sign out?",
+    "logoutConfirmDesc": "You will be signed out on this device. You can sign back in anytime."
   },
   "alerts": {
     "alertManagement": "Alert Management",
@@ -1590,7 +1593,44 @@
     "upgradeTo": "Upgrade",
     "downgradeTo": "Downgrade",
     "billedAnnually": "billed annually",
-    "popular": "Popular"
+    "popular": "Popular",
+    "billingPortal": "Billing Portal",
+    "billingPortalHint": "Manage payment method, invoices and cancel subscription",
+    "downgradeFreeHint": "Cancel your subscription via the billing portal to drop to Free.",
+    "forMentors": "For Mentors",
+    "availablePlans": "Available Plans",
+    "availablePlansDesc": "Compare plans and choose the one that fits your trading needs. Upgrade or downgrade anytime.",
+    "connections": "Connections",
+    "trades": "Trades",
+    "aiMessages": "AI Messages",
+    "alerts": "Alerts",
+    "reports": "Reports",
+    "manageSubscription": "Manage Subscription",
+    "currentSession": "Current",
+    "cancelAtPeriodEnd": "Cancels at period end",
+    "accessUntil": "Access until",
+    "billingInterval": "Billing",
+    "dayShort": "day",
+    "monthShort": "mo",
+    "status": {
+      "ACTIVE": "Active",
+      "TRIALING": "Trialing",
+      "PAST_DUE": "Past due",
+      "CANCELED": "Canceled",
+      "INCOMPLETE": "Incomplete",
+      "UNPAID": "Unpaid"
+    },
+    "interval": {
+      "MONTHLY": "monthly",
+      "ANNUAL": "annual"
+    },
+    "plan": {
+      "FREE": "Free",
+      "STARTER": "Starter",
+      "PRO": "Pro",
+      "ELITE": "Elite",
+      "TEAM": "Team"
+    }
   },
   "accounts": {
     "tradingAccounts": "Trading Accounts",
@@ -3331,7 +3371,6 @@
       "COLLAR": "Collar",
       "CUSTOM": "Custom"
     },
-    "detectedAt": "Detected",
     "payoffTitle": "Payoff at expiration",
     "payoffUnavailable": "Payoff unavailable",
     "pnl": "P&L",
@@ -3348,8 +3387,6 @@
     "sourceManual": "Manual",
     "sourceAuto": "Auto",
     "rolled": "Rolled",
-    "exportCsv": "Export CSV",
-    "exportSuccess": "CSV downloaded",
     "exportError": "Export failed",
     "greeks": "Greeks at entry",
     "delta": "Delta",

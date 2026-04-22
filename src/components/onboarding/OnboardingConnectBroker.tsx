@@ -36,7 +36,7 @@ const OnboardingConnectBroker: React.FC<OnboardingConnectBrokerProps> = ({ onNex
       icon: <Link className="w-6 h-6" />,
       titleKey: 'onboarding.connectApi',
       descKey: 'onboarding.connectApiDesc',
-      href: '/account-management',
+      href: '/settings?tab=profile',
     },
     {
       id: 'add-manually',

@@ -33,7 +33,7 @@ import {
 
 import type { WatchlistResponseDto } from '@/types/dto';
 
-const WATCHLIST_LIMITS: Record<string, number> = { FREE: 1, STARTER: 3, PRO: 10, ELITE: 2147483647 };
+const WATCHLIST_LIMITS: Record<string, number> = { FREE: 1, STARTER: 3, PRO: 10, ELITE: 2147483647, TEAM: 2147483647 };
 
 const Watchlists = () => {
   const { t } = useTranslation();

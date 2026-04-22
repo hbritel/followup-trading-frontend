@@ -9,7 +9,6 @@ import { Trophy, Plus, Target, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { usePropFirms, useEvaluations } from '@/hooks/usePropFirm';
-import PlanBadge from '@/components/subscription/PlanBadge';
 import PlanGatedSection from '@/components/subscription/PlanGatedSection';
 import PropFirmCard from '@/components/propfirm/PropFirmCard';
 import EvaluationCard from '@/components/propfirm/EvaluationCard';
@@ -128,7 +127,6 @@ const PropFirmHub = () => {
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold text-gradient">{t('propFirm.title')}</h1>
-              <PlanBadge plan={REQUIRED_PLAN} size="sm" />
               {activeCount > 0 && (
                 <span className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                   {t('propFirm.counts.active', { count: activeCount })}

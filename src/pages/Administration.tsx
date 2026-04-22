@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { ChangePlanDialog } from '@/components/admin/ChangePlanDialog';
 import {
   Search,
   MoreHorizontal,
@@ -153,6 +154,7 @@ const PLAN_COLORS: Record<string, string> = {
   STARTER: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
   PRO: 'bg-primary/10 text-primary border-primary/30',
   ELITE: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
+  TEAM: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30',
 };
 
 // ── Pagination ────────────────────────────────────────────────────────────────
@@ -276,9 +278,6 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
   const [roleDialogUser, setRoleDialogUser] = useState<AdminUserDto | null>(null);
   const [selectedRoleName, setSelectedRoleName] = useState('');
   const [planDialogUser, setPlanDialogUser] = useState<AdminUserDto | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState('permanent');
-  const [customDays, setCustomDays] = useState('');
   const [featureOverrideUser, setFeatureOverrideUser] = useState<AdminUserDto | null>(null);
 
   // Batch selection state
@@ -286,9 +285,6 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
   const [batchPromoDialogOpen, setBatchPromoDialogOpen] = useState(false);
   const [batchSelectedPromoId, setBatchSelectedPromoId] = useState('');
   const [batchPlanDialogOpen, setBatchPlanDialogOpen] = useState(false);
-  const [batchSelectedPlan, setBatchSelectedPlan] = useState('');
-  const [batchSelectedDuration, setBatchSelectedDuration] = useState('permanent');
-  const [batchCustomDays, setBatchCustomDays] = useState('');
   const { data: promos } = useAdminPromos();
   const applyBatchMutation = useApplyBatch();
 
@@ -317,25 +313,6 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
     setBatchSelectedPromoId('');
   };
 
-  const resolveDurationDays = (duration: string, custom: string): number | null => {
-    if (duration === 'permanent') return null;
-    if (duration === 'custom') return parseInt(custom, 10) || null;
-    return parseInt(duration, 10);
-  };
-
-  const handleBatchChangePlan = () => {
-    if (!batchSelectedPlan || selectedUserIds.size === 0) return;
-    const durationDays = resolveDurationDays(batchSelectedDuration, batchCustomDays);
-    Array.from(selectedUserIds).forEach((userId) => {
-      changePlanMutation.mutate({ userId, plan: batchSelectedPlan, durationDays });
-    });
-    setSelectedUserIds(new Set());
-    setBatchPlanDialogOpen(false);
-    setBatchSelectedPlan('');
-    setBatchSelectedDuration('permanent');
-    setBatchCustomDays('');
-  };
-
   const handleConfirm = () => {
     if (!confirmAction) return;
     if (confirmAction.type === 'toggle') {
@@ -353,15 +330,6 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
     setSelectedRoleName('');
   };
 
-  const handleChangePlan = () => {
-    if (!planDialogUser || !selectedPlan) return;
-    const durationDays = resolveDurationDays(selectedDuration, customDays);
-    changePlanMutation.mutate({ userId: planDialogUser.id, plan: selectedPlan, durationDays });
-    setPlanDialogUser(null);
-    setSelectedPlan('');
-    setSelectedDuration('permanent');
-    setCustomDays('');
-  };
 
   if (isLoading) {
     return (
@@ -509,7 +477,7 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>{t('admin.userActions')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => { setPlanDialogUser(user); setSelectedPlan(''); }}>
+                        <DropdownMenuItem onClick={() => setPlanDialogUser(user)}>
                           <Crown className="mr-2 h-4 w-4" />
                           {t('admin.changePlan', 'Change Plan')}
                         </DropdownMenuItem>
@@ -616,77 +584,21 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* Batch change plan dialog */}
-      <Dialog open={batchPlanDialogOpen} onOpenChange={(open) => { if (!open) { setBatchPlanDialogOpen(false); setBatchSelectedDuration('permanent'); setBatchCustomDays(''); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
-            <DialogDescription>
-              {t('admin.batchChangePlanDescription', 'Change plan for {{count}} selected user(s).', { count: selectedUserIds.size })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div>
-              <Label>{t('admin.plan', 'Plan')}</Label>
-              <Select value={batchSelectedPlan} onValueChange={setBatchSelectedPlan}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FREE">Free</SelectItem>
-                  <SelectItem value="STARTER">Starter</SelectItem>
-                  <SelectItem value="PRO">Pro</SelectItem>
-                  <SelectItem value="ELITE">Elite</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('admin.duration', 'Duration')}</Label>
-              <Select value={batchSelectedDuration} onValueChange={(v) => { setBatchSelectedDuration(v); setBatchCustomDays(''); }}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
-                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
-                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
-                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
-                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
-                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
-                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
-                </SelectContent>
-              </Select>
-              {batchSelectedDuration === 'custom' && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
-                    value={batchCustomDays}
-                    onChange={(e) => setBatchCustomDays(e.target.value)}
-                    className="w-32"
-                  />
-                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
-                </div>
-              )}
-              {batchSelectedDuration !== 'permanent' && (
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setBatchPlanDialogOpen(false); setBatchSelectedDuration('permanent'); setBatchCustomDays(''); }}>{t('common.cancel')}</Button>
-            <Button
-              onClick={handleBatchChangePlan}
-              disabled={!batchSelectedPlan || changePlanMutation.isPending || (batchSelectedDuration === 'custom' && !batchCustomDays)}
-            >
-              {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('admin.applyToSelected', 'Apply to Selected')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Batch change plan — reuses shared dialog */}
+      <ChangePlanDialog
+        open={batchPlanDialogOpen}
+        onOpenChange={setBatchPlanDialogOpen}
+        targetLabel={t('admin.batchPlanTarget', '{{count}} selected user(s)', { count: selectedUserIds.size })}
+        isPending={changePlanMutation.isPending}
+        confirmLabel={t('admin.applyToSelected', 'Apply to Selected')}
+        onConfirm={(plan, durationDays) => {
+          Array.from(selectedUserIds).forEach((userId) => {
+            changePlanMutation.mutate({ userId, plan, durationDays });
+          });
+          setSelectedUserIds(new Set());
+          setBatchPlanDialogOpen(false);
+        }}
+      />
 
       <ConfirmActionDialog confirmAction={confirmAction} onConfirm={handleConfirm} onClose={() => setConfirmAction(null)} />
 
@@ -725,76 +637,19 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
       </Dialog>
 
       {/* Change plan dialog */}
-      <Dialog open={planDialogUser !== null} onOpenChange={(open) => { if (!open) { setPlanDialogUser(null); setSelectedDuration('permanent'); setCustomDays(''); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
-            <DialogDescription>
-              {t('admin.changePlanDescription', 'Change subscription plan for {{name}}', { name: planDialogUser?.fullName ?? planDialogUser?.username })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div>
-              <Label>{t('admin.plan', 'Plan')}</Label>
-              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FREE">Free</SelectItem>
-                  <SelectItem value="STARTER">Starter</SelectItem>
-                  <SelectItem value="PRO">Pro</SelectItem>
-                  <SelectItem value="ELITE">Elite</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('admin.duration', 'Duration')}</Label>
-              <Select value={selectedDuration} onValueChange={(v) => { setSelectedDuration(v); setCustomDays(''); }}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
-                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
-                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
-                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
-                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
-                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
-                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
-                </SelectContent>
-              </Select>
-              {selectedDuration === 'custom' && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
-                    value={customDays}
-                    onChange={(e) => setCustomDays(e.target.value)}
-                    className="w-32"
-                  />
-                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
-                </div>
-              )}
-              {selectedDuration !== 'permanent' && (
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPlanDialogUser(null); setSelectedDuration('permanent'); setCustomDays(''); }}>{t('common.cancel')}</Button>
-            <Button
-              onClick={handleChangePlan}
-              disabled={!selectedPlan || changePlanMutation.isPending || (selectedDuration === 'custom' && !customDays)}
-            >
-              {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('common.confirm')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChangePlanDialog
+        open={planDialogUser !== null}
+        onOpenChange={(open) => { if (!open) setPlanDialogUser(null); }}
+        targetLabel={planDialogUser?.fullName ?? planDialogUser?.username ?? ''}
+        isPending={changePlanMutation.isPending}
+        onConfirm={(plan, durationDays) => {
+          if (!planDialogUser) return;
+          changePlanMutation.mutate(
+            { userId: planDialogUser.id, plan, durationDays },
+            { onSuccess: () => setPlanDialogUser(null) },
+          );
+        }}
+      />
 
       {/* Feature overrides dialog */}
       {featureOverrideUser && (
@@ -830,7 +685,7 @@ const FEATURE_REQUIRED_PLAN: Record<string, string> = {
   alerts: 'STARTER',
 };
 
-const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3 };
+const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3, TEAM: 4 };
 
 function userPlanAllowsFeature(userPlan: string | undefined, featureKey: string): boolean {
   const required = FEATURE_REQUIRED_PLAN[featureKey];
@@ -1127,7 +982,17 @@ function DashboardTab() {
                     <div key={plan} className="flex items-center gap-2">
                       <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 w-20 justify-center', PLAN_COLORS[plan])}>{plan}</Badge>
                       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className={cn('h-full rounded-full', plan === 'ELITE' ? 'bg-amber-500' : plan === 'PRO' ? 'bg-primary' : plan === 'STARTER' ? 'bg-blue-500' : 'bg-muted-foreground/30')} style={{ width: `${pct}%` }} />
+                        <div
+                          className={cn(
+                            'h-full rounded-full',
+                            plan === 'TEAM' ? 'bg-fuchsia-500'
+                              : plan === 'ELITE' ? 'bg-amber-500'
+                              : plan === 'PRO' ? 'bg-primary'
+                              : plan === 'STARTER' ? 'bg-blue-500'
+                              : 'bg-muted-foreground/30',
+                          )}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                       <span className="text-xs tabular-nums text-muted-foreground w-16 text-right">{count} ({pct}%)</span>
                     </div>
@@ -1277,25 +1142,6 @@ function SubscriptionsTab() {
   const { data, isLoading, isError } = useAdminSubscriptions(page, 20);
   const changePlanMutation = useChangeUserPlan();
   const [planDialog, setPlanDialog] = useState<{ userId: string; username: string } | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState('permanent');
-  const [customDays, setCustomDays] = useState('');
-
-  const resolveDurationDays = (duration: string, custom: string): number | null => {
-    if (duration === 'permanent') return null;
-    if (duration === 'custom') return parseInt(custom, 10) || null;
-    return parseInt(duration, 10);
-  };
-
-  const handleChangePlan = () => {
-    if (!planDialog || !selectedPlan) return;
-    const durationDays = resolveDurationDays(selectedDuration, customDays);
-    changePlanMutation.mutate({ userId: planDialog.userId, plan: selectedPlan, durationDays });
-    setPlanDialog(null);
-    setSelectedPlan('');
-    setSelectedDuration('permanent');
-    setCustomDays('');
-  };
 
   if (isLoading) {
     return (
@@ -1376,7 +1222,7 @@ function SubscriptionsTab() {
                       variant="ghost"
                       size="sm"
                       className="h-8 text-xs gap-1.5"
-                      onClick={() => { setPlanDialog({ userId: sub.userId, username: sub.username }); setSelectedPlan(''); }}
+                      onClick={() => setPlanDialog({ userId: sub.userId, username: sub.username })}
                     >
                       <Crown className="h-3.5 w-3.5" />
                       {t('admin.changePlan', 'Change')}
@@ -1401,77 +1247,19 @@ function SubscriptionsTab() {
         />
       </div>
 
-      {/* Change plan dialog */}
-      <Dialog open={planDialog !== null} onOpenChange={(open) => { if (!open) { setPlanDialog(null); setSelectedDuration('permanent'); setCustomDays(''); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('admin.changePlan', 'Change Plan')}</DialogTitle>
-            <DialogDescription>
-              {t('admin.changePlanDescription', 'Change subscription plan for {{name}}', { name: planDialog?.username })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div>
-              <Label>{t('admin.plan', 'Plan')}</Label>
-              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FREE">Free</SelectItem>
-                  <SelectItem value="STARTER">Starter</SelectItem>
-                  <SelectItem value="PRO">Pro</SelectItem>
-                  <SelectItem value="ELITE">Elite</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t('admin.duration', 'Duration')}</Label>
-              <Select value={selectedDuration} onValueChange={(v) => { setSelectedDuration(v); setCustomDays(''); }}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="permanent">{t('admin.durationPermanent', 'Permanent')}</SelectItem>
-                  <SelectItem value="7">{t('admin.duration7days', '7 days')}</SelectItem>
-                  <SelectItem value="14">{t('admin.duration14days', '14 days')}</SelectItem>
-                  <SelectItem value="30">{t('admin.duration30days', '30 days')}</SelectItem>
-                  <SelectItem value="60">{t('admin.duration60days', '60 days')}</SelectItem>
-                  <SelectItem value="90">{t('admin.duration90days', '90 days')}</SelectItem>
-                  <SelectItem value="custom">{t('admin.durationCustom', 'Custom')}</SelectItem>
-                </SelectContent>
-              </Select>
-              {selectedDuration === 'custom' && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder={t('admin.customDaysPlaceholder', 'e.g. 45')}
-                    value={customDays}
-                    onChange={(e) => setCustomDays(e.target.value)}
-                    className="w-32"
-                  />
-                  <span className="text-sm text-muted-foreground">{t('admin.days', 'days')}</span>
-                </div>
-              )}
-              {selectedDuration !== 'permanent' && (
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  {t('admin.durationHint', 'Plan will revert to FREE after the period expires.')}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPlanDialog(null); setSelectedDuration('permanent'); setCustomDays(''); }}>{t('common.cancel')}</Button>
-            <Button
-              onClick={handleChangePlan}
-              disabled={!selectedPlan || changePlanMutation.isPending || (selectedDuration === 'custom' && !customDays)}
-            >
-              {changePlanMutation.isPending ? t('common.saving', 'Saving...') : t('common.confirm')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChangePlanDialog
+        open={planDialog !== null}
+        onOpenChange={(open) => { if (!open) setPlanDialog(null); }}
+        targetLabel={planDialog?.username ?? ''}
+        isPending={changePlanMutation.isPending}
+        onConfirm={(plan, durationDays) => {
+          if (!planDialog) return;
+          changePlanMutation.mutate(
+            { userId: planDialog.userId, plan, durationDays },
+            { onSuccess: () => setPlanDialog(null) },
+          );
+        }}
+      />
     </>
   );
 }
@@ -2206,6 +1994,7 @@ function PromoFormDialog({
                   <SelectItem value="STARTER">Starter</SelectItem>
                   <SelectItem value="PRO">Pro</SelectItem>
                   <SelectItem value="ELITE">Elite</SelectItem>
+                  <SelectItem value="TEAM">Team</SelectItem>
                 </SelectContent>
               </Select>
             </div>

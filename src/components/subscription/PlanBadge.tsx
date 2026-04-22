@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PlanBadgeProps {
-  plan: 'STARTER' | 'PRO' | 'ELITE';
+  plan: 'STARTER' | 'PRO' | 'ELITE' | 'TEAM';
   className?: string;
   size?: 'sm' | 'md';
 }
@@ -12,6 +12,7 @@ const PLAN_STYLES: Record<string, { bg: string; text: string; label: string }> =
   STARTER: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'Starter+' },
   PRO: { bg: 'bg-primary/10 border-primary/20', text: 'text-primary', label: 'Pro+' },
   ELITE: { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', label: 'Elite' },
+  TEAM: { bg: 'bg-fuchsia-500/10 border-fuchsia-500/20', text: 'text-fuchsia-400', label: 'Team' },
 };
 
 const PlanBadge: React.FC<PlanBadgeProps> = ({ plan, className, size = 'sm' }) => {

@@ -34,7 +34,7 @@
     "update": "Mettre a jour",
     "settings": "Paramètres",
     "profile": "Profil",
-    "logout": "Deconnexion",
+    "logout": "Déconnexion",
     "login": "Connexion",
     "signup": "S'inscrire",
     "email": "E-mail",
@@ -964,7 +964,10 @@
     "freeNoManualSync": "La synchronisation manuelle n'est pas disponible avec le plan Gratuit. Passez à Starter ou supérieur.",
     "syncCooldown": "Prochaine synchronisation disponible dans {{days}} jour(s)",
     "mentor": "Mentor",
-    "myMentor": "Mon Mentor"
+    "myMentor": "Mon Mentor",
+    "signedInAs": "Connecté en tant que",
+    "logoutConfirmTitle": "Se déconnecter ?",
+    "logoutConfirmDesc": "Vous serez déconnecté sur cet appareil. Vous pourrez vous reconnecter à tout moment."
   },
   "alerts": {
     "alertManagement": "Gestion des alertes",
@@ -1542,7 +1545,44 @@
     "upgradeTo": "Passer a ce plan",
     "downgradeTo": "Retrograder",
     "billedAnnually": "facture annuellement",
-    "popular": "Populaire"
+    "popular": "Populaire",
+    "billingPortal": "Portail de facturation",
+    "billingPortalHint": "Gérer le moyen de paiement, les factures et annuler l’abonnement",
+    "downgradeFreeHint": "Annulez votre abonnement via le portail de facturation pour repasser au plan Free.",
+    "forMentors": "Pour les mentors",
+    "availablePlans": "Plans disponibles",
+    "availablePlansDesc": "Comparez les plans et choisissez celui qui correspond à vos besoins. Mettez à niveau ou redescendez à tout moment.",
+    "connections": "Connexions",
+    "trades": "Trades",
+    "aiMessages": "Messages IA",
+    "alerts": "Alertes",
+    "reports": "Rapports",
+    "manageSubscription": "Gérer l’abonnement",
+    "currentSession": "Actuelle",
+    "cancelAtPeriodEnd": "Annulation à la fin de la période",
+    "accessUntil": "Accès jusqu’au",
+    "billingInterval": "Facturation",
+    "dayShort": "jour",
+    "monthShort": "mois",
+    "status": {
+      "ACTIVE": "Actif",
+      "TRIALING": "Essai",
+      "PAST_DUE": "En retard",
+      "CANCELED": "Annulé",
+      "INCOMPLETE": "Incomplet",
+      "UNPAID": "Impayé"
+    },
+    "interval": {
+      "MONTHLY": "mensuelle",
+      "ANNUAL": "annuelle"
+    },
+    "plan": {
+      "FREE": "Free",
+      "STARTER": "Starter",
+      "PRO": "Pro",
+      "ELITE": "Elite",
+      "TEAM": "Team"
+    }
   },
   "accounts": {
     "tradingAccounts": "Comptes de trading",
@@ -3319,7 +3359,6 @@
       "COLLAR": "Collar",
       "CUSTOM": "Personnalisé"
     },
-    "detectedAt": "Détecté",
     "payoffTitle": "Payoff à l'expiration",
     "payoffUnavailable": "Payoff indisponible",
     "pnl": "P&L",
@@ -3336,8 +3375,6 @@
     "sourceManual": "Manuel",
     "sourceAuto": "Auto",
     "rolled": "Roulé",
-    "exportCsv": "Exporter CSV",
-    "exportSuccess": "CSV téléchargé",
     "exportError": "Échec de l'export",
     "greeks": "Greeks à l'entrée",
     "delta": "Delta",

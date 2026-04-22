@@ -121,9 +121,9 @@ function App() {
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/watchlists" element={<Watchlists />} />
                     <Route path="/accounts" element={<Accounts />} />
-                    <Route path="/account-management" element={<AccountManagement />} />
+                    <Route path="/account-management" element={<Navigate to="/settings?tab=profile" replace />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile" element={<Navigate to="/settings?tab=profile" replace />} />
                     <Route path="/reports" element={<FeatureGate featureKey="reports" requiredPlan="STARTER"><Reports /></FeatureGate>} />
                     <Route path="/backtesting" element={<FeatureGate featureKey="backtesting" requiredPlan="PRO"><Backtesting /></FeatureGate>} />
                     <Route path="/trade-replay" element={<FeatureGate featureKey="trade_replay" requiredPlan="PRO"><TradeReplay /></FeatureGate>} />
@@ -143,8 +143,8 @@ function App() {
                     <Route path="/options" element={<FeatureGate requiredPlan="PRO"><OptionSpreads /></FeatureGate>} />
                     <Route path="/developer" element={<FeatureGate requiredPlan="ELITE"><DeveloperPortal /></FeatureGate>} />
 
-                    {/* Redirect from /account to /profile */}
-                    <Route path="/account" element={<Navigate to="/profile" replace />} />
+                    {/* Legacy redirects — everything goes to unified Settings hub */}
+                    <Route path="/account" element={<Navigate to="/settings?tab=profile" replace />} />
                   </Route>
 
                   {/* Public routes — no auth required */}

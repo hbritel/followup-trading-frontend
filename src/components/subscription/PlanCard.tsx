@@ -75,6 +75,16 @@ const PLAN_FEATURES: Record<string, { key: string; included: boolean; detail?: s
     { key: 'dedicatedSupport', included: true },
     { key: 'customRss', included: true },
   ],
+  TEAM: [
+    { key: 'everything', included: true, detail: 'All ELITE features' },
+    { key: 'mentorInstance', included: true, detail: 'Your branded academy' },
+    { key: 'students', included: true, detail: 'Up to 20 students' },
+    { key: 'mentorDashboard', included: true, detail: 'Metrics / trades / psychology' },
+    { key: 'studentBoost', included: true, detail: 'Students get Starter features' },
+    { key: 'inviteCode', included: true, detail: 'Public join page + code' },
+    { key: 'privacyControls', included: true, detail: 'Student-side toggles' },
+    { key: 'dedicatedSupport', included: true },
+  ],
 };
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -87,6 +97,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   const { t } = useTranslation();
   const isPro = plan.name === 'PRO';
   const isElite = plan.name === 'ELITE';
+  const isTeam = plan.name === 'TEAM';
   const isStarter = plan.name === 'STARTER';
   const isCurrent = currentPlan === plan.name;
   const monthlyPrice = (plan as PlanDto & { monthlyPrice?: number }).monthlyPrice ?? plan.monthlyPriceUsd;
@@ -98,6 +109,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
     'glass-card rounded-2xl p-8 relative flex flex-col gap-6 transition-all duration-300',
     isPro && 'border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]',
     isElite && 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]',
+    isTeam && 'border-fuchsia-500/50 shadow-[0_0_30px_rgba(217,70,239,0.12)]',
     isStarter && 'border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.08)]',
   );
 
