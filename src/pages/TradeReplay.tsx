@@ -7,7 +7,9 @@ import PageTransition from '@/components/ui/page-transition';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +18,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   ArrowLeft, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-  Calendar, Hash, DollarSign, Lock,
+  Calendar, Hash, DollarSign, Lock, Search, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // TODO(tradeview-license): request a TradingView Advanced Charts license.
@@ -338,33 +340,82 @@ const TradeReplay = () => {
           </div>
         ) : (
           <>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">{t('tradeReplay.title')}</h1>
                 <p className="text-sm text-muted-foreground mt-1">{t('tradeReplay.subtitle')}</p>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 <DashboardDateFilter
                   preset={filters.datePreset}
                   onPresetChange={(p) => {
                     if (p !== 'custom') {
-                      setFilters({ ...filters, datePreset: p, customStart: null, customEnd: null, page: 1 });
+                      setFilters((prev) => ({
+                        ...prev,
+                        datePreset: p,
+                        customStart: null,
+                        customEnd: null,
+                        page: 1,
+                      }));
                     }
                   }}
                   customStart={filters.customStart}
                   customEnd={filters.customEnd}
                   onCustomStartChange={(d) =>
-                    setFilters({ ...filters, customStart: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 })
+                    setFilters((prev) => ({
+                      ...prev,
+                      customStart: d,
+                      datePreset: d ? 'custom' : prev.datePreset,
+                      page: 1,
+                    }))
                   }
                   onCustomEndChange={(d) =>
-                    setFilters({ ...filters, customEnd: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 })
+                    setFilters((prev) => ({
+                      ...prev,
+                      customEnd: d,
+                      datePreset: d ? 'custom' : prev.datePreset,
+                      page: 1,
+                    }))
                   }
                 />
                 <AccountSelector
                   value={filters.selectedAccountId}
-                  onChange={(v) => setFilters({ ...filters, selectedAccountId: v, page: 1 })}
+                  onChange={(v) => setFilters((prev) => ({ ...prev, selectedAccountId: v, page: 1 }))}
                   className="w-48"
                 />
+                <Select
+                  value={filters.direction}
+                  onValueChange={(v) => setFilters((prev) => ({ ...prev, direction: v, page: 1 }))}
+                >
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('trades.allTypes', 'All Directions')}</SelectItem>
+                    <SelectItem value="LONG">
+                      <span className="flex items-center gap-1.5">
+                        <ArrowUp className="h-3.5 w-3.5 text-green-500" />
+                        Long
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="SHORT">
+                      <span className="flex items-center gap-1.5">
+                        <ArrowDown className="h-3.5 w-3.5 text-red-500" />
+                        Short
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder={t('tradeReplay.searchTrades')}
+                    className="pl-8 rounded-xl"
+                    value={filters.search}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value, page: 1 }))}
+                  />
+                </div>
               </div>
             </div>
 

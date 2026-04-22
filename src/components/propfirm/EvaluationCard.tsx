@@ -115,8 +115,10 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
   // "Last checked" — use createdAt as a proxy if no explicit field is available
   const lastCheckedLabel = timeAgo(evaluation.createdAt);
 
-  const handleQuickCheck = (e: React.MouseEvent) => {
+  const handleQuickCheck = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     e.stopPropagation();
+    if (forceCheck.isPending) return;
     forceCheck.mutate(evaluation.id, {
       onSuccess: () => {
         toast({
@@ -132,6 +134,10 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
         });
       },
     });
+  };
+
+  const stopCardClick = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
   };
 
   return (
@@ -204,13 +210,16 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
             {/* Quick check button — only for active evaluations */}
             {evaluation.status === 'ACTIVE' && (
               <Button
+                type="button"
                 size="icon"
                 variant="ghost"
                 className={cn(
-                  'h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
-                  forceCheck.isPending && forceCheck.variables === evaluation.id && 'opacity-100',
+                  'h-6 w-6 shrink-0 relative z-10 opacity-60 hover:opacity-100 group-hover:opacity-100 transition-opacity',
+                  forceCheck.isPending && 'opacity-100',
                 )}
                 onClick={handleQuickCheck}
+                onMouseDown={stopCardClick}
+                onPointerDown={stopCardClick}
                 disabled={forceCheck.isPending}
                 title={t('propFirm.card.forceCheck')}
                 aria-label={t('propFirm.card.forceCheck')}
@@ -218,9 +227,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
                 <RefreshCw
                   className={cn(
                     'h-3.5 w-3.5',
-                    forceCheck.isPending &&
-                      forceCheck.variables === evaluation.id &&
-                      'animate-spin',
+                    forceCheck.isPending && 'animate-spin',
                   )}
                 />
               </Button>
