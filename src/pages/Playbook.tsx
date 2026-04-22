@@ -12,7 +12,7 @@ import PlaybookSuggestionsPanel from '@/components/playbook/PlaybookSuggestionsP
 import { useStrategyStats, useDeleteStrategy } from '@/hooks/useStrategies';
 import { useToast } from '@/hooks/use-toast';
 import type { StrategyStatsDto, StrategyResponseDto } from '@/types/dto';
-import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useSubscription } from '@/hooks/useSubscription';
 import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 /** Convert stats DTO to the response shape expected by StrategyForm */
@@ -28,13 +28,11 @@ const toResponseDto = (s: StrategyStatsDto): StrategyResponseDto => ({
   rules: s.rules ?? [],
 });
 
-const STRATEGY_LIMITS: Record<string, number> = { FREE: 2, STARTER: 5, PRO: 20, ELITE: 2147483647, TEAM: 2147483647 };
-
 const Playbook = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { currentPlan } = useFeatureFlags();
+  const { data: subscription } = useSubscription();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<StrategyResponseDto | null>(null);
@@ -88,7 +86,7 @@ const Playbook = () => {
   };
 
   const count = strategies?.length ?? 0;
-  const maxStrategies = STRATEGY_LIMITS[currentPlan] ?? 2;
+  const maxStrategies = subscription?.usage?.strategiesMax ?? 2;
   const atStrategyLimit = count >= maxStrategies;
 
   return (

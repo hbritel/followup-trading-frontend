@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PlusCircle, AlertCircle, Loader2, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useSubscription } from '@/hooks/useSubscription';
 import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 
 // Import components
@@ -33,13 +33,11 @@ import {
 
 import type { WatchlistResponseDto } from '@/types/dto';
 
-const WATCHLIST_LIMITS: Record<string, number> = { FREE: 1, STARTER: 3, PRO: 10, ELITE: 2147483647, TEAM: 2147483647 };
-
 const Watchlists = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { currentPlan } = useFeatureFlags();
-  const maxWatchlists = WATCHLIST_LIMITS[currentPlan] ?? 1;
+  const { data: subscription } = useSubscription();
+  const maxWatchlists = subscription?.usage?.watchlistsMax ?? 1;
 
   // API hooks
   const { data: watchlists = [], isLoading, isError, refetch } = useWatchlists();

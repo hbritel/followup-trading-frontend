@@ -94,6 +94,7 @@ const ALERT_LIMITS: Record<string, number> = {
   STARTER: 5,
   PRO: 25,
   ELITE: 2147483647,
+  TEAM: 2147483647,
 };
 
 const AlertManager = () => {

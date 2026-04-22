@@ -60,6 +60,7 @@ const PLAN_SYNC_LABEL: Record<string, string> = {
   STARTER: 'Weekly sync',
   PRO: 'Daily sync',
   ELITE: 'Real-time sync',
+  TEAM: 'Real-time sync',
 };
 
 const buildUsageBars = (usage: UsageDto, t: (key: string) => string) => [

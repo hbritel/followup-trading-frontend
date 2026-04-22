@@ -576,6 +576,7 @@ const PLAN_SYNC_LABEL: Record<string, string> = {
   STARTER: 'Weekly sync',
   PRO: 'Daily sync',
   ELITE: 'Real-time sync',
+  TEAM: 'Real-time sync',
 };
 
 const SYNC_FREQUENCY_LABELS: Record<string, string> = {

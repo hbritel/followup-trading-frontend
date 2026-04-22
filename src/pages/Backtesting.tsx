@@ -21,6 +21,7 @@ import type { BacktestResponseDto } from '@/types/dto';
 const BACKTEST_SESSION_LIMITS: Record<string, number> = {
   PRO: 3,
   ELITE: 2147483647,
+  TEAM: 2147483647,
 };
 
 const Backtesting = () => {

@@ -227,6 +227,7 @@ const StartEvaluationDialog: React.FC<StartEvaluationDialogProps> = ({
     STARTER: 1,
     PRO: 10,
     ELITE: Infinity,
+    TEAM: Infinity,
   };
 
   const activeEvaluationCount = allEvaluations.filter(
