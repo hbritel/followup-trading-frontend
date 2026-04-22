@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,7 +13,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from '@/components/ui/pagination';
-import { Search, Play, ArrowUpRight, ArrowDownRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { Play, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/apiClient';
@@ -57,8 +56,6 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
 
   const update = (partial: Partial<TradeReplayFilters>) =>
     onFiltersChange({ ...filters, ...partial });
-
-  const resetPage = () => update({ page: 1 });
 
   // Compute date range from preset or custom
   const dateRange = useMemo(() => {
@@ -169,41 +166,9 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
 
   return (
     <div className="space-y-4">
-      {/* List toolbar: direction + search + count */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <Select value={direction} onValueChange={(v) => { update({ direction: v, page: 1 }); }}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('trades.allTypes', 'All Directions')}</SelectItem>
-            <SelectItem value="LONG">
-              <span className="flex items-center gap-1.5">
-                <ArrowUp className="h-3.5 w-3.5 text-green-500" />
-                Long
-              </span>
-            </SelectItem>
-            <SelectItem value="SHORT">
-              <span className="flex items-center gap-1.5">
-                <ArrowDown className="h-3.5 w-3.5 text-red-500" />
-                Short
-              </span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder={t('tradeReplay.searchTrades')}
-            className="pl-8 rounded-xl"
-            value={search}
-            onChange={(e) => { update({ search: e.target.value, page: 1 }); }}
-          />
-        </div>
-
-        <span className="text-xs text-muted-foreground tabular-nums font-mono shrink-0">
+      {/* Result count */}
+      <div className="flex items-center justify-end">
+        <span className="text-xs text-muted-foreground tabular-nums font-mono">
           {totalCount} {t('tradeReplay.closedTrades')}
         </span>
       </div>
