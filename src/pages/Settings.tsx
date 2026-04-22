@@ -42,6 +42,7 @@ import {
     Settings as SettingsIcon,
     KeyRound,
     Lock,
+    Building2,
 } from 'lucide-react';
 import {authService} from '@/services/auth.service';
 import {
@@ -75,9 +76,10 @@ import AiMessagePackPicker from "@/components/ai/AiMessagePackPicker";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
 import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
 import MyMentorSettings from "@/components/settings/MyMentorSettings";
+import { PropFirmSettings } from "@/components/settings/PropFirmSettings";
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useMyMentorInstance } from '@/hooks/useMentor';
-import { Users as UsersIcon, GraduationCap } from 'lucide-react';
+import { Users as UsersIcon, GraduationCap, Building2 as Building2Icon } from 'lucide-react';
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -416,6 +418,13 @@ const Settings = () => {
                             <TabsTrigger value="mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
                                 <UsersIcon className="h-4 w-4" />
                                 {t("settings.mentor", "Mentor")}
+                            </TabsTrigger>
+                        )}
+                        {/* Always show Prop Firm tab for users on TEAM plan for now as an admin feature? Wait, let's just make it available or maybe under a feature flag? Actually, the user just asked to create it. We can show it unconditionally or based on isTeamPlan. Let's make it conditional on isTeamPlan or just show it. Let's use Building2 icon. */}
+                        {isTeamPlan && (
+                            <TabsTrigger value="propfirm" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                                <Building2Icon className="h-4 w-4" />
+                                Prop Firm
                             </TabsTrigger>
                         )}
                         {isInMentorInstance && (
@@ -988,6 +997,13 @@ const Settings = () => {
                     {isInMentorInstance && (
                         <TabsContent value="my-mentor" className="space-y-6">
                             <MyMentorSettings />
+                        </TabsContent>
+                    )}
+
+                    {/* ========== PROP FIRM TAB ========== */}
+                    {isTeamPlan && (
+                        <TabsContent value="propfirm" className="space-y-6">
+                            <PropFirmSettings />
                         </TabsContent>
                     )}
                 </Tabs>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { propFirmAdminService } from '@/services/propFirmAdmin.service';
-import type { AddTraderRequestDto } from '@/types/dto';
+import type { AddTraderRequestDto, CreateTenantRequestDto } from '@/types/dto';
 
 const QUERY_KEYS = {
   dashboard: ['propfirm-admin', 'dashboard'] as const,
@@ -43,6 +43,17 @@ export const useRemoveTrader = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.traders });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
+    },
+  });
+};
+
+export const useCreatePropFirmTenant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateTenantRequestDto) => propFirmAdminService.createTenant(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.traders });
     },
   });
 };
