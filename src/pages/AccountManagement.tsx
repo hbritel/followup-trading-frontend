@@ -70,6 +70,7 @@ import {
   useSubscription,
   usePlans,
   useCreatePortal,
+  useCreateCheckout,
 } from '@/hooks/useSubscription';
 import { getApiErrorMessage } from '@/services/apiClient';
 
@@ -182,7 +183,7 @@ const SubscriptionSkeleton = () => (
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
 
-const ProfileTab = () => {
+export const ProfileTab = () => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -723,29 +724,56 @@ const ProfileTab = () => {
 
 // ── Subscription Tab ──────────────────────────────────────────────────────────
 
-const SubscriptionTab = () => {
-  const { t } = useTranslation();
+export const SubscriptionTab = () => {
+  const { t, i18n } = useTranslation();
   const { data: subscription, isLoading: subLoading } = useSubscription();
   const { data: plans, isLoading: plansLoading } = usePlans();
   const createPortal = useCreatePortal();
+  const createCheckout = useCreateCheckout();
   const [showPlans, setShowPlans] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
 
   const isLoading = subLoading || plansLoading;
 
   if (isLoading) return <SubscriptionSkeleton />;
 
-  const handleManageSubscription = () => {
-    // If Stripe portal is available, redirect there; otherwise show plans inline
+  const handleOpenPortal = () => {
     createPortal.mutate(
       { returnUrl: window.location.href },
       {
-        onError: () => {
-          // Stripe not configured — show plans inline instead
-          setShowPlans(true);
-        },
-      }
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
     );
   };
+
+  const handleSelectPlan = (planName: string) => {
+    if (planName === 'FREE' || planName === subscription?.plan) return;
+    setPendingPlan(planName);
+    const interval = subscription?.billingInterval === 'ANNUAL' ? 'ANNUAL' : 'MONTHLY';
+    createCheckout.mutate(
+      {
+        plan: planName,
+        interval,
+        successUrl: `${window.location.origin}/settings?tab=billing&checkout=success`,
+        cancelUrl: window.location.href,
+      },
+      {
+        onError: (err) => {
+          setPendingPlan(null);
+          toast.error(getApiErrorMessage(err));
+        },
+      },
+    );
+  };
+
+  const locale = i18n.language || 'en';
+  const fmtCurrency = (value: number): string =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 2,
+      minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+    }).format(value);
 
   const planDisplayName = subscription?.planDisplayName ?? subscription?.plan ?? 'Free';
   const isFree = (subscription?.plan ?? 'FREE') === 'FREE';
@@ -776,7 +804,7 @@ const SubscriptionTab = () => {
       info: t('accountManagement.aiMessagesInfo', 'AI-powered trade analysis messages available per day'),
       current: subscription.usage.aiMessagesToday ?? 0,
       max: subscription.usage.aiMessagesMax ?? 0,
-      suffix: '/day',
+      suffix: `/${t('accountManagement.dayShort', 'day')}`,
     },
     {
       label: t('accountManagement.alerts', 'Alerts'),
@@ -789,7 +817,7 @@ const SubscriptionTab = () => {
       info: t('accountManagement.reportsInfo', 'PDF/CSV performance reports you can generate per month'),
       current: subscription.usage.reportsThisMonth ?? 0,
       max: subscription.usage.reportsMax ?? 0,
-      suffix: '/mo',
+      suffix: `/${t('accountManagement.monthShort', 'mo')}`,
     },
   ] : [];
 
@@ -807,11 +835,14 @@ const SubscriptionTab = () => {
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-base font-semibold">
-                {t('accountManagement.currentPlan')}: <span className="text-primary">{planDisplayName}</span>
+                {t('accountManagement.currentPlan')}:{' '}
+                <span className="text-primary">
+                  {t(`accountManagement.plan.${subscription?.plan ?? 'FREE'}`, planDisplayName)}
+                </span>
               </h2>
               {subscription?.status && (
                 <Badge variant="outline" className={cn('text-xs', badgeClass)}>
-                  {subscription.status}
+                  {t(`accountManagement.status.${subscription.status}`, subscription.status)}
                 </Badge>
               )}
               {subscription?.cancelAtPeriodEnd && (
@@ -829,35 +860,37 @@ const SubscriptionTab = () => {
             )}
             {subscription?.billingInterval && subscription.billingInterval !== 'MONTHLY' && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                {t('accountManagement.billingInterval', 'Billing')}: {subscription.billingInterval.toLowerCase()}
+                {t('accountManagement.billingInterval', 'Billing')}: {t(`accountManagement.interval.${subscription.billingInterval}`, subscription.billingInterval.toLowerCase())}
               </p>
             )}
           </div>
 
-          <div className="flex gap-2 shrink-0">
-            {isFree ? (
-              <Button
-                onClick={() => setShowPlans(!showPlans)}
-                className="gap-2"
-              >
-                <CreditCard className="h-4 w-4" />
-                {showPlans
-                  ? t('accountManagement.hidePlans', 'Hide Plans')
-                  : t('accountManagement.upgradePlan', 'Upgrade Plan')}
-              </Button>
-            ) : (
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button
+              onClick={() => setShowPlans(!showPlans)}
+              className="gap-2"
+            >
+              <CreditCard className="h-4 w-4" />
+              {showPlans
+                ? t('accountManagement.hidePlans', 'Hide Plans')
+                : isFree
+                  ? t('accountManagement.upgradePlan', 'Upgrade Plan')
+                  : t('accountManagement.changePlan', 'Change Plan')}
+            </Button>
+            {!isFree && (
               <Button
                 variant="outline"
-                onClick={handleManageSubscription}
+                onClick={handleOpenPortal}
                 disabled={createPortal.isPending}
                 className="gap-2"
+                title={t('accountManagement.billingPortalHint', 'Manage payment method, invoices and cancel subscription')}
               >
                 {createPortal.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <CreditCard className="h-4 w-4" />
                 )}
-                {t('accountManagement.manageSubscription', 'Manage Subscription')}
+                {t('accountManagement.billingPortal', 'Billing Portal')}
               </Button>
             )}
           </div>
@@ -935,12 +968,16 @@ const SubscriptionTab = () => {
           <p className="text-sm text-muted-foreground">
             {t('accountManagement.availablePlansDesc', 'Compare plans and choose the one that fits your trading needs. Upgrade or downgrade anytime.')}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {plans.map((plan) => {
               const isCurrent = plan.name === subscription?.plan;
               const isPopular = plan.name === 'PRO';
               const isElite = plan.name === 'ELITE';
+              const isTeam = plan.name === 'TEAM';
               const isStarter = plan.name === 'STARTER';
+              const isFreePlan = plan.name === 'FREE';
+              const isDowngrade = Number(plan.monthlyPriceUsd) < Number(subscription?.monthlyPriceUsd ?? 0);
+              const isPending = pendingPlan === plan.name && createCheckout.isPending;
               return (
                 <div
                   key={plan.name}
@@ -948,13 +985,15 @@ const SubscriptionTab = () => {
                     'relative rounded-xl border p-5 space-y-3 transition-colors flex flex-col',
                     isCurrent
                       ? 'border-primary/40 bg-primary/5'
-                      : isPopular
-                        ? 'border-primary/20'
-                        : isElite
-                          ? 'border-amber-500/30'
-                          : isStarter
-                            ? 'border-blue-500/20'
-                            : 'border-border/50 hover:border-border',
+                      : isTeam
+                        ? 'border-fuchsia-500/30'
+                        : isPopular
+                          ? 'border-primary/20'
+                          : isElite
+                            ? 'border-amber-500/30'
+                            : isStarter
+                              ? 'border-blue-500/20'
+                              : 'border-border/50 hover:border-border',
                   )}
                 >
                   {isPopular && !isCurrent && (
@@ -967,9 +1006,15 @@ const SubscriptionTab = () => {
                       {t('accountManagement.bestValue', 'Best Value')}
                     </Badge>
                   )}
+                  {isTeam && !isCurrent && (
+                    <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] bg-fuchsia-500 text-white">
+                      {t('accountManagement.forMentors', 'For Mentors')}
+                    </Badge>
+                  )}
                   <div className="flex items-center justify-between">
                     <p className={cn(
                       'font-semibold',
+                      isTeam && 'text-fuchsia-400',
                       isElite && 'text-amber-500',
                       isStarter && 'text-blue-400',
                     )}>{plan.displayName}</p>
@@ -980,11 +1025,11 @@ const SubscriptionTab = () => {
                     )}
                   </div>
                   <div>
-                    <span className="text-2xl font-bold tabular-nums">${plan.monthlyPriceUsd}</span>
+                    <span className="text-2xl font-bold tabular-nums">{fmtCurrency(plan.monthlyPriceUsd)}</span>
                     <span className="text-sm text-muted-foreground">/{t('accountManagement.month')}</span>
                     {plan.annualMonthlyPriceUsd > 0 && plan.annualMonthlyPriceUsd < plan.monthlyPriceUsd && (
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        ${plan.annualMonthlyPriceUsd}/{t('accountManagement.month')} {t('accountManagement.billedAnnually', 'billed annually')}
+                        {fmtCurrency(plan.annualMonthlyPriceUsd)}/{t('accountManagement.month')} {t('accountManagement.billedAnnually', 'billed annually')}
                       </p>
                     )}
                   </div>
@@ -997,20 +1042,34 @@ const SubscriptionTab = () => {
                     ))}
                   </ul>
                   <div className="mt-auto pt-3">
-                    {!isCurrent ? (
+                    {isCurrent ? (
+                      <Button variant="outline" size="sm" className="w-full" disabled>
+                        {t('accountManagement.currentPlanLabel')}
+                      </Button>
+                    ) : isFreePlan ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={handleOpenPortal}
+                        disabled={createPortal.isPending}
+                        title={t('accountManagement.downgradeFreeHint', 'Cancel your subscription via the billing portal to drop to Free.')}
+                      >
+                        {t('accountManagement.downgradeTo', 'Downgrade')}
+                      </Button>
+                    ) : (
                       <Button
                         variant={isPopular ? 'default' : 'outline'}
                         size="sm"
-                        className="w-full"
-                        onClick={handleManageSubscription}
-                        disabled={createPortal.isPending}
+                        className="w-full gap-2"
+                        onClick={() => handleSelectPlan(plan.name)}
+                        disabled={createCheckout.isPending}
                       >
-                        {Number(plan.monthlyPriceUsd) < Number(subscription?.monthlyPriceUsd ?? 0)
+                        {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        {isDowngrade
                           ? t('accountManagement.downgradeTo', 'Downgrade')
                           : t('accountManagement.upgradeTo', 'Upgrade')}
                       </Button>
-                    ) : (
-                      <div className="h-8" />
                     )}
                   </div>
                 </div>

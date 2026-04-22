@@ -20,7 +20,7 @@ import { useBrokerConnections } from '@/hooks/useBrokers';
 import PlaybookSuggestionCard from './PlaybookSuggestionCard';
 import type { PlaybookSuggestionDto } from '@/types/dto';
 
-const PAID_PLANS = new Set(['STARTER', 'PRO', 'ELITE']);
+const PAID_PLANS = new Set(['STARTER', 'PRO', 'ELITE', 'TEAM']);
 
 const SuggestionSkeleton: React.FC = () => (
   <div className="glass-card rounded-2xl border border-white/[0.04] p-5 space-y-3">

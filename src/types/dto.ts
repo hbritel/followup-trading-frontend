@@ -864,7 +864,7 @@ export interface UpdatePublicProfileRequestDto {
 
 // --- Subscription / Billing types ---
 
-export type PlanName = 'FREE' | 'STARTER' | 'PRO' | 'ELITE';
+export type PlanName = 'FREE' | 'STARTER' | 'PRO' | 'ELITE' | 'TEAM';
 
 export interface UsageDto {
   connectionsUsed: number;

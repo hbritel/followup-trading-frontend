@@ -7,6 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useOptionSpreads, useDetectSpreads } from '@/hooks/useOptionSpreads';
+import { useSubscription } from '@/hooks/useSubscription';
+import SpreadDetailDialog from '@/components/options/SpreadDetailDialog';
 import { toast } from 'sonner';
 import type { OptionSpreadDto, SpreadStatus } from '@/types/dto';
 
@@ -48,15 +50,33 @@ function formatCurrency(value: number | null): string {
 
 type FilterTab = 'all' | 'OPEN' | 'CLOSED' | 'EXPIRED';
 
-const SpreadCard: React.FC<{ spread: OptionSpreadDto }> = ({ spread }) => {
+interface SpreadCardProps {
+  readonly spread: OptionSpreadDto;
+  readonly onOpen: (spread: OptionSpreadDto) => void;
+}
+
+const SpreadCard: React.FC<SpreadCardProps> = ({ spread, onOpen }) => {
   const { t } = useTranslation();
   const sortedLegs = [...spread.legs].sort((a, b) => a.sortOrder - b.sortOrder);
 
   const spreadTypeLabel = t(`options.types.${spread.spreadType}`, spread.spreadType);
   const statusLabel = t(`options.status.${spread.status}`, spread.status);
 
+  const handleActivate = () => onOpen(spread);
+
   return (
-    <div className="glass-card rounded-2xl p-5 flex flex-col gap-4 h-full transition-colors duration-200 hover:border-border/80">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleActivate}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleActivate();
+        }
+      }}
+      className="glass-card rounded-2xl p-5 flex flex-col gap-4 h-full transition-colors duration-200 cursor-pointer hover:border-border/80 hover:bg-white/[0.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
       {/* Header: type badge + status */}
       <div className="flex items-start justify-between gap-3">
         <Badge
@@ -150,6 +170,8 @@ const SpreadCard: React.FC<{ spread: OptionSpreadDto }> = ({ spread }) => {
 const OptionSpreads: React.FC = () => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterTab>('all');
+  const [selected, setSelected] = useState<OptionSpreadDto | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     document.title = `${t('options.title')} | FollowUp Trading`;
@@ -158,6 +180,8 @@ const OptionSpreads: React.FC = () => {
   const statusParam = filter === 'all' ? undefined : filter;
   const { data: spreads = [], isLoading, isError } = useOptionSpreads(statusParam);
   const detectMutation = useDetectSpreads();
+  const { data: subscription } = useSubscription();
+  const canSeeGreeks = subscription?.plan === 'ELITE' || subscription?.plan === 'TEAM';
 
   const handleDetect = async () => {
     try {
@@ -166,6 +190,11 @@ const OptionSpreads: React.FC = () => {
     } catch {
       toast.error(t('common.error'));
     }
+  };
+
+  const handleOpenDetail = (spread: OptionSpreadDto) => {
+    setSelected(spread);
+    setDialogOpen(true);
   };
 
   return (
@@ -235,10 +264,21 @@ const OptionSpreads: React.FC = () => {
         {!isLoading && spreads.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {spreads.map((spread) => (
-              <SpreadCard key={spread.id} spread={spread} />
+              <SpreadCard key={spread.id} spread={spread} onOpen={handleOpenDetail} />
             ))}
           </div>
         )}
+
+        {/* Detail dialog */}
+        <SpreadDetailDialog
+          spread={selected}
+          open={dialogOpen}
+          showGreeks={canSeeGreeks}
+          onOpenChange={(o) => {
+            setDialogOpen(o);
+            if (!o) setSelected(null);
+          }}
+        />
       </PageTransition>
     </DashboardLayout>
   );

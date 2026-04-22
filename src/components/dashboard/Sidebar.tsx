@@ -104,8 +104,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     {
       label: t('sidebar.mentor', 'Mentor'),
       items: [
-        ...(hasPlan('TEAM') ? [{ href: '/mentor/dashboard', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const }] : []),
-      ].filter(Boolean),
+        { href: '/mentor/dashboard', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
+      ],
     },
     {
       label: t('sidebar.social'),
@@ -241,6 +241,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                                   'flex-shrink-0 whitespace-nowrap text-[9px] font-semibold px-1.5 py-0.5 rounded-md border leading-none',
                                   item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' :
                                   item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
+                                  item.requiredPlan === 'TEAM' ? 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20' :
                                   'text-primary bg-primary/10 border-primary/20',
                                 ].join(' ')}
                               >

@@ -70,7 +70,7 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
     staleTime: 60 * 1000,
   });
   const showUsageCounter =
-    currentPlan === 'STARTER' || currentPlan === 'PRO' || currentPlan === 'ELITE';
+    currentPlan === 'STARTER' || currentPlan === 'PRO' || currentPlan === 'ELITE' || currentPlan === 'TEAM';
   const aiMessagesToday = subscription?.usage?.aiMessagesToday ?? 0;
   const aiMessagesMax =
     subscription?.usage?.aiMessagesMax ?? AI_PLAN_CAPS[currentPlan] ?? 0;

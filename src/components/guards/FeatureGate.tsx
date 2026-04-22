@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import UpgradePrompt from '@/components/subscription/UpgradePrompt';
 
 interface FeatureGateProps {
-  featureKey: string;
-  requiredPlan?: 'STARTER' | 'PRO' | 'ELITE';
+  featureKey?: string;
+  requiredPlan?: 'STARTER' | 'PRO' | 'ELITE' | 'TEAM';
   children: React.ReactNode;
 }
 
@@ -17,6 +17,7 @@ const PLAN_HIERARCHY: Record<string, number> = {
   STARTER: 1,
   PRO: 2,
   ELITE: 3,
+  TEAM: 4,
 };
 
 function hasSufficientPlan(userPlan: string, requiredPlan: string): boolean {
@@ -61,7 +62,7 @@ export function FeatureGate({ featureKey, requiredPlan, children }: FeatureGateP
         {/* Overlay with upgrade prompt */}
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
           <UpgradePrompt
-            feature={t(`featureGate.features.${featureKey}`, featureKey)}
+            feature={featureKey ? t(`featureGate.features.${featureKey}`, featureKey) : ''}
             requiredPlan={requiredPlan}
             currentPlan={currentPlan}
             className="max-w-md w-full shadow-2xl"

@@ -13,6 +13,7 @@ const PLAN_HIERARCHY: Record<string, number> = {
   STARTER: 1,
   PRO: 2,
   ELITE: 3,
+  TEAM: 4,
 };
 
 interface FeatureFlagsContextValue {

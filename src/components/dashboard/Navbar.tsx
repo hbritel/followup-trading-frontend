@@ -1,10 +1,8 @@
 
 import React from 'react';
 import {
-  User,
   Sun,
   Moon,
-  LogOut,
   Search as SearchIcon,
   Sparkles,
   MoreVertical,
@@ -16,7 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuSub,
@@ -38,17 +35,11 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const { theme, setTheme } = useTheme();
-  const { logout } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
   };
 
   const languages = [
@@ -154,29 +145,6 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
             </DropdownMenu>
           </div>
 
-          {/* User menu — always visible */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label={t('navbar.userMenu', 'User menu')}>
-                <User className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{t('navbar.myAccount', 'My Account')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/account-management')}>
-                <User className="h-4 w-4 mr-2" />
-                {t('common.profile')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <div className="flex items-center w-full">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t('common.logout')}
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </nav>
 

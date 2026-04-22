@@ -599,7 +599,7 @@ function daysUntilNextSync(lastSyncTime: string | null, plan: string): number {
   return Math.max(0, Math.ceil(cooldownDays - elapsedDays));
 }
 
-const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3 };
+const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3, TEAM: 4 };
 
 // -- Main component --
 const BrokerConnections = () => {

@@ -27,6 +27,7 @@ import {
     Globe,
     Laptop,
     Loader2,
+    LogOut,
     Mail,
     Monitor,
     Newspaper,
@@ -71,15 +72,21 @@ import {
 import TagsSection from "@/components/settings/TagsSection";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
-import UsageDashboard from "@/components/subscription/UsageDashboard";
 import AiMessagePackPicker from "@/components/ai/AiMessagePackPicker";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
 import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
 import MyMentorSettings from "@/components/settings/MyMentorSettings";
 import { PropFirmSettings } from "@/components/settings/PropFirmSettings";
+import { ProfileTab, SubscriptionTab } from '@/pages/AccountManagement';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useMyMentorInstance } from '@/hooks/useMentor';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Users as UsersIcon, GraduationCap, Building2 as Building2Icon } from 'lucide-react';
+
+const VALID_TABS = new Set([
+    'general', 'profile', 'notifications', 'security', 'tags', 'public-profile',
+    'billing', 'ai-provider', 'mentor', 'my-mentor', 'propfirm',
+]);
 
 // Helper simple pour deviner le type d'appareil depuis le User Agent
 const getDeviceIcon = (userAgent: string | null): React.ReactNode => {
@@ -110,13 +117,31 @@ const Settings = () => {
     const {t} = useTranslation();
     const {toast} = useToast();
     const {theme, setTheme} = useTheme();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = (() => {
+        const q = searchParams.get('tab');
+        return q && VALID_TABS.has(q) ? q : 'profile';
+    })();
+    const [activeTab, setActiveTab] = useState<string>(initialTab);
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        const next = new URLSearchParams(searchParams);
+        next.set('tab', value);
+        setSearchParams(next, { replace: true });
+    };
 
     // --- États NON-MFA ---
     const [changePasswordOpen, setChangePasswordOpen] = useState(false);
     const [logoutAllDevicesOpen, setLogoutAllDevicesOpen] = useState(false);
 
     // --- États MFA ---
-    const {user, isLoading: isAuthLoading, confirmMfaSetup, disableMfa} = useAuth();
+    const {user, isLoading: isAuthLoading, confirmMfaSetup, disableMfa, logout} = useAuth();
+    const navigate = useNavigate();
+    const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+    const handleLogout = async () => {
+        await logout();
+        navigate('/');
+    };
     const { hasPlan } = useFeatureFlags();
     const { data: myMentorInstance } = useMyMentorInstance();
     const isTeamPlan = hasPlan('TEAM');
@@ -384,8 +409,32 @@ const Settings = () => {
     return (
         <DashboardLayout pageTitle={t('settings.title')}>
             <div className="space-y-6">
-                <Tabs defaultValue="general" className="space-y-6">
+                {/* Account identity strip — ambient info, discreet logout */}
+                {user && (
+                    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground -mb-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <User className="h-3.5 w-3.5 shrink-0" />
+                            <span className="shrink-0">{t('settings.signedInAs', 'Signed in as')}</span>
+                            <span className="font-medium text-foreground truncate">{user.email ?? user.username}</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setLogoutConfirmOpen(true)}
+                            className="gap-1.5 h-7 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        >
+                            <LogOut className="h-3.5 w-3.5" />
+                            {t('common.logout', 'Sign out')}
+                        </Button>
+                    </div>
+                )}
+
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                     <TabsList className="inline-flex h-auto flex-wrap gap-1 bg-muted/50 p-1 rounded-xl">
+                        <TabsTrigger value="profile" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <User className="h-4 w-4" />
+                            {t('common.profile', 'Profile')}
+                        </TabsTrigger>
                         <TabsTrigger value="general" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
                             <SettingsIcon className="h-4 w-4" />
                             {t('settings.general')}
@@ -434,6 +483,11 @@ const Settings = () => {
                             </TabsTrigger>
                         )}
                     </TabsList>
+
+                    {/* ========== PROFILE TAB ========== */}
+                    <TabsContent value="profile" className="space-y-6">
+                        <ProfileTab />
+                    </TabsContent>
 
                     {/* ========== GENERAL TAB ========== */}
                     <TabsContent value="general" className="space-y-6">
@@ -974,10 +1028,10 @@ const Settings = () => {
 
                     {/* ========== BILLING TAB ========== */}
                     <TabsContent value="billing" className="space-y-6">
-                        <UsageDashboard />
+                        <SubscriptionTab />
                         <AiMessagePackPicker
-                            heading="AI coach message packs"
-                            subheading="One-off top-ups for extra coach messages — credited immediately after checkout."
+                            heading={t('accountManagement.aiCoachPacksHeading', 'AI coach message packs')}
+                            subheading={t('accountManagement.aiCoachPacksSubheading', 'One-off top-ups for extra coach messages — credited immediately after checkout.')}
                         />
                     </TabsContent>
 
@@ -1018,6 +1072,27 @@ const Settings = () => {
                 open={logoutAllDevicesOpen}
                 onOpenChange={setLogoutAllDevicesOpen}
             />
+
+            {/* Current-device logout confirmation */}
+            <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('settings.logoutConfirmTitle', 'Sign out?')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('settings.logoutConfirmDesc', 'You will be signed out on this device. You can sign back in anytime.')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={handleLogout}
+                        >
+                            {t('common.logout', 'Sign out')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Disable MFA confirmation dialog */}
             <Dialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>

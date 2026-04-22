@@ -50,6 +50,15 @@ const STATIC_PLANS = [
     annualMonthlyPriceUsd: 47.99,
     features: [],
   },
+  {
+    name: 'TEAM',
+    displayName: 'Team',
+    monthlyPrice: 99.99,
+    annualPrice: 79.99,
+    monthlyPriceUsd: 99.99,
+    annualMonthlyPriceUsd: 79.99,
+    features: [],
+  },
 ] as PlanDto[];
 
 const Pricing: React.FC = () => {

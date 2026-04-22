@@ -28,7 +28,7 @@ const toResponseDto = (s: StrategyStatsDto): StrategyResponseDto => ({
   rules: s.rules ?? [],
 });
 
-const STRATEGY_LIMITS: Record<string, number> = { FREE: 2, STARTER: 5, PRO: 20, ELITE: 2147483647 };
+const STRATEGY_LIMITS: Record<string, number> = { FREE: 2, STARTER: 5, PRO: 20, ELITE: 2147483647, TEAM: 2147483647 };
 
 const Playbook = () => {
   const { t } = useTranslation();

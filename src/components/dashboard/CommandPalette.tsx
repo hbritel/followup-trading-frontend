@@ -268,7 +268,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
     { id: 'nav-replay', label: t('sidebar.tradeReplay', 'Trade Replay'), icon: RewindIcon, href: '/trade-replay', requiredPlan: 'PRO' },
     { id: 'nav-reports', label: t('sidebar.reports', 'Reports'), icon: FileTextIcon, href: '/reports' },
     { id: 'nav-accounts', label: t('sidebar.accounts', 'Accounts'), icon: WalletIcon, href: '/accounts' },
-    { id: 'nav-account-mgmt', label: t('sidebar.accountManagement', 'Account Management'), icon: CircleDollarSignIcon, href: '/account-management' },
+    { id: 'nav-account-mgmt', label: t('sidebar.accountManagement', 'Account Management'), icon: CircleDollarSignIcon, href: '/settings?tab=profile' },
     { id: 'nav-admin', label: t('sidebar.administration', 'Administration'), icon: ShieldIcon, href: '/administration', adminOnly: true },
     { id: 'nav-settings', label: t('common.settings', 'Settings'), icon: SettingsIcon, shortcut: ',', href: '/settings' },
   ];
