@@ -1324,6 +1324,13 @@ export interface PlaybookSuggestionDto {
   appliedAt?: string;
   dismissedAt?: string;
   createdAt: string;
+  /**
+   * `true` when the wording was produced by the LLM.
+   * `false` when the LLM was unavailable and the suggestion was built from a
+   * hardcoded fallback template — the underlying metrics are still real, only
+   * the phrasing is templated.
+   */
+  aiGenerated: boolean;
 }
 
 export interface TradePlanRequestDto {

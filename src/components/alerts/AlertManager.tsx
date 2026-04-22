@@ -8,9 +8,7 @@ import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -501,23 +499,23 @@ const AlertManager = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>{t('alerts.alertManagement')}</CardTitle>
-              <CardDescription>{t('alerts.alertManagementDescription')}</CardDescription>
-            </div>
-            <div className="mt-2 sm:mt-0 flex flex-col sm:flex-row sm:items-center gap-3">
-              {showAlertCounter && (
-                <UsageLimitIndicator
-                  used={activeCount}
-                  max={alertLimit}
-                  label={t('alerts.activeAlerts', 'Active alerts')}
-                  showBar={false}
-                />
-              )}
-              <Dialog open={showNewAlertDialog} onOpenChange={(open) => {
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t('alerts.alertManagement')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('alerts.alertManagementDescription')}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {showAlertCounter && (
+            <UsageLimitIndicator
+              used={activeCount}
+              max={alertLimit}
+              label={t('alerts.activeAlerts', 'Active alerts')}
+              showBar={false}
+            />
+          )}
+          <Dialog open={showNewAlertDialog} onOpenChange={(open) => {
                 setShowNewAlertDialog(open);
                 if (!open) resetForm();
               }}>
@@ -747,15 +745,15 @@ const AlertManager = () => {
                     </Button>
                   </DialogFooter>
                 </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Filter bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          </Dialog>
+        </div>
+      </div>
+
+      <div>
+        {/* Filter bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
             {/* Search */}
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative w-full lg:w-64 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -766,11 +764,11 @@ const AlertManager = () => {
               />
             </div>
 
-            {/* Dropdown filters */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Dropdown filters — share remaining width */}
+            <div className="flex flex-1 items-center gap-2 flex-wrap">
               {/* Symbol filter */}
               <Select value={symbolFilter || '__all__'} onValueChange={(v) => setSymbolFilter(v === '__all__' ? null : v)}>
-                <SelectTrigger className="w-[130px] h-9 rounded-xl text-xs">
+                <SelectTrigger className="flex-1 min-w-[160px] h-9 rounded-xl">
                   <SelectValue placeholder={t('alerts.symbol')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -785,7 +783,7 @@ const AlertManager = () => {
 
               {/* Type filter */}
               <Select value={typeFilter || '__all__'} onValueChange={(v) => setTypeFilter(v === '__all__' ? null : v)}>
-                <SelectTrigger className="w-[130px] h-9 rounded-xl text-xs">
+                <SelectTrigger className="flex-1 min-w-[160px] h-9 rounded-xl">
                   <SelectValue placeholder={t('alerts.alertType')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -800,7 +798,7 @@ const AlertManager = () => {
 
               {/* Condition filter */}
               <Select value={conditionFilter || '__all__'} onValueChange={(v) => setConditionFilter(v === '__all__' ? null : v)}>
-                <SelectTrigger className="w-[130px] h-9 rounded-xl text-xs">
+                <SelectTrigger className="flex-1 min-w-[180px] h-9 rounded-xl">
                   <SelectValue placeholder={t('alerts.alertCondition')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -820,7 +818,7 @@ const AlertManager = () => {
               {/* Watchlist filter */}
               {alerts.some(a => a.sourceWatchlistName) && (
                 <Select value={watchlistFilter || '__all__'} onValueChange={(v) => setWatchlistFilter(v === '__all__' ? null : v)}>
-                  <SelectTrigger className="w-[150px] h-9 rounded-xl text-xs">
+                  <SelectTrigger className="flex-1 min-w-[180px] h-9 rounded-xl">
                     <SelectValue placeholder={t('alerts.filterByWatchlist')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -831,28 +829,28 @@ const AlertManager = () => {
                   </SelectContent>
                 </Select>
               )}
+            </div>
 
-              {/* View mode toggle */}
-              <div className="flex items-center gap-1 rounded-lg border p-1 ml-auto">
-                <Button
-                  variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setViewMode('cards')}
-                  title={t('alerts.viewCards')}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setViewMode('table')}
-                  title={t('alerts.viewTable')}
-                >
-                  <Table2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+            {/* View mode toggle */}
+            <div className="flex items-center gap-1 rounded-lg border p-1 shrink-0 self-start lg:self-auto">
+              <Button
+                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setViewMode('cards')}
+                title={t('alerts.viewCards')}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setViewMode('table')}
+                title={t('alerts.viewTable')}
+              >
+                <Table2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
 
@@ -1116,9 +1114,8 @@ const AlertManager = () => {
                 )}
               </div>
             )}
-          </Tabs>
-        </CardContent>
-      </Card>
+        </Tabs>
+      </div>
     </div>
   );
 };

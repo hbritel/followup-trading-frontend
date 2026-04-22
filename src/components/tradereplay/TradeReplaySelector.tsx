@@ -18,8 +18,7 @@ import { Search, Play, ArrowUpRight, ArrowDownRight, ArrowUp, ArrowDown } from '
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/services/apiClient';
-import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
-import AccountSelector from '@/components/dashboard/AccountSelector';
+import { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 
 interface ClosedTrade {
   id: string;
@@ -170,71 +169,43 @@ const TradeReplaySelector: React.FC<TradeReplaySelectorProps> = ({ onSelectTrade
 
   return (
     <div className="space-y-4">
-      {/* Date range presets */}
-      <div className="flex flex-col gap-3">
-        <DashboardDateFilter
-          preset={datePreset}
-          onPresetChange={(p) => {
-            // Only reset dates when choosing a non-custom preset.
-            // When p === 'custom', the date callbacks handle the full update.
-            if (p !== 'custom') {
-              onFiltersChange({ ...filters, datePreset: p, customStart: null, customEnd: null, page: 1 });
-            }
-          }}
-          customStart={customStart}
-          customEnd={customEnd}
-          onCustomStartChange={(d) => {
-            onFiltersChange({ ...filters, customStart: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 });
-          }}
-          onCustomEndChange={(d) => {
-            onFiltersChange({ ...filters, customEnd: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 });
-          }}
-        />
+      {/* List toolbar: direction + search + count */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <Select value={direction} onValueChange={(v) => { update({ direction: v, page: 1 }); }}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('trades.allTypes', 'All Directions')}</SelectItem>
+            <SelectItem value="LONG">
+              <span className="flex items-center gap-1.5">
+                <ArrowUp className="h-3.5 w-3.5 text-green-500" />
+                Long
+              </span>
+            </SelectItem>
+            <SelectItem value="SHORT">
+              <span className="flex items-center gap-1.5">
+                <ArrowDown className="h-3.5 w-3.5 text-red-500" />
+                Short
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-        {/* Account selector + Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <AccountSelector
-            value={selectedAccountId}
-            onChange={(v) => { update({ selectedAccountId: v, page: 1 }); }}
-            className="w-full sm:w-[220px]"
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder={t('tradeReplay.searchTrades')}
+            className="pl-8 rounded-xl"
+            value={search}
+            onChange={(e) => { update({ search: e.target.value, page: 1 }); }}
           />
-
-          <Select value={direction} onValueChange={(v) => { update({ direction: v, page: 1 }); }}>
-            <SelectTrigger className="w-full sm:w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('trades.allTypes', 'All Directions')}</SelectItem>
-              <SelectItem value="LONG">
-                <span className="flex items-center gap-1.5">
-                  <ArrowUp className="h-3.5 w-3.5 text-green-500" />
-                  Long
-                </span>
-              </SelectItem>
-              <SelectItem value="SHORT">
-                <span className="flex items-center gap-1.5">
-                  <ArrowDown className="h-3.5 w-3.5 text-red-500" />
-                  Short
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t('tradeReplay.searchTrades')}
-              className="pl-8 rounded-xl"
-              value={search}
-              onChange={(e) => { update({ search: e.target.value, page: 1 }); }}
-            />
-          </div>
-
-          <span className="text-xs text-muted-foreground ml-auto tabular-nums font-mono">
-            {totalCount} {t('tradeReplay.closedTrades')}
-          </span>
         </div>
+
+        <span className="text-xs text-muted-foreground tabular-nums font-mono shrink-0">
+          {totalCount} {t('tradeReplay.closedTrades')}
+        </span>
       </div>
 
       {/* Trade list */}

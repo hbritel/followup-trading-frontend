@@ -269,12 +269,12 @@ const Watchlists = () => {
   return (
     <DashboardLayout pageTitle={t('pages.watchlists')}>
       <PageTransition className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gradient">{t('watchlists.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('watchlists.description')}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t('watchlists.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('watchlists.description')}</p>
           </div>
-          <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-3">
             <UsageLimitIndicator
               used={watchlists.length}
               max={maxWatchlists}
@@ -284,8 +284,9 @@ const Watchlists = () => {
             <Button
               onClick={() => setOpenNewWatchlistDialog(true)}
               disabled={watchlists.length >= maxWatchlists}
+              className="gap-2"
             >
-              <PlusCircle className="h-4 w-4 mr-2" />
+              <PlusCircle className="h-4 w-4" />
               {t('watchlists.newWatchlist')}
             </Button>
           </div>

@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils';
 // https://www.tradingview.com/advanced-charts/ and docs/TODO.md.
 import BacktestChart, { type StaticPriceLine, type StaticMarker, type TradePriceOverlay } from '@/components/backtesting/BacktestChart';
 import TradeReplaySelector, { type TradeReplayFilters } from '@/components/tradereplay/TradeReplaySelector';
+import DashboardDateFilter from '@/components/dashboard/DashboardDateFilter';
+import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useTradeReplay } from '@/hooks/useTradeReplay';
 import { useMarketHistory } from '@/hooks/useMarketHistory';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
@@ -336,9 +338,34 @@ const TradeReplay = () => {
           </div>
         ) : (
           <>
-            <div>
-              <h1 className="text-2xl font-bold text-gradient">{t('tradeReplay.title')}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{t('tradeReplay.subtitle')}</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">{t('tradeReplay.title')}</h1>
+                <p className="text-sm text-muted-foreground mt-1">{t('tradeReplay.subtitle')}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <DashboardDateFilter
+                  preset={filters.datePreset}
+                  onPresetChange={(p) => {
+                    if (p !== 'custom') {
+                      setFilters({ ...filters, datePreset: p, customStart: null, customEnd: null, page: 1 });
+                    }
+                  }}
+                  customStart={filters.customStart}
+                  customEnd={filters.customEnd}
+                  onCustomStartChange={(d) =>
+                    setFilters({ ...filters, customStart: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 })
+                  }
+                  onCustomEndChange={(d) =>
+                    setFilters({ ...filters, customEnd: d, datePreset: d ? 'custom' : filters.datePreset, page: 1 })
+                  }
+                />
+                <AccountSelector
+                  value={filters.selectedAccountId}
+                  onChange={(v) => setFilters({ ...filters, selectedAccountId: v, page: 1 })}
+                  className="w-48"
+                />
+              </div>
             </div>
 
             {isLoading && selectedTradeId && (

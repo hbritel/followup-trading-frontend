@@ -17,7 +17,7 @@ import CoachTour from '@/components/ai-coach/CoachTour';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
-  Brain, MessageSquare, LayoutDashboard, Sun, Moon, Sparkles,
+  MessageSquare, LayoutDashboard, Sun, Moon,
   HelpCircle, Info, ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -115,7 +115,6 @@ const AiCoach: React.FC = () => {
             </h3>
             <InfoTip text={t('ai.tiltScoreInfo', 'Measures emotional/impulsive trading risk (0-100). GREEN (0-30) = calm, YELLOW (31-60) = monitor, ORANGE (61-80) = caution, RED (81+) = stop trading.')} />
           </div>
-          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
         </div>
         <div className="flex justify-center mb-3">
           <TiltGauge accountId={accountId} compact={false} enableRealtime={false} />
@@ -159,8 +158,8 @@ const AiCoach: React.FC = () => {
       {/* Block 5: Psychology Correlation */}
       <PsychologyCorrelation />
 
-      {/* Disclaimer */}
-      <p className="text-[10px] text-muted-foreground/40 text-center px-4 pb-2">
+      {/* Disclaimer — muted but legible */}
+      <p className="text-xs text-muted-foreground text-center px-4 pb-2">
         {t('ai.disclaimer', 'AI-generated insights are for informational purposes only. Not financial advice.')}
       </p>
     </div>
@@ -172,16 +171,15 @@ const AiCoach: React.FC = () => {
   return (
     <DashboardLayout pageTitle="AI Coach">
       <div className="flex flex-col h-[calc(100vh-7rem)]">
-        {/* Header */}
+        {/* Header — product-specific framing, no AI-slop gradient avatar */}
         <div className="flex items-center justify-between mb-3 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center">
-              <Brain className="h-5 w-5 text-amber-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">{t('ai.coachTitle', 'AI Trading Coach')}</h1>
-              <p className="text-xs text-muted-foreground">{t('ai.coachSubtitle', 'Your personal trading mentor')}</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t('ai.coachTitle', 'Coach')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('ai.coachSubtitle', 'Patterns, behaviour and session debriefs from your own trades.')}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <AccountSelector

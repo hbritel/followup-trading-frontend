@@ -271,4 +271,81 @@ export const metricsService = {
     const response = await apiClient.get<RollingMetricPointDto[]>('/metrics/rolling', { params });
     return response.data;
   },
+
+  getMarginUtilizationTimeSeries: async (
+    startDate?: string,
+    endDate?: string,
+    accountIds?: string | string[],
+    granularity: 'DAY' | 'WEEK' | 'MONTH' = 'WEEK',
+  ): Promise<MarginUtilizationPointDto[]> => {
+    const params: Record<string, string> = { granularity };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
+    const response = await apiClient.get<MarginUtilizationPointDto[]>(
+      '/metrics/advanced/risk/margin-utilization/timeseries',
+      { params },
+    );
+    return response.data;
+  },
+
+  getHoldingPeriodDistribution: async (
+    startDate?: string,
+    endDate?: string,
+    accountIds?: string | string[],
+  ): Promise<HoldingPeriodBucketDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
+    const response = await apiClient.get<HoldingPeriodBucketDto[]>(
+      '/metrics/advanced/risk/holding-period-distribution',
+      { params: Object.keys(params).length > 0 ? params : undefined },
+    );
+    return response.data;
+  },
+
+  getKellyByStrategy: async (
+    startDate?: string,
+    endDate?: string,
+    accountIds?: string | string[],
+  ): Promise<StrategyKellyDto[]> => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (accountIds) params.accountIds = Array.isArray(accountIds) ? accountIds.join(',') : accountIds;
+    const response = await apiClient.get<StrategyKellyDto[]>('/metrics/advanced/risk/kelly', {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    });
+    return response.data;
+  },
 };
+
+// --- Extended risk DTOs ---
+
+export interface MarginUtilizationPointDto {
+  date: string;            // ISO date (bucket start)
+  marginUsed: number;
+  availableMargin: number;
+  utilizationPct: number;
+}
+
+export interface HoldingPeriodBucketDto {
+  label: string;           // "<1h" | "1-4h" | "4-24h" | "1-3d" | "3d+"
+  minHours: number;
+  maxHours: number;
+  tradeCount: number;
+  totalPnl: number;
+  avgPnl: number;
+}
+
+export interface StrategyKellyDto {
+  strategyId: string;
+  strategyName: string;
+  winRate: number;         // 0..1
+  avgWin: number;
+  avgLoss: number;
+  kellyPct: number;        // 0..100
+  halfKellyPct: number;    // 0..100
+  sampleSize: number;
+}

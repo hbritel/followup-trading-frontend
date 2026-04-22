@@ -61,3 +61,53 @@ export const useRiskDistribution = (startDate?: string, endDate?: string, accoun
     placeholderData: keepPreviousData,
   });
 };
+
+/**
+ * Margin-utilisation time series — replaces the fabricated 2024-01..06 series.
+ * GET /api/v1/metrics/advanced/risk/margin-utilization/timeseries
+ */
+export const useMarginUtilizationTimeSeries = (
+  startDate?: string,
+  endDate?: string,
+  accountId?: string | string[],
+  granularity: 'DAY' | 'WEEK' | 'MONTH' = 'WEEK',
+) => {
+  return useQuery({
+    queryKey: ['margin-utilization-timeseries', startDate, endDate, accountId, granularity],
+    queryFn: () =>
+      metricsService.getMarginUtilizationTimeSeries(startDate, endDate, accountId, granularity),
+    placeholderData: keepPreviousData,
+  });
+};
+
+/**
+ * Holding-period distribution (<1h, 1-4h, 4-24h, 1-3d, 3d+).
+ * GET /api/v1/metrics/advanced/risk/holding-period-distribution
+ */
+export const useHoldingPeriodDistribution = (
+  startDate?: string,
+  endDate?: string,
+  accountId?: string | string[],
+) => {
+  return useQuery({
+    queryKey: ['holding-period-distribution', startDate, endDate, accountId],
+    queryFn: () => metricsService.getHoldingPeriodDistribution(startDate, endDate, accountId),
+    placeholderData: keepPreviousData,
+  });
+};
+
+/**
+ * Kelly criterion per strategy.
+ * GET /api/v1/metrics/advanced/risk/kelly
+ */
+export const useKellyByStrategy = (
+  startDate?: string,
+  endDate?: string,
+  accountId?: string | string[],
+) => {
+  return useQuery({
+    queryKey: ['strategy-kelly', startDate, endDate, accountId],
+    queryFn: () => metricsService.getKellyByStrategy(startDate, endDate, accountId),
+    placeholderData: keepPreviousData,
+  });
+};

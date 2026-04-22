@@ -33,18 +33,29 @@ const RiskMetrics = () => {
 
   return (
     <DashboardLayout pageTitle={t('pages.riskMetrics', 'Risk Metrics')}>
-      <PageTransition>
-        <div className="flex items-center justify-between mb-6 gap-4">
-          <DashboardDateFilter
-            preset={datePreset}
-            onPresetChange={setDatePreset}
-            customStart={customStart}
-            customEnd={customEnd}
-            onCustomStartChange={setCustomStart}
-            onCustomEndChange={setCustomEnd}
-          />
-          <AccountSelector value={accountId} onChange={setAccountId} className="w-[200px]" />
+      <PageTransition className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t('riskMetrics.title', 'Risk Metrics')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('riskMetrics.description', 'In-depth risk analysis of your trading portfolio')}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <DashboardDateFilter
+              preset={datePreset}
+              onPresetChange={setDatePreset}
+              customStart={customStart}
+              customEnd={customEnd}
+              onCustomStartChange={setCustomStart}
+              onCustomEndChange={setCustomEnd}
+            />
+            <AccountSelector value={accountId} onChange={setAccountId} className="w-48" />
+          </div>
         </div>
+
         <PlanGatedSection requiredPlan="PRO" feature="Risk metrics">
           <RiskMetricsBoard startDate={dateRange.startDate} endDate={dateRange.endDate} accountId={effectiveAccountId} />
         </PlanGatedSection>
