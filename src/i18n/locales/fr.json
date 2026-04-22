@@ -3147,6 +3147,87 @@
     "removeSuccess": "Trader retire du suivi",
     "removeConfirm": "Retirer ce trader du suivi ?"
   },
+  "propFirm": {
+    "title": "Suivi Prop Firm",
+    "subtitle": "Suivez vos challenges prop firm, surveillez les règles de conformité et pilotez votre parcours vers un compte financé.",
+    "requiresPlan": "Le suivi Prop Firm nécessite un plan Pro ou supérieur.",
+    "startEvaluation": "Démarrer une évaluation",
+    "myEvaluations": "Mes évaluations",
+    "catalog": "Catalogue des prop firms",
+    "activeBadge": "{{count}} active",
+    "searchFirms": "Rechercher une firm...",
+    "firmCount_one": "{{count}} firm",
+    "firmCount_other": "{{count}} firms",
+    "firmOf": "{{count}} sur {{total}}",
+    "filters": {
+      "all": "Toutes",
+      "active": "Actives",
+      "passed": "Réussies / Financées",
+      "failed": "Échouées / Expirées"
+    },
+    "counts": {
+      "active": "{{count}} active",
+      "passed": "{{count}} réussie",
+      "failed": "{{count}} échouée"
+    },
+    "empty": {
+      "title": "Aucune évaluation pour le moment",
+      "description": "Lancez votre premier challenge prop firm et suivez votre progression vers un compte financé.",
+      "cta": "Démarrer votre première évaluation",
+      "browse": "Parcourir le catalogue",
+      "noMatchFilter": "Aucune évaluation ne correspond au filtre sélectionné.",
+      "showAll": "Afficher toutes les évaluations",
+      "catalogEmpty": "Aucune prop firm dans le catalogue pour le moment.",
+      "noFirmMatch": "Aucune firm ne correspond à « {{query}} ».",
+      "clearSearch": "Effacer la recherche"
+    },
+    "status": {
+      "active": "Active",
+      "passed": "Réussie",
+      "failed": "Échouée",
+      "expired": "Expirée",
+      "funded": "Financée"
+    },
+    "card": {
+      "phaseStarted": "Phase {{phase}} · Démarrée le {{date}}",
+      "balance": "Solde",
+      "pnl": "P&L",
+      "drawdown": "Drawdown",
+      "tradingDays_one": "{{count}} jour de trading",
+      "tradingDays_other": "{{count}} jours de trading",
+      "profitPct": "Profit {{value}} %",
+      "lastChecked": "Dernière vérification : {{label}}",
+      "forceCheck": "Forcer la vérification de conformité",
+      "viewAria": "Voir l'évaluation {{name}}"
+    },
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutes": "il y a {{count}} min",
+      "hours": "il y a {{count}} h",
+      "days": "il y a {{count}} j"
+    },
+    "toast": {
+      "checkSuccessTitle": "Vérification de conformité terminée",
+      "checkSuccessDesc": "Toutes les règles ont été réévaluées à partir de vos derniers trades.",
+      "checkFailTitle": "Échec de la vérification",
+      "checkFailDesc": "Impossible de lancer la vérification de conformité. Veuillez réessayer."
+    },
+    "firmCard": {
+      "challengeCount_one": "{{count}} challenge",
+      "challengeCount_other": "{{count}} challenges",
+      "phaseCount_one": "{{count}} phase",
+      "phaseCount_other": "{{count}} phases",
+      "phaseLine": "{{type}} · Phase 1 sur {{total}}",
+      "profit": "Profit",
+      "maxDd": "DD Max",
+      "daily": "Journalier",
+      "noPhase": "Aucune donnée de phase disponible",
+      "minDaysWithMax": "Min. {{min}} jours de trading · Max {{max}}",
+      "minDays": "Min. {{min}} jours de trading",
+      "profitSplit": "jusqu'à {{percent}} % de split",
+      "websiteAria": "Visiter le site de {{name}}"
+    }
+  },
   "options": {
     "title": "Spreads d'options",
     "subtitle": "Stratégies multi-jambes détectées automatiquement à partir de vos trades d'options.",

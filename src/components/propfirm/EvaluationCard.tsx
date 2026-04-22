@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useForceComplianceCheck } from '@/hooks/usePropFirm';
+import { useToast } from '@/hooks/use-toast';
 import type { PropFirmEvaluation, EvaluationStatus } from '@/types/propfirm';
 
 interface EvaluationCardProps {
@@ -22,81 +24,82 @@ interface EvaluationCardProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
+const STATUS_META: Record<
   EvaluationStatus,
-  { label: string; badgeClass: string; borderClass: string }
+  { labelKey: string; badgeClass: string; borderClass: string }
 > = {
   ACTIVE: {
-    label: 'Active',
+    labelKey: 'propFirm.status.active',
     badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     borderClass: 'border-l-blue-500',
   },
   PASSED: {
-    label: 'Passed',
+    labelKey: 'propFirm.status.passed',
     badgeClass: 'bg-green-500/10 text-green-400 border-green-500/20',
     borderClass: 'border-l-green-500',
   },
   FAILED: {
-    label: 'Failed',
+    labelKey: 'propFirm.status.failed',
     badgeClass: 'bg-red-500/10 text-red-400 border-red-500/20',
     borderClass: 'border-l-red-500',
   },
   EXPIRED: {
-    label: 'Expired',
+    labelKey: 'propFirm.status.expired',
     badgeClass: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
     borderClass: 'border-l-zinc-500',
   },
   FUNDED: {
-    label: 'Funded',
+    labelKey: 'propFirm.status.funded',
     badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     borderClass: 'border-l-amber-500',
   },
 };
 
-const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value);
-
-const formatDate = (iso: string): string => {
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-};
-
-/**
- * Returns a human-readable "X ago" string for an ISO timestamp.
- * Falls back gracefully if the date is invalid.
- */
-const timeAgo = (iso: string): string => {
-  try {
-    const diffMs = Date.now() - new Date(iso).getTime();
-    if (diffMs < 0) return 'just now';
-    const diffMin = Math.floor(diffMs / 60_000);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    const diffDay = Math.floor(diffHr / 24);
-    return `${diffDay}d ago`;
-  } catch {
-    return '';
-  }
-};
-
 const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }) => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const { toast } = useToast();
   const forceCheck = useForceComplianceCheck();
 
-  const statusCfg = STATUS_CONFIG[evaluation.status] ?? STATUS_CONFIG.ACTIVE;
+  const locale = i18n.language || 'en';
+
+  const formatCurrency = (value: number): string =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const formatDate = (iso: string): string => {
+    try {
+      return new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(iso));
+    } catch {
+      return iso;
+    }
+  };
+
+  const timeAgo = (iso: string): string => {
+    try {
+      const diffMs = Date.now() - new Date(iso).getTime();
+      if (diffMs < 0) return t('propFirm.timeAgo.justNow');
+      const diffMin = Math.floor(diffMs / 60_000);
+      if (diffMin < 1) return t('propFirm.timeAgo.justNow');
+      if (diffMin < 60) return t('propFirm.timeAgo.minutes', { count: diffMin });
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return t('propFirm.timeAgo.hours', { count: diffHr });
+      const diffDay = Math.floor(diffHr / 24);
+      return t('propFirm.timeAgo.days', { count: diffDay });
+    } catch {
+      return '';
+    }
+  };
+
+  const statusMeta = STATUS_META[evaluation.status] ?? STATUS_META.ACTIVE;
+  const statusLabel = t(statusMeta.labelKey);
 
   const pnlPositive = evaluation.totalPnl >= 0;
 
@@ -114,7 +117,21 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
 
   const handleQuickCheck = (e: React.MouseEvent) => {
     e.stopPropagation();
-    forceCheck.mutate(evaluation.id);
+    forceCheck.mutate(evaluation.id, {
+      onSuccess: () => {
+        toast({
+          title: t('propFirm.toast.checkSuccessTitle'),
+          description: t('propFirm.toast.checkSuccessDesc'),
+        });
+      },
+      onError: () => {
+        toast({
+          title: t('propFirm.toast.checkFailTitle'),
+          description: t('propFirm.toast.checkFailDesc'),
+          variant: 'destructive',
+        });
+      },
+    });
   };
 
   return (
@@ -123,12 +140,12 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
         'glass-card rounded-2xl cursor-pointer hover:border-primary/30 transition-all group overflow-hidden',
         // Colored left border based on status
         'border-l-4',
-        statusCfg.borderClass,
+        statusMeta.borderClass,
         className,
       )}
       onClick={() => navigate(`/prop-firm/evaluation/${evaluation.id}`)}
       role="button"
-      aria-label={`View ${titleLine} evaluation`}
+      aria-label={t('propFirm.card.viewAria', { name: titleLine })}
     >
       <CardContent className="p-5 space-y-4">
         {/* Row 1: title, badges, actions, arrow */}
@@ -161,7 +178,10 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
             )}
             {/* Line 3: Phase + start date (always shown) */}
             <p className="text-xs text-muted-foreground mt-0.5">
-              Phase {evaluation.currentPhase} &middot; Started {formatDate(evaluation.startDate)}
+              {t('propFirm.card.phaseStarted', {
+                phase: evaluation.currentPhase,
+                date: formatDate(evaluation.startDate),
+              })}
             </p>
           </div>
 
@@ -177,9 +197,9 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
             )}
             <Badge
               variant="secondary"
-              className={cn('text-[10px] border font-medium', statusCfg.badgeClass)}
+              className={cn('text-[10px] border font-medium', statusMeta.badgeClass)}
             >
-              {statusCfg.label}
+              {statusLabel}
             </Badge>
             {/* Quick check button — only for active evaluations */}
             {evaluation.status === 'ACTIVE' && (
@@ -192,8 +212,8 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
                 )}
                 onClick={handleQuickCheck}
                 disabled={forceCheck.isPending}
-                title="Force compliance check"
-                aria-label="Force compliance check"
+                title={t('propFirm.card.forceCheck')}
+                aria-label={t('propFirm.card.forceCheck')}
               >
                 <RefreshCw
                   className={cn(
@@ -213,7 +233,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
         <div className="grid grid-cols-3 gap-3">
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-              Balance
+              {t('propFirm.card.balance')}
             </p>
             <p className="text-sm font-semibold font-mono">
               {formatCurrency(evaluation.currentBalance)}
@@ -221,7 +241,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
           </div>
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-              P&amp;L
+              {t('propFirm.card.pnl')}
             </p>
             <p
               className={cn(
@@ -240,7 +260,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
           </div>
           <div>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
-              Drawdown
+              {t('propFirm.card.drawdown')}
             </p>
             <p
               className={cn(
@@ -258,9 +278,11 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {evaluation.tradingDaysCount} trading days
+              {t('propFirm.card.tradingDays', { count: evaluation.tradingDaysCount })}
             </span>
-            <span className="font-mono">Profit {profitProgressPct.toFixed(0)}%</span>
+            <span className="font-mono">
+              {t('propFirm.card.profitPct', { value: profitProgressPct.toFixed(0) })}
+            </span>
           </div>
           <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-green-500/10">
             <div
@@ -274,7 +296,7 @@ const EvaluationCard: React.FC<EvaluationCardProps> = ({ evaluation, className }
         {lastCheckedLabel && (
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70 pt-0.5">
             <Clock className="h-2.5 w-2.5 shrink-0" />
-            <span>Last checked: {lastCheckedLabel}</span>
+            <span>{t('propFirm.card.lastChecked', { label: lastCheckedLabel })}</span>
           </div>
         )}
       </CardContent>

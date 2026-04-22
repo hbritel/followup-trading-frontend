@@ -75,7 +75,10 @@ export const useForceComplianceCheck = () => {
   return useMutation({
     mutationFn: (id: string) => propFirmService.forceCheck(id),
     onSuccess: (_, id) => {
+      // Invalidate both the list (hub page) and single-evaluation views (detail + dashboard)
+      queryClient.invalidateQueries({ queryKey: EVALUATIONS_KEY });
       queryClient.invalidateQueries({ queryKey: [...EVALUATIONS_KEY, id] });
+      queryClient.invalidateQueries({ queryKey: [...EVALUATIONS_KEY, id, 'alerts'] });
     },
   });
 };
