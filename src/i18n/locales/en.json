@@ -3461,6 +3461,30 @@
       "cancelDesc": "You keep access until the end of your current billing period. No refund is issued.",
       "confirmCancel": "Yes, cancel"
     },
+    "legal": {
+      "disclaimerModal": {
+        "cancelButton": "Cancel",
+        "checkoutError": "Could not start checkout. Please try again.",
+        "coolingOffWaiver": "I expressly request that my mentorship access begin immediately and I <1>waive my 14-day right of withdrawal</1> for any portion already consumed.",
+        "mentorTerms": "I have read the <1>mentor's terms</1> (including cancellation policy).",
+        "notAdvice": "I understand the mentor is an <1>independent educator</1>, not my financial adviser, and FollowUp Trading provides no investment advice.",
+        "risk": "I acknowledge the <1>risk of loss</1> and that past performance is not a guarantee of future results.",
+        "subscribeButton": "Subscribe to {{brand}}",
+        "subtitle": "Please read and acknowledge each statement to continue.",
+        "title": "Before you subscribe"
+      },
+      "profile": {
+        "subscribeCta": {
+          "cancelAnytime": "Cancel anytime. No commitment.",
+          "title": "Subscribe to {{brand}}"
+        }
+      },
+      "riskBanner": {
+        "cfdText": "CFDs are complex instruments with a high risk of losing money rapidly due to leverage. Trading involves substantial risk of loss. Past performance is not indicative of future results. Nothing on this page is investment advice, a solicitation, or a recommendation.",
+        "dismiss": "Dismiss",
+        "text": "Trading involves substantial risk of loss. Past performance is not indicative of future results. Nothing on this page is investment advice, a solicitation, or a recommendation."
+      }
+    },
     "publicPage": {
       "notFound": "Mentor not found",
       "notFoundDesc": "This profile doesn't exist or isn't published.",

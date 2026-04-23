@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CalendarClock,
   CheckCircle2,
+  CreditCard,
   Loader2,
   LogIn,
   Star,
@@ -16,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePublicMentorProfile, useJoinInstance } from '@/hooks/useMentor';
 import { useAuth } from '@/contexts/auth-context';
+import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
+import DisclaimerModal from '@/components/mentor/legal/DisclaimerModal';
 import type { MentorPublicProfileDto } from '@/types/dto';
 
 const currencySymbol: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
@@ -255,10 +258,63 @@ const StatCard: React.FC<{
   </div>
 );
 
+const SubscribeCtaCard: React.FC<{
+  profile: MentorPublicProfileDto;
+  priceLabel: string;
+  onSubscribe: () => void;
+}> = ({ profile, priceLabel, onSubscribe }) => {
+  const { t } = useTranslation();
+  const accent = profile.primaryColor || undefined;
+
+  return (
+    <div
+      className="glass-card rounded-2xl p-6 border border-border/50 space-y-4 relative overflow-hidden"
+      style={accent ? { boxShadow: `inset 4px 0 0 0 ${accent}` } : undefined}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">
+            {t(
+              'mentor.legal.profile.subscribeCta.title',
+              'Subscribe to {{brand}}',
+              { brand: profile.brandName }
+            )}
+          </h3>
+          <p className="text-2xl font-bold tabular-nums tracking-tight">
+            {priceLabel}
+            <span className="text-sm font-normal text-muted-foreground ml-1">
+              / {t('mentor.monetization.month', 'month')}
+            </span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              'mentor.legal.profile.subscribeCta.cancelAnytime',
+              'Cancel anytime. No commitment.'
+            )}
+          </p>
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <CreditCard className="w-5 h-5" aria-hidden="true" />
+        </div>
+      </div>
+      <Button className="w-full" size="lg" onClick={onSubscribe}>
+        {t(
+          'mentor.legal.profile.subscribeCta.title',
+          'Subscribe to {{brand}}',
+          { brand: profile.brandName }
+        )}
+      </Button>
+    </div>
+  );
+};
+
 const PublicMentorProfile: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { data: profile, isLoading } = usePublicMentorProfile(slug);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
 
   // SEO — react-helmet not available; use document.title + meta tags directly
   useEffect(() => {
@@ -307,11 +363,59 @@ const PublicMentorProfile: React.FC = () => {
     const prevOgDesc = ogDesc.getAttribute('content');
     ogDesc.setAttribute('content', descValue);
 
+    // JSON-LD structured data
+    const personSchema: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: profile.brandName,
+      ...(profile.bio ? { description: profile.bio } : {}),
+      ...(profile.logoUrl ? { image: profile.logoUrl } : {}),
+      ...(profile.headline ? { knowsAbout: profile.headline } : {}),
+    };
+
+    if (profile.pricing) {
+      personSchema['offers'] = {
+        '@type': 'Offer',
+        price: profile.pricing.monthlyAmount.toFixed(2),
+        priceCurrency: profile.pricing.currency,
+      };
+      personSchema['hasOfferCatalog'] = {
+        '@type': 'Service',
+        serviceType: 'Trading Education',
+        provider: { '@type': 'Person', name: profile.brandName },
+        offers: personSchema['offers'],
+      };
+    }
+
+    if (profile.testimonials.length >= 3) {
+      const totalRating = profile.testimonials.reduce(
+        (sum, t) => sum + t.rating,
+        0
+      );
+      personSchema['aggregateRating'] = {
+        '@type': 'AggregateRating',
+        ratingValue: (totalRating / profile.testimonials.length).toFixed(1),
+        reviewCount: profile.testimonials.length,
+        bestRating: 5,
+        worstRating: 1,
+      };
+    }
+
+    const ldScript = document.createElement('script');
+    ldScript.setAttribute('type', 'application/ld+json');
+    ldScript.setAttribute('data-mentor-ld', profile.slug);
+    ldScript.textContent = JSON.stringify(personSchema);
+    document.head.appendChild(ldScript);
+
     return () => {
       document.title = prevTitle;
       if (prevDesc != null) descTag.setAttribute('content', prevDesc);
       if (prevOgTitle != null) ogTitle.setAttribute('content', prevOgTitle);
       if (prevOgDesc != null) ogDesc.setAttribute('content', prevOgDesc);
+      const injected = document.head.querySelector(
+        `script[data-mentor-ld="${profile.slug}"]`
+      );
+      if (injected) document.head.removeChild(injected);
     };
   }, [profile]);
 
@@ -323,6 +427,14 @@ const PublicMentorProfile: React.FC = () => {
         2
       )} ${profile.pricing.currency}`
     : null;
+
+  const handleSubscribeClick = () => {
+    if (!isAuthenticated) {
+      navigate(`/auth/signup?returnTo=/m/${profile.slug}`);
+      return;
+    }
+    setDisclaimerOpen(true);
+  };
 
   return (
     <main className="min-h-screen">
@@ -336,6 +448,8 @@ const PublicMentorProfile: React.FC = () => {
             {t('mentor.publicPage.backHome', 'Back to home')}
           </Link>
         </nav>
+
+        <RiskDisclosureBanner isCfdContext={profile.isCfdContext} />
 
         <ProfileHero profile={profile} />
 
@@ -443,9 +557,18 @@ const PublicMentorProfile: React.FC = () => {
           </section>
         )}
 
-        {/* Join */}
+        {/* Subscribe CTA + Join by code */}
         {profile.acceptsNewStudents && (
-          <JoinByCodeCard brandName={profile.brandName} />
+          <div className="space-y-4">
+            {profile.pricing && priceLabel && (
+              <SubscribeCtaCard
+                profile={profile}
+                priceLabel={priceLabel}
+                onSubscribe={handleSubscribeClick}
+              />
+            )}
+            <JoinByCodeCard brandName={profile.brandName} />
+          </div>
         )}
 
         <footer className="text-center text-xs text-muted-foreground pt-6 pb-4">
@@ -455,6 +578,15 @@ const PublicMentorProfile: React.FC = () => {
           )}
         </footer>
       </div>
+
+      {profile.pricing && (
+        <DisclaimerModal
+          open={disclaimerOpen}
+          onOpenChange={setDisclaimerOpen}
+          slug={profile.slug}
+          brandName={profile.brandName}
+        />
+      )}
     </main>
   );
 };
