@@ -31,6 +31,11 @@ import type {
   DisclaimerType,
   DisclaimerAckResponse,
   PublicCheckoutResponse,
+  DirectoryQuery,
+  DirectoryPageDto,
+  MentorTagDto,
+  MentorTagCategory,
+  LanguageOptionsDto,
 } from '@/types/dto';
 
 const MENTOR_BASE = '/mentor';
@@ -442,6 +447,58 @@ export const mentorService = {
       `/public/mentor/profile/${slug}/checkout`,
       { acknowledgmentIds }
     );
+    return res.data;
+  },
+
+  // ── Phase 1: Directory ───────────────────────────────────────────────────
+
+  searchDirectory: async (query: DirectoryQuery): Promise<DirectoryPageDto> => {
+    const params = new URLSearchParams();
+    if (query.q) params.set('q', query.q);
+    if (query.tags?.length) params.set('tags', query.tags.join(','));
+    if (query.langs?.length) params.set('langs', query.langs.join(','));
+    if (query.minPrice != null) params.set('minPrice', String(query.minPrice));
+    if (query.maxPrice != null) params.set('maxPrice', String(query.maxPrice));
+    if (query.acceptsNew != null) params.set('acceptsNew', String(query.acceptsNew));
+    if (query.monetizedOnly != null) params.set('monetizedOnly', String(query.monetizedOnly));
+    if (query.sort) params.set('sort', query.sort);
+    if (query.page != null) params.set('page', String(query.page));
+    if (query.size != null) params.set('size', String(query.size));
+    const qs = params.toString();
+    const res = await apiClient.get<DirectoryPageDto>(
+      `/public/mentors${qs ? `?${qs}` : ''}`
+    );
+    return res.data;
+  },
+
+  listDirectoryTags: async (category?: MentorTagCategory): Promise<MentorTagDto[]> => {
+    const params = category ? `?category=${category}` : '';
+    const res = await apiClient.get<MentorTagDto[]>(`/public/mentors/tags${params}`);
+    return res.data;
+  },
+
+  listDirectoryLanguages: async (): Promise<LanguageOptionsDto> => {
+    const res = await apiClient.get<LanguageOptionsDto>('/public/mentors/languages');
+    return res.data;
+  },
+
+  getMyTags: async (): Promise<string[]> => {
+    const res = await apiClient.get<string[]>(`${MENTOR_BASE}/tags`);
+    return res.data;
+  },
+
+  setMyTags: async (slugs: string[]): Promise<string[]> => {
+    const res = await apiClient.put<string[]>(`${MENTOR_BASE}/tags`, { slugs });
+    return res.data;
+  },
+
+  getMyLanguages: async (): Promise<string[]> => {
+    const res = await apiClient.get<string[]>(`${MENTOR_BASE}/languages`);
+    return res.data;
+  },
+
+  setMyLanguages: async (codes: string[]): Promise<string[]> => {
+    const res = await apiClient.put<string[]>(`${MENTOR_BASE}/languages`, { codes });
     return res.data;
   },
 };
