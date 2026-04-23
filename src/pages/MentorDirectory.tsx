@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/auth-context';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
 import DirectoryHero from '@/components/mentor/directory/DirectoryHero';
 import FilterRail, { type FilterValues } from '@/components/mentor/directory/FilterRail';
@@ -262,9 +263,11 @@ const MentorDirectory: React.FC = () => {
 
   if (isAuthenticated) {
     return (
-      <DashboardLayout pageTitle={t('sidebar.browseMentors', 'Browse Mentors')}>
-        <MentorDirectoryContent />
-      </DashboardLayout>
+      <WebSocketProvider>
+        <DashboardLayout pageTitle={t('sidebar.browseMentors', 'Browse Mentors')}>
+          <MentorDirectoryContent />
+        </DashboardLayout>
+      </WebSocketProvider>
     );
   }
   return <MentorDirectoryContent />;
