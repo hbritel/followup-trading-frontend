@@ -62,6 +62,7 @@ import {
   OptionSpreads,
   DeveloperPortal,
   PublicMentorProfile,
+  MentorDirectory,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -152,6 +153,7 @@ function App() {
                   </Route>
 
                   {/* Public routes — no auth required */}
+                  <Route path="/mentors" element={<MentorDirectory />} />
                   <Route path="/join/:inviteCode" element={<JoinMentor />} />
                   <Route path="/m/:slug" element={<PublicMentorProfile />} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />

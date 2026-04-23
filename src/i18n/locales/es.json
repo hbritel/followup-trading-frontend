@@ -248,7 +248,8 @@
     "marketplace": "Mercado",
     "traders": "Traders",
     "aiCoach": "Coach IA",
-    "myMentor": "Mi Mentor"
+    "myMentor": "Mi Mentor",
+    "browseMentors": "Explorar mentores"
   },
   "pages": {
     "dashboard": "Panel",
@@ -3292,6 +3293,72 @@
       "cancelAnytime": "Cancela cuando quieras",
       "testimonialsTitle": "Lo que dicen los alumnos",
       "poweredBy": "Impulsado por FollowUp Trading"
+    },
+    "directory": {
+      "hero": {
+        "title": "Encuentra un mentor de trading",
+        "subtitle": "Explora mentores de trading verificados. Filtra por nicho, idioma y precio para encontrar el indicado."
+      },
+      "searchPlaceholder": "Buscar mentores…",
+      "filters": {
+        "label": "Filtros",
+        "niche": "Nicho",
+        "nicheAssetClass": "Clase de activo",
+        "nicheStyle": "Estilo de trading",
+        "nicheFocus": "Área de enfoque",
+        "language": "Idioma",
+        "priceRange": "Rango de precio",
+        "priceFree": "Solo gratis",
+        "priceMax": "Cualquiera",
+        "acceptsNew": "Acepta nuevos alumnos",
+        "clearAll": "Limpiar todo",
+        "mobileButton": "Filtros"
+      },
+      "sort": {
+        "label": "Ordenar por",
+        "relevance": "Relevancia",
+        "newest": "Más recientes",
+        "mostStudents": "Más alumnos",
+        "highestRated": "Mejor valorados",
+        "lowestPrice": "Precio más bajo"
+      },
+      "card": {
+        "free": "Gratis",
+        "new": "Nuevo",
+        "acceptsNew": "Abierto",
+        "studentsFew": "1–10 alumnos",
+        "studentsMedium": "11–50 alumnos",
+        "studentsMany": "50+ alumnos",
+        "monthlyPrice": "{{price}} / mes"
+      },
+      "empty": {
+        "title": "Ningún mentor coincide con tus filtros.",
+        "clearFilters": "Limpiar filtros"
+      },
+      "pagination": {
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "ofTotal": "Página {{page}} de {{total}}"
+      },
+      "home": {
+        "ctaSection": {
+          "title": "¿Buscas un mentor de trading?",
+          "body": "Descubre mentores experimentados que pueden guiarte en los mercados — desde day trading hasta opciones, futuros y más.",
+          "button": "Ver mentores"
+        }
+      },
+      "resultsCount": "mentores encontrados"
+    },
+    "settings": {
+      "tags": {
+        "title": "Etiquetas de nicho",
+        "description": "Selecciona hasta {{max}} etiquetas que describan mejor tu área de trading.",
+        "limitReached": "Máximo {{max}} etiquetas permitidas"
+      },
+      "languages": {
+        "title": "Idiomas de enseñanza",
+        "description": "Selecciona los idiomas en los que enseñas. Los alumnos pueden filtrar por idioma."
+      }
     }
   }
 }

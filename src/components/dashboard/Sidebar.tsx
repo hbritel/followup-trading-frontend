@@ -13,6 +13,7 @@ import {
   Calendar as CalendarIcon,
   ChevronDown as ChevronDownIcon,
   Code as CodeIcon,
+  Compass as CompassIcon,
   FileText as FileTextIcon,
   Layers as LayersIcon,
   LineChart as LineChartIcon,
@@ -118,6 +119,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
         { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
         { href: '/marketplace', label: t('sidebar.marketplace', 'Marketplace'), icon: ShoppingBagIcon },
+        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon },
         ...(hasMyMentor
           ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
           : []),
