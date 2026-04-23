@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/auth-context';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 import {
   BarChart3,
   TrendingUp,
@@ -39,14 +40,7 @@ const PLANS = [
     price: 0,
     annual: 0,
     description: 'Get started with the essentials',
-    features: [
-      '1 broker connection',
-      'Up to 100 trades',
-      '2 strategies, 5 tags',
-      '1 watchlist',
-      '30 days market history',
-      'Basic analytics',
-    ],
+    features: [],
     cta: 'getStartedFree',
     variant: 'outline' as const,
     popular: false,
@@ -56,18 +50,7 @@ const PLANS = [
     price: 9.99,
     annual: 7.99,
     description: 'For active traders building discipline',
-    features: [
-      '2 broker connections',
-      'Up to 1,500 trades',
-      '5 strategies, 20 tags',
-      '3 watchlists',
-      '5 AI coach messages/day',
-      '5 price alerts',
-      '3 reports/month + CSV export',
-      'Market feed & economic calendar',
-      '1 year market history',
-      '1 prop firm evaluation',
-    ],
+    features: [],
     cta: 'startFreeTrial',
     variant: 'outline' as const,
     popular: false,
@@ -77,21 +60,7 @@ const PLANS = [
     price: 24.99,
     annual: 19.99,
     description: 'Full-featured for serious traders',
-    features: [
-      '5 broker connections',
-      'Up to 15,000 trades',
-      '20 strategies, unlimited tags',
-      '10 watchlists',
-      '30 AI coach messages/day',
-      '25 price alerts',
-      '15 reports/month',
-      'Trade replay & backtesting',
-      'Tax preview',
-      'Advanced analytics & scheduled reports',
-      '5 years market history',
-      'Public leaderboard profile',
-      '10 prop firm evaluations',
-    ],
+    features: [],
     cta: 'startFreeTrial',
     variant: 'default' as const,
     popular: true,
@@ -101,21 +70,17 @@ const PLANS = [
     price: 59.99,
     annual: 47.99,
     description: 'Unlimited power for professionals',
-    features: [
-      'Unlimited broker connections',
-      'Unlimited trades',
-      'Unlimited strategies & tags',
-      'Unlimited watchlists',
-      '150 AI coach messages/day',
-      'Unlimited alerts & reports',
-      'Trade replay & backtesting (unlimited)',
-      'Full tax reporting',
-      'All analytics & exports',
-      'Unlimited market history',
-      'Real-time sync (<1s)',
-      'Prop firm live tracking (unlimited)',
-      'Priority support',
-    ],
+    features: [],
+    cta: 'startFreeTrial',
+    variant: 'outline' as const,
+    popular: false,
+  },
+  {
+    name: 'Team',
+    price: 99.99,
+    annual: 79.99,
+    description: 'Branded academy for mentors',
+    features: [],
     cta: 'startFreeTrial',
     variant: 'outline' as const,
     popular: false,
@@ -313,7 +278,7 @@ const HomePage = () => {
 
       {/* ── Pricing ─────────────────────────────────────────────────── */}
       <section id="pricing" className="py-20 md:py-28 px-4">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-[112rem]">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">{t('landing.pricingTitle', 'Simple, Transparent Pricing')}</h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -336,19 +301,25 @@ const HomePage = () => {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {PLANS.map(plan => {
               const price = billingAnnual ? plan.annual : plan.price;
+              const planKey = plan.name.toUpperCase();
+              const features = (PLAN_FEATURES[planKey] ?? []).filter(f => f.included);
+              const isTeam = plan.name === 'Team';
+              const isElite = plan.name === 'Elite';
               return (
                 <div
                   key={plan.name}
                   className={cn(
                     'relative rounded-xl border p-6 flex flex-col transition-all',
-                    plan.name === 'Elite'
+                    isElite
                       ? 'border-amber-500/50 shadow-lg shadow-amber-500/10'
-                      : plan.popular
-                        ? 'border-primary shadow-lg shadow-primary/10 scale-[1.02]'
-                        : 'border-border hover:border-primary/30',
+                      : isTeam
+                        ? 'border-fuchsia-500/50 shadow-lg shadow-fuchsia-500/10'
+                        : plan.popular
+                          ? 'border-primary shadow-lg shadow-primary/10 scale-[1.02]'
+                          : 'border-border hover:border-primary/30',
                   )}
                 >
                   {plan.popular && (
@@ -356,9 +327,14 @@ const HomePage = () => {
                       {t('landing.mostPopular', 'Most Popular')}
                     </Badge>
                   )}
-                  {plan.name === 'Elite' && (
+                  {isElite && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] px-3">
                       {t('landing.mostPowerful', 'Most Powerful')}
+                    </Badge>
+                  )}
+                  {isTeam && (
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-fuchsia-500 text-white text-[10px] px-3">
+                      {t('landing.forMentors', 'For Mentors')}
                     </Badge>
                   )}
                   <div className="mb-4">
@@ -375,10 +351,17 @@ const HomePage = () => {
                     )}
                   </div>
                   <ul className="space-y-2.5 flex-1 mb-6">
-                    {plan.features.map(feature => (
-                      <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    {features.map(f => (
+                      <li key={f.key} className="flex items-start gap-2 text-sm text-muted-foreground">
                         <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <span>{feature}</span>
+                        <span>
+                          {t(`subscription.features.${f.key}`, f.key)}
+                          {f.detailKey && (
+                            <span className="ml-1">
+                              ({t(`subscription.details.${f.detailKey}`, f.detailParams ?? {})})
+                            </span>
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -388,7 +371,8 @@ const HomePage = () => {
                       className={cn(
                         'w-full',
                         plan.popular && 'shadow-md',
-                        plan.name === 'Elite' && 'bg-gradient-to-r from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 border-0',
+                        isElite && 'bg-gradient-to-r from-amber-500 to-amber-400 text-white hover:from-amber-600 hover:to-amber-500 border-0',
+                        isTeam && 'bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:from-fuchsia-600 hover:to-pink-600 border-0',
                       )}
                     >
                       {plan.price === 0

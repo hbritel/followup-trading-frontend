@@ -46,37 +46,27 @@ export function FeatureGate({ featureKey, requiredPlan, children }: FeatureGateP
     return <>{children}</>;
   }
 
-  // Plan gate — user must have the required plan
+  // Plan gate — user must have the required plan.
+  // IMPORTANT: do NOT render {children} here, even blurred. The gated page's hooks
+  // would mount and fire API calls that return 403, polluting logs and wasting work.
   if (!planSufficient) {
     return (
-      <div className="relative min-h-[60vh]">
-        {/* Blurred page content rendered behind */}
-        <div
-          className="pointer-events-none select-none"
-          style={{ filter: 'blur(14px)', opacity: 0.3 }}
-          aria-hidden="true"
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+        <UpgradePrompt
+          feature={featureKey ? t(`featureGate.features.${featureKey}`, featureKey) : ''}
+          requiredPlan={requiredPlan}
+          currentPlan={currentPlan}
+          className="max-w-md w-full shadow-2xl"
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mt-4 text-muted-foreground hover:text-foreground"
         >
-          {children}
-        </div>
-
-        {/* Overlay with upgrade prompt */}
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm">
-          <UpgradePrompt
-            feature={featureKey ? t(`featureGate.features.${featureKey}`, featureKey) : ''}
-            requiredPlan={requiredPlan}
-            currentPlan={currentPlan}
-            className="max-w-md w-full shadow-2xl"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="mt-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('common.goBack', 'Go back')}
-          </Button>
-        </div>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t('common.goBack', 'Go back')}
+        </Button>
       </div>
     );
   }

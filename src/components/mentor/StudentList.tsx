@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, BarChart3, TrendingUp, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,28 +18,55 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import StudentCohortChips from './StudentCohortChips';
 import type { MentorStudentDto } from '@/types/dto';
 
 interface StudentListProps {
   students: MentorStudentDto[];
   onSelectStudent: (userId: string) => void;
   onRemoveStudent: (userId: string) => void;
+  searchQuery?: string;
+  sortBy?: 'joined' | 'sharing';
+  /**
+   * If provided, only students whose ID is in this set are shown.
+   * Undefined means no cohort filter (show all).
+   */
+  visibleStudentIds?: Set<string>;
+  showCohortChips?: boolean;
 }
 
-const SharingDot: React.FC<{ shared: boolean; label: string }> = ({ shared, label }) => (
+interface SharingChipProps {
+  shared: boolean;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}
+
+const SharingChip: React.FC<SharingChipProps> = ({ shared, label, Icon }) => (
   <span
-    title={label}
     className={[
-      'w-2.5 h-2.5 rounded-full flex-shrink-0',
-      shared ? 'bg-emerald-400' : 'bg-muted-foreground/30',
+      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors',
+      shared
+        ? 'bg-primary/10 text-primary border-primary/30'
+        : 'bg-muted/40 text-muted-foreground border-border/40',
     ].join(' ')}
-  />
+    aria-label={`${label}: ${shared ? 'shared' : 'not shared'}`}
+  >
+    <Icon className="w-3 h-3" aria-hidden="true" />
+    <span>{label}</span>
+  </span>
 );
+
+const sharingScore = (s: MentorStudentDto) =>
+  (s.shareMetrics ? 1 : 0) + (s.shareTrades ? 1 : 0) + (s.sharePsychology ? 1 : 0);
 
 const StudentList: React.FC<StudentListProps> = ({
   students,
   onSelectStudent,
   onRemoveStudent,
+  searchQuery = '',
+  sortBy = 'joined',
+  visibleStudentIds,
+  showCohortChips = false,
 }) => {
   const { t } = useTranslation();
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
@@ -45,12 +78,32 @@ const StudentList: React.FC<StudentListProps> = ({
     }
   };
 
-  const safeStudents = Array.isArray(students) ? students : [];
+  const filteredStudents = useMemo(() => {
+    const safe = Array.isArray(students) ? students : [];
+    const q = searchQuery.trim().toLowerCase();
+    let filtered = q
+      ? safe.filter((s) => (s.username ?? '').toLowerCase().includes(q))
+      : safe;
+    if (visibleStudentIds) {
+      filtered = filtered.filter((s) => visibleStudentIds.has(s.studentUserId));
+    }
+    const sorted = [...filtered];
+    if (sortBy === 'sharing') {
+      sorted.sort((a, b) => sharingScore(b) - sharingScore(a));
+    } else {
+      sorted.sort(
+        (a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime()
+      );
+    }
+    return sorted;
+  }, [students, searchQuery, sortBy, visibleStudentIds]);
 
-  if (safeStudents.length === 0) {
+  if (filteredStudents.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground text-sm">
-        {t('mentor.noStudents', 'No students have joined yet.')}
+      <div className="text-center py-10 text-muted-foreground text-sm">
+        {searchQuery || visibleStudentIds
+          ? t('mentor.noStudentsFound', 'No students match your search.')
+          : t('mentor.noStudents', 'No students have joined yet.')}
       </div>
     );
   }
@@ -64,9 +117,14 @@ const StudentList: React.FC<StudentListProps> = ({
               <th className="py-3 px-3 font-medium">
                 {t('common.username', 'Username')}
               </th>
-              <th className="py-3 px-3 font-medium text-center">
+              <th className="py-3 px-3 font-medium">
                 {t('mentor.sharing', 'Sharing')}
               </th>
+              {showCohortChips && (
+                <th className="py-3 px-3 font-medium hidden md:table-cell">
+                  {t('mentor.cohorts.title', 'Cohorts')}
+                </th>
+              )}
               <th className="py-3 px-3 font-medium">
                 {t('mentor.joinedDate', 'Joined')}
               </th>
@@ -74,7 +132,7 @@ const StudentList: React.FC<StudentListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {safeStudents.map((student) => (
+            {filteredStudents.map((student) => (
               <tr
                 key={student.studentUserId}
                 className="border-b border-border/30 hover:bg-muted/30 transition-colors"
@@ -89,33 +147,54 @@ const StudentList: React.FC<StudentListProps> = ({
                   </button>
                 </td>
                 <td className="py-3 px-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <SharingDot
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <SharingChip
                       shared={student.shareMetrics}
-                      label={t('mentor.shareMetrics', 'Metrics')}
+                      label={t('mentor.sharingChip.metrics', 'Metrics')}
+                      Icon={BarChart3}
                     />
-                    <SharingDot
+                    <SharingChip
                       shared={student.shareTrades}
-                      label={t('mentor.shareTrades', 'Trades')}
+                      label={t('mentor.sharingChip.trades', 'Trades')}
+                      Icon={TrendingUp}
                     />
-                    <SharingDot
+                    <SharingChip
                       shared={student.sharePsychology}
-                      label={t('mentor.sharePsychology', 'Psychology')}
+                      label={t('mentor.sharingChip.psychology', 'Psychology')}
+                      Icon={Brain}
                     />
                   </div>
                 </td>
+                {showCohortChips && (
+                  <td className="py-3 px-3 hidden md:table-cell">
+                    <StudentCohortChips studentUserId={student.studentUserId} />
+                  </td>
+                )}
                 <td className="py-3 px-3 text-muted-foreground">
                   {new Date(student.joinedAt).toLocaleDateString()}
                 </td>
                 <td className="py-3 px-3">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setRemoveTarget(student.studentUserId)}
-                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground"
+                        aria-label={t('mentor.rowActions', 'Row actions')}
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() => setRemoveTarget(student.studentUserId)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {t('mentor.removeFromMenu', 'Remove student')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}

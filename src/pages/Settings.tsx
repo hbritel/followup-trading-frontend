@@ -74,7 +74,6 @@ import NotificationPreferences from "@/components/notifications/NotificationPref
 import PublicProfileSettings from "@/components/settings/PublicProfileSettings";
 import AiMessagePackPicker from "@/components/ai/AiMessagePackPicker";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
-import MentorInstanceSettings from "@/components/settings/MentorInstanceSettings";
 import MyMentorSettings from "@/components/settings/MyMentorSettings";
 import { PropFirmSettings } from "@/components/settings/PropFirmSettings";
 import { ProfileTab, SubscriptionTab } from '@/pages/AccountManagement';
@@ -431,53 +430,53 @@ const Settings = () => {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                     <TabsList className="inline-flex h-auto flex-wrap gap-1 bg-muted/50 p-1 rounded-xl">
-                        <TabsTrigger value="profile" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="profile" className="gap-2 rounded-lg px-4 py-2">
                             <User className="h-4 w-4" />
                             {t('common.profile', 'Profile')}
                         </TabsTrigger>
-                        <TabsTrigger value="general" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="general" className="gap-2 rounded-lg px-4 py-2">
                             <SettingsIcon className="h-4 w-4" />
                             {t('settings.general')}
                         </TabsTrigger>
-                        <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="notifications" className="gap-2 rounded-lg px-4 py-2">
                             <Bell className="h-4 w-4" />
                             {t('settings.notifications')}
                         </TabsTrigger>
-                        <TabsTrigger value="security" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="security" className="gap-2 rounded-lg px-4 py-2">
                             <Shield className="h-4 w-4" />
                             {t('settings.security')}
                         </TabsTrigger>
-                        <TabsTrigger value="tags" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="tags" className="gap-2 rounded-lg px-4 py-2">
                             <Tag className="h-4 w-4" />
                             {t("settings.tags", "Tags")}
                         </TabsTrigger>
-                        <TabsTrigger value="public-profile" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="public-profile" className="gap-2 rounded-lg px-4 py-2">
                             <User className="h-4 w-4" />
                             {t("gamification.publicProfile", "Public Profile")}
                         </TabsTrigger>
-                        <TabsTrigger value="billing" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="billing" className="gap-2 rounded-lg px-4 py-2">
                             <CreditCard className="h-4 w-4" />
                             {t("subscription.manageBilling", "Billing")}
                         </TabsTrigger>
-                        <TabsTrigger value="ai-provider" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                        <TabsTrigger value="ai-provider" className="gap-2 rounded-lg px-4 py-2">
                             <Brain className="h-4 w-4" />
                             {t("settings.aiProvider", "AI Provider")}
                         </TabsTrigger>
                         {isTeamPlan && (
-                            <TabsTrigger value="mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <TabsTrigger value="mentor" className="gap-2 rounded-lg px-4 py-2">
                                 <UsersIcon className="h-4 w-4" />
                                 {t("settings.mentor", "Mentor")}
                             </TabsTrigger>
                         )}
                         {/* Always show Prop Firm tab for users on TEAM plan for now as an admin feature? Wait, let's just make it available or maybe under a feature flag? Actually, the user just asked to create it. We can show it unconditionally or based on isTeamPlan. Let's make it conditional on isTeamPlan or just show it. Let's use Building2 icon. */}
                         {isTeamPlan && (
-                            <TabsTrigger value="propfirm" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <TabsTrigger value="propfirm" className="gap-2 rounded-lg px-4 py-2">
                                 <Building2Icon className="h-4 w-4" />
                                 Prop Firm
                             </TabsTrigger>
                         )}
                         {isInMentorInstance && (
-                            <TabsTrigger value="my-mentor" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2">
+                            <TabsTrigger value="my-mentor" className="gap-2 rounded-lg px-4 py-2">
                                 <GraduationCap className="h-4 w-4" />
                                 {t("settings.myMentor", "My Mentor")}
                             </TabsTrigger>
@@ -1043,7 +1042,25 @@ const Settings = () => {
                     {/* ========== MENTOR TAB (TEAM plan) ========== */}
                     {isTeamPlan && (
                         <TabsContent value="mentor" className="space-y-6">
-                            <MentorInstanceSettings />
+                            <div className="glass-card rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                        <UsersIcon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="text-base font-semibold">
+                                            {t('mentor.manageLink', 'Manage your mentor space')}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            {t('mentor.manageLinkDesc', 'Students, invites, and branding have moved to the Mentor Hub.')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button onClick={() => navigate('/mentor')} className="gap-1.5">
+                                    {t('mentor.openHub', 'Open Mentor Hub')}
+                                    <span aria-hidden="true">&rarr;</span>
+                                </Button>
+                            </div>
                         </TabsContent>
                     )}
 

@@ -130,7 +130,7 @@ const DeveloperPortal: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Code className="w-6 h-6 text-primary" />
               {t('developer.title')}
             </h1>
@@ -155,7 +155,7 @@ const DeveloperPortal: React.FC = () => {
               <p className="text-xs uppercase tracking-wider text-muted-foreground/60 mb-1">
                 {t('developer.baseUrl')}
               </p>
-              <code className="text-sm font-mono text-white bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 inline-block">
+              <code className="text-sm font-mono text-foreground bg-muted/50 px-3 py-1.5 rounded-lg border border-border inline-block">
                 {config.apiBaseUrl}
               </code>
             </div>
@@ -173,7 +173,7 @@ const DeveloperPortal: React.FC = () => {
               <Key className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-white">{t('developer.noKeys')}</p>
+              <p className="font-semibold text-foreground">{t('developer.noKeys')}</p>
               <p className="text-sm text-muted-foreground mt-1">{t('developer.noKeysDesc')}</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ const DeveloperPortal: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/5">
+                  <tr className="border-b border-border/50">
                     <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-semibold">
                       {t('developer.keyName')}
                     </th>
@@ -208,11 +208,11 @@ const DeveloperPortal: React.FC = () => {
                   {keys.map((key) => (
                     <tr
                       key={key.id}
-                      className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                      className="border-b border-border/40 hover:bg-muted/40 transition-colors"
                     >
-                      <td className="px-5 py-4 font-medium text-white">{key.name}</td>
+                      <td className="px-5 py-4 font-medium text-foreground">{key.name}</td>
                       <td className="px-5 py-4">
-                        <code className="text-xs font-mono text-muted-foreground bg-white/5 px-2 py-1 rounded">
+                        <code className="text-xs font-mono text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                           {maskApiKey(key.apiKey)}
                         </code>
                       </td>
@@ -235,8 +235,8 @@ const DeveloperPortal: React.FC = () => {
                           variant="outline"
                           className={
                             key.isActive
-                              ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                              : 'text-red-400 bg-red-500/10 border-red-500/20'
+                              ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                              : 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20'
                           }
                         >
                           {key.isActive ? 'Active' : 'Revoked'}
@@ -250,7 +250,7 @@ const DeveloperPortal: React.FC = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            className="text-red-600 dark:text-red-400 hover:text-red-500 dark:text-red-300 hover:bg-red-500/10"
                             onClick={() => setRevokeId(key.id)}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -267,12 +267,12 @@ const DeveloperPortal: React.FC = () => {
 
         {/* Scopes reference */}
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-3">{t('developer.scopes')}</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t('developer.scopes')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AVAILABLE_SCOPES.map((scope) => (
               <div
                 key={scope.value}
-                className="rounded-xl bg-white/[0.03] border border-white/5 px-4 py-3"
+                className="rounded-xl bg-muted/30 border border-border/50 px-4 py-3"
               >
                 <code className="text-xs font-mono text-primary">{scope.value}</code>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -292,7 +292,7 @@ const DeveloperPortal: React.FC = () => {
           if (!open) resetForm();
         }}
       >
-        <DialogContent className="glass-panel border border-white/10 sm:max-w-md">
+        <DialogContent className="glass-panel border border-border sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('developer.createKey')}</DialogTitle>
             <DialogDescription>{t('developer.subtitle')}</DialogDescription>
@@ -305,7 +305,7 @@ const DeveloperPortal: React.FC = () => {
                 value={keyName}
                 onChange={(e) => setKeyName(e.target.value)}
                 placeholder="My Integration"
-                className="bg-white/5 border-white/10"
+                className="bg-muted/50 border-border"
               />
             </div>
             <div className="space-y-3">
@@ -319,7 +319,7 @@ const DeveloperPortal: React.FC = () => {
                   />
                   <label
                     htmlFor={`scope-${scope.value}`}
-                    className="text-sm text-white cursor-pointer"
+                    className="text-sm text-foreground cursor-pointer"
                   >
                     {t(scope.labelKey)}
                   </label>
@@ -328,7 +328,7 @@ const DeveloperPortal: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)} className="border-white/20">
+            <Button variant="outline" onClick={() => setCreateOpen(false)} className="border-border">
               {t('common.cancel')}
             </Button>
             <Button
@@ -353,7 +353,7 @@ const DeveloperPortal: React.FC = () => {
           }
         }}
       >
-        <DialogContent className="glass-panel border border-white/10 sm:max-w-lg">
+        <DialogContent className="glass-panel border border-border sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
@@ -362,20 +362,20 @@ const DeveloperPortal: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-300">{t('developer.secretWarning')}</p>
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-700 dark:text-amber-300">{t('developer.secretWarning')}</p>
             </div>
             <div className="relative">
-              <code className="block text-xs font-mono text-white bg-black/40 border border-white/10 rounded-xl px-4 py-3 break-all">
+              <code className="block text-xs font-mono text-foreground bg-muted border border-border rounded-xl px-4 py-3 break-all">
                 {createdSecret?.secret}
               </code>
               <Button
                 size="sm"
                 variant="ghost"
-                className="absolute top-2 right-2 h-7 w-7 p-0 text-muted-foreground hover:text-white"
+                className="absolute top-2 right-2 h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                 onClick={handleCopySecret}
               >
-                {copiedSecret ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedSecret ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </Button>
             </div>
           </div>
@@ -395,13 +395,13 @@ const DeveloperPortal: React.FC = () => {
 
       {/* Revoke Confirmation */}
       <AlertDialog open={!!revokeId} onOpenChange={(open) => { if (!open) setRevokeId(null); }}>
-        <AlertDialogContent className="glass-panel border border-white/10">
+        <AlertDialogContent className="glass-panel border border-border">
           <AlertDialogHeader>
             <AlertDialogTitle>{t('developer.revoke')}</AlertDialogTitle>
             <AlertDialogDescription>{t('developer.revokeConfirm')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/20">{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel className="border-border">{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRevoke}
               className="bg-red-600 hover:bg-red-700 text-white"

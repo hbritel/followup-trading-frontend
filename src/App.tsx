@@ -55,11 +55,13 @@ import {
   PropFirmEvaluationDetail,
   AiCoach,
   JoinMentor,
-  MentorDashboard,
+  Mentor,
+  MyMentor,
   StudyGroups,
   PropFirmAdmin,
   OptionSpreads,
   DeveloperPortal,
+  PublicMentorProfile,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -137,7 +139,9 @@ function App() {
                     <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
                     <Route path="/ai-coach" element={<FeatureGate featureKey="ai_chat" requiredPlan="STARTER"><AiCoach /></FeatureGate>} />
-                    <Route path="/mentor/dashboard" element={<FeatureGate requiredPlan="TEAM"><MentorDashboard /></FeatureGate>} />
+                    <Route path="/mentor" element={<FeatureGate requiredPlan="TEAM"><Mentor /></FeatureGate>} />
+                    <Route path="/mentor/dashboard" element={<Navigate to="/mentor" replace />} />
+                    <Route path="/my-mentor" element={<MyMentor />} />
                     <Route path="/study-groups" element={<FeatureGate requiredPlan="ELITE"><StudyGroups /></FeatureGate>} />
                     <Route path="/propfirm-admin" element={<FeatureGate requiredPlan="ELITE"><PropFirmAdmin /></FeatureGate>} />
                     <Route path="/options" element={<FeatureGate requiredPlan="PRO"><OptionSpreads /></FeatureGate>} />
@@ -149,6 +153,7 @@ function App() {
 
                   {/* Public routes — no auth required */}
                   <Route path="/join/:inviteCode" element={<JoinMentor />} />
+                  <Route path="/m/:slug" element={<PublicMentorProfile />} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />
                   <Route path="/payment/canceled" element={<PaymentCanceled />} />
                   <Route path="/pricing" element={<Pricing />} />
