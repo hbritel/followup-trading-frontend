@@ -3290,7 +3290,10 @@
         "desc": "Rejoignez un espace mentor avec un code d'invitation de votre coach.",
         "inputLabel": "Code d'invitation",
         "joinButton": "Rejoindre"
-      }
+      },
+      "viewPublicProfile": "Voir le profil public",
+      "taxonomyTitle": "Niche",
+      "languagesTitle": "Langues"
     },
     "atRiskReasons": {
       "LOW_WIN_RATE": {
@@ -3564,6 +3567,11 @@
         "title": "Langues d'enseignement",
         "description": "Sélectionnez les langues dans lesquelles vous enseignez. Les élèves peuvent filtrer par langue."
       }
+    },
+    "profileDialog": {
+      "title": "Profil du mentor",
+      "openFull": "Ouvrir la page complète",
+      "close": "Fermer"
     }
   },
   "studyGroups": {

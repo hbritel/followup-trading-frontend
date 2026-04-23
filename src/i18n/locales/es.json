@@ -3079,7 +3079,10 @@
         "desc": "Únete a un espacio mentor con un código de invitación de tu coach.",
         "inputLabel": "Código de invitación",
         "joinButton": "Unirse"
-      }
+      },
+      "viewPublicProfile": "Ver perfil público",
+      "taxonomyTitle": "Nicho",
+      "languagesTitle": "Idiomas"
     },
     "atRisk": {
       "dialogTitle": "Estudiantes en riesgo",
@@ -3359,6 +3362,11 @@
         "title": "Idiomas de enseñanza",
         "description": "Selecciona los idiomas en los que enseñas. Los alumnos pueden filtrar por idioma."
       }
+    },
+    "profileDialog": {
+      "title": "Perfil del mentor",
+      "openFull": "Abrir página completa",
+      "close": "Cerrar"
     }
   }
 }

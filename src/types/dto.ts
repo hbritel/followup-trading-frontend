@@ -1626,6 +1626,8 @@ export interface MentorPublicProfileDto {
   testimonials: MentorTestimonialPublicDto[];
   acceptsNewStudents: boolean;
   isCfdContext?: boolean;
+  tagSlugs: string[];
+  languageCodes: string[];
   pricing: {
     currency: string;
     monthlyAmount: number;

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import MentorCard from './MentorCard';
+import MentorProfileDialog from '@/components/mentor/MentorProfileDialog';
 import type { DirectoryCardDto, MentorTagDto } from '@/types/dto';
 
 interface ResultsGridProps {
@@ -34,6 +35,8 @@ const CardSkeleton: React.FC = () => (
 );
 
 const ResultsGrid: React.FC<ResultsGridProps> = ({ cards, tags, isLoading }) => {
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -45,11 +48,24 @@ const ResultsGrid: React.FC<ResultsGridProps> = ({ cards, tags, isLoading }) => 
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-      {cards.map((card) => (
-        <MentorCard key={card.id} card={card} tags={tags} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {cards.map((card) => (
+          <MentorCard
+            key={card.id}
+            card={card}
+            tags={tags}
+            onClick={setOpenSlug}
+          />
+        ))}
+      </div>
+
+      <MentorProfileDialog
+        slug={openSlug}
+        open={!!openSlug}
+        onOpenChange={(o) => { if (!o) setOpenSlug(null); }}
+      />
+    </>
   );
 };
 

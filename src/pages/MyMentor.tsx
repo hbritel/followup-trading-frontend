@@ -29,10 +29,13 @@ import {
   useUpdateSharing,
   useLeaveInstance,
   useJoinInstance,
+  usePublicMentorProfile,
+  useDirectoryTags,
 } from '@/hooks/useMentor';
 import MentorPaywallCard from '@/components/mentor/monetization/MentorPaywallCard';
 import StudentSubscriptionPanel, { PastDueBanner } from '@/components/mentor/monetization/StudentSubscriptionPanel';
 import StudentTestimonialCard from '@/components/mentor/testimonials/StudentTestimonialCard';
+import MentorProfileDialog from '@/components/mentor/MentorProfileDialog';
 import type { MentorAnnouncementDto } from '@/types/dto';
 
 /* ── Announcement read-only card ───────────────────── */
@@ -157,7 +160,7 @@ const NotEnrolledState: React.FC = () => {
 
 /* ── Main page ─────────────────────────────────────── */
 const MyMentor: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: hub, isLoading } = useMyMentorHub();
   const updateSharingMutation = useUpdateSharing();
   const leaveMutation = useLeaveInstance();
@@ -167,6 +170,7 @@ const MyMentor: React.FC = () => {
   const [shareTrades, setShareTrades] = useState(false);
   const [sharePsychology, setSharePsychology] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   useEffect(() => {
     if (hub) {
@@ -197,6 +201,33 @@ const MyMentor: React.FC = () => {
   };
 
   const pageTitle = t('mentor.myMentor.title', 'My Mentor');
+
+  // Fetch public profile for tags + languages (slug only available after hub loads)
+  const instanceSlug =
+    hub?.instance?.publicProfileEnabled && hub?.instance?.slug
+      ? hub.instance.slug
+      : undefined;
+  const { data: publicProfile } = usePublicMentorProfile(instanceSlug);
+  const { data: allTags = [] } = useDirectoryTags();
+
+  const getTagLabel = (slug: string): string => {
+    const tag = allTags.find((tg) => tg.slug === slug);
+    if (!tag) return slug;
+    const lang = i18n.language.split('-')[0];
+    if (lang === 'fr' && tag.labelFr) return tag.labelFr;
+    if (lang === 'es' && tag.labelEs) return tag.labelEs;
+    return tag.labelEn;
+  };
+
+  const getLanguageName = (code: string): string => {
+    try {
+      const lang = i18n.language.split('-')[0];
+      const displayNames = new Intl.DisplayNames([lang, 'en'], { type: 'language' });
+      return displayNames.of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -271,14 +302,14 @@ const MyMentor: React.FC = () => {
                 </p>
               )}
               {instance.publicProfileEnabled && instance.slug && (
-                <a
-                  href={`/m/${instance.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:underline"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 px-0 h-auto text-xs font-medium text-primary hover:text-primary/80 hover:bg-transparent"
+                  onClick={() => setProfileDialogOpen(true)}
                 >
                   {t('mentor.myMentor.viewPublicProfile', 'View public profile')}
-                </a>
+                </Button>
               )}
             </div>
           </div>
@@ -304,6 +335,44 @@ const MyMentor: React.FC = () => {
                   {t('mentor.publicPage.yearsValue', '{{n}} yrs', { n: instance.publicYearsTrading })}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Tags */}
+          {publicProfile && publicProfile.tagSlugs.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('mentor.myMentor.taxonomyTitle', 'Niche')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {publicProfile.tagSlugs.map((slug) => (
+                  <span
+                    key={slug}
+                    className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
+                  >
+                    {getTagLabel(slug)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Languages */}
+          {publicProfile && publicProfile.languageCodes.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('mentor.myMentor.languagesTitle', 'Languages')}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {publicProfile.languageCodes.map((code) => (
+                  <span
+                    key={code}
+                    className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20"
+                  >
+                    {getLanguageName(code)}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </header>
@@ -432,6 +501,15 @@ const MyMentor: React.FC = () => {
           />
         )}
         </>
+        )}
+
+        {/* Profile dialog */}
+        {instanceSlug && (
+          <MentorProfileDialog
+            slug={instanceSlug}
+            open={profileDialogOpen}
+            onOpenChange={setProfileDialogOpen}
+          />
         )}
 
         {/* Leave confirmation */}

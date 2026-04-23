@@ -3302,7 +3302,10 @@
         "desc": "Join a mentor space with an invite code from your coach.",
         "inputLabel": "Invite code",
         "joinButton": "Join"
-      }
+      },
+      "viewPublicProfile": "View public profile",
+      "taxonomyTitle": "Niche",
+      "languagesTitle": "Languages"
     },
     "atRiskReasons": {
       "LOW_WIN_RATE": {
@@ -3576,6 +3579,11 @@
         "title": "Teaching languages",
         "description": "Select the languages you teach in. Students can filter by language."
       }
+    },
+    "profileDialog": {
+      "title": "Mentor profile",
+      "openFull": "Open full page",
+      "close": "Close"
     }
   },
   "studyGroups": {
