@@ -339,13 +339,13 @@ const MyMentor: React.FC = () => {
           )}
 
           {/* Tags */}
-          {publicProfile && publicProfile.tagSlugs.length > 0 && (
+          {publicProfile && (publicProfile.tagSlugs?.length ?? 0) > 0 && (
             <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t('mentor.myMentor.taxonomyTitle', 'Niche')}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {publicProfile.tagSlugs.map((slug) => (
+                {(publicProfile.tagSlugs ?? []).map((slug) => (
                   <span
                     key={slug}
                     className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
@@ -358,13 +358,13 @@ const MyMentor: React.FC = () => {
           )}
 
           {/* Languages */}
-          {publicProfile && publicProfile.languageCodes.length > 0 && (
+          {publicProfile && (publicProfile.languageCodes?.length ?? 0) > 0 && (
             <div className="mt-3 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t('mentor.myMentor.languagesTitle', 'Languages')}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {publicProfile.languageCodes.map((code) => (
+                {(publicProfile.languageCodes ?? []).map((code) => (
                   <span
                     key={code}
                     className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20"

@@ -225,7 +225,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile, onClose }) => 
         </header>
 
         {/* Tag chips */}
-        {profile.tagSlugs.length > 0 && (
+        {(profile.tagSlugs?.length ?? 0) > 0 && (
           <section aria-labelledby="dialog-taxonomy-heading">
             <h3
               id="dialog-taxonomy-heading"
@@ -234,7 +234,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile, onClose }) => 
               {t('mentor.myMentor.taxonomyTitle', 'Niche')}
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {profile.tagSlugs.map((slug) => (
+              {(profile.tagSlugs ?? []).map((slug) => (
                 <span
                   key={slug}
                   className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
@@ -247,7 +247,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile, onClose }) => 
         )}
 
         {/* Language chips */}
-        {profile.languageCodes.length > 0 && (
+        {(profile.languageCodes?.length ?? 0) > 0 && (
           <section aria-labelledby="dialog-languages-heading">
             <h3
               id="dialog-languages-heading"
@@ -256,7 +256,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ profile, onClose }) => 
               {t('mentor.myMentor.languagesTitle', 'Languages')}
             </h3>
             <div className="flex flex-wrap gap-1.5">
-              {profile.languageCodes.map((code) => (
+              {(profile.languageCodes ?? []).map((code) => (
                 <span
                   key={code}
                   className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20"
