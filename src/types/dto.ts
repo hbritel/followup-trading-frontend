@@ -1625,11 +1625,28 @@ export interface MentorPublicProfileDto {
   maxStudents: number;
   testimonials: MentorTestimonialPublicDto[];
   acceptsNewStudents: boolean;
+  isCfdContext?: boolean;
   pricing: {
     currency: string;
     monthlyAmount: number;
     stripePriceId: string;
   } | null;
+}
+
+// ── Mentor public disclaimer / checkout (Phase 0) ────────────────────────────
+
+export type DisclaimerType =
+  | 'RISK_DISCLOSURE'
+  | 'NOT_FINANCIAL_ADVICE'
+  | 'COOLING_OFF_WAIVER_EU'
+  | 'MENTOR_TERMS';
+
+export interface DisclaimerAckResponse {
+  acknowledgmentIds: string[];
+}
+
+export interface PublicCheckoutResponse {
+  checkoutUrl: string;
 }
 
 export interface UpdatePublicProfileRequestDto {
@@ -1638,7 +1655,7 @@ export interface UpdatePublicProfileRequestDto {
   bio?: string;
   credentials?: string;
   yearsTrading?: number;
-  publicProfileEnabled?: boolean;
+  enabled?: boolean;
 }
 
 export interface MentorTestimonialDto {

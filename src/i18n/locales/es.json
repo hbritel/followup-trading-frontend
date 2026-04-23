@@ -3244,6 +3244,30 @@
       "cancelDesc": "Mantienes acceso hasta el final del periodo. No se reembolsa.",
       "confirmCancel": "Sí, cancelar"
     },
+    "legal": {
+      "disclaimerModal": {
+        "cancelButton": "Cancelar",
+        "checkoutError": "No se pudo iniciar el pago. Por favor, inténtalo de nuevo.",
+        "coolingOffWaiver": "Solicito expresamente que mi acceso al mentorado comience de inmediato y <1>renuncio a mi derecho de desistimiento de 14 días</1> por cualquier parte ya consumida.",
+        "mentorTerms": "He leído los <1>términos del mentor</1> (incluida la política de cancelación).",
+        "notAdvice": "Entiendo que el mentor es un <1>educador independiente</1>, no mi asesor financiero, y que FollowUp Trading no proporciona ningún consejo de inversión.",
+        "risk": "Reconozco el <1>riesgo de pérdida</1> y que el rendimiento pasado no garantiza resultados futuros.",
+        "subscribeButton": "Suscribirse a {{brand}}",
+        "subtitle": "Por favor, lee y acepta cada declaración para continuar.",
+        "title": "Antes de suscribirte"
+      },
+      "profile": {
+        "subscribeCta": {
+          "cancelAnytime": "Cancela cuando quieras. Sin compromiso.",
+          "title": "Suscribirse a {{brand}}"
+        }
+      },
+      "riskBanner": {
+        "cfdText": "Los CFD son instrumentos complejos con un alto riesgo de perder dinero rápidamente debido al apalancamiento. El trading implica un riesgo sustancial de pérdida. El rendimiento pasado no es indicativo de resultados futuros. Nada en esta página es un consejo de inversión, una solicitud o una recomendación.",
+        "dismiss": "Cerrar",
+        "text": "El trading implica un riesgo sustancial de pérdida. El rendimiento pasado no es indicativo de resultados futuros. Nada en esta página es un consejo de inversión, una solicitud o una recomendación."
+      }
+    },
     "publicPage": {
       "notFound": "Mentor no encontrado",
       "notFoundDesc": "Este perfil no existe o no está publicado.",

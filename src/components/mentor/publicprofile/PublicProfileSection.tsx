@@ -103,7 +103,7 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
       headline,
       bio,
       credentials,
-      publicProfileEnabled: enabled,
+      enabled,
     };
     if (yearsTrading !== '') {
       payload.yearsTrading = Number(yearsTrading);

@@ -28,6 +28,9 @@ import type {
   MentorSubscriptionDto,
   MentorOnboardUrlDto,
   MentorCheckoutUrlDto,
+  DisclaimerType,
+  DisclaimerAckResponse,
+  PublicCheckoutResponse,
 } from '@/types/dto';
 
 const MENTOR_BASE = '/mentor';
@@ -416,5 +419,29 @@ export const mentorService = {
 
   cancelMentorSubscription: async (): Promise<void> => {
     await apiClient.post(`${MENTOR_BASE}/my-mentor/subscription/cancel`);
+  },
+
+  // ── Public disclaimer + checkout (Phase 0) ──────────────────────────────
+
+  acknowledgeDisclaimer: async (
+    slug: string,
+    types: DisclaimerType[]
+  ): Promise<DisclaimerAckResponse> => {
+    const res = await apiClient.post<DisclaimerAckResponse>(
+      `/public/mentor/profile/${slug}/disclaimer`,
+      { types }
+    );
+    return res.data;
+  },
+
+  createPublicCheckout: async (
+    slug: string,
+    acknowledgmentIds: string[]
+  ): Promise<PublicCheckoutResponse> => {
+    const res = await apiClient.post<PublicCheckoutResponse>(
+      `/public/mentor/profile/${slug}/checkout`,
+      { acknowledgmentIds }
+    );
+    return res.data;
   },
 };

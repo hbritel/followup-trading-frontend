@@ -3449,6 +3449,30 @@
       "cancelDesc": "Vous gardez l'accès jusqu'à la fin de la période en cours. Aucun remboursement.",
       "confirmCancel": "Oui, annuler"
     },
+    "legal": {
+      "disclaimerModal": {
+        "cancelButton": "Annuler",
+        "checkoutError": "Impossible de démarrer le paiement. Veuillez réessayer.",
+        "coolingOffWaiver": "Je demande expressément que mon accès au mentorat commence immédiatement et je <1>renonce à mon droit de rétractation de 14 jours</1> pour toute partie déjà consommée.",
+        "mentorTerms": "J'ai lu les <1>conditions du mentor</1> (y compris la politique d'annulation).",
+        "notAdvice": "Je comprends que le mentor est un <1>éducateur indépendant</1>, pas mon conseiller financier, et que FollowUp Trading ne fournit aucun conseil en investissement.",
+        "risk": "J'accepte le <1>risque de perte</1> et que les performances passées ne garantissent pas les résultats futurs.",
+        "subscribeButton": "S'abonner à {{brand}}",
+        "subtitle": "Veuillez lire et accepter chaque énoncé pour continuer.",
+        "title": "Avant de vous abonner"
+      },
+      "profile": {
+        "subscribeCta": {
+          "cancelAnytime": "Annulable à tout moment. Sans engagement.",
+          "title": "S'abonner à {{brand}}"
+        }
+      },
+      "riskBanner": {
+        "cfdText": "Les CFD sont des instruments complexes présentant un risque élevé de perte rapide en raison de l'effet de levier. Le trading implique un risque substantiel de perte. Les performances passées ne préjugent pas des résultats futurs. Rien sur cette page ne constitue un conseil en investissement, une sollicitation ou une recommandation.",
+        "dismiss": "Fermer",
+        "text": "Le trading implique un risque substantiel de perte. Les performances passées ne préjugent pas des résultats futurs. Rien sur cette page ne constitue un conseil en investissement, une sollicitation ou une recommandation."
+      }
+    },
     "publicPage": {
       "notFound": "Mentor introuvable",
       "notFoundDesc": "Ce profil n'existe pas ou n'est pas publié.",
