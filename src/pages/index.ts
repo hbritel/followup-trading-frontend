@@ -45,3 +45,4 @@ export { default as PropFirmAdmin } from './PropFirmAdmin';
 export { default as OptionSpreads } from './OptionSpreads';
 export { default as DeveloperPortal } from './DeveloperPortal';
 export { default as PublicMentorProfile } from './PublicMentorProfile';
+export { default as MentorDirectory } from './MentorDirectory';
