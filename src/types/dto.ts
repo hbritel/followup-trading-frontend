@@ -1655,7 +1655,7 @@ export interface UpdatePublicProfileRequestDto {
   bio?: string;
   credentials?: string;
   yearsTrading?: number;
-  publicProfileEnabled?: boolean;
+  enabled?: boolean;
 }
 
 export interface MentorTestimonialDto {
