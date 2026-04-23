@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import type { PlanDto } from '@/types/dto';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 
 interface PlanCardProps {
   plan: PlanDto;
@@ -14,78 +15,6 @@ interface PlanCardProps {
   isLoading?: boolean;
 }
 
-const PLAN_FEATURES: Record<string, { key: string; included: boolean; detail?: string }[]> = {
-  FREE: [
-    { key: 'trades', included: true, detail: '100 trades' },
-    { key: 'brokerAccount', included: true, detail: '1 account' },
-    { key: 'sync', included: true, detail: 'Monthly sync' },
-    { key: 'csvImport', included: true },
-    { key: 'journal', included: true },
-    { key: 'basicMetrics', included: true },
-    { key: 'badges', included: true },
-    { key: 'csvExport', included: false },
-    { key: 'alerts', included: false },
-    { key: 'aiCoach', included: false },
-    { key: 'reports', included: false },
-    { key: 'backtesting', included: false },
-    { key: 'tradeReplay', included: false },
-  ],
-  STARTER: [
-    { key: 'trades', included: true, detail: '1,500 trades' },
-    { key: 'brokerAccounts', included: true, detail: '2 accounts' },
-    { key: 'sync', included: true, detail: 'Weekly sync' },
-    { key: 'csvImportExport', included: true },
-    { key: 'journal', included: true, detail: 'With calendar' },
-    { key: 'basicMetrics', included: true },
-    { key: 'badges', included: true },
-    { key: 'aiCoach', included: true, detail: '5 msg/day' },
-    { key: 'alerts', included: true, detail: '5 price alerts' },
-    { key: 'reports', included: true, detail: '3/month' },
-    { key: 'marketFeed', included: true, detail: '1 source' },
-    { key: 'economicCalendar', included: true },
-    { key: 'backtesting', included: false },
-    { key: 'tradeReplay', included: false },
-  ],
-  PRO: [
-    { key: 'trades', included: true, detail: '15,000 trades' },
-    { key: 'brokerAccounts', included: true, detail: '5 accounts' },
-    { key: 'sync', included: true, detail: 'Daily sync' },
-    { key: 'csvImportExport', included: true },
-    { key: 'journal', included: true, detail: 'With calendar' },
-    { key: 'advancedMetrics', included: true, detail: 'Sharpe, VaR...' },
-    { key: 'liveWebSocket', included: true },
-    { key: 'aiCoach', included: true, detail: '30 msg/day' },
-    { key: 'alerts', included: true, detail: '25 alerts' },
-    { key: 'reports', included: true, detail: '15/month, 12 types' },
-    { key: 'backtesting', included: true, detail: '3 sessions' },
-    { key: 'tradeReplay', included: true },
-    { key: 'taxPreview', included: true },
-    { key: 'publicProfile', included: true },
-  ],
-  ELITE: [
-    { key: 'trades', included: true, detail: 'Unlimited' },
-    { key: 'brokerAccounts', included: true, detail: 'Unlimited' },
-    { key: 'sync', included: true, detail: 'Real-time sync' },
-    { key: 'everything', included: true, detail: 'All PRO features' },
-    { key: 'aiCoach', included: true, detail: '150 msg/day' },
-    { key: 'alerts', included: true, detail: 'Unlimited, all types' },
-    { key: 'reports', included: true, detail: 'Unlimited, 16 types' },
-    { key: 'backtesting', included: true, detail: 'Unlimited sessions' },
-    { key: 'fullTaxReport', included: true, detail: '14 jurisdictions' },
-    { key: 'dedicatedSupport', included: true },
-    { key: 'customRss', included: true },
-  ],
-  TEAM: [
-    { key: 'everything', included: true, detail: 'All ELITE features' },
-    { key: 'mentorInstance', included: true, detail: 'Your branded academy' },
-    { key: 'students', included: true, detail: 'Up to 20 students' },
-    { key: 'mentorDashboard', included: true, detail: 'Metrics / trades / psychology' },
-    { key: 'studentBoost', included: true, detail: 'Students get Starter features' },
-    { key: 'inviteCode', included: true, detail: 'Public join page + code' },
-    { key: 'privacyControls', included: true, detail: 'Student-side toggles' },
-    { key: 'dedicatedSupport', included: true },
-  ],
-};
 
 const PlanCard: React.FC<PlanCardProps> = ({
   plan,
@@ -106,7 +35,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   const features = PLAN_FEATURES[plan.name] ?? [];
 
   const cardClasses = cn(
-    'glass-card rounded-2xl p-8 relative flex flex-col gap-6 transition-all duration-300',
+    'glass-card rounded-2xl p-7 xl:p-8 relative flex flex-col gap-6 transition-all duration-300',
     isPro && 'border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]',
     isElite && 'border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)]',
     isTeam && 'border-fuchsia-500/50 shadow-[0_0_30px_rgba(217,70,239,0.12)]',
@@ -116,7 +45,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   const getButtonLabel = () => {
     if (isCurrent) return t('subscription.currentPlan');
     if (plan.name === 'FREE') return t('subscription.free');
-    return `${t('subscription.upgrade')} to ${plan.displayName}`;
+    return t('subscription.upgradeTo', { plan: plan.displayName, defaultValue: `Upgrade to ${plan.displayName}` });
   };
 
   const getButtonVariant = (): 'default' | 'outline' | 'secondary' => {
@@ -127,8 +56,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
 
   return (
     <div className={cardClasses}>
-      {/* Badges */}
-      <div className="flex items-start justify-between gap-2 flex-wrap">
+      {/* Badges — reserve space even when empty so price aligns across cards */}
+      <div className="flex items-start justify-between gap-2 flex-wrap min-h-[28px]">
         <div className="flex flex-col gap-2">
           {isPro && (
             <span className="bg-primary text-white text-xs px-3 py-1 rounded-full self-start">
@@ -193,7 +122,11 @@ const PlanCard: React.FC<PlanCardProps> = ({
             )}
             <span className={cn(!f.included && 'text-muted-foreground/60')}>
               {t(`subscription.features.${f.key}`, f.key)}
-              {f.detail && <span className="text-muted-foreground ml-1">({f.detail})</span>}
+              {f.detailKey && (
+                <span className="text-muted-foreground ml-1">
+                  ({t(`subscription.details.${f.detailKey}`, f.detailParams ?? {})})
+                </span>
+              )}
             </span>
           </li>
         ))}

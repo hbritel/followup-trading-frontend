@@ -1441,6 +1441,13 @@ export interface MentorInstanceDto {
   currentStudents: number;
   active: boolean;
   createdAt: string;
+  // Public profile (M9)
+  slug?: string | null;
+  publicProfileEnabled?: boolean;
+  publicHeadline?: string | null;
+  publicBio?: string | null;
+  publicCredentials?: string | null;
+  publicYearsTrading?: number | null;
 }
 
 export interface MentorStudentDto {
@@ -1467,6 +1474,233 @@ export interface UpdateSharingRequestDto {
   shareMetrics?: boolean;
   shareTrades?: boolean;
   sharePsychology?: boolean;
+}
+
+export type MentorAtRiskReason = 'LOW_WIN_RATE' | 'LOSING_STREAK' | 'TILT_SPIKE';
+
+export interface MentorAtRiskStudentDto {
+  studentUserId: string;
+  username: string;
+  winRate: number | null;
+  reason: MentorAtRiskReason;
+}
+
+export interface MentorMetricsSummaryDto {
+  totalStudents: number;
+  maxStudents: number;
+  activeToday: number;
+  avgWinRate: number | null;
+  atRiskCount: number;
+  sharingMetrics: number;
+  sharingTrades: number;
+  sharingPsychology: number;
+  atRiskStudents?: MentorAtRiskStudentDto[];
+}
+
+// ── Mentor Cohorts (M5) ─────────────────────────────────────
+
+export interface MentorCohortDto {
+  id: string;
+  instanceId: string;
+  name: string;
+  color: string | null;
+  description: string | null;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCohortRequestDto {
+  name: string;
+  color?: string;
+  description?: string;
+}
+
+export interface UpdateCohortRequestDto {
+  name?: string;
+  color?: string;
+  description?: string;
+}
+
+// ── Mentor Activity Feed (M7) ───────────────────────────────
+
+export type MentorActivityEventType =
+  | 'STUDENT_JOINED'
+  | 'STUDENT_LEFT'
+  | 'TRADE_CLOSED'
+  | 'TRADE_OPENED'
+  | 'PSYCH_LOGGED';
+
+export interface MentorActivityEventDto {
+  id: string;
+  eventType: MentorActivityEventType;
+  studentUserId: string;
+  username: string;
+  payload: Record<string, unknown> | null;
+  occurredAt: string;
+}
+
+export interface MentorStudentTradeDto {
+  id?: string | number;
+  symbol?: string;
+  direction?: string;
+  type?: string;
+  pnl?: number | null;
+  profit?: number | null;
+  openTime?: string;
+}
+
+export interface MentorStudentPsychologyDto {
+  id?: string | number;
+  emotion?: string;
+  note?: string;
+  date?: string;
+}
+
+// Mentor announcements & student notes (Iteration A)
+export interface MentorAnnouncementDto {
+  id: string;
+  instanceId: string;
+  title: string | null;
+  body: string;
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAnnouncementRequestDto {
+  title?: string;
+  body: string;
+  pinned?: boolean;
+}
+
+export interface UpdateAnnouncementRequestDto {
+  title?: string;
+  body?: string;
+  pinned?: boolean;
+}
+
+export interface MentorStudentNoteDto {
+  id: string;
+  studentUserId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentMentorHubDto {
+  instance: MentorInstanceDto;
+  announcements: MentorAnnouncementDto[];
+  shareMetrics: boolean;
+  shareTrades: boolean;
+  sharePsychology: boolean;
+  joinedAt: string;
+  // Monetization (M10)
+  subscriptionRequired?: boolean;
+  subscription?: {
+    status: 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE';
+    currentPeriodEnd: string | null;
+  } | null;
+}
+
+// ── Mentor Iteration C: Public profile (M9) + Stripe Connect (M10) ──
+
+export interface MentorTestimonialPublicDto {
+  username: string;
+  rating: number;
+  body: string;
+  createdAt: string;
+}
+
+export interface MentorPublicProfileDto {
+  brandName: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  slug: string;
+  headline: string | null;
+  bio: string | null;
+  credentials: string | null;
+  yearsTrading: number | null;
+  studentsCount: number;
+  maxStudents: number;
+  testimonials: MentorTestimonialPublicDto[];
+  acceptsNewStudents: boolean;
+  pricing: {
+    currency: string;
+    monthlyAmount: number;
+    stripePriceId: string;
+  } | null;
+}
+
+export interface UpdatePublicProfileRequestDto {
+  slug?: string;
+  headline?: string;
+  bio?: string;
+  credentials?: string;
+  yearsTrading?: number;
+  publicProfileEnabled?: boolean;
+}
+
+export interface MentorTestimonialDto {
+  id: string;
+  studentUserId: string;
+  username: string;
+  rating: number;
+  body: string;
+  approved: boolean;
+  createdAt: string;
+}
+
+export interface StudentTestimonialRequestDto {
+  rating?: number;
+  body?: string;
+}
+
+export interface MentorConnectStatusDto {
+  accountId: string | null;
+  chargesEnabled: boolean;
+  detailsSubmitted: boolean;
+}
+
+export interface MentorPricingDto {
+  defaultPriceCents: number | null;
+  currency: string | null;
+  connectAccountReady: boolean;
+}
+
+export interface SetDefaultPricingRequestDto {
+  priceCents: number;
+  currency: string;
+}
+
+export interface MentorStudentPricingDto {
+  studentUserId: string;
+  priceCents: number | null;
+  waived: boolean;
+}
+
+export interface SetStudentPricingRequestDto {
+  priceCents?: number;
+  waived?: boolean;
+}
+
+export type MentorSubscriptionStatus = 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'INCOMPLETE';
+
+export interface MentorSubscriptionDto {
+  id: string;
+  studentUserId: string;
+  username: string;
+  status: MentorSubscriptionStatus;
+  currentPeriodEnd: string | null;
+  canceledAt: string | null;
+}
+
+export interface MentorOnboardUrlDto {
+  url: string;
+}
+
+export interface MentorCheckoutUrlDto {
+  checkoutUrl: string;
 }
 
 // Study Groups (Phase 3E)

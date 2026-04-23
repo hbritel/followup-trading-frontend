@@ -54,6 +54,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PLAN_FEATURES } from '@/lib/planFeatures';
 import {
   useUserProfile,
   useUpdateProfile,
@@ -1034,10 +1035,17 @@ export const SubscriptionTab = () => {
                     )}
                   </div>
                   <ul className="space-y-1.5 flex-1">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-xs text-muted-foreground">
+                    {(PLAN_FEATURES[plan.name] ?? []).filter(f => f.included).map((f) => (
+                      <li key={f.key} className="flex items-start gap-2 text-xs text-muted-foreground">
                         <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        <span>{feature}</span>
+                        <span>
+                          {t(`subscription.features.${f.key}`, f.key)}
+                          {f.detailKey && (
+                            <span className="ml-1">
+                              ({t(`subscription.details.${f.detailKey}`, f.detailParams ?? {})})
+                            </span>
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>

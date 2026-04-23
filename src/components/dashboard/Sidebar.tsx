@@ -34,11 +34,13 @@ import {
   ShoppingBag as ShoppingBagIcon,
   UsersRound as UsersRoundIcon,
   Building as BuildingIcon,
+  GraduationCap as GraduationCapIcon,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/auth-context';
+import { useMyMentorInstance } from '@/hooks/useMentor';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-sections';
 
@@ -56,6 +58,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const { isEnabled, hasPlan } = useFeatureFlags();
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
+  const { data: myMentorInstance } = useMyMentorInstance();
+  const hasMyMentor = !!myMentorInstance;
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>(getInitialCollapsed);
 
   const toggleSection = (index: number) => {
@@ -104,7 +108,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     {
       label: t('sidebar.mentor', 'Mentor'),
       items: [
-        { href: '/mentor/dashboard', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
+        { href: '/mentor', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
       ],
     },
     {
@@ -114,6 +118,9 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
         { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
         { href: '/marketplace', label: t('sidebar.marketplace', 'Marketplace'), icon: ShoppingBagIcon },
+        ...(hasMyMentor
+          ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
+          : []),
         { href: '/study-groups', label: t('sidebar.studyGroups', 'Study Groups'), icon: UsersRoundIcon, requiredPlan: 'ELITE' as const },
       ],
     },
@@ -201,8 +208,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                             onClick={onNavigate}
                             aria-current={isActive ? 'page' : undefined}
                             className={[
-                              'relative flex items-center gap-x-2 rounded-xl py-2.5 min-w-0 w-full',
-                              'justify-start pl-2.5 pr-1.5',
+                              'relative flex items-center gap-x-1.5 rounded-xl py-2.5 min-w-0 w-full',
+                              'justify-start pl-2 pr-1',
                               'text-sm font-medium transition-all duration-200',
                               dimmed
                                 ? 'opacity-60 text-muted-foreground border border-transparent'
@@ -236,13 +243,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                             )}
                             {planLocked && hasRequiredPlan && (
                               <span
-                                title={`Requires ${(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()} plan`}
+                                title={`${t('featureGate.requiresPlan', 'Requires')} ${(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()}+`}
+                                aria-label={`${(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()}+ plan`}
                                 className={[
-                                  'flex-shrink-0 whitespace-nowrap text-[9px] font-semibold px-1.5 py-0.5 rounded-md border leading-none',
-                                  item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' :
-                                  item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
-                                  item.requiredPlan === 'TEAM' ? 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/20' :
-                                  'text-primary bg-primary/10 border-primary/20',
+                                  'flex-shrink-0 whitespace-nowrap text-[9px] font-semibold px-1 py-0.5 rounded-md border leading-none tracking-tight',
+                                  item.requiredPlan === 'STARTER' ? 'text-blue-400 bg-blue-500/10 border-blue-500/25' :
+                                  item.requiredPlan === 'PRO' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25' :
+                                  item.requiredPlan === 'ELITE' ? 'text-amber-400 bg-amber-500/10 border-amber-500/25' :
+                                  item.requiredPlan === 'TEAM' ? 'text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/25' :
+                                  'text-primary bg-primary/10 border-primary/25',
                                 ].join(' ')}
                               >
                                 {(item.requiredPlan as string).charAt(0) + (item.requiredPlan as string).slice(1).toLowerCase()}+
@@ -317,7 +326,7 @@ const DashboardSidebar = () => {
   }
 
   return (
-    <div className="hidden md:flex flex-col h-full py-4 px-2 flex-shrink-0 w-64">
+    <div className="hidden md:flex flex-col h-full py-4 px-2 flex-shrink-0 w-[17rem]">
       <SidebarContent />
     </div>
   );

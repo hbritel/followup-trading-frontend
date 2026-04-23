@@ -175,7 +175,7 @@ const Pricing: React.FC = () => {
         <div className="ambient-blob ambient-blob-secondary w-64 h-64 bottom-20 left-1/2 opacity-30" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 sm:py-24">
+      <div className="relative z-10 max-w-[112rem] mx-auto px-6 py-16 sm:py-24">
         {/* Back button */}
         {isAuthenticated && (
           <Button
@@ -234,7 +234,7 @@ const Pricing: React.FC = () => {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 xl:gap-7">
             {displayPlans.map((plan) => (
               <PlanCard
                 key={plan.name}
