@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useAuth } from '@/contexts/auth-context';
 import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
 import DirectoryHero from '@/components/mentor/directory/DirectoryHero';
 import FilterRail, { type FilterValues } from '@/components/mentor/directory/FilterRail';
@@ -55,7 +57,7 @@ const DEFAULT_FILTERS: FilterValues = {
   freeOnly: false,
 };
 
-const MentorDirectory: React.FC = () => {
+const MentorDirectoryContent: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -252,6 +254,20 @@ const MentorDirectory: React.FC = () => {
       </div>
     </main>
   );
+};
+
+const MentorDirectory: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
+
+  if (isAuthenticated) {
+    return (
+      <DashboardLayout pageTitle={t('sidebar.browseMentors', 'Browse Mentors')}>
+        <MentorDirectoryContent />
+      </DashboardLayout>
+    );
+  }
+  return <MentorDirectoryContent />;
 };
 
 export default MentorDirectory;
