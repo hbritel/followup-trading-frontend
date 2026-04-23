@@ -31,6 +31,8 @@ import ActivityFeed from '@/components/mentor/ActivityFeed';
 import MonetizationSection from '@/components/mentor/monetization/MonetizationSection';
 import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfileSection';
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
+import MentorTagsPicker from '@/components/mentor/settings/MentorTagsPicker';
+import MentorLanguagesPicker from '@/components/mentor/settings/MentorLanguagesPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -938,6 +940,11 @@ const Mentor: React.FC = () => {
 
         {/* Iteration C: Public profile / Monetization / Testimonials */}
         <PublicProfileSection instance={instance} />
+
+        {/* Phase 1: Directory taxonomy */}
+        <MentorTagsPicker />
+        <MentorLanguagesPicker />
+
         <MonetizationSection />
         <TestimonialsSection />
 

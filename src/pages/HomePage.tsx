@@ -24,6 +24,7 @@ import {
   RefreshCcw,
   Globe,
   Calculator,
+  GraduationCap,
   Newspaper,
   Star,
   ArrowRight,
@@ -272,6 +273,31 @@ const HomePage = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed">{t(`landing.${f.desc}`, f.desc)}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Mentor directory CTA ────────────────────────────────────── */}
+      <section className="py-14 md:py-20 px-4 bg-muted/20">
+        <div className="container mx-auto max-w-4xl">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl md:text-2xl font-bold mb-1.5">
+                {t('mentor.directory.home.ctaSection.title')}
+              </h2>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-xl">
+                {t('mentor.directory.home.ctaSection.body')}
+              </p>
+            </div>
+            <Link to="/mentors" className="shrink-0">
+              <Button size="lg" variant="outline" className="gap-2 whitespace-nowrap">
+                {t('mentor.directory.home.ctaSection.button')}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -10,6 +10,8 @@ import type {
   CreateAnnouncementRequestDto,
   UpdateAnnouncementRequestDto,
   MentorActivityEventDto,
+  DirectoryQuery,
+  MentorTagCategory,
 } from '@/types/dto';
 
 const INSTANCE_KEY = ['mentor', 'instance'];
@@ -814,6 +816,117 @@ export const useCancelMentorSubscription = () => {
     },
     onError: () => {
       toast.error('Failed to cancel subscription.');
+    },
+  });
+};
+
+// ── Phase 1: Directory hooks ─────────────────────────────────────────────────
+
+const dirQueryKey = (query: DirectoryQuery) => ['mentor', 'directory', query];
+const DIR_TAGS_KEY = (category?: MentorTagCategory) => ['mentor', 'directory-tags', category];
+const DIR_LANGS_KEY = ['mentor', 'directory-languages'];
+const MY_TAGS_KEY = ['mentor', 'my-tags'];
+const MY_LANGS_KEY = ['mentor', 'my-languages'];
+
+export const useMentorDirectory = (query: DirectoryQuery) => {
+  return useQuery({
+    queryKey: dirQueryKey(query),
+    queryFn: () => mentorService.searchDirectory(query),
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useDirectoryTags = (category?: MentorTagCategory) => {
+  return useQuery({
+    queryKey: DIR_TAGS_KEY(category),
+    queryFn: () => mentorService.listDirectoryTags(category),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useDirectoryLanguages = () => {
+  return useQuery({
+    queryKey: DIR_LANGS_KEY,
+    queryFn: mentorService.listDirectoryLanguages,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useMyMentorTags = () => {
+  return useQuery({
+    queryKey: MY_TAGS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.getMyTags();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [] as string[];
+        }
+        throw error;
+      }
+    },
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useSetMyMentorTags = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (slugs: string[]) => mentorService.setMyTags(slugs),
+    onMutate: async (slugs) => {
+      await queryClient.cancelQueries({ queryKey: MY_TAGS_KEY });
+      const prev = queryClient.getQueryData<string[]>(MY_TAGS_KEY);
+      queryClient.setQueryData(MY_TAGS_KEY, slugs);
+      return { prev };
+    },
+    onError: (_err, _slugs, ctx) => {
+      if (ctx?.prev != null) queryClient.setQueryData(MY_TAGS_KEY, ctx.prev);
+      toast.error('Failed to save tags.');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_TAGS_KEY });
+      toast.success('Tags saved.');
+    },
+  });
+};
+
+export const useMyMentorLanguages = () => {
+  return useQuery({
+    queryKey: MY_LANGS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.getMyLanguages();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [] as string[];
+        }
+        throw error;
+      }
+    },
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useSetMyMentorLanguages = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (codes: string[]) => mentorService.setMyLanguages(codes),
+    onMutate: async (codes) => {
+      await queryClient.cancelQueries({ queryKey: MY_LANGS_KEY });
+      const prev = queryClient.getQueryData<string[]>(MY_LANGS_KEY);
+      queryClient.setQueryData(MY_LANGS_KEY, codes);
+      return { prev };
+    },
+    onError: (_err, _codes, ctx) => {
+      if (ctx?.prev != null) queryClient.setQueryData(MY_LANGS_KEY, ctx.prev);
+      toast.error('Failed to save languages.');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_LANGS_KEY });
+      toast.success('Languages saved.');
     },
   });
 };

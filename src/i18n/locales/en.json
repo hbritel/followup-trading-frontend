@@ -259,7 +259,8 @@
     "propFirmAdmin": "Prop Firm Admin",
     "options": "Options",
     "developer": "Developer API",
-    "myMentor": "My Mentor"
+    "myMentor": "My Mentor",
+    "browseMentors": "Browse Mentors"
   },
   "pages": {
     "dashboard": "Dashboard",
@@ -3509,6 +3510,72 @@
       "cancelAnytime": "Cancel anytime",
       "testimonialsTitle": "What students are saying",
       "poweredBy": "Powered by FollowUp Trading"
+    },
+    "directory": {
+      "hero": {
+        "title": "Find a trading mentor",
+        "subtitle": "Browse verified trading mentors. Filter by niche, language, and price to find the right fit."
+      },
+      "searchPlaceholder": "Search mentors…",
+      "filters": {
+        "label": "Filters",
+        "niche": "Niche",
+        "nicheAssetClass": "Asset class",
+        "nicheStyle": "Trading style",
+        "nicheFocus": "Focus area",
+        "language": "Language",
+        "priceRange": "Price range",
+        "priceFree": "Free only",
+        "priceMax": "Any",
+        "acceptsNew": "Accepts new students",
+        "clearAll": "Clear all",
+        "mobileButton": "Filters"
+      },
+      "sort": {
+        "label": "Sort by",
+        "relevance": "Relevance",
+        "newest": "Newest",
+        "mostStudents": "Most students",
+        "highestRated": "Highest rated",
+        "lowestPrice": "Lowest price"
+      },
+      "card": {
+        "free": "Free",
+        "new": "New",
+        "acceptsNew": "Open",
+        "studentsFew": "1–10 students",
+        "studentsMedium": "11–50 students",
+        "studentsMany": "50+ students",
+        "monthlyPrice": "{{price}} / mo"
+      },
+      "empty": {
+        "title": "No mentors match your filters.",
+        "clearFilters": "Clear filters"
+      },
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "ofTotal": "Page {{page}} of {{total}}"
+      },
+      "home": {
+        "ctaSection": {
+          "title": "Looking for a trading mentor?",
+          "body": "Discover experienced mentors who can guide you through the markets — from day trading to options, futures, and beyond.",
+          "button": "Browse mentors"
+        }
+      },
+      "resultsCount": "mentors found"
+    },
+    "settings": {
+      "tags": {
+        "title": "Niche tags",
+        "description": "Select up to {{max}} tags that best describe your trading focus.",
+        "limitReached": "Maximum {{max}} tags allowed"
+      },
+      "languages": {
+        "title": "Teaching languages",
+        "description": "Select the languages you teach in. Students can filter by language."
+      }
     }
   },
   "studyGroups": {

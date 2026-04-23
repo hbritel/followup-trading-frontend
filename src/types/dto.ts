@@ -1947,3 +1947,70 @@ export interface EarningsDto {
   pendingPayout: number;
   totalSales: number;
 }
+
+// ── Mentor Directory (Phase 1) ────────────────────────────────────────────────
+
+export type MentorTagCategory = 'asset_class' | 'style' | 'focus';
+
+export interface MentorTagDto {
+  slug: string;
+  category: MentorTagCategory;
+  labelEn: string;
+  labelFr?: string;
+  labelEs?: string;
+  sortOrder: number;
+}
+
+export interface DirectoryCardDto {
+  id: string;
+  slug: string;
+  brandName: string;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  publicHeadline?: string | null;
+  publicYearsTrading?: number | null;
+  defaultMonthlyPriceCents?: number | null;
+  defaultCurrency?: string | null;
+  maxStudents: number;
+  studentCount: number;
+  avgRating: number;
+  testimonialCount: number;
+  tagSlugs: string[];
+  languageCodes: string[];
+  monetized: boolean;
+  acceptsNewStudents: boolean;
+  createdAt: string;
+}
+
+export interface DirectoryPageDto {
+  content: DirectoryCardDto[];
+  totalElements: number;
+  page: number;
+  size: number;
+  totalPages: number;
+}
+
+export type DirectorySortKey =
+  | 'RELEVANCE'
+  | 'NEWEST'
+  | 'MOST_STUDENTS'
+  | 'HIGHEST_RATED'
+  | 'LOWEST_PRICE';
+
+export interface DirectoryQuery {
+  q?: string;
+  tags?: string[];
+  langs?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  acceptsNew?: boolean;
+  monetizedOnly?: boolean;
+  sort?: DirectorySortKey;
+  page?: number;
+  size?: number;
+}
+
+export interface LanguageOptionsDto {
+  used: string[];
+  allowed: string[];
+}
