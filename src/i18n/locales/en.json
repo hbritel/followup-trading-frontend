@@ -784,6 +784,43 @@
     "subscriptions": "Subscriptions",
     "brokerConnections": "Connections",
     "system": "System",
+    "mentorModeration": "Mentors",
+    "mentors": {
+      "verificationQueue": {
+        "title": "Verification candidates",
+        "empty": "No candidates pending verification.",
+        "approve": "Approve",
+        "revoke": "Revoke",
+        "revokeTitle": "Revoke verification",
+        "revokeDesc": "Provide a reason for revoking this mentor's verified status. They will be notified.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Explain why verification is being revoked…",
+        "confirmRevoke": "Revoke verification"
+      },
+      "complaints": {
+        "title": "Mentor complaints",
+        "tabAll": "All",
+        "tabOpen": "Open",
+        "tabUnderReview": "Under review",
+        "tabRemoved": "Removed",
+        "tabRejected": "Rejected",
+        "empty": "No complaints in this category.",
+        "descriptionLabel": "Description",
+        "evidenceLabel": "Evidence",
+        "statusLabel": "Status",
+        "notesLabel": "Admin notes (optional)",
+        "notesPlaceholder": "Internal notes…",
+        "saveTransition": "Update",
+        "statusOPEN": "Open",
+        "statusUNDERREVIEW": "Under review",
+        "statusRESOLVEDREMOVED": "Resolved — Removed",
+        "statusRESOLVEDREJECTED": "Resolved — Rejected",
+        "statusOpen": "Open",
+        "statusUnderReview": "Under review",
+        "statusRemoved": "Resolved — Removed",
+        "statusRejected": "Resolved — Rejected"
+      }
+    },
     "totalUsers": "Total Users",
     "activeToday": "Active Today",
     "last24h": "last 24h",
@@ -3528,6 +3565,7 @@
         "priceFree": "Free only",
         "priceMax": "Any",
         "acceptsNew": "Accepts new students",
+        "verifiedOnly": "Verified only",
         "clearAll": "Clear all",
         "mobileButton": "Filters"
       },
@@ -3575,6 +3613,147 @@
       "languages": {
         "title": "Teaching languages",
         "description": "Select the languages you teach in. Students can filter by language."
+      },
+      "trustPolicies": {
+        "title": "Trust & policies"
+      },
+      "publicStats": {
+        "toggleLabel": "Show trading stats publicly",
+        "toggleDesc": "Display your verified trading performance on your public profile.",
+        "noStats": "No stats available yet. Close some trades and they'll appear here."
+      },
+      "cancellationPolicy": {
+        "title": "Cancellation policy",
+        "description": "Choose the refund policy that applies to your subscriptions.",
+        "PLATFORM_DEFAULT": {
+          "desc": "Follow the standard FollowUp Trading cancellation policy."
+        },
+        "FLEXIBLE_7D": {
+          "desc": "Students can request a full refund within 7 days of subscribing."
+        },
+        "FLEXIBLE_14D": {
+          "desc": "Students can request a full refund within 14 days of subscribing."
+        },
+        "STRICT_NONE": {
+          "desc": "No refunds are issued. Students will see this clearly before subscribing."
+        }
+      },
+      "jurisdictions": {
+        "title": "Jurisdiction rules",
+        "description": "Restrict which countries can access your profile. Leave empty to allow all.",
+        "allowList": "Allow list",
+        "denyList": "Deny list",
+        "allowHint": "Only visitors from these countries can access your profile.",
+        "denyHint": "Visitors from these countries cannot access your profile.",
+        "selectCountry": "Select a country…",
+        "selectedLabel": "Selected countries",
+        "removeCountry": "Remove {{country}}"
+      }
+    },
+    "trust": {
+      "verifiedBadge": {
+        "label": "Verified",
+        "tooltip": "Verified by FollowUp Trading"
+      },
+      "stats": {
+        "panelLabel": "Verified trading stats",
+        "sectionTitle": "Verified trading stats",
+        "lookback": "Last {{days}} days",
+        "winRate": "Win rate",
+        "profitFactor": "Profit factor",
+        "avgR": "Avg R",
+        "trades": "Trades",
+        "insufficientTitle": "Not enough data yet",
+        "insufficientDesc": "Stats will appear once the mentor has closed enough trades in the last {{days}} days.",
+        "disclosure": "Historical, unaudited trades of the mentor (last {{days}} days). Past performance is not indicative of future results."
+      },
+      "cancellationPolicy": {
+        "PLATFORM_DEFAULT": "Default policy",
+        "STRICT_NONE": "No refunds",
+        "FLEXIBLE_7D": "7-day refund",
+        "FLEXIBLE_14D": "14-day refund"
+      }
+    },
+    "faq": {
+      "public": {
+        "title": "Frequently asked questions"
+      },
+      "editor": {
+        "title": "FAQ",
+        "count": "{{count}} / {{max}} entries",
+        "addButton": "Add FAQ",
+        "capReached": "Maximum {{max}} FAQ entries.",
+        "empty": "No FAQ entries yet. Add a question to help prospective students.",
+        "questionLabel": "Question",
+        "questionPlaceholder": "What do students ask most?",
+        "answerLabel": "Answer",
+        "answerPlaceholder": "Your answer…",
+        "edit": "Edit",
+        "delete": "Delete",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "deleteTitle": "Delete FAQ entry?",
+        "deleteDesc": "This FAQ entry will be permanently removed from your public profile."
+      }
+    },
+    "contact": {
+      "form": {
+        "title": "Contact {{brand}}",
+        "emailLabel": "Your email",
+        "emailPlaceholder": "you@example.com",
+        "messageLabel": "Your message",
+        "messagePlaceholder": "What would you like to ask {{brand}}?",
+        "consentText": "I consent to my email address and message being shared with {{brand}} for the purpose of responding to my enquiry. I can withdraw this consent at any time.",
+        "submitButton": "Send message",
+        "successToast": "Message sent to {{brand}}!",
+        "successTitle": "Message sent!",
+        "successDesc": "{{brand}} will get back to you at the email you provided.",
+        "rateLimitError": "You're sending messages too quickly. Please wait a moment and try again.",
+        "genericError": "Failed to send. Please try again."
+      },
+      "inbox": {
+        "title": "Contact leads",
+        "empty": "No contact leads yet.",
+        "emptyDesc": "When visitors fill out your contact form, their messages will appear here.",
+        "markRead": "Mark as read"
+      }
+    },
+    "complaint": {
+      "reportButton": {
+        "label": "Report",
+        "ariaLabel": "Report {{brand}}"
+      },
+      "form": {
+        "title": "Report {{brand}}",
+        "description": "Reports are reviewed by the FollowUp Trading trust & safety team. Do not submit false reports.",
+        "categoryLabel": "Category",
+        "categoryPlaceholder": "Select a category",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Describe the issue in detail (minimum 10 characters).",
+        "evidenceLabel": "Evidence URL (optional)",
+        "reporterEmailLabel": "Your email (optional)",
+        "reporterEmailPlaceholder": "So we can follow up if needed",
+        "submitButton": "Submit report",
+        "successToast": "Report submitted. Thank you.",
+        "successTitle": "Report received",
+        "successDesc": "Our team will review your report and take appropriate action.",
+        "genericError": "Failed to submit report. Please try again."
+      },
+      "categories": {
+        "MISLEADING_CREDENTIALS": "Misleading credentials",
+        "SCAM": "Scam",
+        "HARASSMENT": "Harassment",
+        "COPYRIGHT": "Copyright infringement",
+        "ILLEGAL_CONTENT": "Illegal content",
+        "MINOR_ABUSE": "Child safety",
+        "IMPERSONATION": "Impersonation",
+        "OTHER": "Other"
+      },
+      "statuses": {
+        "OPEN": "Open",
+        "UNDER_REVIEW": "Under review",
+        "RESOLVED_REMOVED": "Resolved — Removed",
+        "RESOLVED_REJECTED": "Resolved — Rejected"
       }
     }
   },

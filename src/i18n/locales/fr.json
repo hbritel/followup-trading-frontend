@@ -736,6 +736,39 @@
     "subscriptions": "Abonnements",
     "brokerConnections": "Connexions",
     "system": "Système",
+    "mentorModeration": "Mentors",
+    "mentors": {
+      "verificationQueue": {
+        "title": "Candidats à la vérification",
+        "empty": "Aucun candidat en attente de vérification.",
+        "approve": "Approuver",
+        "revoke": "Révoquer",
+        "revokeTitle": "Révoquer la vérification",
+        "revokeDesc": "Fournissez une raison pour révoquer le statut vérifié de ce mentor.",
+        "reasonLabel": "Raison",
+        "reasonPlaceholder": "Expliquez pourquoi la vérification est révoquée…",
+        "confirmRevoke": "Révoquer la vérification"
+      },
+      "complaints": {
+        "title": "Signalements de mentors",
+        "tabAll": "Tous",
+        "tabOpen": "Ouverts",
+        "tabUnderReview": "En cours",
+        "tabRemoved": "Supprimés",
+        "tabRejected": "Rejetés",
+        "empty": "Aucun signalement dans cette catégorie.",
+        "descriptionLabel": "Description",
+        "evidenceLabel": "Preuve",
+        "statusLabel": "Statut",
+        "notesLabel": "Notes admin (optionnel)",
+        "notesPlaceholder": "Notes internes…",
+        "saveTransition": "Mettre à jour",
+        "statusOpen": "Ouvert",
+        "statusUnderReview": "En cours d'examen",
+        "statusRemoved": "Résolu — Supprimé",
+        "statusRejected": "Résolu — Rejeté"
+      }
+    },
     "totalUsers": "Total utilisateurs",
     "activeToday": "Actifs aujourd'hui",
     "last24h": "dernières 24h",
@@ -3516,6 +3549,7 @@
         "priceFree": "Gratuit uniquement",
         "priceMax": "Indifférent",
         "acceptsNew": "Accepte de nouveaux élèves",
+        "verifiedOnly": "Vérifiés uniquement",
         "clearAll": "Tout effacer",
         "mobileButton": "Filtres"
       },
@@ -3563,6 +3597,147 @@
       "languages": {
         "title": "Langues d'enseignement",
         "description": "Sélectionnez les langues dans lesquelles vous enseignez. Les élèves peuvent filtrer par langue."
+      },
+      "trustPolicies": {
+        "title": "Confiance & politiques"
+      },
+      "publicStats": {
+        "toggleLabel": "Afficher les stats publiquement",
+        "toggleDesc": "Affichez vos performances de trading vérifiées sur votre profil public.",
+        "noStats": "Aucune statistique disponible. Clôturez des trades pour qu'elles apparaissent ici."
+      },
+      "cancellationPolicy": {
+        "title": "Politique d'annulation",
+        "description": "Choisissez la politique de remboursement applicable à vos abonnements.",
+        "PLATFORM_DEFAULT": {
+          "desc": "Suivre la politique d'annulation standard de FollowUp Trading."
+        },
+        "FLEXIBLE_7D": {
+          "desc": "Les élèves peuvent demander un remboursement complet dans les 7 jours suivant l'abonnement."
+        },
+        "FLEXIBLE_14D": {
+          "desc": "Les élèves peuvent demander un remboursement complet dans les 14 jours suivant l'abonnement."
+        },
+        "STRICT_NONE": {
+          "desc": "Aucun remboursement n'est accordé. Les élèves verront cela clairement avant de s'abonner."
+        }
+      },
+      "jurisdictions": {
+        "title": "Règles de juridiction",
+        "description": "Restreignez les pays pouvant accéder à votre profil. Laissez vide pour tout autoriser.",
+        "allowList": "Liste blanche",
+        "denyList": "Liste noire",
+        "allowHint": "Seuls les visiteurs de ces pays peuvent accéder à votre profil.",
+        "denyHint": "Les visiteurs de ces pays ne peuvent pas accéder à votre profil.",
+        "selectCountry": "Sélectionner un pays…",
+        "selectedLabel": "Pays sélectionnés",
+        "removeCountry": "Retirer {{country}}"
+      }
+    },
+    "trust": {
+      "verifiedBadge": {
+        "label": "Vérifié",
+        "tooltip": "Vérifié par FollowUp Trading"
+      },
+      "stats": {
+        "panelLabel": "Statistiques de trading vérifiées",
+        "sectionTitle": "Statistiques de trading vérifiées",
+        "lookback": "{{days}} derniers jours",
+        "winRate": "Taux de réussite",
+        "profitFactor": "Facteur de profit",
+        "avgR": "R moyen",
+        "trades": "Trades",
+        "insufficientTitle": "Données insuffisantes",
+        "insufficientDesc": "Les stats apparaîtront dès que le mentor aura clôturé suffisamment de trades dans les {{days}} derniers jours.",
+        "disclosure": "Trades historiques non audités du mentor ({{days}} derniers jours). Les performances passées ne garantissent pas les résultats futurs."
+      },
+      "cancellationPolicy": {
+        "PLATFORM_DEFAULT": "Politique par défaut",
+        "STRICT_NONE": "Sans remboursement",
+        "FLEXIBLE_7D": "Remboursement 7 jours",
+        "FLEXIBLE_14D": "Remboursement 14 jours"
+      }
+    },
+    "faq": {
+      "public": {
+        "title": "Questions fréquentes"
+      },
+      "editor": {
+        "title": "FAQ",
+        "count": "{{count}} / {{max}} entrées",
+        "addButton": "Ajouter une FAQ",
+        "capReached": "Maximum {{max}} entrées FAQ.",
+        "empty": "Aucune entrée FAQ. Ajoutez une question pour aider les futurs élèves.",
+        "questionLabel": "Question",
+        "questionPlaceholder": "Ce que les élèves demandent le plus ?",
+        "answerLabel": "Réponse",
+        "answerPlaceholder": "Votre réponse…",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "moveUp": "Monter",
+        "moveDown": "Descendre",
+        "deleteTitle": "Supprimer cette entrée FAQ ?",
+        "deleteDesc": "Cette entrée sera définitivement supprimée de votre profil public."
+      }
+    },
+    "contact": {
+      "form": {
+        "title": "Contacter {{brand}}",
+        "emailLabel": "Votre email",
+        "emailPlaceholder": "vous@exemple.com",
+        "messageLabel": "Votre message",
+        "messagePlaceholder": "Que souhaitez-vous demander à {{brand}} ?",
+        "consentText": "Je consens à ce que mon adresse email et mon message soient partagés avec {{brand}} pour répondre à ma demande. Je peux retirer ce consentement à tout moment.",
+        "submitButton": "Envoyer le message",
+        "successToast": "Message envoyé à {{brand}} !",
+        "successTitle": "Message envoyé !",
+        "successDesc": "{{brand}} vous répondra à l'adresse email fournie.",
+        "rateLimitError": "Vous envoyez des messages trop rapidement. Veuillez patienter un moment.",
+        "genericError": "Échec de l'envoi. Veuillez réessayer."
+      },
+      "inbox": {
+        "title": "Leads de contact",
+        "empty": "Aucun lead de contact pour l'instant.",
+        "emptyDesc": "Quand des visiteurs remplissent votre formulaire de contact, leurs messages apparaîtront ici.",
+        "markRead": "Marquer comme lu"
+      }
+    },
+    "complaint": {
+      "reportButton": {
+        "label": "Signaler",
+        "ariaLabel": "Signaler {{brand}}"
+      },
+      "form": {
+        "title": "Signaler {{brand}}",
+        "description": "Les signalements sont examinés par l'équipe confiance & sécurité de FollowUp Trading. Ne soumettez pas de faux signalements.",
+        "categoryLabel": "Catégorie",
+        "categoryPlaceholder": "Sélectionner une catégorie",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Décrivez le problème en détail (minimum 10 caractères).",
+        "evidenceLabel": "URL de preuve (optionnel)",
+        "reporterEmailLabel": "Votre email (optionnel)",
+        "reporterEmailPlaceholder": "Pour que nous puissions vous contacter si nécessaire",
+        "submitButton": "Soumettre le signalement",
+        "successToast": "Signalement soumis. Merci.",
+        "successTitle": "Signalement reçu",
+        "successDesc": "Notre équipe examinera votre signalement et prendra les mesures appropriées.",
+        "genericError": "Échec de la soumission. Veuillez réessayer."
+      },
+      "categories": {
+        "MISLEADING_CREDENTIALS": "Qualifications trompeuses",
+        "SCAM": "Arnaque",
+        "HARASSMENT": "Harcèlement",
+        "COPYRIGHT": "Violation du droit d'auteur",
+        "ILLEGAL_CONTENT": "Contenu illégal",
+        "MINOR_ABUSE": "Protection de l'enfance",
+        "IMPERSONATION": "Usurpation d'identité",
+        "OTHER": "Autre"
+      },
+      "statuses": {
+        "OPEN": "Ouvert",
+        "UNDER_REVIEW": "En cours d'examen",
+        "RESOLVED_REMOVED": "Résolu — Supprimé",
+        "RESOLVED_REJECTED": "Résolu — Rejeté"
       }
     }
   },
