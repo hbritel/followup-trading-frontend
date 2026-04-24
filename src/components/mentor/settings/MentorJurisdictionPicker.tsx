@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -11,14 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { COUNTRIES, getCountryName } from '@/lib/countries';
+import { getAllCountries, getCountryName as getCountryNameDefault } from '@/lib/countries';
 import { useMyJurisdictions, useSetMyJurisdictions } from '@/hooks/useMentor';
 import type { MentorJurisdictionMode, MentorJurisdictionRuleDto } from '@/types/dto';
 
 const MentorJurisdictionPicker: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: rules = [], isLoading } = useMyJurisdictions();
   const setJurisdictions = useSetMyJurisdictions();
+  const locale = i18n.language.split('-')[0];
+  const allCountries = useMemo(() => getAllCountries(locale), [locale]);
+  const getCountryName = (code: string) => getCountryNameDefault(code, locale);
 
   // Determine current mode from existing rules (all rules share the same mode or none exist)
   const currentMode: MentorJurisdictionMode =
@@ -30,7 +33,7 @@ const MentorJurisdictionPicker: React.FC = () => {
   );
   const [addCode, setAddCode] = useState('');
 
-  const remainingCountries = COUNTRIES.filter(
+  const remainingCountries = allCountries.filter(
     (c) => !selectedCountries.includes(c.code)
   );
 

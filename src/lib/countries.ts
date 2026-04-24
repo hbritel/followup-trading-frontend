@@ -1,65 +1,73 @@
 /**
- * Curated list of ISO 3166-1 alpha-2 country codes with localized display names.
- * Covers the most relevant jurisdictions for trading education products.
+ * Full ISO 3166-1 alpha-2 country code list.
+ *
+ * Display names are resolved at call time via {@link Intl.DisplayNames}
+ * (`type: 'region'`) so they localize automatically to the user's current
+ * i18n locale — no manual translation table to maintain.
  */
 export interface Country {
   code: string;
   name: string;
 }
 
-export const COUNTRIES: Country[] = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'SE', name: 'Sweden' },
-  { code: 'NO', name: 'Norway' },
-  { code: 'DK', name: 'Denmark' },
-  { code: 'FI', name: 'Finland' },
-  { code: 'PT', name: 'Portugal' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'CZ', name: 'Czech Republic' },
-  { code: 'RO', name: 'Romania' },
-  { code: 'HU', name: 'Hungary' },
-  { code: 'GR', name: 'Greece' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'KR', name: 'South Korea' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'HK', name: 'Hong Kong' },
-  { code: 'IN', name: 'India' },
-  { code: 'CN', name: 'China' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'AR', name: 'Argentina' },
-  { code: 'CL', name: 'Chile' },
-  { code: 'CO', name: 'Colombia' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'EG', name: 'Egypt' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'SA', name: 'Saudi Arabia' },
-  { code: 'IL', name: 'Israel' },
-  { code: 'TR', name: 'Turkey' },
-  { code: 'RU', name: 'Russia' },
-  { code: 'UA', name: 'Ukraine' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'TH', name: 'Thailand' },
-  { code: 'MY', name: 'Malaysia' },
-  { code: 'ID', name: 'Indonesia' },
-  { code: 'PH', name: 'Philippines' },
-  { code: 'VN', name: 'Vietnam' },
-  { code: 'PK', name: 'Pakistan' },
-  { code: 'BD', name: 'Bangladesh' },
+export const ISO_3166_ALPHA2: string[] = [
+  'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR',
+  'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE',
+  'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ',
+  'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD',
+  'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CR',
+  'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DJ', 'DK', 'DM',
+  'DO', 'DZ', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI',
+  'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF',
+  'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS',
+  'GT', 'GU', 'GW', 'GY', 'HK', 'HM', 'HN', 'HR', 'HT', 'HU',
+  'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT',
+  'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN',
+  'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK',
+  'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME',
+  'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ',
+  'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA',
+  'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU',
+  'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM',
+  'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS',
+  'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI',
+  'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV',
+  'SX', 'SY', 'SZ', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK',
+  'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA',
+  'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI',
+  'VN', 'VU', 'WF', 'WS', 'YE', 'YT', 'ZA', 'ZM', 'ZW',
 ];
 
-export function getCountryName(code: string): string {
-  return COUNTRIES.find((c) => c.code === code)?.name ?? code;
+/**
+ * Returns the localized region name for an alpha-2 code using
+ * {@link Intl.DisplayNames}. Falls back to the raw code if the
+ * runtime can't resolve it (very old browsers / unknown code).
+ */
+export function getCountryName(code: string, locale: string = 'en'): string {
+  try {
+    const dn = new Intl.DisplayNames([locale, 'en'], { type: 'region' });
+    return dn.of(code) ?? code;
+  } catch {
+    return code;
+  }
 }
+
+/**
+ * Full localized country list, sorted by name in the current locale.
+ */
+export function getAllCountries(locale: string = 'en'): Country[] {
+  const dn = new Intl.DisplayNames([locale, 'en'], { type: 'region' });
+  const collator = new Intl.Collator(locale);
+  return ISO_3166_ALPHA2
+    .map((code) => ({ code, name: dn.of(code) ?? code }))
+    .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+/**
+ * Legacy export kept for backward compatibility — English-labelled
+ * list. Prefer {@link getAllCountries} for locale-aware labelling.
+ */
+export const COUNTRIES: Country[] = ISO_3166_ALPHA2.map((code) => ({
+  code,
+  name: getCountryName(code, 'en'),
+}));

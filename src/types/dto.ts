@@ -1448,6 +1448,12 @@ export interface MentorInstanceDto {
   publicBio?: string | null;
   publicCredentials?: string | null;
   publicYearsTrading?: number | null;
+  // Phase 2 trust & policies
+  cancellationPolicy?: MentorCancellationPolicy | null;
+  showStatsPublicly?: boolean;
+  acceptNewEnabled?: boolean;
+  verified?: boolean;
+  verifiedAt?: string | null;
 }
 
 export interface MentorStudentDto {
