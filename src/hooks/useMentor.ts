@@ -12,6 +12,11 @@ import type {
   MentorActivityEventDto,
   DirectoryQuery,
   MentorTagCategory,
+  MentorFaqMutation,
+  MentorCancellationPolicy,
+  MentorJurisdictionRuleDto,
+  MentorContactSubmission,
+  MentorComplaintSubmission,
 } from '@/types/dto';
 
 const INSTANCE_KEY = ['mentor', 'instance'];
@@ -927,6 +932,235 @@ export const useSetMyMentorLanguages = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MY_LANGS_KEY });
       toast.success('Languages saved.');
+    },
+  });
+};
+
+// ── Phase 2: FAQ hooks ──────────────────────────────────────────────────────
+
+const MY_FAQ_KEY = ['mentor', 'my-faq'];
+
+export const useMyMentorFaq = () => {
+  return useQuery({
+    queryKey: MY_FAQ_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.listMyFaq();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [];
+        }
+        throw error;
+      }
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useCreateFaq = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: MentorFaqMutation) => mentorService.createFaq(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_FAQ_KEY });
+      toast.success('FAQ entry added.');
+    },
+    onError: () => {
+      toast.error('Failed to add FAQ entry.');
+    },
+  });
+};
+
+export const useUpdateFaq = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: MentorFaqMutation }) =>
+      mentorService.updateFaq(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_FAQ_KEY });
+      toast.success('FAQ entry updated.');
+    },
+    onError: () => {
+      toast.error('Failed to update FAQ entry.');
+    },
+  });
+};
+
+export const useDeleteFaq = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mentorService.deleteFaq(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_FAQ_KEY });
+      toast.success('FAQ entry deleted.');
+    },
+    onError: () => {
+      toast.error('Failed to delete FAQ entry.');
+    },
+  });
+};
+
+export const useReorderFaq = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => mentorService.reorderFaq(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_FAQ_KEY });
+    },
+    onError: () => {
+      toast.error('Failed to reorder FAQ.');
+    },
+  });
+};
+
+// ── Phase 2: Leads hooks ────────────────────────────────────────────────────
+
+const MY_LEADS_KEY = ['mentor', 'my-leads'];
+
+export const useMyLeads = () => {
+  return useQuery({
+    queryKey: MY_LEADS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.listMyLeads();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [];
+        }
+        throw error;
+      }
+    },
+    staleTime: 30 * 1000,
+    retry: false,
+  });
+};
+
+export const useMarkLeadRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mentorService.markLeadRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_LEADS_KEY });
+    },
+    onError: () => {
+      toast.error('Failed to mark lead as read.');
+    },
+  });
+};
+
+// ── Phase 2: Jurisdiction hooks ─────────────────────────────────────────────
+
+const MY_JURISDICTIONS_KEY = ['mentor', 'my-jurisdictions'];
+
+export const useMyJurisdictions = () => {
+  return useQuery({
+    queryKey: MY_JURISDICTIONS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.getMyJurisdictions();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [] as MentorJurisdictionRuleDto[];
+        }
+        throw error;
+      }
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useSetMyJurisdictions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rules: MentorJurisdictionRuleDto[]) => mentorService.setMyJurisdictions(rules),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MY_JURISDICTIONS_KEY });
+      toast.success('Jurisdiction rules saved.');
+    },
+    onError: () => {
+      toast.error('Failed to save jurisdiction rules.');
+    },
+  });
+};
+
+// ── Phase 2: Trust settings hooks ───────────────────────────────────────────
+
+export const useSetPublicStatsOptIn = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => mentorService.setPublicStatsOptIn(enabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: INSTANCE_KEY });
+      toast.success('Public stats setting saved.');
+    },
+    onError: () => {
+      toast.error('Failed to update public stats setting.');
+    },
+  });
+};
+
+export const useSetCancellationPolicy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (policy: MentorCancellationPolicy) => mentorService.setCancellationPolicy(policy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: INSTANCE_KEY });
+      toast.success('Cancellation policy saved.');
+    },
+    onError: () => {
+      toast.error('Failed to save cancellation policy.');
+    },
+  });
+};
+
+export const useSetAcceptNewEnabled = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => mentorService.setAcceptNewEnabled(enabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: INSTANCE_KEY });
+      toast.success(
+        'Accept new students setting updated.'
+      );
+    },
+    onError: () => {
+      toast.error('Failed to update accept-new setting.');
+    },
+  });
+};
+
+// ── Phase 2: Public stats hook (for preview) ────────────────────────────────
+
+export const usePublicMentorStats = (slug: string | undefined) => {
+  return useQuery({
+    queryKey: ['mentor', 'public-stats', slug],
+    queryFn: () => mentorService.getPublicStats(slug!),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+};
+
+// ── Phase 2: Contact / Complaint mutations ──────────────────────────────────
+
+export const useSubmitContact = (slug: string) => {
+  return useMutation({
+    mutationFn: (submission: MentorContactSubmission) =>
+      mentorService.submitContact(slug, submission),
+    onError: () => {
+      toast.error('Failed to send message.');
+    },
+  });
+};
+
+export const useSubmitComplaint = (slug: string) => {
+  return useMutation({
+    mutationFn: (submission: MentorComplaintSubmission) =>
+      mentorService.submitComplaint(slug, submission),
+    onError: () => {
+      toast.error('Failed to submit report.');
     },
   });
 };
