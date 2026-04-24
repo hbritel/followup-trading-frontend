@@ -277,27 +277,54 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── Mentor directory CTA ────────────────────────────────────── */}
+      {/* ── Mentor CTAs (2-col grid: find a mentor + become a mentor) ── */}
       <section className="py-14 md:py-20 px-4 bg-muted/20">
-        <div className="container mx-auto max-w-4xl">
-          <div className="rounded-2xl border border-border/60 bg-card p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+        <div className="container mx-auto max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* Looking for a mentor */}
+            <div className="rounded-2xl border border-border/60 bg-card p-7 md:p-8 flex flex-col gap-5">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold mb-1.5">
+                  {t('mentor.directory.home.ctaSection.title')}
+                </h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {t('mentor.directory.home.ctaSection.body')}
+                </p>
+              </div>
+              <Link to="/mentors" className="mt-auto">
+                <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto whitespace-nowrap">
+                  {t('mentor.directory.home.ctaSection.button')}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl md:text-2xl font-bold mb-1.5">
-                {t('mentor.directory.home.ctaSection.title')}
-              </h2>
-              <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-xl">
-                {t('mentor.directory.home.ctaSection.body')}
-              </p>
+
+            {/* Are you a mentor */}
+            <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/5 to-pink-500/5 p-7 md:p-8 flex flex-col gap-5">
+              <div className="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center shrink-0">
+                <Star className="h-6 w-6 text-fuchsia-500" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold mb-1.5">
+                  {t('home.mentorCta.title')}
+                </h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {t('home.mentorCta.body')}
+                </p>
+              </div>
+              <Link to="/become-a-mentor" className="mt-auto">
+                <Button
+                  size="lg"
+                  className="gap-2 w-full sm:w-auto whitespace-nowrap bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:from-fuchsia-600 hover:to-pink-600 border-0 shadow-md shadow-fuchsia-500/15"
+                >
+                  {t('home.mentorCta.button')}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
-            <Link to="/mentors" className="shrink-0">
-              <Button size="lg" variant="outline" className="gap-2 whitespace-nowrap">
-                {t('mentor.directory.home.ctaSection.button')}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
