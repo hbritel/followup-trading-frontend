@@ -35,6 +35,8 @@ import {
 import MentorPaywallCard from '@/components/mentor/monetization/MentorPaywallCard';
 import StudentSubscriptionPanel, { PastDueBanner } from '@/components/mentor/monetization/StudentSubscriptionPanel';
 import StudentTestimonialCard from '@/components/mentor/testimonials/StudentTestimonialCard';
+import StudentSessionsList from '@/components/mentor/sessions/StudentSessionsList';
+import StudentWebinarTicketsList from '@/components/mentor/webinars/StudentWebinarTicketsList';
 import type { MentorAnnouncementDto, MentorStudentNoteDto } from '@/types/dto';
 
 /* ── Announcement read-only card ───────────────────── */
@@ -459,6 +461,16 @@ const MyMentor: React.FC = () => {
             currentPeriodEnd={sub.currentPeriodEnd}
           />
         )}
+
+        {/* Phase 4: Session bookings */}
+        <div className="glass-card rounded-2xl p-5 border border-border/50">
+          <StudentSessionsList />
+        </div>
+
+        {/* Phase 4: Webinar tickets */}
+        <div className="glass-card rounded-2xl p-5 border border-border/50">
+          <StudentWebinarTicketsList />
+        </div>
         </>
         )}
 

@@ -76,6 +76,7 @@ import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import PlanChangeListener from '@/components/subscription/PlanChangeListener';
 import GlobalLiveListeners from '@/components/live/GlobalLiveListeners';
+import CookieBanner from '@/components/legal/CookieBanner';
 
 function App() {
   useFingerprint();
@@ -176,6 +177,7 @@ function App() {
             </ThemeProvider>
           </AuthProvider>
         </Suspense>
+        <CookieBanner />
         <Toaster />
         <SonnerToaster position="top-right" richColors closeButton />
       </div>

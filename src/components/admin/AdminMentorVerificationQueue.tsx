@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BadgeCheck, BadgeX, Loader2, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, BadgeX, Loader2, ShieldCheck, ShieldOff, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,8 @@ import {
   useVerificationCandidates,
   useVerifyMentor,
   useUnverifyMentor,
+  useSuspendMentor,
+  useRescreenSanctions,
 } from '@/hooks/useAdminMentor';
 
 const AdminMentorVerificationQueue: React.FC = () => {
@@ -25,9 +27,13 @@ const AdminMentorVerificationQueue: React.FC = () => {
   const { data: candidates = [], isLoading } = useVerificationCandidates();
   const verifyMentor = useVerifyMentor();
   const unverifyMentor = useUnverifyMentor();
+  const suspendMentor = useSuspendMentor();
+  const rescreenSanctions = useRescreenSanctions();
 
   const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const [suspendTarget, setSuspendTarget] = useState<string | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
 
   const handleRevoke = () => {
     if (!revokeTarget || !revokeReason.trim()) return;
@@ -94,7 +100,30 @@ const AdminMentorVerificationQueue: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => rescreenSanctions.mutate(candidate.instanceId)}
+                  disabled={rescreenSanctions.isPending}
+                >
+                  {rescreenSanctions.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ScanLine className="w-3.5 h-3.5" />
+                  )}
+                  {t('admin.sanctions.rescreen', 'Re-screen')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 text-orange-600 hover:text-orange-600 border-orange-500/30 hover:bg-orange-500/10"
+                  onClick={() => setSuspendTarget(candidate.instanceId)}
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  {t('admin.suspensions.suspendAction', 'Suspend')}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -182,6 +211,80 @@ const AdminMentorVerificationQueue: React.FC = () => {
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               )}
               {t('admin.mentors.verificationQueue.confirmRevoke', 'Revoke verification')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend dialog */}
+      <Dialog
+        open={!!suspendTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSuspendTarget(null);
+            setSuspendReason('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('admin.suspensions.suspendTitle', 'Suspend mentor')}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                'admin.suspensions.suspendDescription',
+                'The mentor will be prevented from accepting new students.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="suspend-reason-vq">
+              {t('admin.suspensions.reasonLabel', 'Reason')} *
+            </Label>
+            <Textarea
+              id="suspend-reason-vq"
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+              placeholder={t(
+                'admin.suspensions.reasonPlaceholder',
+                'Policy violation, sanctions hit, etc.'
+              )}
+              rows={3}
+              className="resize-none text-sm"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSuspendTarget(null);
+                setSuspendReason('');
+              }}
+            >
+              {t('common.cancel', 'Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!suspendTarget || !suspendReason.trim()) return;
+                suspendMentor.mutate(
+                  { instanceId: suspendTarget, reason: suspendReason.trim() },
+                  {
+                    onSuccess: () => {
+                      setSuspendTarget(null);
+                      setSuspendReason('');
+                    },
+                  }
+                );
+              }}
+              disabled={!suspendReason.trim() || suspendMentor.isPending}
+              className="gap-2"
+            >
+              {suspendMentor.isPending && (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              )}
+              {t('admin.suspensions.suspendAction', 'Suspend')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePublicMentorProfile, useJoinInstance, useDirectoryTags } from '@/hooks/useMentor';
+import { usePublicSessionOfferings, useBookSession, usePublicWebinars } from '@/hooks/useMentorRevenue';
 import { useAuth } from '@/contexts/auth-context';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
@@ -27,7 +28,11 @@ import CancellationPolicyChip from '@/components/mentor/trust/CancellationPolicy
 import PublicFaqSection from '@/components/mentor/faq/PublicFaqSection';
 import MentorContactForm from '@/components/mentor/contact/MentorContactForm';
 import ReportProfileButton from '@/components/mentor/complaint/ReportProfileButton';
-import type { MentorPublicProfileDto } from '@/types/dto';
+import SessionBookingCalendar from '@/components/mentor/sessions/SessionBookingCalendar';
+import WebinarCard from '@/components/mentor/webinars/WebinarCard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Clock, Video } from 'lucide-react';
+import type { MentorPublicProfileDto, SessionOfferingDto } from '@/types/dto';
 
 const currencySymbol: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
 
@@ -330,6 +335,28 @@ const PublicMentorProfileContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const [bookingOffering, setBookingOffering] = useState<SessionOfferingDto | undefined>(undefined);
+
+  const { data: offerings = [] } = usePublicSessionOfferings(slug ?? '');
+  const { data: webinars = [] } = usePublicWebinars(slug ?? '');
+  const bookSession = useBookSession();
+
+  const handleBookSession = (scheduledAt: string) => {
+    if (!bookingOffering || !slug) return;
+    bookSession.mutate(
+      { slug, offeringId: bookingOffering.id, scheduledAt },
+      {
+        onSuccess: (data) => {
+          setBookingOffering(undefined);
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            navigate('/my-mentor');
+          }
+        },
+      }
+    );
+  };
 
   const tagLabel = (tagSlug: string): string => {
     const tag = allTags.find((tg) => tg.slug === tagSlug);
@@ -670,6 +697,91 @@ const PublicMentorProfileContent: React.FC = () => {
             </div>
           </section>
         )}
+
+        {/* Phase 4: 1-on-1 Sessions */}
+        {offerings.length > 0 && (
+          <section aria-labelledby="sessions-public-heading" className="space-y-4">
+            <h2
+              id="sessions-public-heading"
+              className="text-lg font-semibold flex items-center gap-2"
+            >
+              <Clock className="w-5 h-5 text-primary" aria-hidden="true" />
+              {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {offerings.filter((o) => o.active).map((offering) => (
+                <div
+                  key={offering.id}
+                  className="glass-card rounded-2xl p-5 border border-border/50 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-medium text-sm leading-snug">{offering.title}</h3>
+                    <span className="text-sm font-semibold shrink-0">
+                      {offering.priceCents === 0
+                        ? t('mentor.webinars.free', 'Free')
+                        : `${(currencySymbol[offering.currency] ?? offering.currency)}${(offering.priceCents / 100).toFixed(2)}`}
+                    </span>
+                  </div>
+                  {offering.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {offering.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {offering.durationMinutes}{t('mentor.sessions.min', ' min')}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setBookingOffering(offering)}
+                  >
+                    {t('mentor.sessions.bookButton', 'Book session')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Phase 4: Webinars */}
+        {webinars.length > 0 && (
+          <section aria-labelledby="webinars-public-heading" className="space-y-4">
+            <h2
+              id="webinars-public-heading"
+              className="text-lg font-semibold flex items-center gap-2"
+            >
+              <Video className="w-5 h-5 text-primary" aria-hidden="true" />
+              {t('mentor.webinars.title', 'Webinars')}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {webinars.map((webinar) => (
+                <WebinarCard key={webinar.id} webinar={webinar} slug={profile.slug} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Phase 4: Session booking dialog */}
+        <Dialog
+          open={bookingOffering !== undefined}
+          onOpenChange={(open) => { if (!open) setBookingOffering(undefined); }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {t('mentor.sessions.calendar.title', 'Pick a time')}
+                {bookingOffering && ` — ${bookingOffering.title}`}
+              </DialogTitle>
+            </DialogHeader>
+            {bookingOffering && (
+              <SessionBookingCalendar
+                offering={bookingOffering}
+                onConfirm={handleBookSession}
+                isPending={bookSession.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* FAQ */}
         {(profile.faq?.length ?? 0) > 0 && (

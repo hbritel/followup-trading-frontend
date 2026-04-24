@@ -13,6 +13,7 @@ import SortDropdown from '@/components/mentor/directory/SortDropdown';
 import ResultsGrid from '@/components/mentor/directory/ResultsGrid';
 import EmptyState from '@/components/mentor/directory/EmptyState';
 import PaginationFooter from '@/components/mentor/directory/PaginationFooter';
+import SearchAlertForm from '@/components/mentor/alerts/SearchAlertForm';
 import {
   useMentorDirectory,
   useDirectoryTags,
@@ -240,6 +241,7 @@ const MentorDirectoryContent: React.FC = () => {
               </p>
 
               <SortDropdown value={params.sort} onChange={handleSortChange} />
+              <SearchAlertForm currentQuery={apiQuery} />
             </div>
 
             {/* Results */}

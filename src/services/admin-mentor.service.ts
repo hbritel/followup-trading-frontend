@@ -1,8 +1,11 @@
 import apiClient from './apiClient';
 import type {
-  VerificationCandidateDto,
+  AdminSuspensionDto,
+  Dac7SellerDto,
+  DsaTransparencyReportDto,
   MentorComplaintDto,
   MentorComplaintStatus,
+  VerificationCandidateDto,
 } from '@/types/dto';
 
 const ADMIN_MENTOR_BASE = '/admin/mentors';
@@ -43,6 +46,57 @@ export const adminMentorService = {
     const res = await apiClient.post<MentorComplaintDto>(
       `${ADMIN_MENTOR_BASE}/complaints/${id}/transition`,
       { status, ...(notes ? { notes } : {}) }
+    );
+    return res.data;
+  },
+
+  // ── DAC7 ─────────────────────────────────────────────────────────────────────
+
+  getDac7Sellers: async (year: number): Promise<Dac7SellerDto[]> => {
+    const res = await apiClient.get<Dac7SellerDto[]>(
+      `${ADMIN_MENTOR_BASE}/dac7/sellers/${year}`
+    );
+    return res.data;
+  },
+
+  finalizeDac7: async (year: number): Promise<void> => {
+    await apiClient.post(`${ADMIN_MENTOR_BASE}/dac7/sellers/${year}/finalize`);
+  },
+
+  /** Returns the raw XML blob URL for browser download. */
+  getDac7ExportUrl: (year: number): string =>
+    `${apiClient.defaults.baseURL ?? '/api/v1'}${ADMIN_MENTOR_BASE}/dac7/sellers/${year}/export.xml`,
+
+  // ── DSA transparency ─────────────────────────────────────────────────────────
+
+  getDsaTransparencyReport: async (year: number): Promise<DsaTransparencyReportDto> => {
+    const res = await apiClient.get<DsaTransparencyReportDto>(
+      `${ADMIN_MENTOR_BASE}/dsa/transparency/${year}`
+    );
+    return res.data;
+  },
+
+  // ── Suspensions ──────────────────────────────────────────────────────────────
+
+  suspendMentor: async (instanceId: string, reason: string): Promise<AdminSuspensionDto> => {
+    const res = await apiClient.post<AdminSuspensionDto>(
+      `${ADMIN_MENTOR_BASE}/${instanceId}/suspend`,
+      { reason }
+    );
+    return res.data;
+  },
+
+  liftSuspension: async (instanceId: string): Promise<void> => {
+    await apiClient.post(`${ADMIN_MENTOR_BASE}/${instanceId}/suspend/lift`);
+  },
+
+  rescreenSanctions: async (instanceId: string): Promise<void> => {
+    await apiClient.post(`${ADMIN_MENTOR_BASE}/${instanceId}/sanctions-rescreen`);
+  },
+
+  listActiveSuspensions: async (): Promise<AdminSuspensionDto[]> => {
+    const res = await apiClient.get<AdminSuspensionDto[]>(
+      `${ADMIN_MENTOR_BASE}/suspensions`
     );
     return res.data;
   },

@@ -87,6 +87,9 @@ import {
   Users2,
   Calendar,
   Wallet,
+  ShieldOff,
+  Scale,
+  Receipt,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -126,6 +129,9 @@ import BillingTab from '@/components/admin/BillingTab';
 import AiUsageTab from '@/components/admin/AiUsageTab';
 import AdminMentorVerificationQueue from '@/components/admin/AdminMentorVerificationQueue';
 import AdminMentorComplaintQueue from '@/components/admin/AdminMentorComplaintQueue';
+import AdminDac7Tab from '@/components/admin/AdminDac7Tab';
+import AdminDsaTab from '@/components/admin/AdminDsaTab';
+import AdminMentorSuspensionsTab from '@/components/admin/AdminMentorSuspensionsTab';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -2405,6 +2411,18 @@ const Administration = () => {
               <UserCheck className="h-4 w-4" />
               {t('admin.mentorModeration', 'Mentors')}
             </TabsTrigger>
+            <TabsTrigger value="mentorSuspensions" className="gap-2">
+              <ShieldOff className="h-4 w-4" />
+              {t('admin.mentorSuspensions', 'Suspensions')}
+            </TabsTrigger>
+            <TabsTrigger value="dac7" className="gap-2">
+              <Receipt className="h-4 w-4" />
+              {t('admin.dac7.tab', 'DAC7')}
+            </TabsTrigger>
+            <TabsTrigger value="dsa" className="gap-2">
+              <Scale className="h-4 w-4" />
+              {t('admin.dsa.tab', 'DSA')}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <ToggleLeft className="h-4 w-4" />
               {t('admin.system', 'System')}
@@ -2447,6 +2465,15 @@ const Administration = () => {
               <AdminMentorVerificationQueue />
               <AdminMentorComplaintQueue />
             </div>
+          </TabsContent>
+          <TabsContent value="mentorSuspensions" className="mt-6">
+            <AdminMentorSuspensionsTab />
+          </TabsContent>
+          <TabsContent value="dac7" className="mt-6">
+            <AdminDac7Tab />
+          </TabsContent>
+          <TabsContent value="dsa" className="mt-6">
+            <AdminDsaTab />
           </TabsContent>
           <TabsContent value="system" className="mt-6">
             <FeatureFlagsTab />
