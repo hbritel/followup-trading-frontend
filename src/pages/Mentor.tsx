@@ -31,6 +31,11 @@ import ActivityFeed from '@/components/mentor/ActivityFeed';
 import MonetizationSection from '@/components/mentor/monetization/MonetizationSection';
 import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfileSection';
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
+import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
+import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
+import WebinarEditor from '@/components/mentor/webinars/WebinarEditor';
+import WebinarAttendeesList from '@/components/mentor/webinars/WebinarAttendeesList';
+import FunnelReportPanel from '@/components/mentor/analytics/FunnelReportPanel';
 import MentorTagsPicker from '@/components/mentor/settings/MentorTagsPicker';
 import MentorLanguagesPicker from '@/components/mentor/settings/MentorLanguagesPicker';
 import PublicStatsToggle from '@/components/mentor/settings/PublicStatsToggle';
@@ -952,6 +957,43 @@ const Mentor: React.FC = () => {
 
         <MonetizationSection />
         <TestimonialsSection />
+
+        {/* Phase 4: Sessions */}
+        <section
+          aria-labelledby="sessions-heading"
+          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+        >
+          <h2 id="sessions-heading" className="text-base font-semibold">
+            {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+          </h2>
+          <SessionOfferingEditor />
+          <div className="border-t border-border/40" />
+          <MentorSessionsList />
+        </section>
+
+        {/* Phase 4: Webinars */}
+        <section
+          aria-labelledby="webinars-heading"
+          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+        >
+          <h2 id="webinars-heading" className="text-base font-semibold">
+            {t('mentor.webinars.sectionTitle', 'Webinars')}
+          </h2>
+          <WebinarEditor />
+          <div className="border-t border-border/40" />
+          <WebinarAttendeesList />
+        </section>
+
+        {/* Phase 4: Analytics */}
+        <section
+          aria-labelledby="analytics-section-heading"
+          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+        >
+          <h2 id="analytics-section-heading" className="text-base font-semibold">
+            {t('mentor.analytics.title', 'Funnel analytics')}
+          </h2>
+          <FunnelReportPanel />
+        </section>
 
         {/* Phase 2: Trust & policies */}
         <section
