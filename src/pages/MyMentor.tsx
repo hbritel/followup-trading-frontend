@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Megaphone,
@@ -271,14 +272,12 @@ const MyMentor: React.FC = () => {
                 </p>
               )}
               {instance.publicProfileEnabled && instance.slug && (
-                <a
-                  href={`/m/${instance.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={`/m/${instance.slug}`}
                   className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-primary hover:underline"
                 >
                   {t('mentor.myMentor.viewPublicProfile', 'View public profile')}
-                </a>
+                </Link>
               )}
             </div>
           </div>

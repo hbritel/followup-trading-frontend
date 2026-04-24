@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePublicMentorProfile, useJoinInstance } from '@/hooks/useMentor';
+import { usePublicMentorProfile, useJoinInstance, useDirectoryTags } from '@/hooks/useMentor';
 import { useAuth } from '@/contexts/auth-context';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
@@ -244,7 +244,9 @@ const ProfileHero: React.FC<{ profile: MentorPublicProfileDto }> = ({
                 {t('mentor.publicPage.closed', 'Waitlist')}
               </span>
             )}
-            <CancellationPolicyChip policy={profile.cancellationPolicy} />
+            {profile.cancellationPolicy && (
+              <CancellationPolicyChip policy={profile.cancellationPolicy} />
+            )}
           </div>
         </div>
       </div>
@@ -321,12 +323,32 @@ const SubscribeCtaCard: React.FC<{
 };
 
 const PublicMentorProfileContent: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { data: profile, isLoading } = usePublicMentorProfile(slug);
+  const { data: allTags = [] } = useDirectoryTags();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+
+  const tagLabel = (tagSlug: string): string => {
+    const tag = allTags.find((tg) => tg.slug === tagSlug);
+    if (!tag) return tagSlug;
+    const lang = i18n.language.split('-')[0];
+    if (lang === 'fr' && tag.labelFr) return tag.labelFr;
+    if (lang === 'es' && tag.labelEs) return tag.labelEs;
+    return tag.labelEn;
+  };
+
+  const languageName = (code: string): string => {
+    try {
+      const lang = i18n.language.split('-')[0];
+      const dn = new Intl.DisplayNames([lang, 'en'], { type: 'language' });
+      return dn.of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
 
   // SEO — react-helmet not available; use document.title + meta tags directly
   useEffect(() => {
@@ -500,6 +522,46 @@ const PublicMentorProfileContent: React.FC = () => {
 
         <ProfileHero profile={profile} />
 
+        {/* Tags + Languages */}
+        {((profile.tagSlugs?.length ?? 0) > 0 || (profile.languageCodes?.length ?? 0) > 0) && (
+          <section className="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
+            {(profile.tagSlugs?.length ?? 0) > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  {t('mentor.myMentor.taxonomyTitle', 'Niche')}
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {(profile.tagSlugs ?? []).map((s) => (
+                    <span
+                      key={s}
+                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
+                    >
+                      {tagLabel(s)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(profile.languageCodes?.length ?? 0) > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  {t('mentor.myMentor.languagesTitle', 'Languages')}
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {(profile.languageCodes ?? []).map((c) => (
+                    <span
+                      key={c}
+                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20"
+                    >
+                      {languageName(c)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* About */}
         {(profile.bio || profile.credentials || profile.yearsTrading != null) && (
           <section
@@ -658,11 +720,16 @@ const PublicMentorProfileContent: React.FC = () => {
 
 const PublicMentorProfile: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { slug } = useParams<{ slug: string }>();
+  const { data: profile } = usePublicMentorProfile(slug);
+  const { t } = useTranslation();
 
   if (isAuthenticated) {
+    const pageTitle = profile?.brandName
+      ?? t('mentor.publicPage.pageTitle', 'Mentor profile');
     return (
       <WebSocketProvider>
-        <DashboardLayout>
+        <DashboardLayout pageTitle={pageTitle}>
           <PublicMentorProfileContent />
         </DashboardLayout>
       </WebSocketProvider>

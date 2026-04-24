@@ -119,7 +119,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
         { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
         { href: '/marketplace', label: t('sidebar.marketplace', 'Marketplace'), icon: ShoppingBagIcon },
-        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon },
+        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon, matchPrefixes: ['/m/'] },
         ...(hasMyMentor
           ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
           : []),
@@ -192,7 +192,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                 {!isCollapsed && (
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
-                      const isActive = location.pathname === item.href;
+                      const matchPrefixes = 'matchPrefixes' in item && Array.isArray(item.matchPrefixes)
+                        ? (item.matchPrefixes as string[])
+                        : [];
+                      const isActive =
+                        location.pathname === item.href
+                        || matchPrefixes.some((p) => location.pathname.startsWith(p));
                       const hasRequiredPlan = 'requiredPlan' in item && !!item.requiredPlan;
                       // Plan check: user must have the required plan
                       const planLocked = hasRequiredPlan

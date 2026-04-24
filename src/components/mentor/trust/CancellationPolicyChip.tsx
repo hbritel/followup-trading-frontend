@@ -19,21 +19,24 @@ const CHIP_STYLES: Record<MentorCancellationPolicy, string> = {
     'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25',
 };
 
+const FALLBACKS: Record<MentorCancellationPolicy, string> = {
+  PLATFORM_DEFAULT: 'Default policy',
+  STRICT_NONE: 'No refunds',
+  FLEXIBLE_7D: '7-day refund',
+  FLEXIBLE_14D: '14-day refund',
+};
+
 const CancellationPolicyChip: React.FC<CancellationPolicyChipProps> = ({
   policy,
   className,
 }) => {
   const { t } = useTranslation();
 
-  const label = t(
-    `mentor.trust.cancellationPolicy.${policy}`,
-    {
-      PLATFORM_DEFAULT: 'Default policy',
-      STRICT_NONE: 'No refunds',
-      FLEXIBLE_7D: '7-day refund',
-      FLEXIBLE_14D: '14-day refund',
-    }[policy]
-  );
+  if (!policy || !(policy in FALLBACKS)) {
+    return null;
+  }
+
+  const label = t(`mentor.trust.cancellationPolicy.${policy}`, FALLBACKS[policy]);
 
   return (
     <span
