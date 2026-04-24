@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  useMyMentorInstance,
+  useMyMentorHub,
   useJoinInstance,
   useUpdateSharing,
   useLeaveInstance,
@@ -24,7 +24,8 @@ import {
 
 const MyMentorSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { data: myInstance, isLoading } = useMyMentorInstance();
+  const { data: hub, isLoading } = useMyMentorHub();
+  const myInstance = hub?.instance ?? null;
   const joinMutation = useJoinInstance();
   const updateSharingMutation = useUpdateSharing();
   const leaveMutation = useLeaveInstance();
@@ -140,7 +141,7 @@ const MyMentorSettings: React.FC = () => {
             </Label>
             <Switch
               id={`sharing-${key}`}
-              checked={(myInstance as Record<string, unknown>)[key] as boolean ?? false}
+              checked={hub ? (hub[key] ?? false) : false}
               onCheckedChange={(checked) => handleToggle(key, checked)}
               disabled={updateSharingMutation.isPending}
             />
