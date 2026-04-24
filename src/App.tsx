@@ -63,6 +63,7 @@ import {
   DeveloperPortal,
   PublicMentorProfile,
   MentorDirectory,
+  BecomeMentor,
 } from "@/pages";
 
 import { NotFound } from "@/pages/not-found";
@@ -153,6 +154,7 @@ function App() {
                   </Route>
 
                   {/* Public routes — no auth required */}
+                  <Route path="/become-a-mentor" element={<BecomeMentor />} />
                   <Route path="/mentors" element={<MentorDirectory />} />
                   <Route path="/join/:inviteCode" element={<JoinMentor />} />
                   <Route path="/m/:slug" element={<PublicMentorProfile />} />

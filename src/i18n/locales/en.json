@@ -1537,7 +1537,12 @@
     "viewAllTrades": "View all trades",
     "watchlistAlerts": "Watchlist Alerts",
     "watchlistAlertsDescription": "Price movements on your watchlist",
-    "manageWatchlists": "Manage watchlists"
+    "manageWatchlists": "Manage watchlists",
+    "mentorCta": {
+      "body": "List your program, set your price, and get paid automatically — while your students journal in the same platform.",
+      "button": "Learn how it works",
+      "title": "Are you a trading mentor?"
+    }
   },
   "accountManagement": {
     "subscription": "Subscription",
@@ -3754,6 +3759,71 @@
         "UNDER_REVIEW": "Under review",
         "RESOLVED_REMOVED": "Resolved — Removed",
         "RESOLVED_REJECTED": "Resolved — Rejected"
+      }
+    },
+    "becomeMentor": {
+      "cta": {
+        "apply": "Apply to become a mentor",
+        "signupFirst": "Sign up to apply",
+        "upgradeFirst": "Upgrade to TEAM plan to apply"
+      },
+      "calculator": {
+        "annualOutput": "Annual take-home: {{amount}}",
+        "feeDisclosure": "15% platform fee deducted. Stripe Connect fees apply.",
+        "monthlyOutput": "Monthly take-home: {{amount}}",
+        "priceLabel": "Monthly subscription price",
+        "studentsLabel": "Number of students",
+        "title": "Earnings calculator"
+      },
+      "footer": {
+        "disclaimer": "FollowUp Trading is an education platform, not a financial advisor. Mentor programs are independent educator offerings.",
+        "faqLink": "Read the mentor FAQ"
+      },
+      "hero": {
+        "ctaPrimary": "Apply to become a mentor",
+        "ctaSecondary": "Browse mentors",
+        "subtitle": "Build a paid mentorship program on top of the trading journal your students already use. Real data, real accountability.",
+        "title": "Turn your trading expertise into recurring revenue."
+      },
+      "legalGate": {
+        "label": "I am applying as an independent educator. I am not offering investment advice. I am not an employee or agent of FollowUp Trading."
+      },
+      "requirements": {
+        "age": "18 years of age or older",
+        "agreement": "Signed mentor agreement",
+        "kyc": "KYC verification via Stripe Connect",
+        "sanctions": "No residence in a sanctioned country",
+        "teamPlan": "Active TEAM plan subscription",
+        "title": "Requirements to join"
+      },
+      "screenshots": {
+        "analytics": {
+          "alt": "Screenshot of student analytics dashboard in FollowUp Trading"
+        },
+        "hub": {
+          "alt": "Screenshot of the FollowUp Trading mentor hub"
+        },
+        "students": {
+          "alt": "Screenshot of student management view in FollowUp Trading"
+        }
+      },
+      "valueProps": {
+        "analytics": {
+          "body": "Your students already journal on FollowUp Trading — you see their real performance data, not self-reported numbers.",
+          "title": "Built-in student analytics"
+        },
+        "payouts": {
+          "body": "Get paid automatically via Stripe Connect. No invoicing, no chasing — funds land in your bank on schedule.",
+          "title": "Stripe Connect payouts"
+        },
+        "publicProfile": {
+          "body": "A fully-indexed public profile page that showcases your track record, testimonials, and curriculum.",
+          "title": "Ready-made public profile"
+        },
+        "recurringRevenue": {
+          "body": "Students subscribe monthly. You earn every month they stay — without launching a new cohort each time.",
+          "title": "Recurring monthly revenue"
+        }
       }
     }
   },

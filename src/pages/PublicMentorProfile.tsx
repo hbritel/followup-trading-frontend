@@ -373,28 +373,38 @@ const PublicMentorProfile: React.FC = () => {
     const prevOgDesc = ogDesc.getAttribute('content');
     ogDesc.setAttribute('content', descValue);
 
-    // JSON-LD structured data
+    // JSON-LD structured data (Google Rich Results–compatible)
+    const canonicalUrl = window.location.href;
+
     const personSchema: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Person',
       name: profile.brandName,
+      url: canonicalUrl,
       ...(profile.bio ? { description: profile.bio } : {}),
       ...(profile.logoUrl ? { image: profile.logoUrl } : {}),
       ...(profile.headline ? { knowsAbout: profile.headline } : {}),
     };
 
     if (profile.pricing) {
-      personSchema['offers'] = {
-        '@type': 'Offer',
-        price: profile.pricing.monthlyAmount.toFixed(2),
-        priceCurrency: profile.pricing.currency,
-      };
-      personSchema['hasOfferCatalog'] = {
+      const service: Record<string, unknown> = {
         '@type': 'Service',
         serviceType: 'Trading Education',
-        provider: { '@type': 'Person', name: profile.brandName },
-        offers: personSchema['offers'],
+        url: canonicalUrl,
+        provider: {
+          '@type': 'Person',
+          name: profile.brandName,
+          ...(profile.logoUrl ? { image: profile.logoUrl } : {}),
+        },
+        offers: {
+          '@type': 'Offer',
+          price: profile.pricing.monthlyAmount.toFixed(2),
+          priceCurrency: profile.pricing.currency,
+          url: canonicalUrl,
+        },
       };
+      personSchema['offers'] = (service['offers'] as Record<string, unknown>);
+      personSchema['hasOfferCatalog'] = service;
     }
 
     if (profile.testimonials.length >= 3) {
@@ -417,6 +427,18 @@ const PublicMentorProfile: React.FC = () => {
     ldScript.textContent = JSON.stringify(personSchema);
     document.head.appendChild(ldScript);
 
+    // hreflang alternate links — one per supported locale
+    const HREFLANG_LOCALES = ['en', 'fr', 'es'] as const;
+    const hreflangLinks: HTMLLinkElement[] = HREFLANG_LOCALES.map((lng) => {
+      const link = document.createElement('link');
+      link.setAttribute('rel', 'alternate');
+      link.setAttribute('hreflang', lng);
+      link.setAttribute('href', `${canonicalUrl}?lng=${lng}`);
+      link.setAttribute('data-mentor-hreflang', `${profile.slug}-${lng}`);
+      document.head.appendChild(link);
+      return link;
+    });
+
     return () => {
       document.title = prevTitle;
       if (prevDesc != null) descTag.setAttribute('content', prevDesc);
@@ -426,6 +448,9 @@ const PublicMentorProfile: React.FC = () => {
         `script[data-mentor-ld="${profile.slug}"]`
       );
       if (injected) document.head.removeChild(injected);
+      hreflangLinks.forEach((link) => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      });
     };
   }, [profile]);
 

@@ -1485,7 +1485,12 @@
     "viewAllTrades": "Voir tous les trades",
     "watchlistAlerts": "Alertes de suivi",
     "watchlistAlertsDescription": "Mouvements de prix sur votre liste de suivi",
-    "manageWatchlists": "Gérer les listes de suivi"
+    "manageWatchlists": "Gérer les listes de suivi",
+    "mentorCta": {
+      "body": "Listez votre programme, fixez votre tarif et soyez payé automatiquement — pendant que vos étudiants tiennent leur journal sur la même plateforme.",
+      "button": "Découvrir comment ça marche",
+      "title": "Vous êtes mentor en trading ?"
+    }
   },
   "accountManagement": {
     "subscription": "Abonnement",
@@ -3738,6 +3743,71 @@
         "UNDER_REVIEW": "En cours d'examen",
         "RESOLVED_REMOVED": "Résolu — Supprimé",
         "RESOLVED_REJECTED": "Résolu — Rejeté"
+      }
+    },
+    "becomeMentor": {
+      "cta": {
+        "apply": "Candidater pour devenir mentor",
+        "signupFirst": "Créer un compte pour candidater",
+        "upgradeFirst": "Passer au plan TEAM pour candidater"
+      },
+      "calculator": {
+        "annualOutput": "Revenu annuel estimé : {{amount}}",
+        "feeDisclosure": "15 % de commission plateforme déduits. Frais Stripe Connect en sus.",
+        "monthlyOutput": "Revenu mensuel estimé : {{amount}}",
+        "priceLabel": "Prix d’abonnement mensuel",
+        "studentsLabel": "Nombre d’étudiants",
+        "title": "Calculateur de revenus"
+      },
+      "footer": {
+        "disclaimer": "FollowUp Trading est une plateforme d’éducation et non un conseiller financier. Les programmes de mentors sont des offres d’éducateurs indépendants.",
+        "faqLink": "Consulter la FAQ mentor"
+      },
+      "hero": {
+        "ctaPrimary": "Candidater pour devenir mentor",
+        "ctaSecondary": "Explorer les mentors",
+        "subtitle": "Créez un programme de mentoring payant sur le journal de trading que vos étudiants utilisent déjà. Données réelles, responsabilité réelle.",
+        "title": "Transformez votre expertise en revenus récurrents."
+      },
+      "legalGate": {
+        "label": "Je candidate en tant qu’éducateur indépendant. Je ne fournis pas de conseil en investissement. Je ne suis pas salarié ni agent de FollowUp Trading."
+      },
+      "requirements": {
+        "age": "18 ans ou plus",
+        "agreement": "Accord mentor signé",
+        "kyc": "Vérification d’identité via Stripe Connect",
+        "sanctions": "Résidence hors pays sous sanctions",
+        "teamPlan": "Abonnement plan TEAM actif",
+        "title": "Conditions d’admission"
+      },
+      "screenshots": {
+        "analytics": {
+          "alt": "Capture d’écran du tableau de bord analytique étudiant"
+        },
+        "hub": {
+          "alt": "Capture d’écran du hub mentor FollowUp Trading"
+        },
+        "students": {
+          "alt": "Capture d’écran de la gestion des étudiants"
+        }
+      },
+      "valueProps": {
+        "analytics": {
+          "body": "Vos étudiants tiennent déjà leur journal sur FollowUp Trading — vous accédez à leurs vraies données de performance.",
+          "title": "Analytiques étudiants intégrées"
+        },
+        "payouts": {
+          "body": "Recevez vos paiements automatiquement via Stripe Connect. Sans facturation ni relances.",
+          "title": "Virements Stripe Connect"
+        },
+        "publicProfile": {
+          "body": "Une page publique entièrement indexée qui met en valeur votre bilan, vos témoignages et votre programme.",
+          "title": "Profil public clé en main"
+        },
+        "recurringRevenue": {
+          "body": "Les étudiants s’abonnent mensuellement. Vous touchez chaque mois qu’ils restent, sans lancer de nouvelle cohorte.",
+          "title": "Revenus mensuels récurrents"
+        }
       }
     }
   },
