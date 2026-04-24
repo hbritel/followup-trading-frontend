@@ -557,7 +557,7 @@ export const mentorService = {
   },
 
   setMyJurisdictions: async (rules: MentorJurisdictionRuleDto[]): Promise<void> => {
-    await apiClient.put(`${MENTOR_BASE}/jurisdictions`, { rules });
+    await apiClient.put(`${MENTOR_BASE}/jurisdictions`, rules);
   },
 
   // ── Phase 2: Trust settings ──────────────────────────────────────────────────
