@@ -10,6 +10,7 @@ import {
   Pencil,
   Trash2,
   StickyNote,
+  Eye,
 } from 'lucide-react';
 import {
   Dialog,
@@ -20,6 +21,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -292,6 +295,7 @@ const NoteRow: React.FC<{
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [body, setBody] = useState(note.body);
+  const [visibleToStudent, setVisibleToStudent] = useState(note.visibleToStudent);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const updateMutation = useUpdateStudentNote(userId);
   const deleteMutation = useDeleteStudentNote(userId);
@@ -301,13 +305,14 @@ const NoteRow: React.FC<{
   const handleSave = () => {
     if (!canSubmit) return;
     updateMutation.mutate(
-      { noteId: note.id, body: body.trim() },
+      { noteId: note.id, body: body.trim(), visibleToStudent },
       { onSuccess: () => setEditing(false) }
     );
   };
 
   const handleCancel = () => {
     setBody(note.body);
+    setVisibleToStudent(note.visibleToStudent);
     setEditing(false);
   };
 
@@ -320,12 +325,20 @@ const NoteRow: React.FC<{
   return (
     <div className="group rounded-xl bg-muted/30 border border-border/30 p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          {new Date(note.createdAt).toLocaleString()}
-          {note.updatedAt !== note.createdAt && (
-            <span className="italic ml-1">(edited)</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-xs text-muted-foreground">
+            {new Date(note.createdAt).toLocaleString()}
+            {note.updatedAt !== note.createdAt && (
+              <span className="italic ml-1">(edited)</span>
+            )}
+          </p>
+          {note.visibleToStudent && !editing && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border border-primary/25 px-2 py-0.5 rounded-full">
+              <Eye className="w-3 h-3" aria-hidden="true" />
+              {t('mentor.notes.visibleChip', 'Visible to student')}
+            </span>
           )}
-        </p>
+        </div>
         {!editing && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <Button
@@ -360,6 +373,21 @@ const NoteRow: React.FC<{
             maxLength={MAX_NOTE}
             aria-label={t('mentor.notes.addPlaceholder', 'Note body')}
           />
+          <div className="flex items-center gap-3 rounded-lg bg-muted/30 border border-border/30 px-3 py-2">
+            <Switch
+              id={`visible-edit-${note.id}`}
+              checked={visibleToStudent}
+              onCheckedChange={setVisibleToStudent}
+            />
+            <div className="min-w-0">
+              <Label htmlFor={`visible-edit-${note.id}`} className="text-xs font-medium cursor-pointer">
+                {t('mentor.notes.shareWithStudentLabel', 'Share with student')}
+              </Label>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {t('mentor.notes.shareWithStudentHelper', 'When enabled, the student sees this note and receives a notification.')}
+              </p>
+            </div>
+          </div>
           <div className="flex items-center justify-between">
             <NoteCharCounter count={body.length} />
             <div className="flex gap-2">
@@ -420,14 +448,21 @@ const NotesTab: React.FC<{ userId: string }> = ({ userId }) => {
   const { data, isLoading } = useStudentNotes(userId);
   const addMutation = useAddStudentNote(userId);
   const [body, setBody] = useState('');
+  const [visibleToStudent, setVisibleToStudent] = useState(false);
 
   const canSubmit = body.trim().length > 0 && body.length <= MAX_NOTE;
 
   const handleSave = () => {
     if (!canSubmit) return;
-    addMutation.mutate(body.trim(), {
-      onSuccess: () => setBody(''),
-    });
+    addMutation.mutate(
+      { body: body.trim(), visibleToStudent },
+      {
+        onSuccess: () => {
+          setBody('');
+          setVisibleToStudent(false);
+        },
+      }
+    );
   };
 
   const notes = data ?? [];
@@ -450,6 +485,21 @@ const NotesTab: React.FC<{ userId: string }> = ({ userId }) => {
           rows={3}
           maxLength={MAX_NOTE}
         />
+        <div className="flex items-center gap-3 rounded-lg bg-muted/30 border border-border/30 px-3 py-2">
+          <Switch
+            id="note-visible-to-student"
+            checked={visibleToStudent}
+            onCheckedChange={setVisibleToStudent}
+          />
+          <div className="min-w-0">
+            <Label htmlFor="note-visible-to-student" className="text-xs font-medium cursor-pointer">
+              {t('mentor.notes.shareWithStudentLabel', 'Share with student')}
+            </Label>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              {t('mentor.notes.shareWithStudentHelper', 'When enabled, the student sees this note and receives a notification.')}
+            </p>
+          </div>
+        </div>
         <div className="flex items-center justify-between">
           <NoteCharCounter count={body.length} />
           <Button

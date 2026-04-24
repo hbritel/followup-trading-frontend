@@ -153,11 +153,12 @@ export const mentorService = {
 
   addStudentNote: async (
     userId: string,
-    body: string
+    body: string,
+    visibleToStudent: boolean = false
   ): Promise<MentorStudentNoteDto> => {
     const res = await apiClient.post<MentorStudentNoteDto>(
       `${MENTOR_BASE}/students/${userId}/notes`,
-      { body }
+      { body, visibleToStudent }
     );
     return res.data;
   },
@@ -165,11 +166,12 @@ export const mentorService = {
   updateStudentNote: async (
     userId: string,
     noteId: string,
-    body: string
+    body: string,
+    visibleToStudent: boolean = false
   ): Promise<MentorStudentNoteDto> => {
     const res = await apiClient.put<MentorStudentNoteDto>(
       `${MENTOR_BASE}/students/${userId}/notes/${noteId}`,
-      { body }
+      { body, visibleToStudent }
     );
     return res.data;
   },

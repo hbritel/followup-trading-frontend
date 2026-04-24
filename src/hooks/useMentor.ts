@@ -239,7 +239,8 @@ export const useStudentNotes = (userId: string | undefined) => {
 export const useAddStudentNote = (userId: string | undefined) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => mentorService.addStudentNote(userId!, body),
+    mutationFn: ({ body, visibleToStudent }: { body: string; visibleToStudent: boolean }) =>
+      mentorService.addStudentNote(userId!, body, visibleToStudent),
     onSuccess: () => {
       if (userId) queryClient.invalidateQueries({ queryKey: notesKey(userId) });
       toast.success('Note saved.');
@@ -253,8 +254,8 @@ export const useAddStudentNote = (userId: string | undefined) => {
 export const useUpdateStudentNote = (userId: string | undefined) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ noteId, body }: { noteId: string; body: string }) =>
-      mentorService.updateStudentNote(userId!, noteId, body),
+    mutationFn: ({ noteId, body, visibleToStudent }: { noteId: string; body: string; visibleToStudent: boolean }) =>
+      mentorService.updateStudentNote(userId!, noteId, body, visibleToStudent),
     onSuccess: () => {
       if (userId) queryClient.invalidateQueries({ queryKey: notesKey(userId) });
       toast.success('Note updated.');

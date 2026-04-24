@@ -8,6 +8,7 @@ import {
   Shield,
   BookText,
   Bell,
+  StickyNote,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ const TYPE_ICON_MAP: Record<string, { Icon: React.ElementType; color: string }> 
   WEEKLY_DIGEST: { Icon: Sparkles, color: 'text-primary' },
   NEW_LOGIN_DETECTED: { Icon: Shield, color: 'text-amber-400' },
   JOURNAL_REMINDER: { Icon: BookText, color: 'text-blue-400' },
+  MENTOR_NOTE_SHARED: { Icon: StickyNote, color: 'text-primary' },
 };
 
 const DEFAULT_ICON = { Icon: Bell, color: 'text-muted-foreground' };

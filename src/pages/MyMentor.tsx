@@ -8,6 +8,7 @@ import {
   Loader2,
   Sparkles,
   ShieldCheck,
+  StickyNote,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ import {
 import MentorPaywallCard from '@/components/mentor/monetization/MentorPaywallCard';
 import StudentSubscriptionPanel, { PastDueBanner } from '@/components/mentor/monetization/StudentSubscriptionPanel';
 import StudentTestimonialCard from '@/components/mentor/testimonials/StudentTestimonialCard';
-import type { MentorAnnouncementDto } from '@/types/dto';
+import type { MentorAnnouncementDto, MentorStudentNoteDto } from '@/types/dto';
 
 /* ── Announcement read-only card ───────────────────── */
 const formatRelative = (iso: string): string => {
@@ -80,6 +81,14 @@ const AnnouncementReadCard: React.FC<{ item: MentorAnnouncementDto }> = ({ item 
     </article>
   );
 };
+
+/* ── Shared note read-only card ────────────────────── */
+const SharedNoteCard: React.FC<{ note: MentorStudentNoteDto }> = ({ note }) => (
+  <article className="glass-card rounded-2xl p-5 border border-border/50 space-y-2">
+    <p className="text-xs text-muted-foreground">{formatRelative(note.createdAt)}</p>
+    <p className="text-sm whitespace-pre-wrap leading-relaxed">{note.body}</p>
+  </article>
+);
 
 /* ── Loading skeleton ──────────────────────────────── */
 const HubSkeleton: React.FC = () => (
@@ -215,7 +224,7 @@ const MyMentor: React.FC = () => {
     );
   }
 
-  const { instance, announcements } = hub;
+  const { instance, announcements, sharedNotes } = hub;
   const accentColor = instance.primaryColor || undefined;
   const sub = hub.subscription ?? null;
   const isPaywalled = !!hub.subscriptionRequired && sub == null;
@@ -347,6 +356,26 @@ const MyMentor: React.FC = () => {
             </div>
           )}
         </section>
+
+        {/* Shared notes from mentor */}
+        {sharedNotes && sharedNotes.length > 0 && (
+          <section aria-labelledby="shared-notes-heading" className="space-y-3">
+            <div className="flex items-center gap-2">
+              <StickyNote className="w-4 h-4 text-primary" aria-hidden="true" />
+              <h2 id="shared-notes-heading" className="text-base font-semibold">
+                {t('mentor.myMentor.sharedNotes.title', 'Notes from your mentor')}
+              </h2>
+              <span className="text-xs text-muted-foreground">({sharedNotes.length})</span>
+            </div>
+            <div className="space-y-3">
+              {[...sharedNotes]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((note) => (
+                  <SharedNoteCard key={note.id} note={note} />
+                ))}
+            </div>
+          </section>
+        )}
 
         {/* Sharing controls */}
         <section

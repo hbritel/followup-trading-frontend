@@ -1592,11 +1592,13 @@ export interface MentorStudentNoteDto {
   body: string;
   createdAt: string;
   updatedAt: string;
+  visibleToStudent: boolean;
 }
 
 export interface StudentMentorHubDto {
   instance: MentorInstanceDto;
   announcements: MentorAnnouncementDto[];
+  sharedNotes: MentorStudentNoteDto[];
   shareMetrics: boolean;
   shareTrades: boolean;
   sharePsychology: boolean;
