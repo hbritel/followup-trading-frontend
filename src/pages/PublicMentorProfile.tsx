@@ -407,15 +407,16 @@ const PublicMentorProfile: React.FC = () => {
       personSchema['hasOfferCatalog'] = service;
     }
 
-    if (profile.testimonials.length >= 3) {
-      const totalRating = profile.testimonials.reduce(
+    const testimonials = profile.testimonials ?? [];
+    if (testimonials.length >= 3) {
+      const totalRating = testimonials.reduce(
         (sum, t) => sum + t.rating,
         0
       );
       personSchema['aggregateRating'] = {
         '@type': 'AggregateRating',
-        ratingValue: (totalRating / profile.testimonials.length).toFixed(1),
-        reviewCount: profile.testimonials.length,
+        ratingValue: (totalRating / testimonials.length).toFixed(1),
+        reviewCount: testimonials.length,
         bestRating: 5,
         worstRating: 1,
       };
@@ -561,7 +562,7 @@ const PublicMentorProfile: React.FC = () => {
         )}
 
         {/* Testimonials */}
-        {profile.testimonials.length > 0 && (
+        {(profile.testimonials?.length ?? 0) > 0 && (
           <section
             aria-labelledby="testimonials-heading"
             className="space-y-4"
@@ -576,7 +577,7 @@ const PublicMentorProfile: React.FC = () => {
               )}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {profile.testimonials.map((item, idx) => (
+              {(profile.testimonials ?? []).map((item, idx) => (
                 <article
                   key={`${item.username}-${idx}`}
                   className="glass-card rounded-2xl p-5 border border-border/50 space-y-3"
@@ -598,8 +599,8 @@ const PublicMentorProfile: React.FC = () => {
         )}
 
         {/* FAQ */}
-        {profile.faq.length > 0 && (
-          <PublicFaqSection faq={profile.faq} />
+        {(profile.faq?.length ?? 0) > 0 && (
+          <PublicFaqSection faq={profile.faq ?? []} />
         )}
 
         {/* Subscribe CTA + Join by code */}
