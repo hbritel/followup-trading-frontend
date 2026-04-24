@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
@@ -206,14 +207,10 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
 
             {enabled && slug && slugValid && (
               <Button variant="outline" size="sm" asChild className="gap-1.5">
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <Link to={`/m/${slug}`}>
                   <ExternalLink className="w-4 h-4" />
                   {t('mentor.publicProfile.viewPage', 'View public page')}
-                </a>
+                </Link>
               </Button>
             )}
           </div>

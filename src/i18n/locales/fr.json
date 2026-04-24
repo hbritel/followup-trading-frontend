@@ -3515,6 +3515,7 @@
     "publicPage": {
       "notFound": "Mentor introuvable",
       "notFoundDesc": "Ce profil n'existe pas ou n'est pas publié.",
+      "back": "Retour",
       "backHome": "Retour à l'accueil",
       "joinTitle": "Rejoindre {{brand}}",
       "joinHelper": "Demandez un code d'invitation à {{brand}} pour rejoindre.",
@@ -4002,6 +4003,7 @@
     "publicPage": {
       "notFound": "Mentor introuvable",
       "notFoundDesc": "Ce profil n'existe pas ou n'est pas publié.",
+      "back": "Retour",
       "backHome": "Retour à l'accueil",
       "joinTitle": "Rejoindre {{brand}}",
       "joinHelper": "Demandez un code d'invitation à {{brand}} pour rejoindre.",

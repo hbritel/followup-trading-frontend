@@ -3531,6 +3531,7 @@
     "publicPage": {
       "notFound": "Mentor not found",
       "notFoundDesc": "This profile doesn't exist or isn't published.",
+      "back": "Back",
       "backHome": "Back to home",
       "joinTitle": "Join {{brand}}",
       "joinHelper": "Ask {{brand}} for an invite code to join.",
@@ -4018,6 +4019,7 @@
     "publicPage": {
       "notFound": "Mentor not found",
       "notFoundDesc": "This profile doesn't exist or isn't published.",
+      "back": "Back",
       "backHome": "Back to home",
       "joinTitle": "Join {{brand}}",
       "joinHelper": "Ask {{brand}} for an invite code to join.",

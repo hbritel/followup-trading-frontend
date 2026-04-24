@@ -17,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePublicMentorProfile, useJoinInstance } from '@/hooks/useMentor';
 import { useAuth } from '@/contexts/auth-context';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
 import DisclaimerModal from '@/components/mentor/legal/DisclaimerModal';
 import VerifiedBadge from '@/components/mentor/trust/VerifiedBadge';
@@ -318,7 +320,7 @@ const SubscribeCtaCard: React.FC<{
   );
 };
 
-const PublicMentorProfile: React.FC = () => {
+const PublicMentorProfileContent: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { data: profile, isLoading } = usePublicMentorProfile(slug);
@@ -476,13 +478,22 @@ const PublicMentorProfile: React.FC = () => {
     <main className="min-h-screen">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         <nav aria-label="Breadcrumb">
-          <Link
-            to="/"
+          <button
+            type="button"
+            onClick={() => {
+              if (isAuthenticated && window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {t('mentor.publicPage.backHome', 'Back to home')}
-          </Link>
+            {isAuthenticated
+              ? t('mentor.publicPage.back', 'Back')
+              : t('mentor.publicPage.backHome', 'Back to home')}
+          </button>
         </nav>
 
         <RiskDisclosureBanner isCfdContext={profile.isCfdContext} />
@@ -643,6 +654,21 @@ const PublicMentorProfile: React.FC = () => {
       )}
     </main>
   );
+};
+
+const PublicMentorProfile: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return (
+      <WebSocketProvider>
+        <DashboardLayout>
+          <PublicMentorProfileContent />
+        </DashboardLayout>
+      </WebSocketProvider>
+    );
+  }
+  return <PublicMentorProfileContent />;
 };
 
 export default PublicMentorProfile;

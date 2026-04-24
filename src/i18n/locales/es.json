@@ -3312,6 +3312,7 @@
     "publicPage": {
       "notFound": "Mentor no encontrado",
       "notFoundDesc": "Este perfil no existe o no está publicado.",
+      "back": "Volver",
       "backHome": "Volver al inicio",
       "joinTitle": "Unirse a {{brand}}",
       "joinHelper": "Pide un código de invitación a {{brand}} para unirte.",

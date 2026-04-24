@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { WebSocketProvider } from '@/providers/WebSocketProvider';
+import { useAuth } from '@/contexts/auth-context';
 import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
 import DirectoryHero from '@/components/mentor/directory/DirectoryHero';
 import FilterRail, { type FilterValues } from '@/components/mentor/directory/FilterRail';
@@ -58,7 +61,7 @@ const DEFAULT_FILTERS: FilterValues = {
   verifiedOnly: false,
 };
 
-const MentorDirectory: React.FC = () => {
+const MentorDirectoryContent: React.FC = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -259,6 +262,22 @@ const MentorDirectory: React.FC = () => {
       </div>
     </main>
   );
+};
+
+const MentorDirectory: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
+
+  if (isAuthenticated) {
+    return (
+      <WebSocketProvider>
+        <DashboardLayout pageTitle={t('sidebar.browseMentors', 'Browse mentors')}>
+          <MentorDirectoryContent />
+        </DashboardLayout>
+      </WebSocketProvider>
+    );
+  }
+  return <MentorDirectoryContent />;
 };
 
 export default MentorDirectory;
