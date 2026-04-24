@@ -4034,7 +4034,8 @@
       "lastMatch": "Dernière correspondance : {{date}}",
       "neverMatched": "Jamais trouvé",
       "acceptsNew": "accepte de nouveaux étudiants",
-      "verified": "vérifié"
+      "verified": "vérifié",
+      "tabTitle": "Alertes de recherche"
     }
   },
   "studyGroups": {

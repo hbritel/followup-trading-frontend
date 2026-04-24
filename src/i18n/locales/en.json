@@ -4050,7 +4050,8 @@
       "lastMatch": "Last match: {{date}}",
       "neverMatched": "Never matched",
       "acceptsNew": "accepts new",
-      "verified": "verified"
+      "verified": "verified",
+      "tabTitle": "Search alerts"
     }
   },
   "studyGroups": {

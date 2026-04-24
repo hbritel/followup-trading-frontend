@@ -76,6 +76,7 @@ import AiMessagePackPicker from "@/components/ai/AiMessagePackPicker";
 import AiProviderSettings from "@/components/settings/AiProviderSettings";
 import MyMentorSettings from "@/components/settings/MyMentorSettings";
 import { PropFirmSettings } from "@/components/settings/PropFirmSettings";
+import SearchAlertsList from "@/components/mentor/alerts/SearchAlertsList";
 import { ProfileTab, SubscriptionTab } from '@/pages/AccountManagement';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useMyMentorInstance } from '@/hooks/useMentor';
@@ -481,6 +482,10 @@ const Settings = () => {
                                 {t("settings.myMentor", "My Mentor")}
                             </TabsTrigger>
                         )}
+                        <TabsTrigger value="search-alerts" className="gap-2 rounded-lg px-4 py-2">
+                            <Bell className="h-4 w-4" />
+                            {t('mentor.alerts.tabTitle', 'Search alerts')}
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* ========== PROFILE TAB ========== */}
@@ -1077,6 +1082,9 @@ const Settings = () => {
                             <PropFirmSettings />
                         </TabsContent>
                     )}
+                    <TabsContent value="search-alerts" className="space-y-6">
+                        <SearchAlertsList />
+                    </TabsContent>
                 </Tabs>
             </div>
 
