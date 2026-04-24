@@ -45,6 +45,15 @@ import type {
   MentorContactSubmission,
   MentorJurisdictionRuleDto,
   MentorComplaintSubmission,
+  SessionOfferingDto,
+  SessionBookingDto,
+  WebinarDto,
+  WebinarTicketDto,
+  FunnelReportDto,
+  SearchAlertDto,
+  CreateSessionOfferingDto,
+  CreateWebinarDto,
+  CreateSearchAlertDto,
 } from '@/types/dto';
 
 const MENTOR_BASE = '/mentor';
@@ -605,5 +614,148 @@ export const mentorService = {
 
   submitComplaint: async (slug: string, submission: MentorComplaintSubmission): Promise<void> => {
     await apiClient.post(`/public/mentor/profile/${slug}/complaint`, submission);
+  },
+
+  // ── Phase 4: Session offerings (mentor CRUD) ─────────────────────────────
+
+  getMySessionOfferings: async (): Promise<SessionOfferingDto[]> => {
+    const res = await apiClient.get<SessionOfferingDto[]>(`${MENTOR_BASE}/session-offerings`);
+    return res.data;
+  },
+
+  createSessionOffering: async (data: CreateSessionOfferingDto): Promise<SessionOfferingDto> => {
+    const res = await apiClient.post<SessionOfferingDto>(`${MENTOR_BASE}/session-offerings`, data);
+    return res.data;
+  },
+
+  updateSessionOffering: async (id: string, data: Partial<CreateSessionOfferingDto>): Promise<SessionOfferingDto> => {
+    const res = await apiClient.put<SessionOfferingDto>(`${MENTOR_BASE}/session-offerings/${id}`, data);
+    return res.data;
+  },
+
+  deleteSessionOffering: async (id: string): Promise<void> => {
+    await apiClient.delete(`${MENTOR_BASE}/session-offerings/${id}`);
+  },
+
+  // ── Phase 4: Session bookings (mentor view) ──────────────────────────────
+
+  getMentorSessionBookings: async (upcoming?: boolean): Promise<SessionBookingDto[]> => {
+    const qs = upcoming != null ? `?upcoming=${upcoming}` : '';
+    const res = await apiClient.get<SessionBookingDto[]>(`${MENTOR_BASE}/session-bookings${qs}`);
+    return res.data;
+  },
+
+  cancelSessionBookingAsMentor: async (id: string, reason: string): Promise<void> => {
+    await apiClient.post(`${MENTOR_BASE}/session-bookings/${id}/cancel`, { reason });
+  },
+
+  // ── Phase 4: Session offerings (public) ─────────────────────────────────
+
+  getPublicSessionOfferings: async (slug: string): Promise<SessionOfferingDto[]> => {
+    const res = await apiClient.get<SessionOfferingDto[]>(
+      `/public/mentor/profile/${slug}/session-offerings`
+    );
+    return res.data;
+  },
+
+  bookSession: async (
+    slug: string,
+    offeringId: string,
+    scheduledAt: string
+  ): Promise<{ checkoutUrl: string; bookingId: string }> => {
+    const res = await apiClient.post<{ checkoutUrl: string; bookingId: string }>(
+      `/public/mentor/profile/${slug}/session-offerings/${offeringId}/book`,
+      { scheduledAt }
+    );
+    return res.data;
+  },
+
+  // ── Phase 4: Student bookings ────────────────────────────────────────────
+
+  getMyBookings: async (): Promise<SessionBookingDto[]> => {
+    const res = await apiClient.get<SessionBookingDto[]>(`/me/mentor/bookings`);
+    return res.data;
+  },
+
+  // ── Phase 4: Webinars (mentor CRUD) ─────────────────────────────────────
+
+  getMyWebinars: async (): Promise<WebinarDto[]> => {
+    const res = await apiClient.get<WebinarDto[]>(`${MENTOR_BASE}/webinars`);
+    return res.data;
+  },
+
+  createWebinar: async (data: CreateWebinarDto): Promise<WebinarDto> => {
+    const res = await apiClient.post<WebinarDto>(`${MENTOR_BASE}/webinars`, data);
+    return res.data;
+  },
+
+  updateWebinar: async (id: string, data: Partial<CreateWebinarDto> & { status?: string }): Promise<WebinarDto> => {
+    const res = await apiClient.put<WebinarDto>(`${MENTOR_BASE}/webinars/${id}`, data);
+    return res.data;
+  },
+
+  deleteWebinar: async (id: string): Promise<void> => {
+    await apiClient.delete(`${MENTOR_BASE}/webinars/${id}`);
+  },
+
+  getWebinarAttendees: async (id: string): Promise<WebinarTicketDto[]> => {
+    const res = await apiClient.get<WebinarTicketDto[]>(`${MENTOR_BASE}/webinars/${id}/attendees`);
+    return res.data;
+  },
+
+  // ── Phase 4: Webinars (public) ───────────────────────────────────────────
+
+  getPublicWebinars: async (slug: string): Promise<WebinarDto[]> => {
+    const res = await apiClient.get<WebinarDto[]>(
+      `/public/mentor/profile/${slug}/webinars/published`
+    );
+    return res.data;
+  },
+
+  buyWebinarTicket: async (
+    slug: string,
+    webinarId: string
+  ): Promise<{ checkoutUrl: string; ticketId: string }> => {
+    const res = await apiClient.post<{ checkoutUrl: string; ticketId: string }>(
+      `/public/mentor/profile/${slug}/webinars/${webinarId}/tickets`
+    );
+    return res.data;
+  },
+
+  // ── Phase 4: Student webinar tickets ────────────────────────────────────
+
+  getMyWebinarTickets: async (): Promise<WebinarTicketDto[]> => {
+    const res = await apiClient.get<WebinarTicketDto[]>(`/me/mentor/tickets`);
+    return res.data;
+  },
+
+  // ── Phase 4: Funnel analytics ────────────────────────────────────────────
+
+  getFunnelReport: async (from: string, to: string): Promise<FunnelReportDto> => {
+    const res = await apiClient.get<FunnelReportDto>(
+      `${MENTOR_BASE}/funnel?from=${from}&to=${to}`
+    );
+    return res.data;
+  },
+
+  // ── Phase 4: Search alerts ───────────────────────────────────────────────
+
+  getMySearchAlerts: async (): Promise<SearchAlertDto[]> => {
+    const res = await apiClient.get<SearchAlertDto[]>(`/me/mentor/search-alerts`);
+    return res.data;
+  },
+
+  createSearchAlert: async (data: CreateSearchAlertDto): Promise<SearchAlertDto> => {
+    const res = await apiClient.post<SearchAlertDto>(`/me/mentor/search-alerts`, data);
+    return res.data;
+  },
+
+  updateSearchAlert: async (id: string, active: boolean): Promise<SearchAlertDto> => {
+    const res = await apiClient.put<SearchAlertDto>(`/me/mentor/search-alerts/${id}`, { active });
+    return res.data;
+  },
+
+  deleteSearchAlert: async (id: string): Promise<void> => {
+    await apiClient.delete(`/me/mentor/search-alerts/${id}`);
   },
 };

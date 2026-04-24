@@ -2120,8 +2120,158 @@ export interface MentorComplaintDto {
   resolvedAt: string | null;
 }
 
+// ── Phase 4: Revenue expansion ───────────────────────────────────────────────
+
+export interface SessionOfferingDto {
+  id: string;
+  mentorInstanceId: string;
+  title: string;
+  description?: string;
+  durationMinutes: number;
+  priceCents: number;
+  currency: string;
+  cancellationWindowHours: number;
+  active: boolean;
+}
+
+export type SessionBookingStatus =
+  | 'PENDING_PAYMENT'
+  | 'CONFIRMED'
+  | 'CANCELLED_BY_STUDENT'
+  | 'CANCELLED_BY_MENTOR'
+  | 'COMPLETED'
+  | 'NO_SHOW'
+  | 'REFUNDED';
+
+export interface SessionBookingDto {
+  id: string;
+  offeringId: string;
+  mentorInstanceId: string;
+  studentUserId: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  priceCents: number;
+  currency: string;
+  status: SessionBookingStatus;
+  meetingUrl?: string | null;
+}
+
+export type WebinarStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
+
+export interface WebinarDto {
+  id: string;
+  mentorInstanceId: string;
+  title: string;
+  description?: string;
+  startsAt: string;
+  durationMinutes: number;
+  meetingUrl: string;
+  ticketPriceCents: number;
+  currency: string;
+  maxAttendees?: number | null;
+  status: WebinarStatus;
+}
+
+export type WebinarTicketStatus = 'PENDING_PAYMENT' | 'PAID' | 'REFUNDED' | 'CANCELLED';
+
+export interface WebinarTicketDto {
+  id: string;
+  webinarId: string;
+  attendeeUserId?: string | null;
+  attendeeEmail?: string | null;
+  status: WebinarTicketStatus;
+  createdAt: string;
+}
+
+export interface FunnelReportDto {
+  impressions: number;
+  cardClicks: number;
+  profileViews: number;
+  checkoutStarted: number;
+  checkoutCompleted: number;
+  joins: number;
+}
+
+export interface SearchAlertDto {
+  id: string;
+  name: string;
+  queryJson: DirectoryQuery;
+  email: string;
+  active: boolean;
+  lastMatchedAt?: string | null;
+  createdAt: string;
+}
+
+export interface CreateSessionOfferingDto {
+  title: string;
+  description?: string;
+  durationMinutes: number;
+  priceCents: number;
+  currency: string;
+  cancellationWindowHours: number;
+  active: boolean;
+}
+
+export interface CreateWebinarDto {
+  title: string;
+  description?: string;
+  startsAt: string;
+  durationMinutes: number;
+  meetingUrl: string;
+  ticketPriceCents: number;
+  currency: string;
+  maxAttendees?: number | null;
+}
+
+export interface CreateSearchAlertDto {
+  name: string;
+  queryJson: DirectoryQuery;
+  email: string;
+}
+
 export interface VerificationCandidateDto {
   instanceId: string;
   brandName: string;
   reasonsMet: string[];
+}
+
+// ── Phase 5 — Legal hardening ─────────────────────────────────────────────────
+
+export interface CookieConsentDto {
+  policyVersion: string;
+  essential: boolean;
+  analytics: boolean;
+  marketing: boolean;
+  recordedAt: string;
+}
+
+export interface Dac7SellerDto {
+  mentorInstanceId: string;
+  brandName: string;
+  legalName: string;
+  tin?: string | null;
+  countryOfResidence: string;
+  vatNumber?: string | null;
+  grossAmountCents: number;
+  transactionCount: number;
+  feesCents: number;
+  reportedAt?: string | null;
+}
+
+export interface DsaTransparencyReportDto {
+  year: number;
+  totalComplaints: number;
+  byCategory: Record<string, number>;
+  byResolution: Record<string, number>;
+  medianResponseHours: number;
+  removalsCount: number;
+}
+
+export interface AdminSuspensionDto {
+  id: string;
+  mentorInstanceId: string;
+  adminUserId: string;
+  reason: string;
+  suspendedAt: string;
+  liftedAt?: string | null;
 }
