@@ -1,15 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAllCountries, getCountryName as getCountryNameDefault } from '@/lib/countries';
 import { useMyJurisdictions, useSetMyJurisdictions } from '@/hooks/useMentor';
@@ -32,6 +35,7 @@ const MentorJurisdictionPicker: React.FC = () => {
     rules.map((r) => r.countryCode)
   );
   const [addCode, setAddCode] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const remainingCountries = allCountries.filter(
     (c) => !selectedCountries.includes(c.code)
@@ -117,23 +121,69 @@ const MentorJurisdictionPicker: React.FC = () => {
 
       {/* Add country */}
       <div className="flex gap-2">
-        <Select value={addCode} onValueChange={setAddCode}>
-          <SelectTrigger className="flex-1 text-sm">
-            <SelectValue
-              placeholder={t(
-                'mentor.settings.jurisdictions.selectCountry',
-                'Select a country…'
-              )}
-            />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            {remainingCountries.map((c) => (
-              <SelectItem key={c.code} value={c.code} className="text-sm">
-                {c.code} — {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              role="combobox"
+              aria-expanded={pickerOpen}
+              className="flex-1 justify-between text-sm font-normal"
+            >
+              {addCode
+                ? `${addCode} — ${getCountryName(addCode)}`
+                : t(
+                    'mentor.settings.jurisdictions.selectCountry',
+                    'Select a country…'
+                  )}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="p-0 w-[--radix-popover-trigger-width]"
+            align="start"
+          >
+            <Command>
+              <CommandInput
+                placeholder={t(
+                  'mentor.settings.jurisdictions.searchCountry',
+                  'Search a country…'
+                )}
+              />
+              <CommandList className="max-h-64">
+                <CommandEmpty>
+                  {t(
+                    'mentor.settings.jurisdictions.noMatch',
+                    'No country matches.'
+                  )}
+                </CommandEmpty>
+                <CommandGroup>
+                  {remainingCountries.map((c) => (
+                    <CommandItem
+                      key={c.code}
+                      value={`${c.name} ${c.code}`}
+                      onSelect={() => {
+                        setAddCode(c.code);
+                        setPickerOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          addCode === c.code ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <span className="text-xs font-mono text-muted-foreground mr-2 w-8">
+                        {c.code}
+                      </span>
+                      <span className="truncate">{c.name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         <Button
           type="button"
           variant="outline"
