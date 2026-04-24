@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { AxiosError } from 'axios';
 import type {
   MentorInstanceDto,
   MentorStudentDto,
@@ -36,6 +37,14 @@ import type {
   MentorTagDto,
   MentorTagCategory,
   LanguageOptionsDto,
+  MentorFaqDto,
+  MentorFaqMutation,
+  MentorPublicStatsDto,
+  MentorCancellationPolicy,
+  MentorContactLeadDto,
+  MentorContactSubmission,
+  MentorJurisdictionRuleDto,
+  MentorComplaintSubmission,
 } from '@/types/dto';
 
 const MENTOR_BASE = '/mentor';
@@ -461,6 +470,7 @@ export const mentorService = {
     if (query.maxPrice != null) params.set('maxPrice', String(query.maxPrice));
     if (query.acceptsNew != null) params.set('acceptsNew', String(query.acceptsNew));
     if (query.monetizedOnly != null) params.set('monetizedOnly', String(query.monetizedOnly));
+    if (query.verifiedOnly != null) params.set('verifiedOnly', String(query.verifiedOnly));
     if (query.sort) params.set('sort', query.sort);
     if (query.page != null) params.set('page', String(query.page));
     if (query.size != null) params.set('size', String(query.size));
@@ -500,5 +510,98 @@ export const mentorService = {
   setMyLanguages: async (codes: string[]): Promise<string[]> => {
     const res = await apiClient.put<string[]>(`${MENTOR_BASE}/languages`, { codes });
     return res.data;
+  },
+
+  // ── Phase 2: FAQ (mentor-side) ───────────────────────────────────────────────
+
+  listMyFaq: async (): Promise<MentorFaqDto[]> => {
+    const res = await apiClient.get<MentorFaqDto[]>(`${MENTOR_BASE}/faq`);
+    return res.data;
+  },
+
+  createFaq: async (data: MentorFaqMutation): Promise<MentorFaqDto> => {
+    const res = await apiClient.post<MentorFaqDto>(`${MENTOR_BASE}/faq`, data);
+    return res.data;
+  },
+
+  updateFaq: async (id: string, data: MentorFaqMutation): Promise<MentorFaqDto> => {
+    const res = await apiClient.put<MentorFaqDto>(`${MENTOR_BASE}/faq/${id}`, data);
+    return res.data;
+  },
+
+  deleteFaq: async (id: string): Promise<void> => {
+    await apiClient.delete(`${MENTOR_BASE}/faq/${id}`);
+  },
+
+  reorderFaq: async (ids: string[]): Promise<void> => {
+    await apiClient.put(`${MENTOR_BASE}/faq/reorder`, { ids });
+  },
+
+  // ── Phase 2: Leads inbox ─────────────────────────────────────────────────────
+
+  listMyLeads: async (): Promise<MentorContactLeadDto[]> => {
+    const res = await apiClient.get<MentorContactLeadDto[]>(`${MENTOR_BASE}/leads`);
+    return res.data;
+  },
+
+  markLeadRead: async (id: string): Promise<MentorContactLeadDto> => {
+    const res = await apiClient.put<MentorContactLeadDto>(`${MENTOR_BASE}/leads/${id}/read`);
+    return res.data;
+  },
+
+  // ── Phase 2: Jurisdictions ──────────────────────────────────────────────────
+
+  getMyJurisdictions: async (): Promise<MentorJurisdictionRuleDto[]> => {
+    const res = await apiClient.get<MentorJurisdictionRuleDto[]>(`${MENTOR_BASE}/jurisdictions`);
+    return res.data;
+  },
+
+  setMyJurisdictions: async (rules: MentorJurisdictionRuleDto[]): Promise<void> => {
+    await apiClient.put(`${MENTOR_BASE}/jurisdictions`, { rules });
+  },
+
+  // ── Phase 2: Trust settings ──────────────────────────────────────────────────
+
+  setPublicStatsOptIn: async (enabled: boolean): Promise<void> => {
+    await apiClient.put(`${MENTOR_BASE}/public-stats`, { enabled });
+  },
+
+  setCancellationPolicy: async (policy: MentorCancellationPolicy): Promise<void> => {
+    await apiClient.put(`${MENTOR_BASE}/cancellation-policy`, { policy });
+  },
+
+  setAcceptNewEnabled: async (enabled: boolean): Promise<void> => {
+    await apiClient.put(`${MENTOR_BASE}/accept-new`, { enabled });
+  },
+
+  // ── Phase 2: Public endpoints ────────────────────────────────────────────────
+
+  getPublicFaq: async (slug: string): Promise<MentorFaqDto[]> => {
+    const res = await apiClient.get<MentorFaqDto[]>(
+      `/public/mentor/profile/${slug}/faq`
+    );
+    return res.data;
+  },
+
+  getPublicStats: async (slug: string): Promise<MentorPublicStatsDto | null> => {
+    try {
+      const res = await apiClient.get<MentorPublicStatsDto>(
+        `/public/mentor/profile/${slug}/stats`
+      );
+      return res.data;
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  submitContact: async (slug: string, submission: MentorContactSubmission): Promise<void> => {
+    await apiClient.post(`/public/mentor/profile/${slug}/contact`, submission);
+  },
+
+  submitComplaint: async (slug: string, submission: MentorComplaintSubmission): Promise<void> => {
+    await apiClient.post(`/public/mentor/profile/${slug}/complaint`, submission);
   },
 };

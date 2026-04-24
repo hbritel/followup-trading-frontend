@@ -124,6 +124,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import BillingTab from '@/components/admin/BillingTab';
 import AiUsageTab from '@/components/admin/AiUsageTab';
+import AdminMentorVerificationQueue from '@/components/admin/AdminMentorVerificationQueue';
+import AdminMentorComplaintQueue from '@/components/admin/AdminMentorComplaintQueue';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -2399,6 +2401,10 @@ const Administration = () => {
               <Sparkles className="h-4 w-4" />
               {t('admin.aiUsageTab', 'AI Usage')}
             </TabsTrigger>
+            <TabsTrigger value="mentorModeration" className="gap-2">
+              <UserCheck className="h-4 w-4" />
+              {t('admin.mentorModeration', 'Mentors')}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <ToggleLeft className="h-4 w-4" />
               {t('admin.system', 'System')}
@@ -2435,6 +2441,12 @@ const Administration = () => {
           </TabsContent>
           <TabsContent value="aiUsage" className="mt-6">
             <AiUsageTab />
+          </TabsContent>
+          <TabsContent value="mentorModeration" className="mt-6">
+            <div className="space-y-8">
+              <AdminMentorVerificationQueue />
+              <AdminMentorComplaintQueue />
+            </div>
           </TabsContent>
           <TabsContent value="system" className="mt-6">
             <FeatureFlagsTab />

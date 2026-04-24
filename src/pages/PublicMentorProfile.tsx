@@ -19,6 +19,12 @@ import { usePublicMentorProfile, useJoinInstance } from '@/hooks/useMentor';
 import { useAuth } from '@/contexts/auth-context';
 import RiskDisclosureBanner from '@/components/mentor/legal/RiskDisclosureBanner';
 import DisclaimerModal from '@/components/mentor/legal/DisclaimerModal';
+import VerifiedBadge from '@/components/mentor/trust/VerifiedBadge';
+import VerifiedStatsPanel from '@/components/mentor/trust/VerifiedStatsPanel';
+import CancellationPolicyChip from '@/components/mentor/trust/CancellationPolicyChip';
+import PublicFaqSection from '@/components/mentor/faq/PublicFaqSection';
+import MentorContactForm from '@/components/mentor/contact/MentorContactForm';
+import ReportProfileButton from '@/components/mentor/complaint/ReportProfileButton';
 import type { MentorPublicProfileDto } from '@/types/dto';
 
 const currencySymbol: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
@@ -214,15 +220,18 @@ const ProfileHero: React.FC<{ profile: MentorPublicProfileDto }> = ({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            {profile.brandName}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              {profile.brandName}
+            </h1>
+            {profile.verified && <VerifiedBadge />}
+          </div>
           {profile.headline && (
             <p className="text-lg text-muted-foreground mt-2 max-w-2xl">
               {profile.headline}
             </p>
           )}
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             {profile.acceptsNewStudents ? (
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full">
                 <CheckCircle2 className="w-3 h-3" />
@@ -233,6 +242,7 @@ const ProfileHero: React.FC<{ profile: MentorPublicProfileDto }> = ({
                 {t('mentor.publicPage.closed', 'Waitlist')}
               </span>
             )}
+            <CancellationPolicyChip policy={profile.cancellationPolicy} />
           </div>
         </div>
       </div>
@@ -520,6 +530,11 @@ const PublicMentorProfile: React.FC = () => {
           )}
         </section>
 
+        {/* Verified trading stats */}
+        {profile.showStatsPublicly && profile.stats && (
+          <VerifiedStatsPanel stats={profile.stats} />
+        )}
+
         {/* Testimonials */}
         {profile.testimonials.length > 0 && (
           <section
@@ -557,6 +572,11 @@ const PublicMentorProfile: React.FC = () => {
           </section>
         )}
 
+        {/* FAQ */}
+        {profile.faq.length > 0 && (
+          <PublicFaqSection faq={profile.faq} />
+        )}
+
         {/* Subscribe CTA + Join by code */}
         {profile.acceptsNewStudents && (
           <div className="space-y-4">
@@ -571,11 +591,19 @@ const PublicMentorProfile: React.FC = () => {
           </div>
         )}
 
-        <footer className="text-center text-xs text-muted-foreground pt-6 pb-4">
-          {t(
-            'mentor.publicPage.poweredBy',
-            'Powered by FollowUp Trading'
-          )}
+        {/* Contact form */}
+        {profile.hasContactForm && (
+          <MentorContactForm slug={profile.slug} brandName={profile.brandName} />
+        )}
+
+        <footer className="flex items-center justify-between text-xs text-muted-foreground pt-6 pb-4">
+          <span>
+            {t(
+              'mentor.publicPage.poweredBy',
+              'Powered by FollowUp Trading'
+            )}
+          </span>
+          <ReportProfileButton slug={profile.slug} brandName={profile.brandName} />
         </footer>
       </div>
 

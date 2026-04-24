@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Star, Users, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DirectoryCardDto, MentorTagDto } from '@/types/dto';
+import VerifiedBadge from '@/components/mentor/trust/VerifiedBadge';
 
 interface MentorCardProps {
   card: DirectoryCardDto;
@@ -108,9 +109,12 @@ const MentorCard: React.FC<MentorCardProps> = ({ card, tags }) => {
           )}
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-sm leading-tight truncate">
-              {card.brandName}
-            </h3>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h3 className="font-semibold text-sm leading-tight truncate">
+                {card.brandName}
+              </h3>
+              {card.verified && <VerifiedBadge compact />}
+            </div>
             {card.publicHeadline && (
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 leading-snug">
                 {card.publicHeadline}

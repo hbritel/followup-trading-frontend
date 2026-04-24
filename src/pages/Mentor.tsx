@@ -33,6 +33,11 @@ import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfil
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
 import MentorTagsPicker from '@/components/mentor/settings/MentorTagsPicker';
 import MentorLanguagesPicker from '@/components/mentor/settings/MentorLanguagesPicker';
+import PublicStatsToggle from '@/components/mentor/settings/PublicStatsToggle';
+import CancellationPolicySelector from '@/components/mentor/settings/CancellationPolicySelector';
+import MentorJurisdictionPicker from '@/components/mentor/settings/MentorJurisdictionPicker';
+import MentorFaqEditor from '@/components/mentor/faq/MentorFaqEditor';
+import MentorLeadsInbox from '@/components/mentor/contact/MentorLeadsInbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -947,6 +952,25 @@ const Mentor: React.FC = () => {
 
         <MonetizationSection />
         <TestimonialsSection />
+
+        {/* Phase 2: Trust & policies */}
+        <section
+          aria-labelledby="trust-policies-heading"
+          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-8"
+        >
+          <h2 id="trust-policies-heading" className="text-base font-semibold">
+            {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
+          </h2>
+          <PublicStatsToggle />
+          <div className="border-t border-border/40" />
+          <CancellationPolicySelector />
+          <div className="border-t border-border/40" />
+          <MentorJurisdictionPicker />
+          <div className="border-t border-border/40" />
+          <MentorFaqEditor />
+          <div className="border-t border-border/40" />
+          <MentorLeadsInbox />
+        </section>
 
         {/* Detail modal */}
         <StudentDetailModal
