@@ -2393,7 +2393,8 @@
       "BROKER_DISCONNECTED": "Broker Disconnected",
       "WEEKLY_DIGEST": "Weekly Digest",
       "NEW_LOGIN_DETECTED": "New Login Detected",
-      "JOURNAL_REMINDER": "Journal Reminder"
+      "JOURNAL_REMINDER": "Journal Reminder",
+      "MENTOR_NOTE_SHARED": "Mentor Note Shared"
     },
     "remindAt": "Remind me at"
   },
@@ -3321,7 +3322,10 @@
       "editAction": "Edit note",
       "deleteAction": "Delete note",
       "deleteConfirmTitle": "Delete this note?",
-      "deleteConfirmDesc": "This private note will be permanently removed."
+      "deleteConfirmDesc": "This private note will be permanently removed.",
+      "shareWithStudentLabel": "Share with student",
+      "shareWithStudentHelper": "When enabled, the student sees this note and receives a notification.",
+      "visibleChip": "Visible to student"
     },
     "myMentor": {
       "title": "My Mentor",
@@ -3344,6 +3348,9 @@
         "desc": "Join a mentor space with an invite code from your coach.",
         "inputLabel": "Invite code",
         "joinButton": "Join"
+      },
+      "sharedNotes": {
+        "title": "Notes from your mentor"
       }
     },
     "atRiskReasons": {
@@ -3718,11 +3725,12 @@
         "genericError": "Failed to send. Please try again."
       },
       "inbox": {
-        "title": "Contact leads",
-        "empty": "No contact leads yet.",
-        "emptyDesc": "When visitors fill out your contact form, their messages will appear here.",
+        "title": "Prospect inquiries",
+        "empty": "No prospect inquiries yet.",
+        "emptyDesc": "When prospective students fill out your contact form, their messages will appear here.",
         "markRead": "Mark as read"
-      }
+      },
+      "alreadyStudent": "You are already enrolled with this mentor — use your My Mentor page to reach them."
     },
     "complaint": {
       "reportButton": {

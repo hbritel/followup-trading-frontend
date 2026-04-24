@@ -2137,7 +2137,8 @@
       "BROKER_DISCONNECTED": "Broker desconectado",
       "WEEKLY_DIGEST": "Resumen semanal",
       "NEW_LOGIN_DETECTED": "Nuevo inicio de sesion detectado",
-      "JOURNAL_REMINDER": "Recordatorio de diario"
+      "JOURNAL_REMINDER": "Recordatorio de diario",
+      "MENTOR_NOTE_SHARED": "Nota compartida por el mentor"
     },
     "remindAt": "Recordarme a las"
   },
@@ -3096,7 +3097,10 @@
       "editAction": "Editar nota",
       "deleteAction": "Eliminar nota",
       "deleteConfirmTitle": "¿Eliminar esta nota?",
-      "deleteConfirmDesc": "Esta nota privada se eliminará permanentemente."
+      "deleteConfirmDesc": "Esta nota privada se eliminará permanentemente.",
+      "shareWithStudentLabel": "Compartir con el estudiante",
+      "shareWithStudentHelper": "Cuando está habilitado, el estudiante ve esta nota y recibe una notificación.",
+      "visibleChip": "Visible para el estudiante"
     },
     "myMentor": {
       "title": "Mi Mentor",
@@ -3119,6 +3123,9 @@
         "desc": "Únete a un espacio mentor con un código de invitación de tu coach.",
         "inputLabel": "Código de invitación",
         "joinButton": "Unirse"
+      },
+      "sharedNotes": {
+        "title": "Notas de tu mentor"
       }
     },
     "atRisk": {
@@ -3499,11 +3506,12 @@
         "genericError": "Error al enviar. Por favor, inténtalo de nuevo."
       },
       "inbox": {
-        "title": "Leads de contacto",
-        "empty": "No hay leads de contacto aún.",
-        "emptyDesc": "Cuando los visitantes rellenen tu formulario de contacto, sus mensajes aparecerán aquí.",
+        "title": "Consultas de prospectos",
+        "empty": "Aún no hay consultas de prospectos.",
+        "emptyDesc": "Cuando los prospectos rellenen tu formulario de contacto, sus mensajes aparecerán aquí.",
         "markRead": "Marcar como leído"
-      }
+      },
+      "alreadyStudent": "Ya estás inscrito con este mentor — usa tu página Mi Mentor para contactarle."
     },
     "complaint": {
       "reportButton": {

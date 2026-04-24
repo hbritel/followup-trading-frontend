@@ -2378,7 +2378,8 @@
       "BROKER_DISCONNECTED": "Courtier deconnecte",
       "WEEKLY_DIGEST": "Résumé hebdomadaire",
       "NEW_LOGIN_DETECTED": "Nouvelle connexion detectee",
-      "JOURNAL_REMINDER": "Rappel de journal"
+      "JOURNAL_REMINDER": "Rappel de journal",
+      "MENTOR_NOTE_SHARED": "Note partagée par le mentor"
     },
     "remindAt": "Me rappeler a"
   },
@@ -3305,7 +3306,10 @@
       "editAction": "Modifier la note",
       "deleteAction": "Supprimer la note",
       "deleteConfirmTitle": "Supprimer cette note ?",
-      "deleteConfirmDesc": "Cette note privée sera définitivement supprimée."
+      "deleteConfirmDesc": "Cette note privée sera définitivement supprimée.",
+      "shareWithStudentLabel": "Partager avec l'étudiant",
+      "shareWithStudentHelper": "Quand cette option est activée, l'étudiant voit cette note et reçoit une notification.",
+      "visibleChip": "Visible par l'étudiant"
     },
     "myMentor": {
       "title": "Mon Mentor",
@@ -3328,6 +3332,9 @@
         "desc": "Rejoignez un espace mentor avec un code d'invitation de votre coach.",
         "inputLabel": "Code d'invitation",
         "joinButton": "Rejoindre"
+      },
+      "sharedNotes": {
+        "title": "Notes de votre mentor"
       }
     },
     "atRiskReasons": {
@@ -3702,11 +3709,12 @@
         "genericError": "Échec de l'envoi. Veuillez réessayer."
       },
       "inbox": {
-        "title": "Leads de contact",
-        "empty": "Aucun lead de contact pour l'instant.",
-        "emptyDesc": "Quand des visiteurs remplissent votre formulaire de contact, leurs messages apparaîtront ici.",
+        "title": "Demandes de contact",
+        "empty": "Aucune demande de contact pour l'instant.",
+        "emptyDesc": "Quand des prospects remplissent votre formulaire de contact, leurs messages apparaîtront ici.",
         "markRead": "Marquer comme lu"
-      }
+      },
+      "alreadyStudent": "Vous êtes déjà inscrit chez ce mentor — utilisez votre page Mon Mentor pour le contacter."
     },
     "complaint": {
       "reportButton": {

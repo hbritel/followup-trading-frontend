@@ -25,11 +25,13 @@ const MentorContactForm: React.FC<MentorContactFormProps> = ({ slug, brandName }
   const [message, setMessage] = useState('');
   const [consented, setConsented] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [alreadyStudent, setAlreadyStudent] = useState(false);
 
   const canSubmit =
     email.trim().length > 0 &&
     message.trim().length > 0 &&
     consented &&
+    !alreadyStudent &&
     !submitContact.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,7 +54,15 @@ const MentorContactForm: React.FC<MentorContactFormProps> = ({ slug, brandName }
           );
         },
         onError: (error) => {
-          if (error instanceof AxiosError && error.response?.status === 429) {
+          if (error instanceof AxiosError && error.response?.status === 409) {
+            setAlreadyStudent(true);
+            toast.info(
+              t(
+                'mentor.contact.alreadyStudent',
+                'You are already enrolled with this mentor — use your My Mentor page to reach them.'
+              )
+            );
+          } else if (error instanceof AxiosError && error.response?.status === 429) {
             toast.error(
               t(
                 'mentor.contact.form.rateLimitError',
