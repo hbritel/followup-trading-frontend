@@ -30,6 +30,7 @@ function readParams(sp: URLSearchParams): {
   maxPrice: number;
   acceptsNew: boolean;
   freeOnly: boolean;
+  verifiedOnly: boolean;
   sort: DirectorySortKey;
   page: number;
 } {
@@ -41,6 +42,7 @@ function readParams(sp: URLSearchParams): {
     maxPrice: Number(sp.get('maxPrice') ?? MAX_PRICE),
     acceptsNew: sp.get('acceptsNew') === 'true',
     freeOnly: sp.get('freeOnly') === 'true',
+    verifiedOnly: sp.get('verifiedOnly') === 'true',
     sort: (sp.get('sort') as DirectorySortKey) ?? 'RELEVANCE',
     page: Number(sp.get('page') ?? 0),
   };
@@ -53,6 +55,7 @@ const DEFAULT_FILTERS: FilterValues = {
   maxPrice: MAX_PRICE,
   acceptsNew: false,
   freeOnly: false,
+  verifiedOnly: false,
 };
 
 const MentorDirectory: React.FC = () => {
@@ -71,6 +74,7 @@ const MentorDirectory: React.FC = () => {
     maxPrice: params.maxPrice,
     acceptsNew: params.acceptsNew,
     freeOnly: params.freeOnly,
+    verifiedOnly: params.verifiedOnly,
   };
 
   const setParam = useCallback(
@@ -111,6 +115,7 @@ const MentorDirectory: React.FC = () => {
       if (next.minPrice !== undefined) updates.minPrice = next.minPrice > 0 ? String(next.minPrice) : null;
       if (next.maxPrice !== undefined) updates.maxPrice = next.maxPrice < MAX_PRICE ? String(next.maxPrice) : null;
       if (next.acceptsNew !== undefined) updates.acceptsNew = next.acceptsNew ? 'true' : null;
+      if (next.verifiedOnly !== undefined) updates.verifiedOnly = next.verifiedOnly ? 'true' : null;
       if (next.freeOnly !== undefined) {
         updates.freeOnly = next.freeOnly ? 'true' : null;
         if (next.freeOnly) updates.maxPrice = '0';
@@ -150,6 +155,7 @@ const MentorDirectory: React.FC = () => {
     maxPrice: params.freeOnly ? 0 : params.maxPrice < MAX_PRICE ? params.maxPrice : undefined,
     acceptsNew: params.acceptsNew || undefined,
     monetizedOnly: params.freeOnly ? false : undefined,
+    verifiedOnly: params.verifiedOnly || undefined,
     sort: params.sort !== 'RELEVANCE' ? params.sort : undefined,
     page: params.page,
     size: PAGE_SIZE,
@@ -178,6 +184,7 @@ const MentorDirectory: React.FC = () => {
     filters.maxPrice < MAX_PRICE,
     filters.acceptsNew,
     filters.freeOnly,
+    filters.verifiedOnly,
   ].filter(Boolean).length;
 
   return (

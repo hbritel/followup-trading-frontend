@@ -16,6 +16,7 @@ export interface FilterValues {
   maxPrice: number;
   acceptsNew: boolean;
   freeOnly: boolean;
+  verifiedOnly: boolean;
 }
 
 interface FilterRailProps {
@@ -137,7 +138,8 @@ const FilterRail: React.FC<FilterRailProps> = ({
     values.minPrice > 0 ||
     values.maxPrice < MAX_PRICE ||
     values.acceptsNew ||
-    values.freeOnly;
+    values.freeOnly ||
+    values.verifiedOnly;
 
   return (
     <aside
@@ -267,6 +269,18 @@ const FilterRail: React.FC<FilterRailProps> = ({
         />
         <Label htmlFor="accepts-new" className="text-sm cursor-pointer">
           {t('mentor.directory.filters.acceptsNew')}
+        </Label>
+      </div>
+
+      {/* Verified only toggle */}
+      <div className="flex items-center gap-2">
+        <Switch
+          id="verified-only"
+          checked={values.verifiedOnly}
+          onCheckedChange={(v) => onChange({ verifiedOnly: v })}
+        />
+        <Label htmlFor="verified-only" className="text-sm cursor-pointer">
+          {t('mentor.directory.filters.verifiedOnly', 'Verified only')}
         </Label>
       </div>
     </aside>
