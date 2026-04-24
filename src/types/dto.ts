@@ -1631,6 +1631,13 @@ export interface MentorPublicProfileDto {
     monthlyAmount: number;
     stripePriceId: string;
   } | null;
+  // Phase 2 additions
+  verified: boolean;
+  cancellationPolicy: MentorCancellationPolicy;
+  showStatsPublicly: boolean;
+  stats: MentorPublicStatsDto | null;
+  faq: MentorFaqDto[];
+  hasContactForm: boolean;
 }
 
 // ── Mentor public disclaimer / checkout (Phase 0) ────────────────────────────
@@ -1980,6 +1987,8 @@ export interface DirectoryCardDto {
   monetized: boolean;
   acceptsNewStudents: boolean;
   createdAt: string;
+  // Phase 2 addition
+  verified?: boolean;
 }
 
 export interface DirectoryPageDto {
@@ -2005,6 +2014,7 @@ export interface DirectoryQuery {
   maxPrice?: number;
   acceptsNew?: boolean;
   monetizedOnly?: boolean;
+  verifiedOnly?: boolean;
   sort?: DirectorySortKey;
   page?: number;
   size?: number;
@@ -2013,4 +2023,97 @@ export interface DirectoryQuery {
 export interface LanguageOptionsDto {
   used: string[];
   allowed: string[];
+}
+
+// ── Phase 2: Trust & Conversion ─────────────────────────────────────────────
+
+export interface MentorFaqDto {
+  id: string;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+export interface MentorFaqMutation {
+  question: string;
+  answer: string;
+}
+
+export interface MentorPublicStatsDto {
+  lookbackDays: number;
+  tradeCount: number;
+  winRate: number | null;
+  profitFactor: number | null;
+  avgRMultiple: number | null;
+  insufficientData: boolean;
+}
+
+export type MentorCancellationPolicy =
+  | 'PLATFORM_DEFAULT'
+  | 'STRICT_NONE'
+  | 'FLEXIBLE_7D'
+  | 'FLEXIBLE_14D';
+
+export interface MentorContactLeadDto {
+  id: string;
+  visitorEmail: string;
+  message: string;
+  consentVersion: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface MentorContactSubmission {
+  email: string;
+  message: string;
+  consentVersion: string;
+}
+
+export type MentorJurisdictionMode = 'ALLOW' | 'DENY';
+
+export interface MentorJurisdictionRuleDto {
+  countryCode: string;
+  mode: MentorJurisdictionMode;
+}
+
+export type MentorComplaintCategory =
+  | 'MISLEADING_CREDENTIALS'
+  | 'SCAM'
+  | 'HARASSMENT'
+  | 'COPYRIGHT'
+  | 'ILLEGAL_CONTENT'
+  | 'MINOR_ABUSE'
+  | 'IMPERSONATION'
+  | 'OTHER';
+
+export type MentorComplaintStatus =
+  | 'OPEN'
+  | 'UNDER_REVIEW'
+  | 'RESOLVED_REMOVED'
+  | 'RESOLVED_REJECTED';
+
+export interface MentorComplaintSubmission {
+  reporterEmail?: string;
+  category: MentorComplaintCategory;
+  description: string;
+  evidenceUrl?: string;
+}
+
+export interface MentorComplaintDto {
+  id: string;
+  mentorInstanceId: string;
+  reporterEmail: string | null;
+  category: MentorComplaintCategory;
+  description: string;
+  evidenceUrl: string | null;
+  status: MentorComplaintStatus;
+  adminNotes: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface VerificationCandidateDto {
+  instanceId: string;
+  brandName: string;
+  reasonsMet: string[];
 }
