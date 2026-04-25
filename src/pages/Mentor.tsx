@@ -43,6 +43,12 @@ import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSe
 import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
 import SessionsKpiRibbon from '@/components/mentor/sessions/SessionsKpiRibbon';
 import InsightsKpiRibbon from '@/components/mentor/insights/InsightsKpiRibbon';
+import ComplianceKpiRibbon from '@/components/mentor/compliance/ComplianceKpiRibbon';
+import { useMyMentorFaq, useMyJurisdictions } from '@/hooks/useMentor';
+import {
+  useCohortPolicies,
+  useCohortPricing,
+} from '@/hooks/useMentorCohortOverrides';
 import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
 import WebinarEditor from '@/components/mentor/webinars/WebinarEditor';
 import WebinarAttendeesList from '@/components/mentor/webinars/WebinarAttendeesList';
@@ -653,6 +659,40 @@ const useStudentCohortMap = (
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentUserIds.join('|'), results.map((r) => r.dataUpdatedAt).join('|')]);
+};
+
+/* ───── Compact count badges for Compliance accordions ──── */
+const PillBadge: React.FC<{ count: number; tone?: 'primary' | 'amber' }> = ({ count, tone = 'primary' }) => {
+  if (count === 0) return null;
+  const cls = tone === 'amber'
+    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+    : 'bg-primary/10 text-primary border-primary/25';
+  return (
+    <span
+      className={[
+        'inline-flex items-center text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full border',
+        cls,
+      ].join(' ')}
+    >
+      {count}
+    </span>
+  );
+};
+
+const FaqCountBadge: React.FC = () => {
+  const { data: faq = [] } = useMyMentorFaq();
+  return <PillBadge count={faq.length} />;
+};
+
+const JurisdictionsBadge: React.FC = () => {
+  const { data: rules = [] } = useMyJurisdictions();
+  return <PillBadge count={rules.length} tone="amber" />;
+};
+
+const CohortOverridesBadge: React.FC = () => {
+  const { data: policies = [] } = useCohortPolicies();
+  const { data: pricing = [] } = useCohortPricing();
+  return <PillBadge count={policies.length + pricing.length} />;
 };
 
 /* ───────────────── Main Page ───────────────── */
@@ -1420,30 +1460,95 @@ const Mentor: React.FC = () => {
           {/* ── COMPLIANCE (trust & policies) ────────────────────────── */}
           {tabVisibility.compliance && (
             <TabsContent value="compliance" className="space-y-6 mt-2">
+              <ComplianceKpiRibbon />
+
               <section
                 aria-labelledby="trust-policies-heading"
-                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-8"
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-3"
               >
                 <h2 id="trust-policies-heading" className="text-base font-semibold">
                   {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
                 </h2>
-                <PublicStatsToggle />
-                <div className="border-t border-border/40" />
-                <CancellationPolicySelector />
-                <div className="border-t border-border/40" />
-                <MentorJurisdictionPicker />
-                <div className="border-t border-border/40" />
-                <MentorFaqEditor />
+
+                {/* Public stats — open by default. Most-consulted, fastest toggle. */}
+                <details
+                  open
+                  className="group rounded-xl border border-border/50 bg-muted/10 p-4"
+                >
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold">
+                      {t('mentor.settings.publicStats.title', 'Public stats')}
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <PublicStatsToggle />
+                  </div>
+                </details>
+
+                {/* Cancellation policy — open by default, daily-driver setting. */}
+                <details
+                  open
+                  className="group rounded-xl border border-border/50 bg-muted/10 p-4"
+                >
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold">
+                      {t('mentor.settings.cancellation.title', 'Cancellation policy')}
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <CancellationPolicySelector />
+                  </div>
+                </details>
+
+                {/* Jurisdictions — collapsed by default, count badge if any rule. */}
+                <details className="group rounded-xl border border-border/50 bg-muted/10 p-4">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold inline-flex items-center gap-2">
+                      {t('mentor.settings.jurisdictions.title', 'Jurisdictions')}
+                      <JurisdictionsBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <MentorJurisdictionPicker />
+                  </div>
+                </details>
+
+                {/* FAQ — collapsed by default, count badge. */}
+                <details className="group rounded-xl border border-border/50 bg-muted/10 p-4">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold inline-flex items-center gap-2">
+                      {t('mentor.settings.faq.title', 'FAQ')}
+                      <FaqCountBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <MentorFaqEditor />
+                  </div>
+                </details>
               </section>
 
-              {/* C4 + C5: per-cohort overrides for cancellation policy and pricing.
-                  Renders only the cohorts that exist; falls back to instance defaults
-                  when no row is set. */}
+              {/* C4 + C5: per-cohort overrides — collapsed by default, count
+                  badge surfaces how many cohorts override defaults. */}
               <section
                 aria-labelledby="cohort-overrides-section"
                 className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
               >
-                <MentorCohortOverridesPanel />
+                <details className="group">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-base font-semibold inline-flex items-center gap-2">
+                      {t('mentor.cohortOverrides.title', 'Per-cohort overrides')}
+                      <CohortOverridesBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-4 pt-4 border-t border-border/40">
+                    <MentorCohortOverridesPanel />
+                  </div>
+                </details>
               </section>
             </TabsContent>
           )}
