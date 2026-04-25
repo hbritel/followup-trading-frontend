@@ -8,6 +8,8 @@ import {
   CreditCard,
   Loader2,
   LogIn,
+  MessageSquarePlus,
+  ShieldCheck,
   Star,
   Users,
 } from 'lucide-react';
@@ -29,6 +31,7 @@ import PublicFaqSection from '@/components/mentor/faq/PublicFaqSection';
 import MentorContactForm from '@/components/mentor/contact/MentorContactForm';
 import ReportProfileButton from '@/components/mentor/complaint/ReportProfileButton';
 import SessionBookingCalendar from '@/components/mentor/sessions/SessionBookingCalendar';
+import StickySubscribePanel from '@/components/mentor/publicprofile/StickySubscribePanel';
 import WebinarCard from '@/components/mentor/webinars/WebinarCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Clock, Video } from 'lucide-react';
@@ -667,20 +670,33 @@ const PublicMentorProfileContent: React.FC = () => {
             aria-labelledby="testimonials-heading"
             className="space-y-4"
           >
-            <h2
-              id="testimonials-heading"
-              className="text-lg font-semibold"
-            >
-              {t(
-                'mentor.publicPage.testimonialsTitle',
-                'What students are saying'
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h2
+                id="testimonials-heading"
+                className="text-lg font-semibold"
+              >
+                {t(
+                  'mentor.publicPage.testimonialsTitle',
+                  'What students are saying'
+                )}
+              </h2>
+              {isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-primary hover:text-primary hover:bg-primary/5"
+                  onClick={() => navigate('/my-mentor#my-testimonial-heading')}
+                >
+                  <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+                  {t('mentor.publicPage.shareYourFeedback', 'Share your feedback')}
+                </Button>
               )}
-            </h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(profile.testimonials ?? []).map((item, idx) => (
                 <article
                   key={`${item.username}-${idx}`}
-                  className="glass-card rounded-2xl p-5 border border-border/50 space-y-3"
+                  className="glass-card rounded-2xl p-5 border border-border/50 space-y-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30"
                 >
                   <StarRow rating={item.rating} />
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -761,24 +777,59 @@ const PublicMentorProfileContent: React.FC = () => {
           </section>
         )}
 
-        {/* Phase 4: Session booking dialog */}
+        {/* Phase 4: Session booking dialog with sticky offering summary */}
         <Dialog
           open={bookingOffering !== undefined}
           onOpenChange={(open) => { if (!open) setBookingOffering(undefined); }}
         >
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3">
               <DialogTitle>
                 {t('mentor.sessions.calendar.title', 'Pick a time')}
-                {bookingOffering && ` — ${bookingOffering.title}`}
               </DialogTitle>
             </DialogHeader>
             {bookingOffering && (
-              <SessionBookingCalendar
-                offering={bookingOffering}
-                onConfirm={handleBookSession}
-                isPending={bookSession.isPending}
-              />
+              <>
+                <div
+                  className="mx-6 mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2"
+                  role="region"
+                  aria-label={t('mentor.sessions.summary.aria', 'Session summary')}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wide text-primary/80">
+                        {t('mentor.sessions.summary.label', 'Booking')}
+                      </p>
+                      <p className="font-semibold text-sm leading-snug mt-0.5">
+                        {bookingOffering.title}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-lg font-bold tabular-nums">
+                        {bookingOffering.priceCents === 0
+                          ? t('mentor.webinars.free', 'Free')
+                          : `${currencySymbol[bookingOffering.currency] ?? bookingOffering.currency}${(bookingOffering.priceCents / 100).toFixed(2)}`}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {bookingOffering.durationMinutes}{t('mentor.sessions.min', ' min')}
+                      </p>
+                    </div>
+                  </div>
+                  {profile.cancellationPolicy && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1 border-t border-primary/10">
+                      <ShieldCheck className="w-3 h-3 text-primary/70" aria-hidden="true" />
+                      <CancellationPolicyChip policy={profile.cancellationPolicy} />
+                    </div>
+                  )}
+                </div>
+                <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
+                  <SessionBookingCalendar
+                    offering={bookingOffering}
+                    onConfirm={handleBookSession}
+                    isPending={bookSession.isPending}
+                  />
+                </div>
+              </>
             )}
           </DialogContent>
         </Dialog>
@@ -824,6 +875,14 @@ const PublicMentorProfileContent: React.FC = () => {
           onOpenChange={setDisclaimerOpen}
           slug={profile.slug}
           brandName={profile.brandName}
+        />
+      )}
+
+      {profile.acceptsNewStudents && profile.pricing && priceLabel && (
+        <StickySubscribePanel
+          profile={profile}
+          priceLabel={priceLabel}
+          onSubscribe={handleSubscribeClick}
         />
       )}
     </main>

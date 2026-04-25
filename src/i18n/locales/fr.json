@@ -8,6 +8,7 @@
     "loading": "Chargement...",
     "save": "Enregistrer",
     "cancel": "Annuler",
+    "dismiss": "Masquer",
     "edit": "Modifier",
     "delete": "Supprimer",
     "confirm": "Confirmer",
@@ -3582,6 +3583,8 @@
       "profile": {
         "subscribeCta": {
           "cancelAnytime": "Annulable à tout moment. Sans engagement.",
+          "ready": "Prêt à rejoindre ?",
+          "subscribeNow": "S'abonner maintenant",
           "title": "S'abonner à {{brand}}"
         }
       },
