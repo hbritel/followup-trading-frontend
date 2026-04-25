@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, CircleAlert, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,7 @@ import {
   useDefaultPricing,
   useMentorSubscriptions,
 } from '@/hooks/useMentor';
-
-const STORAGE_KEY = 'mentor.section.monetization.open';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 const currencySymbol: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
 
@@ -23,22 +22,10 @@ const formatAmount = (cents: number, currency: string) => {
 
 const MonetizationSection: React.FC = () => {
   const { t } = useTranslation();
-  // Default open; persisted to localStorage so /harden survives page refresh.
-  const [open, setOpen] = useState<boolean>(() => {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      return v === null ? true : v === '1';
-    } catch {
-      return true;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, open ? '1' : '0');
-    } catch {
-      /* noop */
-    }
-  }, [open]);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.monetization.open',
+    true,
+  );
 
   const { data: status } = useConnectStatus();
   const { data: pricing } = useDefaultPricing();

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdatePublicProfile } from '@/hooks/useMentor';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import type {
   MentorInstanceDto,
   UpdatePublicProfileRequestDto,
@@ -41,7 +42,10 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
   const { t } = useTranslation();
   const mutation = useUpdatePublicProfile();
 
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.publicProfile.open',
+    true,
+  );
   const [enabled, setEnabled] = useState(!!instance.publicProfileEnabled);
   const [slug, setSlug] = useState(instance.slug ?? '');
   const [headline, setHeadline] = useState(instance.publicHeadline ?? '');
@@ -93,6 +97,19 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
     bio.length <= MAX_BIO &&
     credentials.length <= MAX_CREDENTIALS;
 
+  // Dirty when any field differs from server state. Surfaced as a small dot
+  // on the section header so users don't lose work by collapsing the panel.
+  const isDirty =
+    enabled !== !!instance.publicProfileEnabled ||
+    slug !== (instance.slug ?? '') ||
+    headline !== (instance.publicHeadline ?? '') ||
+    bio !== (instance.publicBio ?? '') ||
+    credentials !== (instance.publicCredentials ?? '') ||
+    yearsTrading !==
+      (instance.publicYearsTrading != null
+        ? String(instance.publicYearsTrading)
+        : '');
+
   const publicUrl =
     typeof window !== 'undefined' && slug
       ? `${window.location.origin}/m/${slug}`
@@ -123,6 +140,21 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
           <h2 id="public-profile-heading" className="text-base font-semibold">
             {t('mentor.publicProfile.title', 'Public profile')}
           </h2>
+          {isDirty && (
+            <span
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+              title={t(
+                'mentor.unsavedChanges',
+                'You have unsaved changes in this section',
+              )}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-amber-500"
+                aria-hidden="true"
+              />
+              {t('mentor.unsaved', 'Unsaved')}
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"
