@@ -19,6 +19,8 @@ import {
   ChevronDown,
   Globe,
   Eye,
+  Layers,
+  Minimize2,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StudentList from '@/components/mentor/StudentList';
@@ -645,6 +647,24 @@ const Mentor: React.FC = () => {
   const [atRiskOpen, setAtRiskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'joined' | 'sharing'>('joined');
+
+  // Maturity-based progressive disclosure. Power users can override via the
+  // header "Show all sections" toggle (persisted to localStorage).
+  const [forceFullView, setForceFullView] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('mentor.forceFullView') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (forceFullView) localStorage.setItem('mentor.forceFullView', '1');
+      else localStorage.removeItem('mentor.forceFullView');
+    } catch {
+      /* noop */
+    }
+  }, [forceFullView]);
   const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(new Set());
 
   const handleSelectStudent = (userId: string) => {
@@ -761,6 +781,19 @@ const Mentor: React.FC = () => {
 
   const atRiskStudents = summary?.atRiskStudents ?? [];
 
+  // Stages: SETUP (no students) → GROWING (1-9) → ESTABLISHED (10+).
+  // forceFullView upgrades to ESTABLISHED for power users.
+  const studentCount = instance.currentStudents;
+  const stage: 'SETUP' | 'GROWING' | 'ESTABLISHED' = forceFullView
+    ? 'ESTABLISHED'
+    : studentCount === 0
+      ? 'SETUP'
+      : studentCount < 10
+        ? 'GROWING'
+        : 'ESTABLISHED';
+  const showGrowingPlus = stage !== 'SETUP';
+  const showEstablished = stage === 'ESTABLISHED';
+
   return (
     <DashboardLayout pageTitle={pageTitle}>
       <div className="space-y-6">
@@ -833,6 +866,23 @@ const Mentor: React.FC = () => {
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setForceFullView((v) => !v);
+                }}
+                className="gap-2"
+              >
+                {forceFullView ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Layers className="w-4 h-4" />
+                )}
+                {forceFullView
+                  ? t('mentor.viewMode.compact', 'Compact view')
+                  : t('mentor.viewMode.full', 'Show all sections')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
                 onSelect={() => setDeleteOpen(true)}
                 className="gap-2 text-destructive focus:text-destructive"
               >
@@ -842,6 +892,36 @@ const Mentor: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
+
+        {/* Stage banner — explains why some sections are hidden */}
+        {!forceFullView && stage !== 'ESTABLISHED' && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-primary">
+                {stage === 'SETUP'
+                  ? t('mentor.stage.setupBadge', 'Setup mode')
+                  : t('mentor.stage.growingBadge', 'Growing mode')}
+              </span>
+              <span className="mx-2 opacity-50">·</span>
+              {stage === 'SETUP'
+                ? t(
+                    'mentor.stage.setupHint',
+                    'Sessions, webinars, analytics and trust panels unlock once your first student joins.'
+                  )
+                : t(
+                    'mentor.stage.growingHint',
+                    'Webinars, analytics and trust panels unlock at 10 students, or show them all now.'
+                  )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setForceFullView(true)}
+              className="text-xs font-medium text-primary hover:underline shrink-0"
+            >
+              {t('mentor.viewMode.showAll', 'Show all')}
+            </button>
+          </div>
+        )}
 
         {/* Invite hero */}
         <InviteHero instance={instance} />
@@ -903,11 +983,11 @@ const Mentor: React.FC = () => {
           </div>
         )}
 
-        {/* Announcements section */}
+        {/* Announcements section — always visible */}
         <AnnouncementsSection />
 
-        {/* Cohorts management section */}
-        <CohortsSection />
+        {/* Cohorts — only when there are students to organize */}
+        {showGrowingPlus && <CohortsSection />}
 
         {/* Students section */}
         <div className="glass-card rounded-2xl p-5">
@@ -981,74 +1061,85 @@ const Mentor: React.FC = () => {
           )}
         </div>
 
-        {/* Activity feed */}
-        <ActivityFeed onSelectStudent={handleSelectStudent} />
+        {/* Activity feed — only with students */}
+        {showGrowingPlus && <ActivityFeed onSelectStudent={handleSelectStudent} />}
 
-        {/* Iteration C: Public profile / Monetization / Testimonials */}
+        {/* Public profile — always visible (drives discovery, gates SETUP step 1) */}
         <PublicProfileSection instance={instance} />
 
-        {/* Phase 1: Directory taxonomy */}
+        {/* Directory taxonomy — always visible (helps directory match new mentors) */}
         <MentorTagsPicker />
         <MentorLanguagesPicker />
 
-        <MonetizationSection />
-        <TestimonialsSection />
+        {/* Monetization — visible from GROWING stage so first student triggers Stripe setup */}
+        {showGrowingPlus && <MonetizationSection />}
 
-        {/* Phase 4: Sessions */}
-        <section
-          aria-labelledby="sessions-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="sessions-heading" className="text-base font-semibold">
-            {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
-          </h2>
-          <SessionOfferingEditor />
-          <div className="border-t border-border/40" />
-          <MentorSessionsList />
-        </section>
+        {/* Testimonials — only ESTABLISHED (need real students for real reviews) */}
+        {showEstablished && <TestimonialsSection />}
 
-        {/* Phase 4: Webinars */}
-        <section
-          aria-labelledby="webinars-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="webinars-heading" className="text-base font-semibold">
-            {t('mentor.webinars.sectionTitle', 'Webinars')}
-          </h2>
-          <WebinarEditor />
-          <div className="border-t border-border/40" />
-          <WebinarAttendeesList />
-        </section>
+        {/* Sessions — GROWING+ (some mentors want to launch 1:1 before hitting 10) */}
+        {showGrowingPlus && (
+          <section
+            aria-labelledby="sessions-heading"
+            className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+          >
+            <h2 id="sessions-heading" className="text-base font-semibold">
+              {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+            </h2>
+            <SessionOfferingEditor />
+            <div className="border-t border-border/40" />
+            <MentorSessionsList />
+          </section>
+        )}
 
-        {/* Phase 4: Analytics */}
-        <section
-          aria-labelledby="analytics-section-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="analytics-section-heading" className="text-base font-semibold">
-            {t('mentor.analytics.title', 'Funnel analytics')}
-          </h2>
-          <FunnelReportPanel />
-        </section>
+        {/* Webinars — ESTABLISHED (audience needed) */}
+        {showEstablished && (
+          <section
+            aria-labelledby="webinars-heading"
+            className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+          >
+            <h2 id="webinars-heading" className="text-base font-semibold">
+              {t('mentor.webinars.sectionTitle', 'Webinars')}
+            </h2>
+            <WebinarEditor />
+            <div className="border-t border-border/40" />
+            <WebinarAttendeesList />
+          </section>
+        )}
 
-        {/* Phase 2: Trust & policies */}
-        <section
-          aria-labelledby="trust-policies-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-8"
-        >
-          <h2 id="trust-policies-heading" className="text-base font-semibold">
-            {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
-          </h2>
-          <PublicStatsToggle />
-          <div className="border-t border-border/40" />
-          <CancellationPolicySelector />
-          <div className="border-t border-border/40" />
-          <MentorJurisdictionPicker />
-          <div className="border-t border-border/40" />
-          <MentorFaqEditor />
-          <div className="border-t border-border/40" />
-          <MentorLeadsInbox />
-        </section>
+        {/* Funnel analytics — ESTABLISHED (need traffic for meaningful charts) */}
+        {showEstablished && (
+          <section
+            aria-labelledby="analytics-section-heading"
+            className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+          >
+            <h2 id="analytics-section-heading" className="text-base font-semibold">
+              {t('mentor.analytics.title', 'Funnel analytics')}
+            </h2>
+            <FunnelReportPanel />
+          </section>
+        )}
+
+        {/* Trust & policies — ESTABLISHED (compliance friction not blocking onboarding) */}
+        {showEstablished && (
+          <section
+            aria-labelledby="trust-policies-heading"
+            className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-8"
+          >
+            <h2 id="trust-policies-heading" className="text-base font-semibold">
+              {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
+            </h2>
+            <PublicStatsToggle />
+            <div className="border-t border-border/40" />
+            <CancellationPolicySelector />
+            <div className="border-t border-border/40" />
+            <MentorJurisdictionPicker />
+            <div className="border-t border-border/40" />
+            <MentorFaqEditor />
+            <div className="border-t border-border/40" />
+            <MentorLeadsInbox />
+          </section>
+        )}
 
         {/* Detail modal */}
         <StudentDetailModal
