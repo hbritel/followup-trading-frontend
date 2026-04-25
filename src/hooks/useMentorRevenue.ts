@@ -164,6 +164,23 @@ export const useMyBookings = () => {
   });
 };
 
+export const useCancelMyBooking = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingId: string) => mentorService.cancelMyBooking(bookingId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MY_BOOKINGS_KEY });
+      toast.success('Booking cancelled.');
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof AxiosError && error.response?.data?.message
+        ? String(error.response.data.message)
+        : 'Failed to cancel booking.';
+      toast.error(msg);
+    },
+  });
+};
+
 // ── Webinars — mentor CRUD ───────────────────────────────────────────────────
 
 export const useMyWebinars = () => {

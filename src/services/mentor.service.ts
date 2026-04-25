@@ -47,6 +47,7 @@ import type {
   MentorComplaintSubmission,
   SessionOfferingDto,
   SessionBookingDto,
+  StudentBookingDto,
   WebinarDto,
   WebinarTicketDto,
   FunnelReportDto,
@@ -672,8 +673,16 @@ export const mentorService = {
 
   // ── Phase 4: Student bookings ────────────────────────────────────────────
 
-  getMyBookings: async (): Promise<SessionBookingDto[]> => {
-    const res = await apiClient.get<SessionBookingDto[]>(`/me/mentor/bookings`);
+  getMyBookings: async (): Promise<StudentBookingDto[]> => {
+    const res = await apiClient.get<StudentBookingDto[]>(`/me/mentor/bookings`);
+    return res.data;
+  },
+
+  cancelMyBooking: async (bookingId: string): Promise<StudentBookingDto> => {
+    const res = await apiClient.post<StudentBookingDto>(
+      `/me/mentor/bookings/${bookingId}/cancel`,
+      {},
+    );
     return res.data;
   },
 

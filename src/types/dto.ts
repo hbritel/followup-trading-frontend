@@ -2156,6 +2156,27 @@ export interface SessionBookingDto {
   meetingUrl?: string | null;
 }
 
+/**
+ * Student-facing booking view returned by `/me/mentor/bookings` — wraps the
+ * raw booking with cancellation-window context pre-computed server-side.
+ */
+export interface StudentBookingDto {
+  id: string;
+  offeringId: string;
+  mentorInstanceId: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  priceCents: number;
+  currency: string;
+  status: SessionBookingStatus;
+  meetingUrl?: string | null;
+  cancellationWindowHours?: number | null;
+  withinCancellationWindow: boolean;
+  cancellable: boolean;
+  cancelledAt?: string | null;
+  createdAt: string;
+}
+
 export type WebinarStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
 
 export interface WebinarDto {
