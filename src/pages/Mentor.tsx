@@ -20,7 +20,6 @@ import {
   Globe,
   Eye,
   HelpCircle,
-  Layers,
   Minimize2,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -849,24 +848,14 @@ const Mentor: React.FC = () => {
                 <ExternalLink className="w-4 h-4" />
                 {t('mentor.copyInviteLink', 'Copy invite link')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               {publicProfileUrl ? (
-                <>
-                  <DropdownMenuItem
-                    onSelect={() => window.open(publicProfileUrl, '_blank', 'noopener')}
-                    className="gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    {t('mentor.viewPublicProfile', 'View public profile')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={handleCopyPublicProfile}
-                    className="gap-2"
-                  >
-                    <Globe className="w-4 h-4" />
-                    {t('mentor.copyPublicProfileLink', 'Copy public profile link')}
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem
+                  onSelect={() => window.open(publicProfileUrl, '_blank', 'noopener')}
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  {t('mentor.viewPublicProfile', 'View public profile')}
+                </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
                   onSelect={scrollToPublicProfileSection}
@@ -876,23 +865,25 @@ const Mentor: React.FC = () => {
                   {t('mentor.setUpPublicProfile', 'Set up public profile')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setForceFullView((v) => !v);
-                }}
-                className="gap-2"
-              >
-                {forceFullView ? (
-                  <Minimize2 className="w-4 h-4" />
-                ) : (
-                  <Layers className="w-4 h-4" />
-                )}
-                {forceFullView
-                  ? t('mentor.viewMode.compact', 'Compact view')
-                  : t('mentor.viewMode.full', 'Show all sections')}
-              </DropdownMenuItem>
+              {/* Compact-view toggle only surfaces when forceFullView is on
+                  so a power user can roll back. SETUP/GROWING users get
+                  "Show all" via the stage banner button instead — keeps the
+                  dropdown at ≤4 items in the common case. */}
+              {forceFullView && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setForceFullView(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <Minimize2 className="w-4 h-4" />
+                    {t('mentor.viewMode.compact', 'Compact view')}
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={() => setDeleteOpen(true)}
