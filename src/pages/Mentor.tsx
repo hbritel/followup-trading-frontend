@@ -30,6 +30,7 @@ import CohortFilterChips from '@/components/mentor/CohortFilterChips';
 import ActivityFeed from '@/components/mentor/ActivityFeed';
 import MonetizationSection from '@/components/mentor/monetization/MonetizationSection';
 import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfileSection';
+import MentorSetupChecklist from '@/components/mentor/publicprofile/MentorSetupChecklist';
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
 import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
 import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
@@ -307,20 +308,38 @@ const InviteHero: React.FC<{ instance: MentorInstanceDto }> = ({ instance }) => 
                   max: instance.maxStudents,
                 })}
               </span>
-              <span
-                className={[
-                  'text-xs font-medium tabular-nums',
-                  atCapacity
-                    ? 'text-destructive'
-                    : nearCapacity
-                      ? 'text-amber-500 dark:text-amber-400'
-                      : warnCapacity
-                        ? 'text-muted-foreground'
-                        : 'text-muted-foreground/70',
-                ].join(' ')}
-              >
-                {capacityPct}%
-              </span>
+              <div className="flex items-center gap-2">
+                {instance.maxStudents > 0 && !atCapacity && (
+                  <span
+                    className={[
+                      'text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border',
+                      nearCapacity
+                        ? 'text-amber-700 bg-amber-500/15 border-amber-500/40 dark:text-amber-300'
+                        : warnCapacity
+                          ? 'text-amber-600 bg-amber-500/10 border-amber-500/25 dark:text-amber-400'
+                          : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25 dark:text-emerald-400',
+                    ].join(' ')}
+                  >
+                    {t('mentor.slotsLeft', '{{n}} slots left', {
+                      n: Math.max(0, instance.maxStudents - instance.currentStudents),
+                    })}
+                  </span>
+                )}
+                <span
+                  className={[
+                    'text-xs font-medium tabular-nums',
+                    atCapacity
+                      ? 'text-destructive'
+                      : nearCapacity
+                        ? 'text-amber-500 dark:text-amber-400'
+                        : warnCapacity
+                          ? 'text-muted-foreground'
+                          : 'text-muted-foreground/70',
+                  ].join(' ')}
+                >
+                  {capacityPct}%
+                </span>
+              </div>
             </div>
             <Progress
               value={capacityPct}
@@ -827,6 +846,23 @@ const Mentor: React.FC = () => {
         {/* Invite hero */}
         <InviteHero instance={instance} />
 
+        {/* Setup checklist — guides first-time mentors to first paying student */}
+        <MentorSetupChecklist
+          instance={instance}
+          onStepClick={(anchor) => {
+            const el = document.getElementById(anchor);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // subtle highlight pulse
+              el.classList.add('ring-2', 'ring-primary/60', 'ring-offset-2', 'rounded-xl');
+              setTimeout(() => {
+                el.classList.remove('ring-2', 'ring-primary/60', 'ring-offset-2', 'rounded-xl');
+              }, 1600);
+            }
+          }}
+          onShareClick={handleCopyPublicLink}
+        />
+
         {/* KPI strip — only if summary endpoint returned data */}
         {summary && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1077,6 +1113,8 @@ const EmptyStudentsState: React.FC<{ instance: MentorInstanceDto }> = ({ instanc
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const link = `${window.location.origin}/join/${instance.inviteCode}`;
+  const publicProfileReady =
+    !!instance.publicProfileEnabled && !!instance.slug;
 
   const handleCopy = async () => {
     try {
@@ -1089,26 +1127,146 @@ const EmptyStudentsState: React.FC<{ instance: MentorInstanceDto }> = ({ instanc
     }
   };
 
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  type TipStep = {
+    key: string;
+    title: string;
+    desc: string;
+    cta: string;
+    onClick: () => void;
+    done: boolean;
+    icon: React.ReactNode;
+  };
+
+  const steps: TipStep[] = [
+    {
+      key: 'profile',
+      title: t('mentor.emptyStudents.step1Title', 'Make yourself discoverable'),
+      desc: t(
+        'mentor.emptyStudents.step1Desc',
+        'Enable your public profile so traders can find you.'
+      ),
+      cta: publicProfileReady
+        ? t('mentor.emptyStudents.step1Done', 'Profile is live')
+        : t('mentor.emptyStudents.step1Cta', 'Set up profile'),
+      onClick: () => scrollTo('public-profile-heading'),
+      done: publicProfileReady,
+      icon: <Globe className="w-4 h-4" />,
+    },
+    {
+      key: 'pitch',
+      title: t('mentor.emptyStudents.step2Title', 'Add your pitch'),
+      desc: t(
+        'mentor.emptyStudents.step2Desc',
+        'A strong headline + bio is what converts visitors into students.'
+      ),
+      cta:
+        instance.publicHeadline || instance.publicBio
+          ? t('mentor.emptyStudents.step2Done', 'Pitch set')
+          : t('mentor.emptyStudents.step2Cta', 'Write your pitch'),
+      onClick: () => scrollTo('public-profile-heading'),
+      done: !!(instance.publicHeadline || instance.publicBio),
+      icon: <Pencil className="w-4 h-4" />,
+    },
+    {
+      key: 'share',
+      title: t('mentor.emptyStudents.step3Title', 'Share your invite link'),
+      desc: t(
+        'mentor.emptyStudents.step3Desc',
+        'Post it on X, Discord, YouTube — wherever your audience lives.'
+      ),
+      cta: copied
+        ? t('mentor.copied', 'Copied')
+        : t('mentor.copyLink', 'Copy link'),
+      onClick: handleCopy,
+      done: false,
+      icon: <Share2 className="w-4 h-4" />,
+    },
+  ];
+
+  const completedCount = steps.filter((s) => s.done).length;
+
   return (
-    <div className="flex flex-col items-center text-center py-10 gap-3">
-      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-        <Users className="w-6 h-6 text-primary" />
-      </div>
-      <div>
+    <div className="py-6 space-y-5">
+      <div className="flex flex-col items-center text-center gap-2.5 max-w-md mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Users className="w-6 h-6 text-primary" />
+        </div>
         <h3 className="text-base font-semibold">
           {t('mentor.emptyStudentsTitle', 'No students yet')}
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground">
           {t(
-            'mentor.emptyStudentsDesc',
-            'Share your invite link and grow your cohort.'
+            'mentor.emptyStudents.leadIn',
+            'Your first student is three steps away. Ship them today.'
           )}
         </p>
+        <p className="text-xs font-medium text-primary tabular-nums">
+          {t('mentor.emptyStudents.progress', '{{done}} of {{total}} complete', {
+            done: completedCount,
+            total: steps.length,
+          })}
+        </p>
       </div>
-      <Button onClick={handleCopy} className="gap-1.5 mt-1">
-        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-        {t('mentor.copyLink', 'Copy link')}
-      </Button>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+        {steps.map((step, idx) => (
+          <div
+            key={step.key}
+            className={[
+              'rounded-xl border p-4 flex flex-col gap-3 transition-all duration-200',
+              step.done
+                ? 'border-emerald-500/40 bg-emerald-500/5'
+                : 'border-border/50 bg-muted/10 hover:border-primary/40',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className={[
+                  'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
+                  step.done
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-primary/10 text-primary',
+                ].join(' ')}
+              >
+                {step.done ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  step.icon
+                )}
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('mentor.emptyStudents.stepLabel', 'Step {{n}}', { n: idx + 1 })}
+              </span>
+            </div>
+            <div className="space-y-1 flex-1">
+              <p className="text-sm font-semibold leading-snug">{step.title}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {step.desc}
+              </p>
+            </div>
+            <Button
+              variant={step.done ? 'outline' : 'default'}
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={step.onClick}
+              disabled={step.done && step.key !== 'share'}
+            >
+              {step.key === 'share' &&
+                (copied ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                ))}
+              {step.cta}
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
