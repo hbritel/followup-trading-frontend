@@ -1019,10 +1019,17 @@ const Mentor: React.FC = () => {
         {/* Invite hero — always above tabs (top-of-page identity + capacity + invite link) */}
         <InviteHero instance={instance} />
 
-        {/* Tabbed dashboard — replaces the previous 14-section vertical scroll. */}
+        {/* Tabbed dashboard — replaces the previous 14-section vertical scroll.
+            Sticky wrapper sits inside the DashboardLayout scroll container
+            (`<div className="flex-1 p-4 md:p-6 overflow-auto">`). The negative
+            margins + matching horizontal padding stretch the sticky bar across
+            the full width of that container, so the backdrop-blur covers the
+            scroll edges instead of leaving a gutter on each side. Negative
+            top offsets pull the bar above the container's padding-top so it
+            actually clings to the very top edge when scrolling. */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-          <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/30">
-            <TabsList className="h-auto bg-transparent p-0 flex flex-wrap gap-1 justify-start">
+          <div className="sticky -top-4 md:-top-6 z-30 -mx-4 md:-mx-6 px-4 md:px-6 pt-3 pb-2 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b border-border/40">
+            <TabsList className="h-auto bg-transparent p-0 flex flex-wrap gap-1 justify-start w-full">
               <TabsTrigger value="overview" className="gap-1.5">
                 <LayoutDashboard className="w-3.5 h-3.5" aria-hidden="true" />
                 {t('mentor.tabs.overview', 'Overview')}
