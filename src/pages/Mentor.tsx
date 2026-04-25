@@ -686,6 +686,30 @@ const Mentor: React.FC = () => {
       /* noop */
     }
   }, [forceFullView]);
+
+  // Tab state. MUST be declared before any early returns or React will throw
+  // "Rendered more hooks than during the previous render" when instance flips
+  // from undefined → loaded. Stage gating happens later via `effectiveTab`.
+  const TAB_KEYS = ['overview', 'profile', 'sessions', 'insights', 'compliance'] as const;
+  type TabKey = typeof TAB_KEYS[number];
+  const readInitialTab = (): TabKey => {
+    if (typeof window === 'undefined') return 'overview';
+    const hash = window.location.hash.replace(/^#/, '').split('?')[0];
+    return (TAB_KEYS as readonly string[]).includes(hash) ? (hash as TabKey) : 'overview';
+  };
+  const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab());
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, '').split('?')[0];
+      if ((TAB_KEYS as readonly string[]).includes(hash)) {
+        setActiveTab(hash as TabKey);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(new Set());
 
   const handleSelectStudent = (userId: string) => {
@@ -818,41 +842,21 @@ const Mentor: React.FC = () => {
   // Tab structure replaces the long single-scroll page. Visibility is
   // stage-driven: SETUP shows overview + profile only, GROWING adds
   // sessions + insights, ESTABLISHED unlocks compliance.
-  const tabVisibility: Record<string, boolean> = {
+  const tabVisibility: Record<TabKey, boolean> = {
     overview: true,
     profile: true,
     sessions: showGrowingPlus,
     insights: showGrowingPlus,
     compliance: showEstablished,
   };
-  const allowedTabs = (
-    ['overview', 'profile', 'sessions', 'insights', 'compliance'] as const
-  ).filter((k) => tabVisibility[k]);
-
-  const readHashTab = (): string => {
-    const hash = (typeof window !== 'undefined' ? window.location.hash : '')
-      .replace(/^#/, '')
-      .split('?')[0];
-    return allowedTabs.includes(hash as typeof allowedTabs[number])
-      ? hash
-      : 'overview';
-  };
-  const [activeTab, setActiveTab] = useState<string>(() => readHashTab());
-
-  // Re-sync if the user pastes a hash, navigates back/forward, or stage
-  // gating retracts a tab.
-  useEffect(() => {
-    if (!allowedTabs.includes(activeTab as typeof allowedTabs[number])) {
-      setActiveTab('overview');
-    }
-    const onHashChange = () => setActiveTab(readHashTab());
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowedTabs.join(',')]);
+  // Effective tab is a derived value, NOT a separate state — keeps the page
+  // clear of conditional hooks. If the persisted activeTab is no longer
+  // allowed (stage retracted), fall back to overview without re-rendering.
+  const effectiveTab: TabKey = tabVisibility[activeTab] ? activeTab : 'overview';
 
   const handleTabChange = (next: string) => {
-    setActiveTab(next);
+    if (!(TAB_KEYS as readonly string[]).includes(next)) return;
+    setActiveTab(next as TabKey);
     const newHash = next === 'overview' ? '' : `#${next}`;
     if (typeof window !== 'undefined') {
       // Use replaceState so deep-linking works without polluting browser history.
@@ -1027,7 +1031,7 @@ const Mentor: React.FC = () => {
             scroll edges instead of leaving a gutter on each side. Negative
             top offsets pull the bar above the container's padding-top so it
             actually clings to the very top edge when scrolling. */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs value={effectiveTab} onValueChange={handleTabChange} className="space-y-4">
           <div className="sticky -top-4 md:-top-6 z-30 -mx-4 md:-mx-6 px-4 md:px-6 pt-3 pb-2 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b border-border/40">
             <TabsList className="h-auto bg-transparent p-0 flex flex-wrap gap-1 justify-start w-full">
               <TabsTrigger value="overview" className="gap-1.5">
