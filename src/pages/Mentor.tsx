@@ -311,21 +311,27 @@ const InviteHero: React.FC<{ instance: MentorInstanceDto }> = ({ instance }) => 
                 })}
               </span>
               <div className="flex items-center gap-2">
-                {instance.maxStudents > 0 && !atCapacity && (
-                  <span
-                    className={[
-                      'text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border',
-                      nearCapacity
-                        ? 'text-amber-700 bg-amber-500/15 border-amber-500/40 dark:text-amber-300'
-                        : warnCapacity
-                          ? 'text-amber-600 bg-amber-500/10 border-amber-500/25 dark:text-amber-400'
-                          : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25 dark:text-emerald-400',
-                    ].join(' ')}
-                  >
-                    {t('mentor.slotsLeft', '{{n}} slots left', {
-                      n: Math.max(0, instance.maxStudents - instance.currentStudents),
-                    })}
-                  </span>
+                {instance.maxStudents > 0 && (
+                  atCapacity ? (
+                    <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-destructive/15 text-destructive border-destructive/40">
+                      {t('mentor.slotsFull', 'Full · upgrade to grow')}
+                    </span>
+                  ) : (
+                    <span
+                      className={[
+                        'text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border',
+                        nearCapacity
+                          ? 'text-amber-700 bg-amber-500/15 border-amber-500/40 dark:text-amber-300'
+                          : warnCapacity
+                            ? 'text-amber-600 bg-amber-500/10 border-amber-500/25 dark:text-amber-400'
+                            : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25 dark:text-emerald-400',
+                      ].join(' ')}
+                    >
+                      {t('mentor.slotsLeft', '{{n}} slots left', {
+                        n: Math.max(0, instance.maxStudents - instance.currentStudents),
+                      })}
+                    </span>
+                  )
                 )}
                 <span
                   className={[

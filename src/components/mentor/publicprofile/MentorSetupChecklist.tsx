@@ -35,16 +35,21 @@ interface Step {
 }
 
 const SHARE_STORAGE_KEY = 'mentor.setup.shareConfirmed';
+const DISMISSED_STORAGE_KEY = 'mentor.setup.dismissed';
 
 const MentorSetupChecklist: React.FC<Props> = ({ instance, onStepClick, onShareClick }) => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [shareMarked, setShareMarked] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     try {
       setShareMarked(
         localStorage.getItem(`${SHARE_STORAGE_KEY}.${instance.id}`) === '1'
+      );
+      setDismissed(
+        localStorage.getItem(`${DISMISSED_STORAGE_KEY}.${instance.id}`) === '1'
       );
     } catch {
       /* noop */
@@ -123,7 +128,19 @@ const MentorSetupChecklist: React.FC<Props> = ({ instance, onStepClick, onShareC
   const pct = Math.round((completed / total) * 100);
   const allDone = completed === total;
 
+  // Once dismissed (user clicked "Hide this") it stays gone for the lifetime of
+  // the instance — power users get their pixels back.
+  if (dismissed) return null;
   if (allDone && collapsed) return null;
+
+  const dismissForever = () => {
+    try {
+      localStorage.setItem(`${DISMISSED_STORAGE_KEY}.${instance.id}`, '1');
+    } catch {
+      /* noop */
+    }
+    setDismissed(true);
+  };
 
   return (
     <section
@@ -284,12 +301,21 @@ const MentorSetupChecklist: React.FC<Props> = ({ instance, onStepClick, onShareC
           </ul>
 
           {allDone && (
-            <p className="text-xs text-center text-emerald-700 dark:text-emerald-300 font-medium pt-2 motion-safe:animate-in motion-safe:fade-in">
-              {t(
-                'mentor.setupChecklist.celebrate',
-                '🎉 Your profile is discoverable. Time to grow.'
-              )}
-            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium motion-safe:animate-in motion-safe:fade-in">
+                {t(
+                  'mentor.setupChecklist.celebrate',
+                  '🎉 Your profile is discoverable. Time to grow.'
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={dismissForever}
+                className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {t('mentor.setupChecklist.hideForever', 'Hide this card')}
+              </button>
+            </div>
           )}
         </div>
       )}
