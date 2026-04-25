@@ -38,7 +38,45 @@ import {
 } from '@/hooks/useMentorRevenue';
 import ErrorState from '@/components/ui/ErrorState';
 import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
+import { useMentorCohorts } from '@/hooks/useMentor';
+import { Users } from 'lucide-react';
 import type { WebinarDto, CreateWebinarDto } from '@/types/dto';
+
+/* ── Cohort target pills (header chip) ─────── */
+const CohortTargetPills: React.FC<{ ids: string[] }> = ({ ids }) => {
+  const { data: cohorts = [] } = useMentorCohorts();
+  if (ids.length === 0) return null;
+  const cohortById = new Map(cohorts.map((c) => [c.id, c]));
+  const visible = ids.slice(0, 2);
+  const overflow = ids.length - visible.length;
+  return (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <Users className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+      {visible.map((id) => {
+        const c = cohortById.get(id);
+        if (!c) return null;
+        return (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted/40 border border-border/40 text-muted-foreground"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: c.color ?? '#6366f1' }}
+              aria-hidden="true"
+            />
+            <span className="truncate max-w-[6rem]">{c.name}</span>
+          </span>
+        );
+      })}
+      {overflow > 0 && (
+        <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+          +{overflow}
+        </span>
+      )}
+    </span>
+  );
+};
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
 
@@ -389,7 +427,10 @@ const WebinarEditor: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
-                    <span className="font-medium text-sm">{w.title}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{w.title}</span>
+                      <CohortTargetPills ids={w.targetCohortIds ?? []} />
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {fmtDate(w.startsAt)}
                       {' · '}

@@ -26,6 +26,7 @@ import {
   CalendarClock,
   BarChart3,
   ShieldCheck,
+  Video,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StudentList from '@/components/mentor/StudentList';
@@ -40,6 +41,7 @@ import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfil
 import MentorSetupChecklist from '@/components/mentor/publicprofile/MentorSetupChecklist';
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
 import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
+import SessionsKpiRibbon from '@/components/mentor/sessions/SessionsKpiRibbon';
 import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
 import WebinarEditor from '@/components/mentor/webinars/WebinarEditor';
 import WebinarAttendeesList from '@/components/mentor/webinars/WebinarAttendeesList';
@@ -1296,41 +1298,54 @@ const Mentor: React.FC = () => {
           {/* ── SESSIONS & WEBINARS ──────────────────────────────────── */}
           {tabVisibility.sessions && (
             <TabsContent value="sessions" className="space-y-6 mt-2">
+              {/* KPI ribbon — at-a-glance state of monetised activity. */}
+              <SessionsKpiRibbon showWebinars={showEstablished} />
+
+              {/* Sessions: offerings (left) + bookings (right) on lg+, stack
+                  on mobile. Removes the redundant outer h2 since the tab nav
+                  already says "Sessions & webinars". */}
               <section
-                aria-labelledby="sessions-heading"
-                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+                aria-label={t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
               >
-                <h2 id="sessions-heading" className="text-base font-semibold">
-                  {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
-                </h2>
-                <SessionOfferingEditor />
-                <div className="border-t border-border/40" />
-                <MentorSessionsList />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SessionOfferingEditor />
+                  <MentorSessionsList />
+                </div>
               </section>
 
               {showEstablished ? (
                 <section
-                  aria-labelledby="webinars-heading"
-                  className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+                  aria-label={t('mentor.webinars.sectionTitle', 'Webinars')}
+                  className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
                 >
-                  <h2 id="webinars-heading" className="text-base font-semibold">
-                    {t('mentor.webinars.sectionTitle', 'Webinars')}
-                  </h2>
-                  <WebinarEditor />
-                  <div className="border-t border-border/40" />
-                  <WebinarAttendeesList />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <WebinarEditor />
+                    <WebinarAttendeesList />
+                  </div>
                 </section>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center">
-                  <p className="text-sm font-medium">
-                    {t('mentor.tabs.webinarsLockedTitle', 'Webinars unlock at 10 students')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t(
-                      'mentor.tabs.webinarsLockedDesc',
-                      'You need an audience before broadcasting. Use Show all to override the gate.'
-                    )}
-                  </p>
+                <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center space-y-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <Video className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
+                    <p className="text-sm font-medium">
+                      {t('mentor.tabs.webinarsLockedTitle', 'Webinars unlock at 10 students')}
+                    </p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      {t(
+                        'mentor.tabs.webinarsLockedDesc',
+                        'You need an audience before broadcasting. Use Show all to override the gate.'
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForceFullView(true)}
+                    className="gap-1.5"
+                  >
+                    {t('mentor.viewMode.showAll', 'Show all sections')}
+                  </Button>
                 </div>
               )}
             </TabsContent>
