@@ -224,7 +224,7 @@ const MentorDirectoryContent: React.FC = () => {
           <div className="flex-1 min-w-0">
             {/* Featured mentor spotlight — only on page 1 when no search query */}
             {params.page === 0 && !params.q && cards.length >= 3 && (
-              <MentorSpotlight cards={cards} />
+              <MentorSpotlight />
             )}
 
             {/* Toolbar */}

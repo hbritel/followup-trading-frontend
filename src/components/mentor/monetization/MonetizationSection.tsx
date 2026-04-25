@@ -10,6 +10,7 @@ import {
   useConnectStatus,
   useDefaultPricing,
   useMentorSubscriptions,
+  useMonetizationSummary,
 } from '@/hooks/useMentor';
 import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
@@ -29,16 +30,17 @@ const MonetizationSection: React.FC = () => {
 
   const { data: status } = useConnectStatus();
   const { data: pricing } = useDefaultPricing();
-  const { data: subscriptions = [] } = useMentorSubscriptions();
+  // MRR + active subs counts come from the backend so per-student waivers,
+  // student overrides and cohort overrides are applied to the same chain
+  // Stripe checkout uses. The local "activeSubs × default price" estimate
+  // ignored every override — moved to MentorMonetizationSummaryService.
+  const { data: summary } = useMonetizationSummary();
   const chargesEnabled = !!status?.chargesEnabled;
 
-  const activeSubs = subscriptions.filter(
-    (s) => s.status === 'ACTIVE' || s.status === 'TRIALING'
-  ).length;
-  const monthlyCents = pricing
-    ? activeSubs * Math.round(pricing.monthlyAmount * 100)
-    : 0;
-  const showMrrChip = chargesEnabled && pricing && activeSubs > 0;
+  const activeSubs = summary?.activeSubscribers ?? 0;
+  const monthlyCents = summary?.monthlyAmountCents ?? 0;
+  const summaryCurrency = summary?.currency ?? pricing?.currency ?? 'USD';
+  const showMrrChip = chargesEnabled && activeSubs > 0;
   const needsStripe = !chargesEnabled;
   const needsPricing = chargesEnabled && !pricing;
 
@@ -57,10 +59,10 @@ const MonetizationSection: React.FC = () => {
           {showMrrChip && (
             <span
               className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-              title={t('mentor.monetization.mrrTitle', 'Estimated monthly recurring revenue')}
+              title={t('mentor.monetization.mrrTitle', 'Monthly recurring revenue (overrides applied)')}
             >
               <span className="tabular-nums">
-                {formatAmount(monthlyCents, pricing.currency)}
+                {formatAmount(monthlyCents, summaryCurrency)}
               </span>
               <span className="opacity-70 font-medium">/mo</span>
               <span className="opacity-50">·</span>

@@ -1,36 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Flame, Sparkles, Star, Users, Verified } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { DirectoryCardDto } from '@/types/dto';
-
-interface Props {
-  cards: DirectoryCardDto[];
-}
+import { useDirectorySpotlight } from '@/hooks/useMentor';
 
 const ROTATION_MS = 6000;
 const MAX_SPOTLIGHTS = 5;
 const currencySymbol: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
 
-const score = (c: DirectoryCardDto): number => {
-  const ratingWeight = (c.avgRating || 0) * Math.log1p(c.testimonialCount);
-  const momentum = c.studentCount / Math.max(1, c.maxStudents);
-  const verifiedBonus = c.verified ? 2 : 0;
-  return ratingWeight + momentum + verifiedBonus;
-};
-
-const MentorSpotlight: React.FC<Props> = ({ cards }) => {
+/**
+ * MentorSpotlight — rotator powered by the server-ranked spotlight endpoint.
+ * The scoring formula (rating × ln(reviews) + capacity momentum + verified
+ * bonus) lives server-side in MentorDirectoryService.spotlight, so the
+ * frontend just renders whatever ordered list comes back. No client-side
+ * sort, no `cards` prop required.
+ */
+const MentorSpotlight: React.FC = () => {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const ranked = useMemo(() => {
-    return [...cards]
-      .filter((c) => c.acceptsNewStudents)
-      .sort((a, b) => score(b) - score(a))
-      .slice(0, MAX_SPOTLIGHTS);
-  }, [cards]);
+  const { data: ranked = [] } = useDirectorySpotlight(MAX_SPOTLIGHTS);
 
   useEffect(() => {
     if (paused || ranked.length < 2) return;

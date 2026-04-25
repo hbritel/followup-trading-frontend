@@ -36,6 +36,7 @@ import type {
   PublicCheckoutResponse,
   DirectoryQuery,
   DirectoryPageDto,
+  DirectoryCardDto,
   MentorTagDto,
   MentorTagCategory,
   LanguageOptionsDto,
@@ -109,6 +110,21 @@ export const mentorService = {
   getStudentPsychology: async (userId: string): Promise<MentorStudentPsychologyDto[]> => {
     const res = await apiClient.get<MentorStudentPsychologyDto[]>(
       `${MENTOR_BASE}/students/${userId}/psychology`
+    );
+    return res.data;
+  },
+
+  getMonetizationSummary: async (): Promise<import('@/types/dto').MentorMonetizationSummaryDto> => {
+    const res = await apiClient.get<import('@/types/dto').MentorMonetizationSummaryDto>(
+      `${MENTOR_BASE}/monetization/summary`,
+    );
+    return res.data;
+  },
+
+  getDirectorySpotlight: async (limit = 5): Promise<DirectoryCardDto[]> => {
+    const res = await apiClient.get<DirectoryCardDto[]>(
+      `/public/mentors/spotlight`,
+      { params: { limit } },
     );
     return res.data;
   },

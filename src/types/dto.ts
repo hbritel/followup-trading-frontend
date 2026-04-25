@@ -2067,6 +2067,14 @@ export type MentorCancellationPolicy =
   | 'FLEXIBLE_7D'
   | 'FLEXIBLE_14D';
 
+export interface MentorMonetizationSummaryDto {
+  monthlyAmountCents: number;
+  currency: string;
+  activeSubscribers: number;
+  totalSubscribers: number;
+  waivedSubscribers: number;
+}
+
 export interface MentorCohortPolicyDto {
   cohortId: string;
   instanceId: string;

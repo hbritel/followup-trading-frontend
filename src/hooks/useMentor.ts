@@ -803,6 +803,22 @@ export const useMentorSubscriptions = () => {
   });
 };
 
+export const useMonetizationSummary = () => {
+  return useQuery({
+    queryKey: ['mentor', 'monetization-summary'],
+    queryFn: mentorService.getMonetizationSummary,
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useDirectorySpotlight = (limit = 5) => {
+  return useQuery({
+    queryKey: ['mentor-directory', 'spotlight', limit],
+    queryFn: () => mentorService.getDirectorySpotlight(limit),
+    staleTime: 60 * 1000,
+  });
+};
+
 export const useSubscribeToMentor = () => {
   return useMutation({
     mutationFn: mentorService.subscribeToMentor,
