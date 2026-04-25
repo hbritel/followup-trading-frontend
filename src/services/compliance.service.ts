@@ -38,9 +38,15 @@ export const complianceService = {
   },
 
   getLatestCookieConsent: async (): Promise<CookieConsentDto | null> => {
-    const response = await apiClient.get<CookieConsentDto | null>(
-      '/compliance/cookie-consent/latest'
-    );
-    return response.data;
+    try {
+      const response = await apiClient.get<CookieConsentDto | null>(
+        '/compliance/cookie-consent/latest'
+      );
+      return response.data;
+    } catch {
+      // Pre-auth visitors or transient errors must not trigger the global 401
+      // redirect. Treat any failure as 'no server record yet'.
+      return null;
+    }
   },
 };
