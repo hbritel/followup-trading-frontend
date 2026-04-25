@@ -49,6 +49,7 @@ import PublicStatsToggle from '@/components/mentor/settings/PublicStatsToggle';
 import CancellationPolicySelector from '@/components/mentor/settings/CancellationPolicySelector';
 import MentorJurisdictionPicker from '@/components/mentor/settings/MentorJurisdictionPicker';
 import MentorFaqEditor from '@/components/mentor/faq/MentorFaqEditor';
+import MentorCohortOverridesPanel from '@/components/mentor/cohorts/MentorCohortOverridesPanel';
 import MentorLeadsInbox from '@/components/mentor/contact/MentorLeadsInbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1363,6 +1364,16 @@ const Mentor: React.FC = () => {
                 <MentorJurisdictionPicker />
                 <div className="border-t border-border/40" />
                 <MentorFaqEditor />
+              </section>
+
+              {/* C4 + C5: per-cohort overrides for cancellation policy and pricing.
+                  Renders only the cohorts that exist; falls back to instance defaults
+                  when no row is set. */}
+              <section
+                aria-labelledby="cohort-overrides-section"
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+              >
+                <MentorCohortOverridesPanel />
               </section>
             </TabsContent>
           )}

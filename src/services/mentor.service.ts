@@ -1,6 +1,8 @@
 import apiClient from './apiClient';
 import { AxiosError } from 'axios';
 import type {
+  MentorCohortPolicyDto,
+  MentorCohortPricingDto,
   MentorInstanceDto,
   MentorStudentDto,
   CreateInstanceRequestDto,
@@ -777,5 +779,48 @@ export const mentorService = {
 
   deleteSearchAlert: async (id: string): Promise<void> => {
     await apiClient.delete(`/me/mentor/search-alerts/${id}`);
+  },
+
+  // ── Cohort overrides (C4 + C5) ──────────────────────────────────────────
+
+  getCohortPolicies: async (): Promise<MentorCohortPolicyDto[]> => {
+    const res = await apiClient.get<MentorCohortPolicyDto[]>('/mentor/cohorts/policies');
+    return res.data;
+  },
+
+  upsertCohortPolicy: async (
+    cohortId: string,
+    cancellationPolicy: string,
+  ): Promise<MentorCohortPolicyDto> => {
+    const res = await apiClient.put<MentorCohortPolicyDto>(
+      `/mentor/cohorts/${cohortId}/policy`,
+      { cancellationPolicy },
+    );
+    return res.data;
+  },
+
+  deleteCohortPolicy: async (cohortId: string): Promise<void> => {
+    await apiClient.delete(`/mentor/cohorts/${cohortId}/policy`);
+  },
+
+  getCohortPricing: async (): Promise<MentorCohortPricingDto[]> => {
+    const res = await apiClient.get<MentorCohortPricingDto[]>('/mentor/cohorts/pricing');
+    return res.data;
+  },
+
+  upsertCohortPricing: async (
+    cohortId: string,
+    monthlyAmount: number,
+    currency: string,
+  ): Promise<MentorCohortPricingDto> => {
+    const res = await apiClient.put<MentorCohortPricingDto>(
+      `/mentor/cohorts/${cohortId}/pricing`,
+      { monthlyAmount, currency },
+    );
+    return res.data;
+  },
+
+  deleteCohortPricing: async (cohortId: string): Promise<void> => {
+    await apiClient.delete(`/mentor/cohorts/${cohortId}/pricing`);
   },
 };

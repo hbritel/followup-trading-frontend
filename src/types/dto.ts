@@ -2067,6 +2067,24 @@ export type MentorCancellationPolicy =
   | 'FLEXIBLE_7D'
   | 'FLEXIBLE_14D';
 
+export interface MentorCohortPolicyDto {
+  cohortId: string;
+  instanceId: string;
+  cancellationPolicy: MentorCancellationPolicy;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MentorCohortPricingDto {
+  cohortId: string;
+  instanceId: string;
+  monthlyAmount: number;
+  currency: string;
+  stripePriceId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MentorContactLeadDto {
   id: string;
   visitorEmail: string;
