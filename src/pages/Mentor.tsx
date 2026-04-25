@@ -912,11 +912,11 @@ const Mentor: React.FC = () => {
               {stage === 'SETUP'
                 ? t(
                     'mentor.stage.setupHint',
-                    'Sessions, webinars, analytics and trust panels unlock once your first student joins.'
+                    'Sessions, cohorts, activity, analytics and trust panels unlock once your first student joins.'
                   )
                 : t(
                     'mentor.stage.growingHint',
-                    'Webinars, analytics and trust panels unlock at 10 students, or show them all now.'
+                    'Webinars, funnel analytics and trust panels unlock at 10 students. Show them all now if you need them sooner.'
                   )}
             </p>
             <button
@@ -1077,11 +1077,18 @@ const Mentor: React.FC = () => {
         <MentorTagsPicker />
         <MentorLanguagesPicker />
 
-        {/* Monetization — visible from GROWING stage so first student triggers Stripe setup */}
-        {showGrowingPlus && <MonetizationSection />}
+        {/* Monetization — always visible: a student needs to see pricing on
+            the public profile BEFORE the mentor's first student exists, so
+            this cannot be student-count gated. The header chip already
+            adapts its state ("Connect Stripe" / "Set pricing" / "$X/mo · N
+            active") so a SETUP mentor sees an actionable next step at a
+            glance without expanding the section. */}
+        <MonetizationSection />
 
-        {/* Testimonials — only ESTABLISHED (need real students for real reviews) */}
-        {showEstablished && <TestimonialsSection />}
+        {/* Testimonials — visible from GROWING (1+ student): minimum viable
+            social proof is 1-3 reviews, not 10. Gating to ESTABLISHED hurt
+            early conversion by hiding mentors' best acquisition lever. */}
+        {showGrowingPlus && <TestimonialsSection />}
 
         {/* Sessions — GROWING+ (some mentors want to launch 1:1 before hitting 10) */}
         {showGrowingPlus && (
