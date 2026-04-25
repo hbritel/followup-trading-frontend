@@ -1,16 +1,18 @@
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 interface DirectoryHeroProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
+  isLoading?: boolean;
 }
 
 const DirectoryHero: React.FC<DirectoryHeroProps> = ({
   searchValue,
   onSearchChange,
+  isLoading = false,
 }) => {
   const { t } = useTranslation();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,9 +56,15 @@ const DirectoryHero: React.FC<DirectoryHeroProps> = ({
             defaultValue={searchValue}
             onChange={handleInput}
             placeholder={t('mentor.directory.searchPlaceholder')}
-            className="pl-10 h-11 rounded-xl bg-background/80 backdrop-blur-sm border-border/60 focus-visible:ring-primary/40"
+            className="pl-10 pr-10 h-11 rounded-xl bg-background/80 backdrop-blur-sm border-border/60 focus-visible:ring-primary/40"
             aria-label={t('mentor.directory.searchPlaceholder')}
           />
+          {isLoading && (
+            <Loader2
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin pointer-events-none"
+              aria-hidden="true"
+            />
+          )}
         </div>
       </div>
     </header>

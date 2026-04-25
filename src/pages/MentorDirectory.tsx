@@ -14,6 +14,7 @@ import ResultsGrid from '@/components/mentor/directory/ResultsGrid';
 import EmptyState from '@/components/mentor/directory/EmptyState';
 import PaginationFooter from '@/components/mentor/directory/PaginationFooter';
 import SearchAlertForm from '@/components/mentor/alerts/SearchAlertForm';
+import MentorSpotlight from '@/components/mentor/directory/MentorSpotlight';
 import {
   useMentorDirectory,
   useDirectoryTags,
@@ -196,6 +197,7 @@ const MentorDirectoryContent: React.FC = () => {
       <DirectoryHero
         searchValue={searchInput}
         onSearchChange={handleSearchChange}
+        isLoading={isLoading}
       />
 
       <div className="container mx-auto max-w-7xl px-4 pb-16">
@@ -220,6 +222,11 @@ const MentorDirectoryContent: React.FC = () => {
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
+            {/* Featured mentor spotlight — only on page 1 when no search query */}
+            {params.page === 0 && !params.q && cards.length >= 3 && (
+              <MentorSpotlight cards={cards} />
+            )}
+
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
               {/* Mobile filter trigger */}
