@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Globe,
   Eye,
+  HelpCircle,
   Layers,
   Minimize2,
 } from 'lucide-react';
@@ -66,6 +67,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -902,23 +908,54 @@ const Mentor: React.FC = () => {
         {/* Stage banner — explains why some sections are hidden */}
         {!forceFullView && stage !== 'ESTABLISHED' && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5">
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap min-w-0">
               <span className="font-semibold text-primary">
                 {stage === 'SETUP'
                   ? t('mentor.stage.setupBadge', 'Setup mode')
                   : t('mentor.stage.growingBadge', 'Growing mode')}
               </span>
-              <span className="mx-2 opacity-50">·</span>
-              {stage === 'SETUP'
-                ? t(
-                    'mentor.stage.setupHint',
-                    'Sessions, cohorts, activity, analytics and trust panels unlock once your first student joins.'
-                  )
-                : t(
-                    'mentor.stage.growingHint',
-                    'Webinars, funnel analytics and trust panels unlock at 10 students. Show them all now if you need them sooner.'
-                  )}
-            </p>
+              <span className="opacity-50">·</span>
+              <span className="min-w-0">
+                {stage === 'SETUP'
+                  ? t(
+                      'mentor.stage.setupHint',
+                      'Sessions, cohorts, activity, analytics and trust panels unlock once your first student joins.'
+                    )
+                  : t(
+                      'mentor.stage.growingHint',
+                      'Webinars, funnel analytics and trust panels unlock at 10 students. Show them all now if you need them sooner.'
+                    )}
+              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    aria-label={t('mentor.stage.whyLabel', 'Why is this hidden?')}
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                    {t('mentor.stage.why', 'Why?')}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 text-xs leading-relaxed space-y-2" align="start">
+                  <p className="font-semibold text-foreground">
+                    {t('mentor.stage.whyTitle', 'Why we stage your dashboard')}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t(
+                      'mentor.stage.whyBody',
+                      'A new mentor space has 14+ panels. Showing them all at once made first-time mentors freeze. We hide advanced sections until they would actually carry data — sessions when you have students to book, analytics when you have traffic, trust panels once you are ready for compliance.'
+                    )}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t(
+                      'mentor.stage.whyEscape',
+                      'Click "Show all" any time — your choice persists across reloads.'
+                    )}
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>
             <button
               type="button"
               onClick={() => setForceFullView(true)}
