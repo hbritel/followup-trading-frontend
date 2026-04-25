@@ -77,7 +77,7 @@ const MentorTagsPicker: React.FC = () => {
   return (
     <section
       aria-labelledby="tags-picker-heading"
-      className="glass-card rounded-2xl p-5 space-y-5"
+      className="space-y-5"
     >
       <div className="flex items-center gap-2">
         <Tag className="w-4 h-4 text-primary" aria-hidden="true" />

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Globe,
   Eye,
+  Compass,
   HelpCircle,
   Minimize2,
   LayoutDashboard,
@@ -1266,8 +1267,29 @@ const Mentor: React.FC = () => {
           {/* ── PROFILE ──────────────────────────────────────────────── */}
           <TabsContent value="profile" className="space-y-6 mt-2">
             <PublicProfileSection instance={instance} />
-            <MentorTagsPicker />
-            <MentorLanguagesPicker />
+
+            {/* Discoverability — fuses Tags + Languages into a single card.
+                Both drive the directory filter; presenting them side-by-side
+                makes it obvious they're a pair, halves the vertical space. */}
+            <section
+              aria-labelledby="discoverability-heading"
+              className="glass-card rounded-2xl p-5 space-y-6"
+            >
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
+                <h2 id="discoverability-heading" className="text-base font-semibold">
+                  {t('mentor.discoverability.title', 'Discoverability')}
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  · {t('mentor.discoverability.hint', 'Drives directory matches')}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <MentorTagsPicker />
+                <MentorLanguagesPicker />
+              </div>
+            </section>
+
             <MonetizationSection />
           </TabsContent>
 

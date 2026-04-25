@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronUp,
+  Eye,
   ExternalLink,
   Globe,
   Loader2,
@@ -13,8 +14,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useUpdatePublicProfile } from '@/hooks/useMentor';
 import { useLocalStorageState } from '@/hooks/useLocalStorageState';
+import PublicProfileLivePreview from './PublicProfileLivePreview';
 import type {
   MentorInstanceDto,
   UpdatePublicProfileRequestDto,
@@ -174,7 +183,43 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
       </div>
 
       {open && (
-        <div id="public-profile-body" className="space-y-5">
+        <div
+          id="public-profile-body"
+          className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] gap-6"
+        >
+          {/* Mobile preview trigger — desktop renders side-by-side below. */}
+          <div className="lg:hidden flex justify-end -mb-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Eye className="w-4 h-4" />
+                  {t('mentor.publicProfile.previewButton', 'Preview')}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[90vw] sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>
+                    {t('mentor.publicProfile.previewLabel', 'Live preview')}
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <PublicProfileLivePreview
+                    brandName={instance.brandName}
+                    logoUrl={instance.logoUrl}
+                    primaryColor={instance.primaryColor}
+                    headline={headline}
+                    bio={bio}
+                    credentials={credentials}
+                    yearsTrading={yearsTrading}
+                    enabled={enabled}
+                    publicUrl={publicUrl}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          <div className="space-y-5">
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/30 px-4 py-3 border border-border/30">
             <div className="min-w-0">
               <Label
@@ -336,6 +381,24 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
               )}
               {t('common.save', 'Save')}
             </Button>
+          </div>
+          </div>
+
+          {/* Desktop sticky preview — sits next to the form on lg+ screens. */}
+          <div className="hidden lg:block">
+            <div className="sticky top-32">
+              <PublicProfileLivePreview
+                brandName={instance.brandName}
+                logoUrl={instance.logoUrl}
+                primaryColor={instance.primaryColor}
+                headline={headline}
+                bio={bio}
+                credentials={credentials}
+                yearsTrading={yearsTrading}
+                enabled={enabled}
+                publicUrl={publicUrl}
+              />
+            </div>
           </div>
         </div>
       )}

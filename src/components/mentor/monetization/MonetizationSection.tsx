@@ -107,36 +107,71 @@ const MonetizationSection: React.FC = () => {
       </div>
 
       {open && (
-        <div id="monetization-body" className="space-y-5">
-          <StripeConnectCard />
+        <div id="monetization-body" className="space-y-3">
+          {/* Stripe Connect: when charges are enabled the onboarding card
+              shrinks to a single-line "Connected" chip; expand only if the
+              mentor needs to fix something. Pricing card stays always-visible
+              because it's the daily-driver action. */}
+          {chargesEnabled ? (
+            <details className="group rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-3">
+              <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                  {t('mentor.monetization.stripeConnectedHeader', 'Stripe Connect — connected')}
+                </span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform" aria-hidden="true" />
+              </summary>
+              <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                <StripeConnectCard />
+              </div>
+            </details>
+          ) : (
+            <StripeConnectCard />
+          )}
 
           <MentorPricingCard chargesEnabled={chargesEnabled} />
 
-          <div className="rounded-2xl border border-border/50 p-5 bg-muted/10">
-            <h3 className="text-base font-semibold mb-1">
-              {t(
-                'mentor.monetization.studentOverrides',
-                'Per-student overrides'
-              )}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {t(
-                'mentor.monetization.studentOverridesDesc',
-                'Give specific students a custom price or free access.'
-              )}
-            </p>
-            <StudentPricingTable defaultPricing={pricing ?? null} />
-          </div>
+          {/* Per-student overrides — collapsed by default, surfaces a count
+              chip on the header so the mentor knows how many bespoke prices
+              are active without expanding. */}
+          <details className="group rounded-2xl border border-border/50 bg-muted/10 p-4">
+            <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold">
+                  {t('mentor.monetization.studentOverrides', 'Per-student overrides')}
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {t(
+                    'mentor.monetization.studentOverridesDesc',
+                    'Give specific students a custom price or free access.'
+                  )}
+                </p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+            </summary>
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <StudentPricingTable defaultPricing={pricing ?? null} />
+            </div>
+          </details>
 
-          <div className="rounded-2xl border border-border/50 p-5 bg-muted/10">
-            <h3 className="text-base font-semibold mb-3">
-              {t(
-                'mentor.monetization.subscriptions',
-                'Active subscriptions'
-              )}
-            </h3>
-            <MentorSubscriptionsList />
-          </div>
+          {/* Active subscriptions — collapsed by default, count badge on
+              header. Most mentors check this 1-2× a week, not daily. */}
+          <details className="group rounded-2xl border border-border/50 bg-muted/10 p-4">
+            <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+              <h3 className="text-sm font-semibold inline-flex items-center gap-2">
+                {t('mentor.monetization.subscriptions', 'Active subscriptions')}
+                {activeSubs > 0 && (
+                  <span className="inline-flex items-center text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+                    {activeSubs}
+                  </span>
+                )}
+              </h3>
+              <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+            </summary>
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <MentorSubscriptionsList />
+            </div>
+          </details>
         </div>
       )}
     </section>
