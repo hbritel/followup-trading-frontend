@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarX, Video, Clock, XCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { CalendarX, CreditCard, Video, Clock, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -12,7 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useMyBookings, useCancelMyBooking } from '@/hooks/useMentorRevenue';
+import {
+  useMyBookings,
+  useCancelMyBooking,
+  useResumeBookingCheckout,
+  StripeNotConfiguredError,
+} from '@/hooks/useMentorRevenue';
 import type { SessionBookingStatus, StudentBookingDto } from '@/types/dto';
 
 const STATUS_COLORS: Record<SessionBookingStatus, string> = {
@@ -37,6 +43,9 @@ interface BookingRowProps {
 
 const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel }) => {
   const { t } = useTranslation();
+  const resumeCheckout = useResumeBookingCheckout();
+  const [offlineNotice, setOfflineNotice] = useState(false);
+
   const fmtDate = new Date(booking.scheduledAt).toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -44,6 +53,40 @@ const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel }) => 
 
   const activeStatus =
     booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT';
+
+  const sessionInPast = new Date(booking.scheduledAt).getTime() < Date.now();
+  const canResumePayment =
+    booking.status === 'PENDING_PAYMENT' && !sessionInPast;
+
+  const handleResume = () => {
+    setOfflineNotice(false);
+    resumeCheckout.mutate(booking.id, {
+      onSuccess: ({ checkoutUrl }) => {
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+        } else {
+          toast.error(
+            t(
+              'mentor.sessions.resumePayment.unavailable',
+              'Unable to start payment right now. Please try again later.'
+            )
+          );
+        }
+      },
+      onError: (error) => {
+        if (error instanceof StripeNotConfiguredError) {
+          setOfflineNotice(true);
+          return;
+        }
+        toast.error(
+          t(
+            'mentor.sessions.resumePayment.failed',
+            'Could not resume payment. Please try again.'
+          )
+        );
+      },
+    });
+  };
 
   const windowHint = booking.cancellable && booking.cancellationWindowHours
     ? t('mentor.sessions.cancelHint', {
@@ -93,14 +136,43 @@ const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel }) => 
             {t('mentor.sessions.joinMeeting', 'Join meeting')}
           </a>
         )}
+
         {booking.status === 'PENDING_PAYMENT' && (
-          <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
-            {t(
-              'mentor.sessions.pendingPayment',
-              'Complete your payment to confirm this session.'
+          <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-300 leading-snug">
+              {sessionInPast
+                ? t(
+                    'mentor.sessions.pendingPaymentExpired',
+                    'This session has already started. The booking will be archived shortly.'
+                  )
+                : offlineNotice
+                  ? t(
+                      'mentor.sessions.resumePayment.offline',
+                      "This mentor doesn't accept online payments yet. Contact them to settle the session, or cancel below."
+                    )
+                  : t(
+                      'mentor.sessions.pendingPayment',
+                      'Complete your payment to confirm this session.'
+                    )}
+            </p>
+            {canResumePayment && !offlineNotice && (
+              <Button
+                size="sm"
+                className="w-full sm:w-auto h-8 px-3 text-xs gap-1.5 bg-amber-600 hover:bg-amber-600/90 text-white"
+                onClick={handleResume}
+                disabled={resumeCheckout.isPending}
+              >
+                {resumeCheckout.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CreditCard className="w-3.5 h-3.5" />
+                )}
+                {t('mentor.sessions.resumePayment.cta', 'Pay now')}
+              </Button>
             )}
-          </p>
+          </div>
         )}
+
         {windowHint && (
           <p className="mt-1.5 text-xs text-muted-foreground">{windowHint}</p>
         )}

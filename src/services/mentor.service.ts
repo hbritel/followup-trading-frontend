@@ -686,6 +686,16 @@ export const mentorService = {
     return res.data;
   },
 
+  resumeBookingCheckout: async (
+    bookingId: string,
+  ): Promise<{ bookingId: string; checkoutUrl: string }> => {
+    const res = await apiClient.post<{ bookingId: string; checkoutUrl: string }>(
+      `/me/mentor/bookings/${bookingId}/resume-checkout`,
+      {},
+    );
+    return res.data;
+  },
+
   // ── Phase 4: Webinars (mentor CRUD) ─────────────────────────────────────
 
   getMyWebinars: async (): Promise<WebinarDto[]> => {
