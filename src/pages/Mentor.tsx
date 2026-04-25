@@ -898,7 +898,7 @@ const Mentor: React.FC = () => {
 
         {/* Stage banner — explains why some sections are hidden */}
         {!forceFullView && stage !== 'ESTABLISHED' && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 mt-1">
             <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap min-w-0">
               <span className="font-semibold text-primary">
                 {stage === 'SETUP'

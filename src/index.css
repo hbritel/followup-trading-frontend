@@ -399,3 +399,18 @@ html.font-size-large { font-size: 18px; }
     animation: none !important;
   }
 }
+
+/* ===== Setup Checklist Celebration ===== */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -8px, 0) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 120px, 0) scale(1);
+    opacity: 0;
+  }
+}

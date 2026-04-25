@@ -128,6 +128,19 @@ const MentorSetupChecklist: React.FC<Props> = ({ instance, onStepClick, onShareC
   const pct = Math.round((completed / total) * 100);
   const allDone = completed === total;
 
+  // Confetti burst the first time allDone flips true. Tracked in a ref-like
+  // boolean so it doesn't replay on every re-render.
+  const [celebrating, setCelebrating] = useState(false);
+  const [hasCelebrated, setHasCelebrated] = useState(false);
+  useEffect(() => {
+    if (allDone && !hasCelebrated) {
+      setCelebrating(true);
+      setHasCelebrated(true);
+      const id = setTimeout(() => setCelebrating(false), 1800);
+      return () => clearTimeout(id);
+    }
+  }, [allDone, hasCelebrated]);
+
   // Once dismissed (user clicked "Hide this") it stays gone for the lifetime of
   // the instance — power users get their pixels back.
   if (dismissed) return null;
@@ -146,12 +159,37 @@ const MentorSetupChecklist: React.FC<Props> = ({ instance, onStepClick, onShareC
     <section
       aria-labelledby="setup-checklist-heading"
       className={[
-        'glass-card rounded-2xl border overflow-hidden transition-all duration-300',
+        'glass-card rounded-2xl border overflow-hidden transition-all duration-300 relative',
         allDone
           ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 to-transparent'
           : 'border-primary/25',
+        celebrating ? 'ring-2 ring-emerald-500/40 ring-offset-2 ring-offset-background' : '',
       ].join(' ')}
     >
+      {celebrating && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden"
+        >
+          {[
+            { left: '12%', delay: '0ms', hue: 'bg-emerald-400' },
+            { left: '28%', delay: '120ms', hue: 'bg-amber-300' },
+            { left: '46%', delay: '60ms', hue: 'bg-emerald-300' },
+            { left: '64%', delay: '180ms', hue: 'bg-primary' },
+            { left: '82%', delay: '90ms', hue: 'bg-emerald-500' },
+          ].map((dot, i) => (
+            <span
+              key={i}
+              className={[
+                'absolute top-3 w-1.5 h-1.5 rounded-full',
+                dot.hue,
+                'animate-[confetti-fall_1.6s_ease-out_forwards]',
+              ].join(' ')}
+              style={{ left: dot.left, animationDelay: dot.delay }}
+            />
+          ))}
+        </div>
+      )}
       <button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
