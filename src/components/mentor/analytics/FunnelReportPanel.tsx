@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import FunnelChart from './FunnelChart';
+import ErrorState from '@/components/ui/ErrorState';
 import { useFunnelReport } from '@/hooks/useMentorRevenue';
 
 type Preset = '7d' | '30d' | '90d' | 'custom';
@@ -38,7 +39,7 @@ const FunnelReportPanel: React.FC = () => {
     return { from: customFrom, to: customTo };
   })();
 
-  const { data, isLoading, error } = useFunnelReport(from, to);
+  const { data, isLoading, isFetching, error, refetch } = useFunnelReport(from, to);
 
   return (
     <section
@@ -114,9 +115,16 @@ const FunnelReportPanel: React.FC = () => {
       )}
 
       {error && !isLoading && (
-        <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-          {t('mentor.analytics.error', 'Failed to load funnel data. Try again.')}
-        </div>
+        <ErrorState
+          title={t('mentor.analytics.error.title', 'Funnel data unavailable')}
+          description={t(
+            'mentor.analytics.error.description',
+            "We couldn't load funnel data for the selected range. Your filters are unchanged — retry, or pick a different range.",
+          )}
+          error={error}
+          onRetry={() => refetch()}
+          isRetrying={isFetching}
+        />
       )}
 
       {data && !isLoading && <FunnelChart data={data} />}
