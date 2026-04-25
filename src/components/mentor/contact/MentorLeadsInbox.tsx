@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Inbox, MailOpen, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,18 @@ const MentorLeadsInbox: React.FC = () => {
   const { t } = useTranslation();
   const { data: leads = [], isLoading } = useMyLeads();
   const markRead = useMarkLeadRead();
+  const [unreadOnly, setUnreadOnly] = useState(false);
 
   const sorted = [...leads].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   const unreadCount = sorted.filter((l) => !l.readAt).length;
+  const visible = unreadOnly ? sorted.filter((l) => !l.readAt) : sorted;
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Skeleton className="h-20 rounded-xl" />
         <Skeleton className="h-20 rounded-xl" />
       </div>
@@ -35,9 +37,9 @@ const MentorLeadsInbox: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">
+          <h3 id="leads-inbox-heading" className="text-sm font-semibold">
             {t('mentor.contact.inbox.title', 'Contact leads')}
           </h3>
           {unreadCount > 0 && (
@@ -46,6 +48,36 @@ const MentorLeadsInbox: React.FC = () => {
             </Badge>
           )}
         </div>
+        {sorted.length > 0 && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setUnreadOnly(false)}
+              aria-pressed={!unreadOnly}
+              className={[
+                'rounded-full px-2.5 py-1 font-medium transition-colors',
+                !unreadOnly
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'border border-border/40 text-muted-foreground hover:bg-muted/40',
+              ].join(' ')}
+            >
+              {t('mentor.contact.inbox.filterAll', 'All')} · {sorted.length}
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnreadOnly(true)}
+              aria-pressed={unreadOnly}
+              className={[
+                'rounded-full px-2.5 py-1 font-medium transition-colors',
+                unreadOnly
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'border border-border/40 text-muted-foreground hover:bg-muted/40',
+              ].join(' ')}
+            >
+              {t('mentor.contact.inbox.filterUnread', 'Unread')} · {unreadCount}
+            </button>
+          </div>
+        )}
       </div>
 
       {sorted.length === 0 ? (
@@ -59,9 +91,13 @@ const MentorLeadsInbox: React.FC = () => {
             )}
           </p>
         </div>
+      ) : visible.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic py-6 text-center">
+          {t('mentor.contact.inbox.allRead', 'No unread leads. Inbox zero — nice.')}
+        </p>
       ) : (
-        <ul className="space-y-2">
-          {sorted.map((lead) => {
+        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {visible.map((lead) => {
             const isUnread = !lead.readAt;
             return (
               <li

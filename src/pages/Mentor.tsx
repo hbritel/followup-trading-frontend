@@ -42,6 +42,7 @@ import MentorSetupChecklist from '@/components/mentor/publicprofile/MentorSetupC
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
 import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
 import SessionsKpiRibbon from '@/components/mentor/sessions/SessionsKpiRibbon';
+import InsightsKpiRibbon from '@/components/mentor/insights/InsightsKpiRibbon';
 import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
 import WebinarEditor from '@/components/mentor/webinars/WebinarEditor';
 import WebinarAttendeesList from '@/components/mentor/webinars/WebinarAttendeesList';
@@ -1354,32 +1355,64 @@ const Mentor: React.FC = () => {
           {/* ── INSIGHTS (testimonials + analytics + leads) ──────────── */}
           {tabVisibility.insights && (
             <TabsContent value="insights" className="space-y-6 mt-2">
-              <TestimonialsSection />
+              <InsightsKpiRibbon
+                showFunnel={showEstablished}
+                showLeads={showEstablished}
+              />
+
               {showEstablished ? (
                 <>
+                  {/* Testimonials (left) + Funnel chart (right) on lg+. The
+                      chart needs more horizontal room than the testimonial
+                      cards, so it gets a wider 3/5 share of the row. */}
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div className="lg:col-span-2">
+                      <TestimonialsSection />
+                    </div>
+                    <section
+                      aria-labelledby="analytics-section-heading"
+                      className="lg:col-span-3 glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+                    >
+                      <h2 id="analytics-section-heading" className="text-base font-semibold">
+                        {t('mentor.analytics.title', 'Funnel analytics')}
+                      </h2>
+                      <FunnelReportPanel />
+                    </section>
+                  </div>
+
                   <section
-                    aria-labelledby="analytics-section-heading"
-                    className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+                    aria-labelledby="leads-inbox-heading"
+                    className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
                   >
-                    <h2 id="analytics-section-heading" className="text-base font-semibold">
-                      {t('mentor.analytics.title', 'Funnel analytics')}
-                    </h2>
-                    <FunnelReportPanel />
+                    <MentorLeadsInbox />
                   </section>
-                  <MentorLeadsInbox />
                 </>
               ) : (
-                <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center">
-                  <p className="text-sm font-medium">
-                    {t('mentor.tabs.insightsLockedTitle', 'Funnel analytics + leads unlock at 10 students')}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t(
-                      'mentor.tabs.insightsLockedDesc',
-                      'Charts need traffic to be meaningful. Use Show all to override the gate.'
-                    )}
-                  </p>
-                </div>
+                <>
+                  <TestimonialsSection />
+                  <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center space-y-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <BarChart3 className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
+                      <p className="text-sm font-medium">
+                        {t('mentor.tabs.insightsLockedTitle', 'Funnel analytics + leads unlock at 10 students')}
+                      </p>
+                      <p className="text-xs text-muted-foreground max-w-md">
+                        {t(
+                          'mentor.tabs.insightsLockedDesc',
+                          'Charts need traffic to be meaningful. Use Show all to override the gate.'
+                        )}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setForceFullView(true)}
+                      className="gap-1.5"
+                    >
+                      {t('mentor.viewMode.showAll', 'Show all sections')}
+                    </Button>
+                  </div>
+                </>
               )}
             </TabsContent>
           )}
