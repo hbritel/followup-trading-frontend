@@ -1307,27 +1307,30 @@ const Mentor: React.FC = () => {
           <TabsContent value="profile" className="space-y-6 mt-2">
             <PublicProfileSection instance={instance} />
 
-            {/* Discoverability — fuses Tags + Languages into a single card.
-                Both drive the directory filter; presenting them side-by-side
-                makes it obvious they're a pair, halves the vertical space. */}
-            <section
-              aria-labelledby="discoverability-heading"
-              className="glass-card rounded-2xl p-5 space-y-6"
+            {/* Discoverability — collapsible card fusing Tags + Languages
+                (both drive the directory filter). Default open so first-time
+                mentors see it, but the mentor can fold it once configured. */}
+            <details
+              open
+              className="group glass-card rounded-2xl p-5"
             >
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
-                <h2 id="discoverability-heading" className="text-base font-semibold">
-                  {t('mentor.discoverability.title', 'Discoverability')}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  · {t('mentor.discoverability.hint', 'Drives directory matches')}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
+                  <h2 id="discoverability-heading" className="text-base font-semibold">
+                    {t('mentor.discoverability.title', 'Discoverability')}
+                  </h2>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">
+                    · {t('mentor.discoverability.hint', 'Drives directory matches')}
+                  </span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+              </summary>
+              <div className="mt-5 pt-5 border-t border-border/40 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <MentorTagsPicker />
                 <MentorLanguagesPicker />
               </div>
-            </section>
+            </details>
 
             <MonetizationSection />
           </TabsContent>
@@ -1405,15 +1408,20 @@ const Mentor: React.FC = () => {
                     <div className="lg:col-span-2">
                       <TestimonialsSection />
                     </div>
-                    <section
-                      aria-labelledby="analytics-section-heading"
-                      className="lg:col-span-3 glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
+                    <details
+                      open
+                      className="group lg:col-span-3 glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
                     >
-                      <h2 id="analytics-section-heading" className="text-base font-semibold">
-                        {t('mentor.analytics.title', 'Funnel analytics')}
-                      </h2>
-                      <FunnelReportPanel />
-                    </section>
+                      <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                        <h2 id="analytics-section-heading" className="text-base font-semibold">
+                          {t('mentor.analytics.title', 'Funnel analytics')}
+                        </h2>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                      </summary>
+                      <div className="mt-4 pt-4 border-t border-border/40">
+                        <FunnelReportPanel />
+                      </div>
+                    </details>
                   </div>
 
                   <section

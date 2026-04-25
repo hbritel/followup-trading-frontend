@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inbox, MailOpen, Mail } from 'lucide-react';
+import { Inbox, MailOpen, Mail, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMyLeads, useMarkLeadRead } from '@/hooks/useMentor';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 
 function fmtDate(iso: string): string {
   return new Intl.DateTimeFormat(
@@ -18,6 +19,10 @@ const MentorLeadsInbox: React.FC = () => {
   const { data: leads = [], isLoading } = useMyLeads();
   const markRead = useMarkLeadRead();
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.leads.open',
+    true,
+  );
 
   const sorted = [...leads].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -38,7 +43,12 @@ const MentorLeadsInbox: React.FC = () => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex items-center gap-2 text-left hover:bg-muted/20 transition-colors -m-1 p-1 rounded-lg"
+        >
           <h3 id="leads-inbox-heading" className="text-sm font-semibold">
             {t('mentor.contact.inbox.title', 'Contact leads')}
           </h3>
@@ -47,8 +57,13 @@ const MentorLeadsInbox: React.FC = () => {
               {unreadCount}
             </Badge>
           )}
-        </div>
-        {sorted.length > 0 && (
+          {open ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          )}
+        </button>
+        {open && sorted.length > 0 && (
           <div className="flex items-center gap-1.5 text-xs">
             <button
               type="button"
@@ -80,7 +95,7 @@ const MentorLeadsInbox: React.FC = () => {
         )}
       </div>
 
-      {sorted.length === 0 ? (
+      {open && (sorted.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-10 text-center text-muted-foreground">
           <Inbox className="w-8 h-8 opacity-40" aria-hidden="true" />
           <p className="text-sm">{t('mentor.contact.inbox.empty', 'No contact leads yet.')}</p>
@@ -147,7 +162,7 @@ const MentorLeadsInbox: React.FC = () => {
             );
           })}
         </ul>
-      )}
+      ))}
     </div>
   );
 };

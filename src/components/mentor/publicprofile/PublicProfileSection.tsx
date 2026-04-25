@@ -377,9 +377,11 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
           </div>
           </div>
 
-          {/* Desktop sticky preview — sits next to the form on lg+ screens. */}
+          {/* Desktop preview — sits next to the form on lg+ screens. Stays
+              fixed in its grid cell (no sticky) to avoid distracting motion
+              while the mentor scrolls the form. */}
           <div className="hidden lg:block">
-            <div className="sticky top-32">
+            <div>
               <PublicProfileLivePreview
                 brandName={instance.brandName}
                 logoUrl={instance.logoUrl}

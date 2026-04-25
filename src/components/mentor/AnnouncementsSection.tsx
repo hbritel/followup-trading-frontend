@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Pin, PinOff, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Megaphone, Pin, PinOff, Pencil, Trash2, Plus, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -487,34 +488,50 @@ const AnnouncementsSection: React.FC = () => {
   const { t } = useTranslation();
   const { data, isLoading } = useMentorAnnouncements();
   const [composeOpen, setComposeOpen] = useState(false);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.announcements.open',
+    true,
+  );
 
   const items = data ?? [];
 
   return (
     <section aria-labelledby="announcements-heading" className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex items-center gap-2 text-left hover:bg-muted/20 transition-colors -m-1 p-1 rounded-lg"
+        >
           <Megaphone className="w-4 h-4 text-primary" aria-hidden="true" />
           <h2 id="announcements-heading" className="text-base font-semibold">
             {t('mentor.announcements.title', 'Announcements')}
           </h2>
           {items.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              ({items.length})
+            <span className="inline-flex items-center text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+              {items.length}
             </span>
           )}
-        </div>
-        <Button
-          size="sm"
-          onClick={() => setComposeOpen(true)}
-          className="gap-1.5"
-        >
-          <Plus className="w-4 h-4" />
-          {t('mentor.announcements.newButton', 'New announcement')}
-        </Button>
+          {open ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          )}
+        </button>
+        {open && (
+          <Button
+            size="sm"
+            onClick={() => setComposeOpen(true)}
+            className="gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            {t('mentor.announcements.newButton', 'New announcement')}
+          </Button>
+        )}
       </div>
 
-      {isLoading ? (
+      {open && (isLoading ? (
         <div
           className="glass-card rounded-2xl p-5 h-24 bg-muted/20 animate-pulse"
           aria-busy="true"
@@ -546,7 +563,7 @@ const AnnouncementsSection: React.FC = () => {
             <AnnouncementCard key={item.id} item={item} />
           ))}
         </div>
-      )}
+      ))}
 
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
         <DialogContent className="max-w-lg">
