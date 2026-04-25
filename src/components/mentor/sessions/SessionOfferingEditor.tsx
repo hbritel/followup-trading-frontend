@@ -38,6 +38,7 @@ import {
   useDeleteSessionOffering,
 } from '@/hooks/useMentorRevenue';
 import ErrorState from '@/components/ui/ErrorState';
+import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
 import type { SessionOfferingDto, CreateSessionOfferingDto } from '@/types/dto';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
@@ -50,6 +51,7 @@ const emptyForm = (): CreateSessionOfferingDto => ({
   currency: 'USD',
   cancellationWindowHours: 24,
   active: true,
+  targetCohortIds: [],
 });
 
 interface OfferingFormProps {
@@ -173,6 +175,16 @@ const OfferingForm: React.FC<OfferingFormProps> = ({ value, onChange }) => {
             : t('mentor.sessions.editor.inactive', 'Draft — hidden from students')}
         </Label>
       </div>
+
+      <MentorCohortPicker
+        value={value.targetCohortIds ?? []}
+        onChange={(next) => set('targetCohortIds', next)}
+        label={t('mentor.sessions.editor.targetCohorts', 'Visible to')}
+        hint={t(
+          'mentor.sessions.editor.targetCohortsHint',
+          'Select cohorts to restrict this offering, or keep "All students" for everyone on the public profile.'
+        )}
+      />
     </div>
   );
 };
@@ -206,6 +218,7 @@ const OfferingDialog: React.FC<OfferingDialogProps> = ({
               currency: offering.currency,
               cancellationWindowHours: offering.cancellationWindowHours,
               active: offering.active,
+              targetCohortIds: offering.targetCohortIds ?? [],
             }
           : emptyForm()
       );

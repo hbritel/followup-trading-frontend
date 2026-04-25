@@ -2137,6 +2137,8 @@ export interface SessionOfferingDto {
   currency: string;
   cancellationWindowHours: number;
   active: boolean;
+  /** Empty/absent = visible to every visitor; otherwise restricted to listed cohorts. */
+  targetCohortIds?: string[];
 }
 
 export type SessionBookingStatus =
@@ -2196,6 +2198,7 @@ export interface WebinarDto {
   currency: string;
   maxAttendees?: number | null;
   status: WebinarStatus;
+  targetCohortIds?: string[];
 }
 
 export type WebinarTicketStatus = 'PENDING_PAYMENT' | 'PAID' | 'REFUNDED' | 'CANCELLED';
@@ -2236,6 +2239,7 @@ export interface CreateSessionOfferingDto {
   currency: string;
   cancellationWindowHours: number;
   active: boolean;
+  targetCohortIds?: string[];
 }
 
 export interface CreateWebinarDto {
@@ -2247,6 +2251,7 @@ export interface CreateWebinarDto {
   ticketPriceCents: number;
   currency: string;
   maxAttendees?: number | null;
+  targetCohortIds?: string[];
 }
 
 export interface CreateSearchAlertDto {

@@ -37,6 +37,7 @@ import {
   useDeleteWebinar,
 } from '@/hooks/useMentorRevenue';
 import ErrorState from '@/components/ui/ErrorState';
+import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
 import type { WebinarDto, CreateWebinarDto } from '@/types/dto';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
@@ -56,6 +57,7 @@ const emptyForm = (): CreateWebinarDto => ({
   ticketPriceCents: 0,
   currency: 'USD',
   maxAttendees: null,
+  targetCohortIds: [],
 });
 
 interface WebinarFormProps {
@@ -196,6 +198,16 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ value, onChange }) => {
           placeholder={t('mentor.webinars.editor.unlimited', 'Unlimited')}
         />
       </div>
+
+      <MentorCohortPicker
+        value={value.targetCohortIds ?? []}
+        onChange={(next) => set('targetCohortIds', next)}
+        label={t('mentor.webinars.editor.targetCohorts', 'Visible to')}
+        hint={t(
+          'mentor.webinars.editor.targetCohortsHint',
+          'Select cohorts to restrict this webinar to specific groups; leave on "All students" for everyone.'
+        )}
+      />
     </div>
   );
 };
@@ -226,6 +238,7 @@ const WebinarDialog: React.FC<WebinarDialogProps> = ({ open, onOpenChange, webin
               ticketPriceCents: webinar.ticketPriceCents,
               currency: webinar.currency,
               maxAttendees: webinar.maxAttendees ?? null,
+              targetCohortIds: webinar.targetCohortIds ?? [],
             }
           : emptyForm()
       );
