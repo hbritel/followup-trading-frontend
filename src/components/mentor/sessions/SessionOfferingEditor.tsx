@@ -37,6 +37,7 @@ import {
   useUpdateSessionOffering,
   useDeleteSessionOffering,
 } from '@/hooks/useMentorRevenue';
+import ErrorState from '@/components/ui/ErrorState';
 import type { SessionOfferingDto, CreateSessionOfferingDto } from '@/types/dto';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
@@ -242,6 +243,19 @@ const OfferingDialog: React.FC<OfferingDialogProps> = ({
         </DialogHeader>
 
         <OfferingForm value={form} onChange={setForm} />
+
+        {(create.isError || update.isError) && (
+          <ErrorState
+            title={t('mentor.sessions.error.title', 'Could not save offering')}
+            description={t(
+              'mentor.sessions.error.desc',
+              'Your form is still here — retry the save before closing.'
+            )}
+            error={create.error ?? update.error}
+            onRetry={handleSave}
+            isRetrying={isPending}
+          />
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

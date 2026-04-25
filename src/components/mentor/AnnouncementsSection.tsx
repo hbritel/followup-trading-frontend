@@ -28,6 +28,7 @@ import {
   useUpdateAnnouncement,
   useDeleteAnnouncement,
 } from '@/hooks/useMentor';
+import ErrorState from '@/components/ui/ErrorState';
 import type { MentorAnnouncementDto } from '@/types/dto';
 
 const MAX_BODY = 5000;
@@ -142,6 +143,23 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
           <CharCounter count={body.length} />
         </div>
       </div>
+      {createMutation.isError && (
+        <ErrorState
+          title={t('mentor.announcements.error.createTitle', 'Could not post announcement')}
+          description={t(
+            'mentor.announcements.error.createDesc',
+            "Your draft is still here — retry the post or copy the message somewhere safe before refreshing."
+          )}
+          error={createMutation.error}
+          onRetry={() => createMutation.mutate({
+            title: title.trim() || undefined,
+            body: body.trim(),
+            pinned,
+          })}
+          isRetrying={createMutation.isPending}
+        />
+      )}
+
       <div className="flex justify-end gap-2">
         {onDone && (
           <Button type="button" variant="outline" onClick={onDone}>
@@ -227,6 +245,18 @@ const EditForm: React.FC<{
           </Button>
         </div>
       </div>
+      {updateMutation.isError && (
+        <ErrorState
+          title={t('mentor.announcements.error.updateTitle', 'Could not save changes')}
+          description={t(
+            'mentor.announcements.error.updateDesc',
+            'Your edits are still in this form — retry the save before closing.'
+          )}
+          error={updateMutation.error}
+          onRetry={handleSave}
+          isRetrying={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 };

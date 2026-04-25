@@ -36,6 +36,7 @@ import {
   useUpdateWebinar,
   useDeleteWebinar,
 } from '@/hooks/useMentorRevenue';
+import ErrorState from '@/components/ui/ErrorState';
 import type { WebinarDto, CreateWebinarDto } from '@/types/dto';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
@@ -259,6 +260,19 @@ const WebinarDialog: React.FC<WebinarDialogProps> = ({ open, onOpenChange, webin
         </DialogHeader>
 
         <WebinarForm value={form} onChange={setForm} />
+
+        {(create.isError || update.isError) && (
+          <ErrorState
+            title={t('mentor.webinars.error.title', 'Could not save webinar')}
+            description={t(
+              'mentor.webinars.error.desc',
+              'Your form is still here — retry the save before closing.'
+            )}
+            error={create.error ?? update.error}
+            onRetry={handleSave}
+            isRetrying={isPending}
+          />
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
