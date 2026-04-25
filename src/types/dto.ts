@@ -1572,18 +1572,23 @@ export interface MentorAnnouncementDto {
   pinned: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Empty array = visible to every student. Non-empty = restricted to listed cohorts. */
+  targetCohortIds?: string[];
 }
 
 export interface CreateAnnouncementRequestDto {
   title?: string;
   body: string;
   pinned?: boolean;
+  targetCohortIds?: string[];
 }
 
 export interface UpdateAnnouncementRequestDto {
   title?: string;
   body?: string;
   pinned?: boolean;
+  /** null/undefined = leave existing targets unchanged; [] = clear them. */
+  targetCohortIds?: string[];
 }
 
 export interface MentorStudentNoteDto {

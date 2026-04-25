@@ -36,6 +36,8 @@ import {
   useDeleteAnnouncement,
 } from '@/hooks/useMentor';
 import ErrorState from '@/components/ui/ErrorState';
+import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
+import { useMentorCohorts } from '@/hooks/useMentor';
 import type { MentorAnnouncementDto } from '@/types/dto';
 
 const MAX_BODY = 5000;
@@ -76,6 +78,7 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [pinned, setPinned] = useState(false);
+  const [targetCohortIds, setTargetCohortIds] = useState<string[]>([]);
   const createMutation = useCreateAnnouncement();
 
   const canSubmit = body.trim().length > 0 && body.length <= MAX_BODY;
@@ -88,12 +91,14 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
         title: title.trim() || undefined,
         body: body.trim(),
         pinned,
+        targetCohortIds: targetCohortIds.length > 0 ? targetCohortIds : undefined,
       },
       {
         onSuccess: () => {
           setTitle('');
           setBody('');
           setPinned(false);
+          setTargetCohortIds([]);
           onDone?.();
         },
       }
@@ -150,6 +155,23 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
           <CharCounter count={body.length} />
         </div>
       </div>
+      <MentorCohortPicker
+        value={targetCohortIds}
+        onChange={setTargetCohortIds}
+        label={t('mentor.announcements.targetCohortsLabel', 'Visible to')}
+        hint={
+          targetCohortIds.length === 0
+            ? t(
+                'mentor.announcements.targetCohortsAllHint',
+                'Currently visible to every student. Pick one or more cohorts to restrict it.'
+              )
+            : t(
+                'mentor.announcements.targetCohortsRestrictedHint',
+                'Restricted: only members of the selected cohort(s) will see this announcement.'
+              )
+        }
+      />
+
       {createMutation.isError && (
         <ErrorState
           title={t('mentor.announcements.error.createTitle', 'Could not post announcement')}
@@ -162,6 +184,7 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
             title: title.trim() || undefined,
             body: body.trim(),
             pinned,
+            targetCohortIds: targetCohortIds.length > 0 ? targetCohortIds : undefined,
           })}
           isRetrying={createMutation.isPending}
         />
@@ -195,6 +218,9 @@ const EditForm: React.FC<{
   const { t } = useTranslation();
   const [title, setTitle] = useState(announcement.title ?? '');
   const [body, setBody] = useState(announcement.body);
+  const [targetCohortIds, setTargetCohortIds] = useState<string[]>(
+    announcement.targetCohortIds ?? []
+  );
   const updateMutation = useUpdateAnnouncement();
 
   const canSubmit = body.trim().length > 0 && body.length <= MAX_BODY;
@@ -207,6 +233,7 @@ const EditForm: React.FC<{
         data: {
           title: title.trim() || undefined,
           body: body.trim(),
+          targetCohortIds,
         },
       },
       {
@@ -233,6 +260,11 @@ const EditForm: React.FC<{
         rows={4}
         maxLength={MAX_BODY}
         aria-label={t('mentor.announcements.bodyPlaceholder', 'Body')}
+      />
+      <MentorCohortPicker
+        value={targetCohortIds}
+        onChange={setTargetCohortIds}
+        label={t('mentor.announcements.targetCohortsLabel', 'Visible to')}
       />
       <div className="flex items-center justify-between">
         <CharCounter count={body.length} />
@@ -265,6 +297,38 @@ const EditForm: React.FC<{
         />
       )}
     </div>
+  );
+};
+
+/* ── Cohort-target badges (AnnouncementCard header) ───── */
+const TargetCohortBadges: React.FC<{ ids: string[] }> = ({ ids }) => {
+  const { t } = useTranslation();
+  const { data: cohorts = [] } = useMentorCohorts();
+  if (ids.length === 0) return null;
+  const cohortById = new Map(cohorts.map((c) => [c.id, c]));
+  return (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {t('mentor.announcements.visibleToBadge', 'Visible to:')}
+      </span>
+      {ids.map((id) => {
+        const c = cohortById.get(id);
+        if (!c) return null;
+        return (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-muted/40 border border-border/40 text-muted-foreground px-1.5 py-0.5 rounded-full"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: c.color ?? '#6366f1' }}
+              aria-hidden="true"
+            />
+            <span className="truncate max-w-[8rem]">{c.name}</span>
+          </span>
+        );
+      })}
+    </span>
   );
 };
 
@@ -319,6 +383,9 @@ const AnnouncementCard: React.FC<{ item: MentorAnnouncementDto }> = ({ item }) =
                   <span className="text-[11px] text-muted-foreground/60 italic">
                     (edited)
                   </span>
+                )}
+                {(item.targetCohortIds?.length ?? 0) > 0 && (
+                  <TargetCohortBadges ids={item.targetCohortIds ?? []} />
                 )}
               </div>
               {item.title && (
