@@ -1191,15 +1191,11 @@ const Mentor: React.FC = () => {
               onShareClick={handleCopyPublicLink}
             />
 
-            {/* KPI strip — only if summary endpoint returned data */}
+            {/* KPI strip — student count is already shown in InviteHero (above
+                the tabs) with a progress bar + slots-left pill, so we drop
+                the "Total Students" card here to avoid the duplicate. */}
             {summary && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard
-                  label={t('mentor.kpis.totalStudents', 'Total Students')}
-                  value={`${summary.totalStudents}/${summary.maxStudents}`}
-                  icon={<Users className="w-5 h-5 text-blue-500" />}
-                  colorClass="bg-blue-500/10"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <KpiCard
                   label={t('mentor.kpis.activeToday', 'Active Today')}
                   value={summary.activeToday}

@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronUp,
   Eye,
-  ExternalLink,
   Globe,
   Loader2,
 } from 'lucide-react';
@@ -242,7 +240,7 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:items-end">
+          <div className="space-y-2">
             <div className="space-y-2">
               <Label htmlFor="mentor-slug">
                 {t('mentor.publicProfile.slug', 'Custom URL')}
@@ -282,14 +280,9 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
               </p>
             </div>
 
-            {enabled && slug && slugValid && (
-              <Button variant="outline" size="sm" asChild className="gap-1.5">
-                <Link to={`/m/${slug}`}>
-                  <ExternalLink className="w-4 h-4" />
-                  {t('mentor.publicProfile.viewPage', 'View public page')}
-                </Link>
-              </Button>
-            )}
+            {/* "View public page" button removed — the LivePreview's "Open
+                live" link covers the same path in-context. The header
+                Manage dropdown also exposes it page-wide. */}
           </div>
 
           <div className="space-y-2">

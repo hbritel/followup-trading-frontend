@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, CircleAlert, Wallet } from 'lucide-react';
+import { ArrowRightCircle, ChevronDown, ChevronUp, CircleAlert, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StripeConnectCard from './StripeConnectCard';
 import MentorPricingCard from './MentorPricingCard';
@@ -130,6 +130,23 @@ const MonetizationSection: React.FC = () => {
           )}
 
           <MentorPricingCard chargesEnabled={chargesEnabled} />
+
+          {/* Cross-link to per-cohort pricing override (lives in the
+              Compliance tab so the override stays close to the cancellation
+              policy override on the same panel). Click switches the tab. */}
+          <a
+            href="#compliance"
+            onClick={(e) => {
+              e.preventDefault();
+              if (typeof window !== 'undefined') {
+                window.location.hash = 'compliance';
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+          >
+            <ArrowRightCircle className="w-3.5 h-3.5" aria-hidden="true" />
+            {t('mentor.monetization.cohortPricingLink', 'Per-cohort pricing overrides → Compliance')}
+          </a>
 
           {/* Per-student overrides — collapsed by default, surfaces a count
               chip on the header so the mentor knows how many bespoke prices
