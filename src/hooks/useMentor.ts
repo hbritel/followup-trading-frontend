@@ -148,12 +148,12 @@ export const useStudentPsychology = (userId: string | undefined) => {
   });
 };
 
-export const useMentorMetricsSummary = () => {
+export const useMentorMetricsSummary = (cohortId?: string) => {
   return useQuery({
-    queryKey: ['mentor', 'metrics-summary'],
+    queryKey: ['mentor', 'metrics-summary', cohortId ?? 'all'],
     queryFn: async () => {
       try {
-        return await mentorService.getMetricsSummary();
+        return await mentorService.getMetricsSummary(cohortId);
       } catch (error) {
         if (error instanceof AxiosError) {
           const status = error.response?.status;

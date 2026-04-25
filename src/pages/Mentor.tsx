@@ -655,7 +655,6 @@ const Mentor: React.FC = () => {
   const { t } = useTranslation();
   const { data: instance, isLoading: instanceLoading } = useMentorInstance();
   const { data: students, isLoading: studentsLoading } = useMentorStudents();
-  const { data: summary } = useMentorMetricsSummary();
   const { data: cohorts } = useMentorCohorts();
   const removeMutation = useRemoveStudent();
 
@@ -732,6 +731,14 @@ const Mentor: React.FC = () => {
     const newUrl = `${window.location.pathname}${search ? '?' + search : ''}${window.location.hash}`;
     window.history.replaceState(null, '', newUrl);
   }, [selectedCohorts]);
+
+  // KPI strip honors the Overview-global cohort filter when exactly one
+  // cohort is selected. Multi-select degrades to "all students" — backend
+  // stat endpoint takes a single cohort id. Must come after selectedCohorts
+  // state declaration above.
+  const summaryCohortId =
+    selectedCohorts.size === 1 ? Array.from(selectedCohorts)[0] : undefined;
+  const { data: summary } = useMentorMetricsSummary(summaryCohortId);
 
   const handleSelectStudent = (userId: string) => {
     setSelectedStudent(userId);

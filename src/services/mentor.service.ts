@@ -111,9 +111,10 @@ export const mentorService = {
     return res.data;
   },
 
-  getMetricsSummary: async (): Promise<MentorMetricsSummaryDto> => {
+  getMetricsSummary: async (cohortId?: string): Promise<MentorMetricsSummaryDto> => {
     const res = await apiClient.get<MentorMetricsSummaryDto>(
-      `${MENTOR_BASE}/metrics/summary`
+      `${MENTOR_BASE}/metrics/summary`,
+      cohortId ? { params: { cohortId } } : undefined
     );
     return res.data;
   },
