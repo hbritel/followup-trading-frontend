@@ -710,7 +710,28 @@ const Mentor: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(new Set());
+  // Cohort filter is now Overview-global. Hydrate from URL `?cohort=id1,id2`
+  // on mount so deep links / page reloads preserve the active filter, and
+  // sync back to the URL whenever it changes via replaceState.
+  const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const raw = new URLSearchParams(window.location.search).get('cohort');
+    if (!raw) return new Set();
+    return new Set(raw.split(',').filter(Boolean));
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (selectedCohorts.size === 0) {
+      params.delete('cohort');
+    } else {
+      params.set('cohort', Array.from(selectedCohorts).join(','));
+    }
+    const search = params.toString();
+    const newUrl = `${window.location.pathname}${search ? '?' + search : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [selectedCohorts]);
 
   const handleSelectStudent = (userId: string) => {
     setSelectedStudent(userId);
@@ -1065,6 +1086,39 @@ const Mentor: React.FC = () => {
 
           {/* ── OVERVIEW ─────────────────────────────────────────────── */}
           <TabsContent value="overview" className="space-y-6 mt-2">
+            {/* Cohort filter — Overview-global (applies to KPIs, students,
+                activity). Sits at the very top so it reads as a page-wide
+                control, not a section-local filter. */}
+            {cohortList.length > 0 && (
+              <div
+                className={[
+                  'flex items-center justify-between gap-3 flex-wrap rounded-xl border px-3 py-2',
+                  selectedCohorts.size > 0
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-border/40 bg-muted/15',
+                ].join(' ')}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('mentor.cohorts.overviewFilterLabel', 'Cohort filter')}
+                  </span>
+                  <CohortFilterChips
+                    cohorts={cohortList}
+                    selected={selectedCohorts}
+                    onToggle={toggleCohort}
+                    onClear={() => setSelectedCohorts(new Set())}
+                    totalStudents={studentList.length}
+                  />
+                </div>
+                {selectedCohorts.size > 0 && (
+                  <span className="text-[11px] text-primary font-medium shrink-0">
+                    {t('mentor.cohorts.activeFilterHint', 'Filtering students + activity')}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Setup checklist — guides first-time mentors to first paying student */}
             <MentorSetupChecklist
               instance={instance}
@@ -1176,18 +1230,6 @@ const Mentor: React.FC = () => {
             </div>
           </div>
 
-          {cohortList.length > 0 && (
-            <div className="mb-4">
-              <CohortFilterChips
-                cohorts={cohortList}
-                selected={selectedCohorts}
-                onToggle={toggleCohort}
-                onClear={() => setSelectedCohorts(new Set())}
-                totalStudents={studentList.length}
-              />
-            </div>
-          )}
-
           {studentList.length === 0 ? (
             <EmptyStudentsState instance={instance} />
           ) : (
@@ -1203,8 +1245,14 @@ const Mentor: React.FC = () => {
           )}
         </div>
 
-            {/* Activity feed — only with students */}
-            {showGrowingPlus && <ActivityFeed onSelectStudent={handleSelectStudent} />}
+            {/* Activity feed — only with students. Honours the Overview-
+                global cohort filter when active. */}
+            {showGrowingPlus && (
+              <ActivityFeed
+                onSelectStudent={handleSelectStudent}
+                visibleStudentIds={visibleStudentIds}
+              />
+            )}
           </TabsContent>
 
           {/* ── PROFILE ──────────────────────────────────────────────── */}

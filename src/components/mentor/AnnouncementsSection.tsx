@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -96,7 +103,7 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="glass-card rounded-2xl p-5 space-y-4 border border-border/50"
+      className="space-y-4"
     >
       <div className="space-y-2">
         <Label htmlFor="announce-title">
@@ -412,7 +419,7 @@ const AnnouncementCard: React.FC<{ item: MentorAnnouncementDto }> = ({ item }) =
 const AnnouncementsSection: React.FC = () => {
   const { t } = useTranslation();
   const { data, isLoading } = useMentorAnnouncements();
-  const [composing, setComposing] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   const items = data ?? [];
 
@@ -430,26 +437,22 @@ const AnnouncementsSection: React.FC = () => {
             </span>
           )}
         </div>
-        {!composing && items.length > 0 && (
-          <Button
-            size="sm"
-            onClick={() => setComposing(true)}
-            className="gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            {t('mentor.announcements.newButton', 'New announcement')}
-          </Button>
-        )}
+        <Button
+          size="sm"
+          onClick={() => setComposeOpen(true)}
+          className="gap-1.5"
+        >
+          <Plus className="w-4 h-4" />
+          {t('mentor.announcements.newButton', 'New announcement')}
+        </Button>
       </div>
-
-      {composing && <ComposeCard onDone={() => setComposing(false)} />}
 
       {isLoading ? (
         <div
           className="glass-card rounded-2xl p-5 h-24 bg-muted/20 animate-pulse"
           aria-busy="true"
         />
-      ) : items.length === 0 && !composing ? (
+      ) : items.length === 0 ? (
         <div className="glass-card rounded-2xl p-8 flex flex-col items-center text-center gap-3 border border-border/50">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Megaphone className="w-6 h-6 text-primary" />
@@ -465,7 +468,7 @@ const AnnouncementsSection: React.FC = () => {
               )}
             </p>
           </div>
-          <Button onClick={() => setComposing(true)} className="gap-1.5 mt-1">
+          <Button onClick={() => setComposeOpen(true)} className="gap-1.5 mt-1">
             <Plus className="w-4 h-4" />
             {t('mentor.announcements.newButton', 'New announcement')}
           </Button>
@@ -477,6 +480,23 @@ const AnnouncementsSection: React.FC = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {t('mentor.announcements.newButton', 'New announcement')}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                'mentor.announcements.composeDesc',
+                'Post an update visible to every student in your space.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <ComposeCard onDone={() => setComposeOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

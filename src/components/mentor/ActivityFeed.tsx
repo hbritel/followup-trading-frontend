@@ -8,12 +8,15 @@ import {
   TrendingDown,
   Circle,
   Brain,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useMentorActivity,
   useLoadMoreActivity,
 } from '@/hooks/useMentor';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import type {
   MentorActivityEventDto,
   MentorActivityEventType,
@@ -21,6 +24,11 @@ import type {
 
 interface ActivityFeedProps {
   onSelectStudent: (studentUserId: string) => void;
+  /**
+   * Optional Overview-cohort filter. When provided, the feed only renders
+   * events whose `studentUserId` is in the set. Undefined = no filter.
+   */
+  visibleStudentIds?: Set<string>;
 }
 
 const formatRelative = (iso: string): string => {
@@ -182,13 +190,27 @@ const EventRow: React.FC<EventRowProps> = ({ event, onSelect }) => {
   );
 };
 
-const ActivityFeed: React.FC<ActivityFeedProps> = ({ onSelectStudent }) => {
+const ActivityFeed: React.FC<ActivityFeedProps> = ({
+  onSelectStudent,
+  visibleStudentIds,
+}) => {
   const { t } = useTranslation();
+  // Default collapsed: 50-event feed used to pin the bottom of the Overview
+  // tab and force long scrolling. Expanded state persists per browser.
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.activity.open',
+    false,
+  );
   const { data, isLoading } = useMentorActivity({ limit: 50 });
   const loadMore = useLoadMoreActivity();
 
-  const events = useMemo(() => data ?? [], [data]);
+  const events = useMemo(() => {
+    const all = data ?? [];
+    if (!visibleStudentIds) return all;
+    return all.filter((e) => visibleStudentIds.has(e.studentUserId));
+  }, [data, visibleStudentIds]);
 
+  const isFiltered = !!visibleStudentIds;
   const oldest = events.length > 0 ? events[events.length - 1].occurredAt : null;
 
   return (
@@ -196,58 +218,89 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ onSelectStudent }) => {
       aria-labelledby="activity-heading"
       className="glass-card rounded-2xl p-5"
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Activity className="w-4 h-4 text-primary" aria-hidden="true" />
-        <h2 id="activity-heading" className="text-base font-semibold">
-          {t('mentor.activity.title', 'Recent activity')}
-        </h2>
-        {events.length > 0 && (
-          <span className="text-xs text-muted-foreground">({events.length})</span>
-        )}
-      </div>
-
-      {isLoading ? (
-        <div
-          className="h-40 rounded-xl bg-muted/20 animate-pulse"
-          aria-busy="true"
-        />
-      ) : events.length === 0 ? (
-        <div className="text-center py-10 space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-            <Activity className="w-6 h-6 text-primary" />
-          </div>
-          <p className="text-sm font-medium">
-            {t('mentor.activity.emptyTitle', 'No activity yet')}
-          </p>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            {t(
-              'mentor.activity.emptyDesc',
-              "When students join or trade, you'll see it here."
-            )}
-          </p>
-        </div>
-      ) : (
-        <>
-          <ul className="divide-y divide-border/40 rounded-xl border border-border/40 overflow-hidden">
-            {events.map((e) => (
-              <EventRow key={e.id} event={e} onSelect={onSelectStudent} />
-            ))}
-          </ul>
-          {oldest && (
-            <div className="flex justify-center mt-3">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={loadMore.isPending}
-                onClick={() => loadMore.mutate(oldest)}
-              >
-                {loadMore.isPending
-                  ? t('common.loading', 'Loading...')
-                  : t('mentor.activity.loadMore', 'Load more')}
-              </Button>
-            </div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="activity-body"
+        className="w-full flex items-center justify-between gap-3 text-left hover:bg-muted/20 transition-colors -m-1 p-1 rounded-lg"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Activity className="w-4 h-4 text-primary" aria-hidden="true" />
+          <h2 id="activity-heading" className="text-base font-semibold">
+            {t('mentor.activity.title', 'Recent activity')}
+          </h2>
+          {events.length > 0 && (
+            <span className="inline-flex items-center text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+              {events.length}
+            </span>
           )}
-        </>
+          {isFiltered && (
+            <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              {t('mentor.activity.filtered', 'Filtered')}
+            </span>
+          )}
+        </div>
+        {open ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+        )}
+      </button>
+
+      {open && (
+        <div id="activity-body" className="mt-4">
+          {isLoading ? (
+            <div
+              className="h-40 rounded-xl bg-muted/20 animate-pulse"
+              aria-busy="true"
+            />
+          ) : events.length === 0 ? (
+            <div className="text-center py-10 space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                <Activity className="w-6 h-6 text-primary" />
+              </div>
+              <p className="text-sm font-medium">
+                {isFiltered
+                  ? t('mentor.activity.filteredEmptyTitle', 'No activity in this cohort')
+                  : t('mentor.activity.emptyTitle', 'No activity yet')}
+              </p>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                {isFiltered
+                  ? t(
+                      'mentor.activity.filteredEmptyDesc',
+                      'Clear the cohort filter to see activity from all students.'
+                    )
+                  : t(
+                      'mentor.activity.emptyDesc',
+                      "When students join or trade, you'll see it here."
+                    )}
+              </p>
+            </div>
+          ) : (
+            <>
+              <ul className="divide-y divide-border/40 rounded-xl border border-border/40 overflow-hidden">
+                {events.map((e) => (
+                  <EventRow key={e.id} event={e} onSelect={onSelectStudent} />
+                ))}
+              </ul>
+              {oldest && (
+                <div className="flex justify-center mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={loadMore.isPending}
+                    onClick={() => loadMore.mutate(oldest)}
+                  >
+                    {loadMore.isPending
+                      ? t('common.loading', 'Loading...')
+                      : t('mentor.activity.loadMore', 'Load more')}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
     </section>
   );
