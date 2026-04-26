@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  Check,
+  Lock,
   Megaphone,
   Pin,
   LogOut,
@@ -179,6 +181,8 @@ const MyMentor: React.FC = () => {
   const [shareTrades, setShareTrades] = useState(false);
   const [sharePsychology, setSharePsychology] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (hub) {
@@ -194,13 +198,25 @@ const MyMentor: React.FC = () => {
       shareTrades !== hub.shareTrades ||
       sharePsychology !== hub.sharePsychology);
 
-  const handleUpdateSharing = () => {
-    updateSharingMutation.mutate({
-      shareMetrics,
-      shareTrades,
-      sharePsychology,
-    });
-  };
+  // Auto-save sharing toggles with a 600ms debounce so users never lose a toggle change.
+  useEffect(() => {
+    if (!hub || !sharingDirty) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      updateSharingMutation.mutate(
+        { shareMetrics, shareTrades, sharePsychology },
+        {
+          onSuccess: () => {
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 1800);
+          },
+        }
+      );
+    }, 600);
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
+  }, [shareMetrics, shareTrades, sharePsychology, hub, sharingDirty, updateSharingMutation]);
 
   const handleLeave = () => {
     leaveMutation.mutate(undefined, {
@@ -320,9 +336,47 @@ const MyMentor: React.FC = () => {
 
         {isPastDue && <PastDueBanner />}
 
-        {isPaywalled ? (
-          <MentorPaywallCard instance={instance} />
-        ) : (
+        {isPaywalled && (
+          <>
+            {/* Teaser: show 2 most-recent announcements with gradient fade + paywall overlay */}
+            {sortedAnnouncements.length > 0 && (
+              <section
+                aria-labelledby="paywall-teaser-heading"
+                className="relative space-y-3"
+                aria-describedby="paywall-teaser-desc"
+              >
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-primary" aria-hidden="true" />
+                  <h2 id="paywall-teaser-heading" className="text-base font-semibold">
+                    {t('mentor.announcements.title', 'Announcements')}
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    <Lock className="w-3 h-3" aria-hidden="true" />
+                    {t('mentor.myMentor.paywall.previewBadge', 'Preview')}
+                  </span>
+                </div>
+                <p id="paywall-teaser-desc" className="sr-only">
+                  {t(
+                    'mentor.myMentor.paywall.teaserAria',
+                    'Preview of recent announcements. Subscribe to unlock the full feed.'
+                  )}
+                </p>
+                <div
+                  className="relative space-y-3 max-h-[22rem] overflow-hidden"
+                  aria-hidden="true"
+                >
+                  {sortedAnnouncements.slice(0, 2).map((item) => (
+                    <AnnouncementReadCard key={item.id} item={item} />
+                  ))}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/90 to-transparent" />
+                </div>
+              </section>
+            )}
+            <MentorPaywallCard instance={instance} />
+          </>
+        )}
+
+        {!isPaywalled && (
         <>
         {/* Announcements feed */}
         <section aria-labelledby="my-announcements-heading" className="space-y-3">
@@ -424,16 +478,25 @@ const MyMentor: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={handleUpdateSharing}
-              disabled={!sharingDirty || updateSharingMutation.isPending}
-            >
-              {updateSharingMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {t('mentor.myMentor.sharing.update', 'Update')}
-            </Button>
+          <div
+            className="flex justify-end items-center gap-2 text-xs font-medium min-h-[1.25rem]"
+            aria-live="polite"
+          >
+            {updateSharingMutation.isPending ? (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                {t('mentor.myMentor.sharing.saving', 'Saving…')}
+              </span>
+            ) : justSaved ? (
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95">
+                <Check className="w-3.5 h-3.5" />
+                {t('mentor.myMentor.sharing.saved', 'Saved')}
+              </span>
+            ) : (
+              <span className="text-muted-foreground/60">
+                {t('mentor.myMentor.sharing.autosaveHint', 'Changes save automatically')}
+              </span>
+            )}
           </div>
         </section>
 

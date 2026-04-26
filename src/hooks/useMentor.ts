@@ -148,12 +148,12 @@ export const useStudentPsychology = (userId: string | undefined) => {
   });
 };
 
-export const useMentorMetricsSummary = () => {
+export const useMentorMetricsSummary = (cohortId?: string) => {
   return useQuery({
-    queryKey: ['mentor', 'metrics-summary'],
+    queryKey: ['mentor', 'metrics-summary', cohortId ?? 'all'],
     queryFn: async () => {
       try {
-        return await mentorService.getMetricsSummary();
+        return await mentorService.getMetricsSummary(cohortId);
       } catch (error) {
         if (error instanceof AxiosError) {
           const status = error.response?.status;
@@ -799,6 +799,22 @@ export const useMentorSubscriptions = () => {
   return useQuery({
     queryKey: SUBSCRIPTIONS_KEY,
     queryFn: mentorService.getMentorSubscriptions,
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useMonetizationSummary = () => {
+  return useQuery({
+    queryKey: ['mentor', 'monetization-summary'],
+    queryFn: mentorService.getMonetizationSummary,
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useDirectorySpotlight = (limit = 5) => {
+  return useQuery({
+    queryKey: ['mentor-directory', 'spotlight', limit],
+    queryFn: () => mentorService.getDirectorySpotlight(limit),
     staleTime: 60 * 1000,
   });
 };

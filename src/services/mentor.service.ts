@@ -1,6 +1,8 @@
 import apiClient from './apiClient';
 import { AxiosError } from 'axios';
 import type {
+  MentorCohortPolicyDto,
+  MentorCohortPricingDto,
   MentorInstanceDto,
   MentorStudentDto,
   CreateInstanceRequestDto,
@@ -34,6 +36,7 @@ import type {
   PublicCheckoutResponse,
   DirectoryQuery,
   DirectoryPageDto,
+  DirectoryCardDto,
   MentorTagDto,
   MentorTagCategory,
   LanguageOptionsDto,
@@ -47,6 +50,7 @@ import type {
   MentorComplaintSubmission,
   SessionOfferingDto,
   SessionBookingDto,
+  StudentBookingDto,
   WebinarDto,
   WebinarTicketDto,
   FunnelReportDto,
@@ -110,9 +114,25 @@ export const mentorService = {
     return res.data;
   },
 
-  getMetricsSummary: async (): Promise<MentorMetricsSummaryDto> => {
+  getMonetizationSummary: async (): Promise<import('@/types/dto').MentorMonetizationSummaryDto> => {
+    const res = await apiClient.get<import('@/types/dto').MentorMonetizationSummaryDto>(
+      `${MENTOR_BASE}/monetization/summary`,
+    );
+    return res.data;
+  },
+
+  getDirectorySpotlight: async (limit = 5): Promise<DirectoryCardDto[]> => {
+    const res = await apiClient.get<DirectoryCardDto[]>(
+      `/public/mentors/spotlight`,
+      { params: { limit } },
+    );
+    return res.data;
+  },
+
+  getMetricsSummary: async (cohortId?: string): Promise<MentorMetricsSummaryDto> => {
     const res = await apiClient.get<MentorMetricsSummaryDto>(
-      `${MENTOR_BASE}/metrics/summary`
+      `${MENTOR_BASE}/metrics/summary`,
+      cohortId ? { params: { cohortId } } : undefined
     );
     return res.data;
   },
@@ -672,8 +692,26 @@ export const mentorService = {
 
   // ── Phase 4: Student bookings ────────────────────────────────────────────
 
-  getMyBookings: async (): Promise<SessionBookingDto[]> => {
-    const res = await apiClient.get<SessionBookingDto[]>(`/me/mentor/bookings`);
+  getMyBookings: async (): Promise<StudentBookingDto[]> => {
+    const res = await apiClient.get<StudentBookingDto[]>(`/me/mentor/bookings`);
+    return res.data;
+  },
+
+  cancelMyBooking: async (bookingId: string): Promise<StudentBookingDto> => {
+    const res = await apiClient.post<StudentBookingDto>(
+      `/me/mentor/bookings/${bookingId}/cancel`,
+      {},
+    );
+    return res.data;
+  },
+
+  resumeBookingCheckout: async (
+    bookingId: string,
+  ): Promise<{ bookingId: string; checkoutUrl: string }> => {
+    const res = await apiClient.post<{ bookingId: string; checkoutUrl: string }>(
+      `/me/mentor/bookings/${bookingId}/resume-checkout`,
+      {},
+    );
     return res.data;
   },
 
@@ -757,5 +795,48 @@ export const mentorService = {
 
   deleteSearchAlert: async (id: string): Promise<void> => {
     await apiClient.delete(`/me/mentor/search-alerts/${id}`);
+  },
+
+  // ── Cohort overrides (C4 + C5) ──────────────────────────────────────────
+
+  getCohortPolicies: async (): Promise<MentorCohortPolicyDto[]> => {
+    const res = await apiClient.get<MentorCohortPolicyDto[]>('/mentor/cohorts/policies');
+    return res.data;
+  },
+
+  upsertCohortPolicy: async (
+    cohortId: string,
+    cancellationPolicy: string,
+  ): Promise<MentorCohortPolicyDto> => {
+    const res = await apiClient.put<MentorCohortPolicyDto>(
+      `/mentor/cohorts/${cohortId}/policy`,
+      { cancellationPolicy },
+    );
+    return res.data;
+  },
+
+  deleteCohortPolicy: async (cohortId: string): Promise<void> => {
+    await apiClient.delete(`/mentor/cohorts/${cohortId}/policy`);
+  },
+
+  getCohortPricing: async (): Promise<MentorCohortPricingDto[]> => {
+    const res = await apiClient.get<MentorCohortPricingDto[]>('/mentor/cohorts/pricing');
+    return res.data;
+  },
+
+  upsertCohortPricing: async (
+    cohortId: string,
+    monthlyAmount: number,
+    currency: string,
+  ): Promise<MentorCohortPricingDto> => {
+    const res = await apiClient.put<MentorCohortPricingDto>(
+      `/mentor/cohorts/${cohortId}/pricing`,
+      { monthlyAmount, currency },
+    );
+    return res.data;
+  },
+
+  deleteCohortPricing: async (cohortId: string): Promise<void> => {
+    await apiClient.delete(`/mentor/cohorts/${cohortId}/pricing`);
   },
 };

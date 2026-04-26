@@ -19,6 +19,14 @@ import {
   ChevronDown,
   Globe,
   Eye,
+  Compass,
+  HelpCircle,
+  Minimize2,
+  LayoutDashboard,
+  CalendarClock,
+  BarChart3,
+  ShieldCheck,
+  Video,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StudentList from '@/components/mentor/StudentList';
@@ -30,8 +38,17 @@ import CohortFilterChips from '@/components/mentor/CohortFilterChips';
 import ActivityFeed from '@/components/mentor/ActivityFeed';
 import MonetizationSection from '@/components/mentor/monetization/MonetizationSection';
 import PublicProfileSection from '@/components/mentor/publicprofile/PublicProfileSection';
+import MentorSetupChecklist from '@/components/mentor/publicprofile/MentorSetupChecklist';
 import TestimonialsSection from '@/components/mentor/testimonials/TestimonialsSection';
 import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingEditor';
+import SessionsKpiRibbon from '@/components/mentor/sessions/SessionsKpiRibbon';
+import InsightsKpiRibbon from '@/components/mentor/insights/InsightsKpiRibbon';
+import ComplianceKpiRibbon from '@/components/mentor/compliance/ComplianceKpiRibbon';
+import { useMyMentorFaq, useMyJurisdictions } from '@/hooks/useMentor';
+import {
+  useCohortPolicies,
+  useCohortPricing,
+} from '@/hooks/useMentorCohortOverrides';
 import MentorSessionsList from '@/components/mentor/sessions/MentorSessionsList';
 import WebinarEditor from '@/components/mentor/webinars/WebinarEditor';
 import WebinarAttendeesList from '@/components/mentor/webinars/WebinarAttendeesList';
@@ -42,6 +59,7 @@ import PublicStatsToggle from '@/components/mentor/settings/PublicStatsToggle';
 import CancellationPolicySelector from '@/components/mentor/settings/CancellationPolicySelector';
 import MentorJurisdictionPicker from '@/components/mentor/settings/MentorJurisdictionPicker';
 import MentorFaqEditor from '@/components/mentor/faq/MentorFaqEditor';
+import MentorCohortOverridesPanel from '@/components/mentor/cohorts/MentorCohortOverridesPanel';
 import MentorLeadsInbox from '@/components/mentor/contact/MentorLeadsInbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +81,17 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -307,20 +336,44 @@ const InviteHero: React.FC<{ instance: MentorInstanceDto }> = ({ instance }) => 
                   max: instance.maxStudents,
                 })}
               </span>
-              <span
-                className={[
-                  'text-xs font-medium tabular-nums',
-                  atCapacity
-                    ? 'text-destructive'
-                    : nearCapacity
-                      ? 'text-amber-500 dark:text-amber-400'
-                      : warnCapacity
-                        ? 'text-muted-foreground'
-                        : 'text-muted-foreground/70',
-                ].join(' ')}
-              >
-                {capacityPct}%
-              </span>
+              <div className="flex items-center gap-2">
+                {instance.maxStudents > 0 && (
+                  atCapacity ? (
+                    <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-destructive/15 text-destructive border-destructive/40">
+                      {t('mentor.slotsFull', 'Full · upgrade to grow')}
+                    </span>
+                  ) : (
+                    <span
+                      className={[
+                        'text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full border',
+                        nearCapacity
+                          ? 'text-amber-700 bg-amber-500/15 border-amber-500/40 dark:text-amber-300'
+                          : warnCapacity
+                            ? 'text-amber-600 bg-amber-500/10 border-amber-500/25 dark:text-amber-400'
+                            : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25 dark:text-emerald-400',
+                      ].join(' ')}
+                    >
+                      {t('mentor.slotsLeft', '{{n}} slots left', {
+                        n: Math.max(0, instance.maxStudents - instance.currentStudents),
+                      })}
+                    </span>
+                  )
+                )}
+                <span
+                  className={[
+                    'text-xs font-medium tabular-nums',
+                    atCapacity
+                      ? 'text-destructive'
+                      : nearCapacity
+                        ? 'text-amber-500 dark:text-amber-400'
+                        : warnCapacity
+                          ? 'text-muted-foreground'
+                          : 'text-muted-foreground/70',
+                  ].join(' ')}
+                >
+                  {capacityPct}%
+                </span>
+              </div>
             </div>
             <Progress
               value={capacityPct}
@@ -608,12 +661,45 @@ const useStudentCohortMap = (
   }, [studentUserIds.join('|'), results.map((r) => r.dataUpdatedAt).join('|')]);
 };
 
+/* ───── Compact count badges for Compliance accordions ──── */
+const PillBadge: React.FC<{ count: number; tone?: 'primary' | 'amber' }> = ({ count, tone = 'primary' }) => {
+  if (count === 0) return null;
+  const cls = tone === 'amber'
+    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+    : 'bg-primary/10 text-primary border-primary/25';
+  return (
+    <span
+      className={[
+        'inline-flex items-center text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full border',
+        cls,
+      ].join(' ')}
+    >
+      {count}
+    </span>
+  );
+};
+
+const FaqCountBadge: React.FC = () => {
+  const { data: faq = [] } = useMyMentorFaq();
+  return <PillBadge count={faq.length} />;
+};
+
+const JurisdictionsBadge: React.FC = () => {
+  const { data: rules = [] } = useMyJurisdictions();
+  return <PillBadge count={rules.length} tone="amber" />;
+};
+
+const CohortOverridesBadge: React.FC = () => {
+  const { data: policies = [] } = useCohortPolicies();
+  const { data: pricing = [] } = useCohortPricing();
+  return <PillBadge count={policies.length + pricing.length} />;
+};
+
 /* ───────────────── Main Page ───────────────── */
 const Mentor: React.FC = () => {
   const { t } = useTranslation();
   const { data: instance, isLoading: instanceLoading } = useMentorInstance();
   const { data: students, isLoading: studentsLoading } = useMentorStudents();
-  const { data: summary } = useMentorMetricsSummary();
   const { data: cohorts } = useMentorCohorts();
   const removeMutation = useRemoveStudent();
 
@@ -626,7 +712,78 @@ const Mentor: React.FC = () => {
   const [atRiskOpen, setAtRiskOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'joined' | 'sharing'>('joined');
-  const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(new Set());
+
+  // Maturity-based progressive disclosure. Power users can override via the
+  // header "Show all sections" toggle (persisted to localStorage).
+  const [forceFullView, setForceFullView] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('mentor.forceFullView') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (forceFullView) localStorage.setItem('mentor.forceFullView', '1');
+      else localStorage.removeItem('mentor.forceFullView');
+    } catch {
+      /* noop */
+    }
+  }, [forceFullView]);
+
+  // Tab state. MUST be declared before any early returns or React will throw
+  // "Rendered more hooks than during the previous render" when instance flips
+  // from undefined → loaded. Stage gating happens later via `effectiveTab`.
+  const TAB_KEYS = ['overview', 'profile', 'sessions', 'insights', 'compliance'] as const;
+  type TabKey = typeof TAB_KEYS[number];
+  const readInitialTab = (): TabKey => {
+    if (typeof window === 'undefined') return 'overview';
+    const hash = window.location.hash.replace(/^#/, '').split('?')[0];
+    return (TAB_KEYS as readonly string[]).includes(hash) ? (hash as TabKey) : 'overview';
+  };
+  const [activeTab, setActiveTab] = useState<TabKey>(() => readInitialTab());
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, '').split('?')[0];
+      if ((TAB_KEYS as readonly string[]).includes(hash)) {
+        setActiveTab(hash as TabKey);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cohort filter is now Overview-global. Hydrate from URL `?cohort=id1,id2`
+  // on mount so deep links / page reloads preserve the active filter, and
+  // sync back to the URL whenever it changes via replaceState.
+  const [selectedCohorts, setSelectedCohorts] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const raw = new URLSearchParams(window.location.search).get('cohort');
+    if (!raw) return new Set();
+    return new Set(raw.split(',').filter(Boolean));
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (selectedCohorts.size === 0) {
+      params.delete('cohort');
+    } else {
+      params.set('cohort', Array.from(selectedCohorts).join(','));
+    }
+    const search = params.toString();
+    const newUrl = `${window.location.pathname}${search ? '?' + search : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [selectedCohorts]);
+
+  // KPI strip honors the Overview-global cohort filter when exactly one
+  // cohort is selected. Multi-select degrades to "all students" — backend
+  // stat endpoint takes a single cohort id. Must come after selectedCohorts
+  // state declaration above.
+  const summaryCohortId =
+    selectedCohorts.size === 1 ? Array.from(selectedCohorts)[0] : undefined;
+  const { data: summary } = useMentorMetricsSummary(summaryCohortId);
 
   const handleSelectStudent = (userId: string) => {
     setSelectedStudent(userId);
@@ -742,6 +899,48 @@ const Mentor: React.FC = () => {
 
   const atRiskStudents = summary?.atRiskStudents ?? [];
 
+  // Stages: SETUP (no students) → GROWING (1-9) → ESTABLISHED (10+).
+  // forceFullView upgrades to ESTABLISHED for power users.
+  const studentCount = instance.currentStudents;
+  const stage: 'SETUP' | 'GROWING' | 'ESTABLISHED' = forceFullView
+    ? 'ESTABLISHED'
+    : studentCount === 0
+      ? 'SETUP'
+      : studentCount < 10
+        ? 'GROWING'
+        : 'ESTABLISHED';
+  const showGrowingPlus = stage !== 'SETUP';
+  const showEstablished = stage === 'ESTABLISHED';
+
+  // Tab structure replaces the long single-scroll page. Visibility is
+  // stage-driven: SETUP shows overview + profile only, GROWING adds
+  // sessions + insights, ESTABLISHED unlocks compliance.
+  const tabVisibility: Record<TabKey, boolean> = {
+    overview: true,
+    profile: true,
+    sessions: showGrowingPlus,
+    insights: showGrowingPlus,
+    compliance: showEstablished,
+  };
+  // Effective tab is a derived value, NOT a separate state — keeps the page
+  // clear of conditional hooks. If the persisted activeTab is no longer
+  // allowed (stage retracted), fall back to overview without re-rendering.
+  const effectiveTab: TabKey = tabVisibility[activeTab] ? activeTab : 'overview';
+
+  const handleTabChange = (next: string) => {
+    if (!(TAB_KEYS as readonly string[]).includes(next)) return;
+    setActiveTab(next as TabKey);
+    const newHash = next === 'overview' ? '' : `#${next}`;
+    if (typeof window !== 'undefined') {
+      // Use replaceState so deep-linking works without polluting browser history.
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}${newHash}`,
+      );
+    }
+  };
+
   return (
     <DashboardLayout pageTitle={pageTitle}>
       <div className="space-y-6">
@@ -785,24 +984,14 @@ const Mentor: React.FC = () => {
                 <ExternalLink className="w-4 h-4" />
                 {t('mentor.copyInviteLink', 'Copy invite link')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               {publicProfileUrl ? (
-                <>
-                  <DropdownMenuItem
-                    onSelect={() => window.open(publicProfileUrl, '_blank', 'noopener')}
-                    className="gap-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    {t('mentor.viewPublicProfile', 'View public profile')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={handleCopyPublicProfile}
-                    className="gap-2"
-                  >
-                    <Globe className="w-4 h-4" />
-                    {t('mentor.copyPublicProfileLink', 'Copy public profile link')}
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem
+                  onSelect={() => window.open(publicProfileUrl, '_blank', 'noopener')}
+                  className="gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  {t('mentor.viewPublicProfile', 'View public profile')}
+                </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem
                   onSelect={scrollToPublicProfileSection}
@@ -811,6 +1000,25 @@ const Mentor: React.FC = () => {
                   <Globe className="w-4 h-4" />
                   {t('mentor.setUpPublicProfile', 'Set up public profile')}
                 </DropdownMenuItem>
+              )}
+              {/* Compact-view toggle only surfaces when forceFullView is on
+                  so a power user can roll back. SETUP/GROWING users get
+                  "Show all" via the stage banner button instead — keeps the
+                  dropdown at ≤4 items in the common case. */}
+              {forceFullView && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setForceFullView(false);
+                    }}
+                    className="gap-2"
+                  >
+                    <Minimize2 className="w-4 h-4" />
+                    {t('mentor.viewMode.compact', 'Compact view')}
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -824,57 +1032,209 @@ const Mentor: React.FC = () => {
           </DropdownMenu>
         </header>
 
-        {/* Invite hero */}
-        <InviteHero instance={instance} />
-
-        {/* KPI strip — only if summary endpoint returned data */}
-        {summary && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
-              label={t('mentor.kpis.totalStudents', 'Total Students')}
-              value={`${summary.totalStudents}/${summary.maxStudents}`}
-              icon={<Users className="w-5 h-5 text-blue-500" />}
-              colorClass="bg-blue-500/10"
-            />
-            <KpiCard
-              label={t('mentor.kpis.activeToday', 'Active Today')}
-              value={summary.activeToday}
-              icon={<Activity className="w-5 h-5 text-violet-500" />}
-              colorClass="bg-violet-500/10"
-            />
-            <KpiCard
-              label={t('mentor.kpis.avgWinRate', 'Avg Win Rate')}
-              value={avgWinRateValue}
-              icon={<TrendingUp className="w-5 h-5 text-emerald-500" />}
-              colorClass="bg-emerald-500/10"
-              hint={
-                summary.sharingMetrics > 0
-                  ? t('mentor.fromSharing', 'from {{n}} sharing', {
-                      n: summary.sharingMetrics,
-                    })
-                  : undefined
-              }
-            />
-            <KpiCard
-              label={t('mentor.kpis.atRisk', 'At Risk')}
-              value={summary.atRiskCount}
-              icon={<AlertTriangle className="w-5 h-5 text-amber-500" />}
-              colorClass="bg-amber-500/10"
-              hint={t('mentor.atRiskDesc', 'Tilt above threshold')}
-              onClick={() => setAtRiskOpen(true)}
-              ariaExpanded={atRiskOpen}
-            />
+        {/* Stage banner — explains why some sections are hidden */}
+        {!forceFullView && stage !== 'ESTABLISHED' && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 mt-1">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap min-w-0">
+              <span className="font-semibold text-primary">
+                {stage === 'SETUP'
+                  ? t('mentor.stage.setupBadge', 'Setup mode')
+                  : t('mentor.stage.growingBadge', 'Growing mode')}
+              </span>
+              <span className="opacity-50">·</span>
+              <span className="min-w-0">
+                {stage === 'SETUP'
+                  ? t(
+                      'mentor.stage.setupHint',
+                      'Sessions, cohorts, activity, analytics and trust panels unlock once your first student joins.'
+                    )
+                  : t(
+                      'mentor.stage.growingHint',
+                      'Webinars, funnel analytics and trust panels unlock at 10 students. Show them all now if you need them sooner.'
+                    )}
+              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    aria-label={t('mentor.stage.whyLabel', 'Why is this hidden?')}
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                    {t('mentor.stage.why', 'Why?')}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 text-xs leading-relaxed space-y-2" align="start">
+                  <p className="font-semibold text-foreground">
+                    {t('mentor.stage.whyTitle', 'Why we stage your dashboard')}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t(
+                      'mentor.stage.whyBody',
+                      'A new mentor space has 14+ panels. Showing them all at once made first-time mentors freeze. We hide advanced sections until they would actually carry data — sessions when you have students to book, analytics when you have traffic, trust panels once you are ready for compliance.'
+                    )}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t(
+                      'mentor.stage.whyEscape',
+                      'Click "Show all" any time — your choice persists across reloads.'
+                    )}
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForceFullView(true)}
+              className="text-xs font-medium text-primary hover:underline shrink-0"
+            >
+              {t('mentor.viewMode.showAll', 'Show all')}
+            </button>
           </div>
         )}
 
-        {/* Announcements section */}
-        <AnnouncementsSection />
+        {/* Invite hero — always above tabs (top-of-page identity + capacity + invite link) */}
+        <InviteHero instance={instance} />
 
-        {/* Cohorts management section */}
-        <CohortsSection />
+        {/* Tabbed dashboard — replaces the previous 14-section vertical scroll.
+            Sticky wrapper sits inside the DashboardLayout scroll container
+            (`<div className="flex-1 p-4 md:p-6 overflow-auto">`). The negative
+            margins + matching horizontal padding stretch the sticky bar across
+            the full width of that container, so the backdrop-blur covers the
+            scroll edges instead of leaving a gutter on each side. Negative
+            top offsets pull the bar above the container's padding-top so it
+            actually clings to the very top edge when scrolling. */}
+        <Tabs value={effectiveTab} onValueChange={handleTabChange} className="space-y-4">
+          <div className="sticky -top-4 md:-top-6 z-30 -mx-4 md:-mx-6 px-4 md:px-6 pt-3 pb-2 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b border-border/40">
+            <TabsList className="h-auto bg-transparent p-0 flex flex-wrap gap-1 justify-start w-full">
+              <TabsTrigger value="overview" className="gap-1.5">
+                <LayoutDashboard className="w-3.5 h-3.5" aria-hidden="true" />
+                {t('mentor.tabs.overview', 'Overview')}
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="gap-1.5">
+                <Globe className="w-3.5 h-3.5" aria-hidden="true" />
+                {t('mentor.tabs.profile', 'Public profile')}
+              </TabsTrigger>
+              {tabVisibility.sessions && (
+                <TabsTrigger value="sessions" className="gap-1.5">
+                  <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
+                  {t('mentor.tabs.sessions', 'Sessions & webinars')}
+                </TabsTrigger>
+              )}
+              {tabVisibility.insights && (
+                <TabsTrigger value="insights" className="gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" aria-hidden="true" />
+                  {t('mentor.tabs.insights', 'Insights')}
+                </TabsTrigger>
+              )}
+              {tabVisibility.compliance && (
+                <TabsTrigger value="compliance" className="gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                  {t('mentor.tabs.compliance', 'Compliance')}
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
-        {/* Students section */}
-        <div className="glass-card rounded-2xl p-5">
+          {/* ── OVERVIEW ─────────────────────────────────────────────── */}
+          <TabsContent value="overview" className="space-y-6 mt-2">
+            {/* Cohort filter — Overview-global (applies to KPIs, students,
+                activity). Sits at the very top so it reads as a page-wide
+                control, not a section-local filter. */}
+            {cohortList.length > 0 && (
+              <div
+                className={[
+                  'flex items-center justify-between gap-3 flex-wrap rounded-xl border px-3 py-2',
+                  selectedCohorts.size > 0
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-border/40 bg-muted/15',
+                ].join(' ')}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t('mentor.cohorts.overviewFilterLabel', 'Cohort filter')}
+                  </span>
+                  <CohortFilterChips
+                    cohorts={cohortList}
+                    selected={selectedCohorts}
+                    onToggle={toggleCohort}
+                    onClear={() => setSelectedCohorts(new Set())}
+                    totalStudents={studentList.length}
+                  />
+                </div>
+                {selectedCohorts.size > 0 && (
+                  <span className="text-[11px] text-primary font-medium shrink-0">
+                    {t('mentor.cohorts.activeFilterHint', 'Filtering students + activity')}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Setup checklist — guides first-time mentors to first paying student */}
+            <MentorSetupChecklist
+              instance={instance}
+              onStepClick={(anchor) => {
+                const el = document.getElementById(anchor);
+                if (el) {
+                  // Switch tab if the anchor lives elsewhere.
+                  if (anchor === 'public-profile-heading') handleTabChange('profile');
+                  setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('ring-2', 'ring-primary/60', 'ring-offset-2', 'rounded-xl');
+                    setTimeout(() => {
+                      el.classList.remove('ring-2', 'ring-primary/60', 'ring-offset-2', 'rounded-xl');
+                    }, 1600);
+                  }, 60);
+                }
+              }}
+              onShareClick={handleCopyPublicLink}
+            />
+
+            {/* KPI strip — student count is already shown in InviteHero (above
+                the tabs) with a progress bar + slots-left pill, so we drop
+                the "Total Students" card here to avoid the duplicate. */}
+            {summary && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <KpiCard
+                  label={t('mentor.kpis.activeToday', 'Active Today')}
+                  value={summary.activeToday}
+                  icon={<Activity className="w-5 h-5 text-violet-500" />}
+                  colorClass="bg-violet-500/10"
+                />
+                <KpiCard
+                  label={t('mentor.kpis.avgWinRate', 'Avg Win Rate')}
+                  value={avgWinRateValue}
+                  icon={<TrendingUp className="w-5 h-5 text-emerald-500" />}
+                  colorClass="bg-emerald-500/10"
+                  hint={
+                    summary.sharingMetrics > 0
+                      ? t('mentor.fromSharing', 'from {{n}} sharing', {
+                          n: summary.sharingMetrics,
+                        })
+                      : undefined
+                  }
+                />
+                <KpiCard
+                  label={t('mentor.kpis.atRisk', 'At Risk')}
+                  value={summary.atRiskCount}
+                  icon={<AlertTriangle className="w-5 h-5 text-amber-500" />}
+                  colorClass="bg-amber-500/10"
+                  hint={t('mentor.atRiskDesc', 'Tilt above threshold')}
+                  onClick={() => setAtRiskOpen(true)}
+                  ariaExpanded={atRiskOpen}
+                />
+              </div>
+            )}
+
+            {/* Announcements */}
+            <AnnouncementsSection />
+
+            {/* Cohorts — only when there are students to organize */}
+            {showGrowingPlus && <CohortsSection />}
+
+            {/* Students section */}
+            <div className="glass-card rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-muted-foreground" />
@@ -918,18 +1278,6 @@ const Mentor: React.FC = () => {
             </div>
           </div>
 
-          {cohortList.length > 0 && (
-            <div className="mb-4">
-              <CohortFilterChips
-                cohorts={cohortList}
-                selected={selectedCohorts}
-                onToggle={toggleCohort}
-                onClear={() => setSelectedCohorts(new Set())}
-                totalStudents={studentList.length}
-              />
-            </div>
-          )}
-
           {studentList.length === 0 ? (
             <EmptyStudentsState instance={instance} />
           ) : (
@@ -945,74 +1293,270 @@ const Mentor: React.FC = () => {
           )}
         </div>
 
-        {/* Activity feed */}
-        <ActivityFeed onSelectStudent={handleSelectStudent} />
+            {/* Activity feed — only with students. Honours the Overview-
+                global cohort filter when active. */}
+            {showGrowingPlus && (
+              <ActivityFeed
+                onSelectStudent={handleSelectStudent}
+                visibleStudentIds={visibleStudentIds}
+              />
+            )}
+          </TabsContent>
 
-        {/* Iteration C: Public profile / Monetization / Testimonials */}
-        <PublicProfileSection instance={instance} />
+          {/* ── PROFILE ──────────────────────────────────────────────── */}
+          <TabsContent value="profile" className="space-y-6 mt-2">
+            <PublicProfileSection instance={instance} />
 
-        {/* Phase 1: Directory taxonomy */}
-        <MentorTagsPicker />
-        <MentorLanguagesPicker />
+            {/* Discoverability — collapsible card fusing Tags + Languages
+                (both drive the directory filter). Default open so first-time
+                mentors see it, but the mentor can fold it once configured. */}
+            <details
+              open
+              className="group glass-card rounded-2xl p-5"
+            >
+              <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Compass className="w-4 h-4 text-primary" aria-hidden="true" />
+                  <h2 id="discoverability-heading" className="text-base font-semibold">
+                    {t('mentor.discoverability.title', 'Discoverability')}
+                  </h2>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">
+                    · {t('mentor.discoverability.hint', 'Drives directory matches')}
+                  </span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+              </summary>
+              <div className="mt-5 pt-5 border-t border-border/40 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <MentorTagsPicker />
+                <MentorLanguagesPicker />
+              </div>
+            </details>
 
-        <MonetizationSection />
-        <TestimonialsSection />
+            <MonetizationSection />
+          </TabsContent>
 
-        {/* Phase 4: Sessions */}
-        <section
-          aria-labelledby="sessions-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="sessions-heading" className="text-base font-semibold">
-            {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
-          </h2>
-          <SessionOfferingEditor />
-          <div className="border-t border-border/40" />
-          <MentorSessionsList />
-        </section>
+          {/* ── SESSIONS & WEBINARS ──────────────────────────────────── */}
+          {tabVisibility.sessions && (
+            <TabsContent value="sessions" className="space-y-6 mt-2">
+              {/* KPI ribbon — at-a-glance state of monetised activity. */}
+              <SessionsKpiRibbon showWebinars={showEstablished} />
 
-        {/* Phase 4: Webinars */}
-        <section
-          aria-labelledby="webinars-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="webinars-heading" className="text-base font-semibold">
-            {t('mentor.webinars.sectionTitle', 'Webinars')}
-          </h2>
-          <WebinarEditor />
-          <div className="border-t border-border/40" />
-          <WebinarAttendeesList />
-        </section>
+              {/* Sessions: offerings (left) + bookings (right) on lg+, stack
+                  on mobile. Removes the redundant outer h2 since the tab nav
+                  already says "Sessions & webinars". */}
+              <section
+                aria-label={t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <SessionOfferingEditor />
+                  <MentorSessionsList />
+                </div>
+              </section>
 
-        {/* Phase 4: Analytics */}
-        <section
-          aria-labelledby="analytics-section-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-6"
-        >
-          <h2 id="analytics-section-heading" className="text-base font-semibold">
-            {t('mentor.analytics.title', 'Funnel analytics')}
-          </h2>
-          <FunnelReportPanel />
-        </section>
+              {showEstablished ? (
+                <section
+                  aria-label={t('mentor.webinars.sectionTitle', 'Webinars')}
+                  className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <WebinarEditor />
+                    <WebinarAttendeesList />
+                  </div>
+                </section>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center space-y-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <Video className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
+                    <p className="text-sm font-medium">
+                      {t('mentor.tabs.webinarsLockedTitle', 'Webinars unlock at 10 students')}
+                    </p>
+                    <p className="text-xs text-muted-foreground max-w-md">
+                      {t(
+                        'mentor.tabs.webinarsLockedDesc',
+                        'You need an audience before broadcasting. Use Show all to override the gate.'
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForceFullView(true)}
+                    className="gap-1.5"
+                  >
+                    {t('mentor.viewMode.showAll', 'Show all sections')}
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+          )}
 
-        {/* Phase 2: Trust & policies */}
-        <section
-          aria-labelledby="trust-policies-heading"
-          className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-8"
-        >
-          <h2 id="trust-policies-heading" className="text-base font-semibold">
-            {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
-          </h2>
-          <PublicStatsToggle />
-          <div className="border-t border-border/40" />
-          <CancellationPolicySelector />
-          <div className="border-t border-border/40" />
-          <MentorJurisdictionPicker />
-          <div className="border-t border-border/40" />
-          <MentorFaqEditor />
-          <div className="border-t border-border/40" />
-          <MentorLeadsInbox />
-        </section>
+          {/* ── INSIGHTS (testimonials + analytics + leads) ──────────── */}
+          {tabVisibility.insights && (
+            <TabsContent value="insights" className="space-y-6 mt-2">
+              <InsightsKpiRibbon
+                showFunnel={showEstablished}
+                showLeads={showEstablished}
+              />
+
+              {showEstablished ? (
+                <>
+                  {/* Testimonials (left) + Funnel chart (right) on lg+. The
+                      chart needs more horizontal room than the testimonial
+                      cards, so it gets a wider 3/5 share of the row. */}
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div className="lg:col-span-2">
+                      <TestimonialsSection />
+                    </div>
+                    <details
+                      open
+                      className="group lg:col-span-3 glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+                    >
+                      <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                        <h2 id="analytics-section-heading" className="text-base font-semibold">
+                          {t('mentor.analytics.title', 'Funnel analytics')}
+                        </h2>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                      </summary>
+                      <div className="mt-4 pt-4 border-t border-border/40">
+                        <FunnelReportPanel />
+                      </div>
+                    </details>
+                  </div>
+
+                  <section
+                    aria-labelledby="leads-inbox-heading"
+                    className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+                  >
+                    <MentorLeadsInbox />
+                  </section>
+                </>
+              ) : (
+                <>
+                  <TestimonialsSection />
+                  <div className="rounded-2xl border border-dashed border-border/50 p-6 text-center space-y-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <BarChart3 className="w-6 h-6 text-muted-foreground/60" aria-hidden="true" />
+                      <p className="text-sm font-medium">
+                        {t('mentor.tabs.insightsLockedTitle', 'Funnel analytics + leads unlock at 10 students')}
+                      </p>
+                      <p className="text-xs text-muted-foreground max-w-md">
+                        {t(
+                          'mentor.tabs.insightsLockedDesc',
+                          'Charts need traffic to be meaningful. Use Show all to override the gate.'
+                        )}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setForceFullView(true)}
+                      className="gap-1.5"
+                    >
+                      {t('mentor.viewMode.showAll', 'Show all sections')}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          )}
+
+          {/* ── COMPLIANCE (trust & policies) ────────────────────────── */}
+          {tabVisibility.compliance && (
+            <TabsContent value="compliance" className="space-y-6 mt-2">
+              <ComplianceKpiRibbon />
+
+              <section
+                aria-labelledby="trust-policies-heading"
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50 space-y-3"
+              >
+                <h2 id="trust-policies-heading" className="text-base font-semibold">
+                  {t('mentor.settings.trustPolicies.title', 'Trust & policies')}
+                </h2>
+
+                {/* Public stats — open by default. Most-consulted, fastest toggle. */}
+                <details
+                  open
+                  className="group rounded-xl border border-border/50 bg-muted/10 p-4"
+                >
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold">
+                      {t('mentor.settings.publicStats.title', 'Public stats')}
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <PublicStatsToggle />
+                  </div>
+                </details>
+
+                {/* Cancellation policy — open by default, daily-driver setting. */}
+                <details
+                  open
+                  className="group rounded-xl border border-border/50 bg-muted/10 p-4"
+                >
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold">
+                      {t('mentor.settings.cancellation.title', 'Cancellation policy')}
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <CancellationPolicySelector />
+                  </div>
+                </details>
+
+                {/* Jurisdictions — collapsed by default, count badge if any rule. */}
+                <details className="group rounded-xl border border-border/50 bg-muted/10 p-4">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold inline-flex items-center gap-2">
+                      {t('mentor.settings.jurisdictions.title', 'Jurisdictions')}
+                      <JurisdictionsBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <MentorJurisdictionPicker />
+                  </div>
+                </details>
+
+                {/* FAQ — collapsed by default, count badge. */}
+                <details className="group rounded-xl border border-border/50 bg-muted/10 p-4">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-sm font-semibold inline-flex items-center gap-2">
+                      {t('mentor.settings.faq.title', 'FAQ')}
+                      <FaqCountBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <MentorFaqEditor />
+                  </div>
+                </details>
+              </section>
+
+              {/* C4 + C5: per-cohort overrides — collapsed by default, count
+                  badge surfaces how many cohorts override defaults. */}
+              <section
+                aria-labelledby="cohort-overrides-section"
+                className="glass-card rounded-2xl p-5 sm:p-6 border border-border/50"
+              >
+                <details className="group">
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 list-none">
+                    <h3 className="text-base font-semibold inline-flex items-center gap-2">
+                      {t('mentor.cohortOverrides.title', 'Per-cohort overrides')}
+                      <CohortOverridesBadge />
+                    </h3>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" aria-hidden="true" />
+                  </summary>
+                  <div className="mt-4 pt-4 border-t border-border/40">
+                    <MentorCohortOverridesPanel />
+                  </div>
+                </details>
+              </section>
+            </TabsContent>
+          )}
+        </Tabs>
 
         {/* Detail modal */}
         <StudentDetailModal
@@ -1077,6 +1621,8 @@ const EmptyStudentsState: React.FC<{ instance: MentorInstanceDto }> = ({ instanc
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const link = `${window.location.origin}/join/${instance.inviteCode}`;
+  const publicProfileReady =
+    !!instance.publicProfileEnabled && !!instance.slug;
 
   const handleCopy = async () => {
     try {
@@ -1089,26 +1635,146 @@ const EmptyStudentsState: React.FC<{ instance: MentorInstanceDto }> = ({ instanc
     }
   };
 
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  type TipStep = {
+    key: string;
+    title: string;
+    desc: string;
+    cta: string;
+    onClick: () => void;
+    done: boolean;
+    icon: React.ReactNode;
+  };
+
+  const steps: TipStep[] = [
+    {
+      key: 'profile',
+      title: t('mentor.emptyStudents.step1Title', 'Make yourself discoverable'),
+      desc: t(
+        'mentor.emptyStudents.step1Desc',
+        'Enable your public profile so traders can find you.'
+      ),
+      cta: publicProfileReady
+        ? t('mentor.emptyStudents.step1Done', 'Profile is live')
+        : t('mentor.emptyStudents.step1Cta', 'Set up profile'),
+      onClick: () => scrollTo('public-profile-heading'),
+      done: publicProfileReady,
+      icon: <Globe className="w-4 h-4" />,
+    },
+    {
+      key: 'pitch',
+      title: t('mentor.emptyStudents.step2Title', 'Add your pitch'),
+      desc: t(
+        'mentor.emptyStudents.step2Desc',
+        'A strong headline + bio is what converts visitors into students.'
+      ),
+      cta:
+        instance.publicHeadline || instance.publicBio
+          ? t('mentor.emptyStudents.step2Done', 'Pitch set')
+          : t('mentor.emptyStudents.step2Cta', 'Write your pitch'),
+      onClick: () => scrollTo('public-profile-heading'),
+      done: !!(instance.publicHeadline || instance.publicBio),
+      icon: <Pencil className="w-4 h-4" />,
+    },
+    {
+      key: 'share',
+      title: t('mentor.emptyStudents.step3Title', 'Share your invite link'),
+      desc: t(
+        'mentor.emptyStudents.step3Desc',
+        'Post it on X, Discord, YouTube — wherever your audience lives.'
+      ),
+      cta: copied
+        ? t('mentor.copied', 'Copied')
+        : t('mentor.copyLink', 'Copy link'),
+      onClick: handleCopy,
+      done: false,
+      icon: <Share2 className="w-4 h-4" />,
+    },
+  ];
+
+  const completedCount = steps.filter((s) => s.done).length;
+
   return (
-    <div className="flex flex-col items-center text-center py-10 gap-3">
-      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-        <Users className="w-6 h-6 text-primary" />
-      </div>
-      <div>
+    <div className="py-6 space-y-5">
+      <div className="flex flex-col items-center text-center gap-2.5 max-w-md mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Users className="w-6 h-6 text-primary" />
+        </div>
         <h3 className="text-base font-semibold">
           {t('mentor.emptyStudentsTitle', 'No students yet')}
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground">
           {t(
-            'mentor.emptyStudentsDesc',
-            'Share your invite link and grow your cohort.'
+            'mentor.emptyStudents.leadIn',
+            'Your first student is three steps away. Ship them today.'
           )}
         </p>
+        <p className="text-xs font-medium text-primary tabular-nums">
+          {t('mentor.emptyStudents.progress', '{{done}} of {{total}} complete', {
+            done: completedCount,
+            total: steps.length,
+          })}
+        </p>
       </div>
-      <Button onClick={handleCopy} className="gap-1.5 mt-1">
-        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-        {t('mentor.copyLink', 'Copy link')}
-      </Button>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+        {steps.map((step, idx) => (
+          <div
+            key={step.key}
+            className={[
+              'rounded-xl border p-4 flex flex-col gap-3 transition-all duration-200',
+              step.done
+                ? 'border-emerald-500/40 bg-emerald-500/5'
+                : 'border-border/50 bg-muted/10 hover:border-primary/40',
+            ].join(' ')}
+          >
+            <div className="flex items-center gap-2">
+              <div
+                className={[
+                  'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
+                  step.done
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-primary/10 text-primary',
+                ].join(' ')}
+              >
+                {step.done ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  step.icon
+                )}
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                {t('mentor.emptyStudents.stepLabel', 'Step {{n}}', { n: idx + 1 })}
+              </span>
+            </div>
+            <div className="space-y-1 flex-1">
+              <p className="text-sm font-semibold leading-snug">{step.title}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {step.desc}
+              </p>
+            </div>
+            <Button
+              variant={step.done ? 'outline' : 'default'}
+              size="sm"
+              className="w-full gap-1.5"
+              onClick={step.onClick}
+              disabled={step.done && step.key !== 'share'}
+            >
+              {step.key === 'share' &&
+                (copied ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                ))}
+              {step.cta}
+            </Button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

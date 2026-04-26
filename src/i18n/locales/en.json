@@ -8,6 +8,7 @@
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
+    "dismiss": "Dismiss",
     "edit": "Edit",
     "delete": "Delete",
     "confirm": "Confirm",
@@ -3598,6 +3599,8 @@
       "profile": {
         "subscribeCta": {
           "cancelAnytime": "Cancel anytime. No commitment.",
+          "ready": "Ready to join?",
+          "subscribeNow": "Subscribe now",
           "title": "Subscribe to {{brand}}"
         }
       },

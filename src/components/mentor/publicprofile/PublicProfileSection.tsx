@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronUp,
-  ExternalLink,
+  Eye,
   Globe,
   Loader2,
 } from 'lucide-react';
@@ -13,7 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useUpdatePublicProfile } from '@/hooks/useMentor';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
+import PublicProfileLivePreview from './PublicProfileLivePreview';
 import type {
   MentorInstanceDto,
   UpdatePublicProfileRequestDto,
@@ -41,7 +49,10 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
   const { t } = useTranslation();
   const mutation = useUpdatePublicProfile();
 
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.publicProfile.open',
+    true,
+  );
   const [enabled, setEnabled] = useState(!!instance.publicProfileEnabled);
   const [slug, setSlug] = useState(instance.slug ?? '');
   const [headline, setHeadline] = useState(instance.publicHeadline ?? '');
@@ -93,6 +104,19 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
     bio.length <= MAX_BIO &&
     credentials.length <= MAX_CREDENTIALS;
 
+  // Dirty when any field differs from server state. Surfaced as a small dot
+  // on the section header so users don't lose work by collapsing the panel.
+  const isDirty =
+    enabled !== !!instance.publicProfileEnabled ||
+    slug !== (instance.slug ?? '') ||
+    headline !== (instance.publicHeadline ?? '') ||
+    bio !== (instance.publicBio ?? '') ||
+    credentials !== (instance.publicCredentials ?? '') ||
+    yearsTrading !==
+      (instance.publicYearsTrading != null
+        ? String(instance.publicYearsTrading)
+        : '');
+
   const publicUrl =
     typeof window !== 'undefined' && slug
       ? `${window.location.origin}/m/${slug}`
@@ -123,6 +147,21 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
           <h2 id="public-profile-heading" className="text-base font-semibold">
             {t('mentor.publicProfile.title', 'Public profile')}
           </h2>
+          {isDirty && (
+            <span
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+              title={t(
+                'mentor.unsavedChanges',
+                'You have unsaved changes in this section',
+              )}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-amber-500"
+                aria-hidden="true"
+              />
+              {t('mentor.unsaved', 'Unsaved')}
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -142,7 +181,43 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
       </div>
 
       {open && (
-        <div id="public-profile-body" className="space-y-5">
+        <div
+          id="public-profile-body"
+          className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] gap-6"
+        >
+          {/* Mobile preview trigger — desktop renders side-by-side below. */}
+          <div className="lg:hidden flex justify-end -mb-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Eye className="w-4 h-4" />
+                  {t('mentor.publicProfile.previewButton', 'Preview')}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[90vw] sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>
+                    {t('mentor.publicProfile.previewLabel', 'Live preview')}
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <PublicProfileLivePreview
+                    brandName={instance.brandName}
+                    logoUrl={instance.logoUrl}
+                    primaryColor={instance.primaryColor}
+                    headline={headline}
+                    bio={bio}
+                    credentials={credentials}
+                    yearsTrading={yearsTrading}
+                    enabled={enabled}
+                    publicUrl={publicUrl}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          <div className="space-y-5">
           <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/30 px-4 py-3 border border-border/30">
             <div className="min-w-0">
               <Label
@@ -165,7 +240,7 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 sm:items-end">
+          <div className="space-y-2">
             <div className="space-y-2">
               <Label htmlFor="mentor-slug">
                 {t('mentor.publicProfile.slug', 'Custom URL')}
@@ -205,14 +280,9 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
               </p>
             </div>
 
-            {enabled && slug && slugValid && (
-              <Button variant="outline" size="sm" asChild className="gap-1.5">
-                <Link to={`/m/${slug}`}>
-                  <ExternalLink className="w-4 h-4" />
-                  {t('mentor.publicProfile.viewPage', 'View public page')}
-                </Link>
-              </Button>
-            )}
+            {/* "View public page" button removed — the LivePreview's "Open
+                live" link covers the same path in-context. The header
+                Manage dropdown also exposes it page-wide. */}
           </div>
 
           <div className="space-y-2">
@@ -304,6 +374,26 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
               )}
               {t('common.save', 'Save')}
             </Button>
+          </div>
+          </div>
+
+          {/* Desktop preview — sits next to the form on lg+ screens. Stays
+              fixed in its grid cell (no sticky) to avoid distracting motion
+              while the mentor scrolls the form. */}
+          <div className="hidden lg:block">
+            <div>
+              <PublicProfileLivePreview
+                brandName={instance.brandName}
+                logoUrl={instance.logoUrl}
+                primaryColor={instance.primaryColor}
+                headline={headline}
+                bio={bio}
+                credentials={credentials}
+                yearsTrading={yearsTrading}
+                enabled={enabled}
+                publicUrl={publicUrl}
+              />
+            </div>
           </div>
         </div>
       )}

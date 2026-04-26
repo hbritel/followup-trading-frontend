@@ -43,7 +43,11 @@ const WebinarCard: React.FC<Props> = ({ webinar, slug }) => {
       { slug, webinarId: webinar.id },
       {
         onSuccess: (data) => {
-          window.location.href = data.checkoutUrl;
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            navigate('/my-mentor');
+          }
         },
       }
     );

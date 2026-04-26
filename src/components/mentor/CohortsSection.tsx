@@ -48,6 +48,7 @@ import {
   useUpdateCohort,
   useDeleteCohort,
 } from '@/hooks/useMentor';
+import ErrorState from '@/components/ui/ErrorState';
 import type { MentorCohortDto } from '@/types/dto';
 
 const MAX_NAME = 100;
@@ -183,6 +184,19 @@ const CohortFormDialog: React.FC<CohortFormDialogProps> = ({
               {description.length}/{MAX_DESC}
             </p>
           </div>
+
+          {(createMutation.isError || updateMutation.isError) && (
+            <ErrorState
+              title={t('mentor.cohorts.error.title', 'Could not save cohort')}
+              description={t(
+                'mentor.cohorts.error.desc',
+                'Your form is still here — retry or copy your changes before closing.'
+              )}
+              error={createMutation.error ?? updateMutation.error}
+              onRetry={() => handleSubmit(new Event('submit') as unknown as React.FormEvent)}
+              isRetrying={pending}
+            />
+          )}
 
           <DialogFooter>
             <Button

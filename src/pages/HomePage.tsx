@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -115,17 +115,16 @@ const FAQS = [
 
 const HomePage = () => {
   // All hooks MUST be called before any early return (Rules of Hooks).
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billingAnnual, setBillingAnnual] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { t } = useTranslation();
 
-  // Redirect authenticated users to the dashboard — avoids rendering app-shell
-  // components (WebSocketProvider etc.) in the public landing page context.
-  if (!isLoading && isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Authenticated users can still browse the landing page — the nav swaps
+  // its Login/Sign up CTAs for a "Go to dashboard" link, and primary hero
+  // CTAs route to /dashboard when authenticated. Auto-redirecting was
+  // hostile to mentors/marketers checking the public storefront.
 
   const navLinks = [
     { href: '#features', label: t('landing.features', 'Features') },
@@ -226,9 +225,11 @@ const HomePage = () => {
             {t('landing.heroSubtitle', 'Connect your brokers, track every trade automatically, and get AI-powered insights to optimize your strategy.')}
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-10">
-            <Link to="/auth/signup">
+            <Link to={isAuthenticated ? '/dashboard' : '/auth/signup'}>
               <Button size="lg" className="gap-2 text-base px-8 h-12 shadow-lg shadow-primary/20">
-                {t('landing.getStartedFree', 'Get Started Free')}
+                {isAuthenticated
+                  ? t('landing.goToDashboard', 'Go to Dashboard')
+                  : t('landing.getStartedFree', 'Get Started Free')}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -418,7 +419,7 @@ const HomePage = () => {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/auth/signup" className="mt-auto">
+                  <Link to={isAuthenticated ? '/pricing' : '/auth/signup'} className="mt-auto">
                     <Button
                       variant={plan.variant}
                       className={cn(
@@ -428,9 +429,11 @@ const HomePage = () => {
                         isTeam && 'bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:from-fuchsia-600 hover:to-pink-600 border-0',
                       )}
                     >
-                      {plan.price === 0
-                        ? t('landing.getStartedFree', 'Get Started Free')
-                        : t('landing.startFreeTrial', 'Start Free Trial')}
+                      {isAuthenticated
+                        ? t('landing.managePlan', 'Manage Plan')
+                        : plan.price === 0
+                          ? t('landing.getStartedFree', 'Get Started Free')
+                          : t('landing.startFreeTrial', 'Start Free Trial')}
                     </Button>
                   </Link>
                 </div>

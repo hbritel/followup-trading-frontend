@@ -1572,18 +1572,23 @@ export interface MentorAnnouncementDto {
   pinned: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Empty array = visible to every student. Non-empty = restricted to listed cohorts. */
+  targetCohortIds?: string[];
 }
 
 export interface CreateAnnouncementRequestDto {
   title?: string;
   body: string;
   pinned?: boolean;
+  targetCohortIds?: string[];
 }
 
 export interface UpdateAnnouncementRequestDto {
   title?: string;
   body?: string;
   pinned?: boolean;
+  /** null/undefined = leave existing targets unchanged; [] = clear them. */
+  targetCohortIds?: string[];
 }
 
 export interface MentorStudentNoteDto {
@@ -2062,6 +2067,32 @@ export type MentorCancellationPolicy =
   | 'FLEXIBLE_7D'
   | 'FLEXIBLE_14D';
 
+export interface MentorMonetizationSummaryDto {
+  monthlyAmountCents: number;
+  currency: string;
+  activeSubscribers: number;
+  totalSubscribers: number;
+  waivedSubscribers: number;
+}
+
+export interface MentorCohortPolicyDto {
+  cohortId: string;
+  instanceId: string;
+  cancellationPolicy: MentorCancellationPolicy;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MentorCohortPricingDto {
+  cohortId: string;
+  instanceId: string;
+  monthlyAmount: number;
+  currency: string;
+  stripePriceId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MentorContactLeadDto {
   id: string;
   visitorEmail: string;
@@ -2132,6 +2163,8 @@ export interface SessionOfferingDto {
   currency: string;
   cancellationWindowHours: number;
   active: boolean;
+  /** Empty/absent = visible to every visitor; otherwise restricted to listed cohorts. */
+  targetCohortIds?: string[];
 }
 
 export type SessionBookingStatus =
@@ -2156,6 +2189,27 @@ export interface SessionBookingDto {
   meetingUrl?: string | null;
 }
 
+/**
+ * Student-facing booking view returned by `/me/mentor/bookings` — wraps the
+ * raw booking with cancellation-window context pre-computed server-side.
+ */
+export interface StudentBookingDto {
+  id: string;
+  offeringId: string;
+  mentorInstanceId: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  priceCents: number;
+  currency: string;
+  status: SessionBookingStatus;
+  meetingUrl?: string | null;
+  cancellationWindowHours?: number | null;
+  withinCancellationWindow: boolean;
+  cancellable: boolean;
+  cancelledAt?: string | null;
+  createdAt: string;
+}
+
 export type WebinarStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';
 
 export interface WebinarDto {
@@ -2170,6 +2224,7 @@ export interface WebinarDto {
   currency: string;
   maxAttendees?: number | null;
   status: WebinarStatus;
+  targetCohortIds?: string[];
 }
 
 export type WebinarTicketStatus = 'PENDING_PAYMENT' | 'PAID' | 'REFUNDED' | 'CANCELLED';
@@ -2210,6 +2265,7 @@ export interface CreateSessionOfferingDto {
   currency: string;
   cancellationWindowHours: number;
   active: boolean;
+  targetCohortIds?: string[];
 }
 
 export interface CreateWebinarDto {
@@ -2221,6 +2277,7 @@ export interface CreateWebinarDto {
   ticketPriceCents: number;
   currency: string;
   maxAttendees?: number | null;
+  targetCohortIds?: string[];
 }
 
 export interface CreateSearchAlertDto {

@@ -37,6 +37,10 @@ import {
   useUpdateSessionOffering,
   useDeleteSessionOffering,
 } from '@/hooks/useMentorRevenue';
+import ErrorState from '@/components/ui/ErrorState';
+import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
+import { useMentorCohorts } from '@/hooks/useMentor';
+import { Users } from 'lucide-react';
 import type { SessionOfferingDto, CreateSessionOfferingDto } from '@/types/dto';
 
 const CURRENCIES = ['USD', 'EUR', 'GBP'];
@@ -49,6 +53,7 @@ const emptyForm = (): CreateSessionOfferingDto => ({
   currency: 'USD',
   cancellationWindowHours: 24,
   active: true,
+  targetCohortIds: [],
 });
 
 interface OfferingFormProps {
@@ -172,6 +177,16 @@ const OfferingForm: React.FC<OfferingFormProps> = ({ value, onChange }) => {
             : t('mentor.sessions.editor.inactive', 'Draft — hidden from students')}
         </Label>
       </div>
+
+      <MentorCohortPicker
+        value={value.targetCohortIds ?? []}
+        onChange={(next) => set('targetCohortIds', next)}
+        label={t('mentor.sessions.editor.targetCohorts', 'Visible to')}
+        hint={t(
+          'mentor.sessions.editor.targetCohortsHint',
+          'Select cohorts to restrict this offering, or keep "All students" for everyone on the public profile.'
+        )}
+      />
     </div>
   );
 };
@@ -205,6 +220,7 @@ const OfferingDialog: React.FC<OfferingDialogProps> = ({
               currency: offering.currency,
               cancellationWindowHours: offering.cancellationWindowHours,
               active: offering.active,
+              targetCohortIds: offering.targetCohortIds ?? [],
             }
           : emptyForm()
       );
@@ -243,6 +259,19 @@ const OfferingDialog: React.FC<OfferingDialogProps> = ({
 
         <OfferingForm value={form} onChange={setForm} />
 
+        {(create.isError || update.isError) && (
+          <ErrorState
+            title={t('mentor.sessions.error.title', 'Could not save offering')}
+            description={t(
+              'mentor.sessions.error.desc',
+              'Your form is still here — retry the save before closing.'
+            )}
+            error={create.error ?? update.error}
+            onRetry={handleSave}
+            isRetrying={isPending}
+          />
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel', 'Cancel')}
@@ -257,6 +286,42 @@ const OfferingDialog: React.FC<OfferingDialogProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+/* ── Cohort target pills (compact, header chip) ─────── */
+const CohortTargetPills: React.FC<{ ids: string[] }> = ({ ids }) => {
+  const { data: cohorts = [] } = useMentorCohorts();
+  if (ids.length === 0) return null;
+  const cohortById = new Map(cohorts.map((c) => [c.id, c]));
+  const visible = ids.slice(0, 2);
+  const overflow = ids.length - visible.length;
+  return (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <Users className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+      {visible.map((id) => {
+        const c = cohortById.get(id);
+        if (!c) return null;
+        return (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted/40 border border-border/40 text-muted-foreground"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: c.color ?? '#6366f1' }}
+              aria-hidden="true"
+            />
+            <span className="truncate max-w-[6rem]">{c.name}</span>
+          </span>
+        );
+      })}
+      {overflow > 0 && (
+        <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+          +{overflow}
+        </span>
+      )}
+    </span>
   );
 };
 
@@ -345,6 +410,7 @@ const SessionOfferingEditor: React.FC = () => {
                       ? t('mentor.sessions.active', 'Active')
                       : t('mentor.sessions.draft', 'Draft')}
                   </span>
+                  <CohortTargetPills ids={o.targetCohortIds ?? []} />
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {o.durationMinutes}

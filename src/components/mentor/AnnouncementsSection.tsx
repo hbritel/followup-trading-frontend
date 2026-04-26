@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Pin, PinOff, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Megaphone, Pin, PinOff, Pencil, Trash2, Plus, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +36,9 @@ import {
   useUpdateAnnouncement,
   useDeleteAnnouncement,
 } from '@/hooks/useMentor';
+import ErrorState from '@/components/ui/ErrorState';
+import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
+import { useMentorCohorts } from '@/hooks/useMentor';
 import type { MentorAnnouncementDto } from '@/types/dto';
 
 const MAX_BODY = 5000;
@@ -68,6 +79,7 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [pinned, setPinned] = useState(false);
+  const [targetCohortIds, setTargetCohortIds] = useState<string[]>([]);
   const createMutation = useCreateAnnouncement();
 
   const canSubmit = body.trim().length > 0 && body.length <= MAX_BODY;
@@ -80,12 +92,14 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
         title: title.trim() || undefined,
         body: body.trim(),
         pinned,
+        targetCohortIds: targetCohortIds.length > 0 ? targetCohortIds : undefined,
       },
       {
         onSuccess: () => {
           setTitle('');
           setBody('');
           setPinned(false);
+          setTargetCohortIds([]);
           onDone?.();
         },
       }
@@ -95,7 +109,7 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="glass-card rounded-2xl p-5 space-y-4 border border-border/50"
+      className="space-y-4"
     >
       <div className="space-y-2">
         <Label htmlFor="announce-title">
@@ -142,6 +156,41 @@ const ComposeCard: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
           <CharCounter count={body.length} />
         </div>
       </div>
+      <MentorCohortPicker
+        value={targetCohortIds}
+        onChange={setTargetCohortIds}
+        label={t('mentor.announcements.targetCohortsLabel', 'Visible to')}
+        hint={
+          targetCohortIds.length === 0
+            ? t(
+                'mentor.announcements.targetCohortsAllHint',
+                'Currently visible to every student. Pick one or more cohorts to restrict it.'
+              )
+            : t(
+                'mentor.announcements.targetCohortsRestrictedHint',
+                'Restricted: only members of the selected cohort(s) will see this announcement.'
+              )
+        }
+      />
+
+      {createMutation.isError && (
+        <ErrorState
+          title={t('mentor.announcements.error.createTitle', 'Could not post announcement')}
+          description={t(
+            'mentor.announcements.error.createDesc',
+            "Your draft is still here — retry the post or copy the message somewhere safe before refreshing."
+          )}
+          error={createMutation.error}
+          onRetry={() => createMutation.mutate({
+            title: title.trim() || undefined,
+            body: body.trim(),
+            pinned,
+            targetCohortIds: targetCohortIds.length > 0 ? targetCohortIds : undefined,
+          })}
+          isRetrying={createMutation.isPending}
+        />
+      )}
+
       <div className="flex justify-end gap-2">
         {onDone && (
           <Button type="button" variant="outline" onClick={onDone}>
@@ -170,6 +219,9 @@ const EditForm: React.FC<{
   const { t } = useTranslation();
   const [title, setTitle] = useState(announcement.title ?? '');
   const [body, setBody] = useState(announcement.body);
+  const [targetCohortIds, setTargetCohortIds] = useState<string[]>(
+    announcement.targetCohortIds ?? []
+  );
   const updateMutation = useUpdateAnnouncement();
 
   const canSubmit = body.trim().length > 0 && body.length <= MAX_BODY;
@@ -182,6 +234,7 @@ const EditForm: React.FC<{
         data: {
           title: title.trim() || undefined,
           body: body.trim(),
+          targetCohortIds,
         },
       },
       {
@@ -209,6 +262,11 @@ const EditForm: React.FC<{
         maxLength={MAX_BODY}
         aria-label={t('mentor.announcements.bodyPlaceholder', 'Body')}
       />
+      <MentorCohortPicker
+        value={targetCohortIds}
+        onChange={setTargetCohortIds}
+        label={t('mentor.announcements.targetCohortsLabel', 'Visible to')}
+      />
       <div className="flex items-center justify-between">
         <CharCounter count={body.length} />
         <div className="flex gap-2">
@@ -227,7 +285,51 @@ const EditForm: React.FC<{
           </Button>
         </div>
       </div>
+      {updateMutation.isError && (
+        <ErrorState
+          title={t('mentor.announcements.error.updateTitle', 'Could not save changes')}
+          description={t(
+            'mentor.announcements.error.updateDesc',
+            'Your edits are still in this form — retry the save before closing.'
+          )}
+          error={updateMutation.error}
+          onRetry={handleSave}
+          isRetrying={updateMutation.isPending}
+        />
+      )}
     </div>
+  );
+};
+
+/* ── Cohort-target badges (AnnouncementCard header) ───── */
+const TargetCohortBadges: React.FC<{ ids: string[] }> = ({ ids }) => {
+  const { t } = useTranslation();
+  const { data: cohorts = [] } = useMentorCohorts();
+  if (ids.length === 0) return null;
+  const cohortById = new Map(cohorts.map((c) => [c.id, c]));
+  return (
+    <span className="inline-flex items-center gap-1 flex-wrap">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {t('mentor.announcements.visibleToBadge', 'Visible to:')}
+      </span>
+      {ids.map((id) => {
+        const c = cohortById.get(id);
+        if (!c) return null;
+        return (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide bg-muted/40 border border-border/40 text-muted-foreground px-1.5 py-0.5 rounded-full"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: c.color ?? '#6366f1' }}
+              aria-hidden="true"
+            />
+            <span className="truncate max-w-[8rem]">{c.name}</span>
+          </span>
+        );
+      })}
+    </span>
   );
 };
 
@@ -282,6 +384,9 @@ const AnnouncementCard: React.FC<{ item: MentorAnnouncementDto }> = ({ item }) =
                   <span className="text-[11px] text-muted-foreground/60 italic">
                     (edited)
                   </span>
+                )}
+                {(item.targetCohortIds?.length ?? 0) > 0 && (
+                  <TargetCohortBadges ids={item.targetCohortIds ?? []} />
                 )}
               </div>
               {item.title && (
@@ -382,28 +487,42 @@ const AnnouncementCard: React.FC<{ item: MentorAnnouncementDto }> = ({ item }) =
 const AnnouncementsSection: React.FC = () => {
   const { t } = useTranslation();
   const { data, isLoading } = useMentorAnnouncements();
-  const [composing, setComposing] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [open, setOpen] = useLocalStorageState<boolean>(
+    'mentor.section.announcements.open',
+    true,
+  );
 
   const items = data ?? [];
 
   return (
     <section aria-labelledby="announcements-heading" className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex items-center gap-2 text-left hover:bg-muted/20 transition-colors -m-1 p-1 rounded-lg"
+        >
           <Megaphone className="w-4 h-4 text-primary" aria-hidden="true" />
           <h2 id="announcements-heading" className="text-base font-semibold">
             {t('mentor.announcements.title', 'Announcements')}
           </h2>
           {items.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              ({items.length})
+            <span className="inline-flex items-center text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25">
+              {items.length}
             </span>
           )}
-        </div>
-        {!composing && items.length > 0 && (
+          {open ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          )}
+        </button>
+        {open && (
           <Button
             size="sm"
-            onClick={() => setComposing(true)}
+            onClick={() => setComposeOpen(true)}
             className="gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -412,14 +531,12 @@ const AnnouncementsSection: React.FC = () => {
         )}
       </div>
 
-      {composing && <ComposeCard onDone={() => setComposing(false)} />}
-
-      {isLoading ? (
+      {open && (isLoading ? (
         <div
           className="glass-card rounded-2xl p-5 h-24 bg-muted/20 animate-pulse"
           aria-busy="true"
         />
-      ) : items.length === 0 && !composing ? (
+      ) : items.length === 0 ? (
         <div className="glass-card rounded-2xl p-8 flex flex-col items-center text-center gap-3 border border-border/50">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Megaphone className="w-6 h-6 text-primary" />
@@ -435,7 +552,7 @@ const AnnouncementsSection: React.FC = () => {
               )}
             </p>
           </div>
-          <Button onClick={() => setComposing(true)} className="gap-1.5 mt-1">
+          <Button onClick={() => setComposeOpen(true)} className="gap-1.5 mt-1">
             <Plus className="w-4 h-4" />
             {t('mentor.announcements.newButton', 'New announcement')}
           </Button>
@@ -446,7 +563,24 @@ const AnnouncementsSection: React.FC = () => {
             <AnnouncementCard key={item.id} item={item} />
           ))}
         </div>
-      )}
+      ))}
+
+      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {t('mentor.announcements.newButton', 'New announcement')}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                'mentor.announcements.composeDesc',
+                'Post an update visible to every student in your space.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <ComposeCard onDone={() => setComposeOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

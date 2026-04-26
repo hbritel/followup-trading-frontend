@@ -164,6 +164,49 @@ export const useMyBookings = () => {
   });
 };
 
+export const useCancelMyBooking = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingId: string) => mentorService.cancelMyBooking(bookingId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MY_BOOKINGS_KEY });
+      toast.success('Booking cancelled.');
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof AxiosError && error.response?.data?.message
+        ? String(error.response.data.message)
+        : 'Failed to cancel booking.';
+      toast.error(msg);
+    },
+  });
+};
+
+export class StripeNotConfiguredError extends Error {
+  constructor() {
+    super('STRIPE_CONNECT_NOT_CONFIGURED');
+    this.name = 'StripeNotConfiguredError';
+  }
+}
+
+export const useResumeBookingCheckout = () => {
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      try {
+        return await mentorService.resumeBookingCheckout(bookingId);
+      } catch (error) {
+        if (
+          error instanceof AxiosError &&
+          error.response?.status === 409 &&
+          error.response?.data?.error === 'STRIPE_CONNECT_NOT_CONFIGURED'
+        ) {
+          throw new StripeNotConfiguredError();
+        }
+        throw error;
+      }
+    },
+  });
+};
+
 // ── Webinars — mentor CRUD ───────────────────────────────────────────────────
 
 export const useMyWebinars = () => {

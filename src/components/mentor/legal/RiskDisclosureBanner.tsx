@@ -31,16 +31,18 @@ const RiskDisclosureBanner: React.FC<RiskDisclosureBannerProps> = ({
       role="note"
       aria-label={t('mentor.legal.riskBanner.text')}
       className={cn(
-        'relative flex items-start gap-3 rounded-xl border-l-4 px-4 py-3 text-sm',
-        'border-l-amber-400 bg-amber-50 text-amber-900',
-        'dark:border-l-amber-500 dark:bg-amber-950/20 dark:text-amber-200',
+        'relative flex items-start gap-3 rounded-xl border px-4 py-3 text-sm',
+        'border-amber-500/30 bg-amber-50/80 text-amber-900',
+        'dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-200',
         className
       )}
     >
-      <AlertTriangle
-        className="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400"
+      <span
+        className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"
         aria-hidden="true"
-      />
+      >
+        <AlertTriangle className="h-4 w-4" />
+      </span>
       <p className="flex-1 leading-relaxed">
         {isCfdContext
           ? t(
