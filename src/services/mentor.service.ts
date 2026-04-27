@@ -89,8 +89,27 @@ export const mentorService = {
     return res.data;
   },
 
-  removeStudent: async (userId: string): Promise<void> => {
-    await apiClient.delete(`${MENTOR_BASE}/students/${userId}`);
+  removeStudent: async (userId: string, reason: string): Promise<void> => {
+    await apiClient.delete(`${MENTOR_BASE}/students/${userId}`, {
+      data: { reason },
+    });
+  },
+
+  getMyRemovalNotice: async (): Promise<{
+    enrollmentId: string;
+    instanceId: string;
+    mentorBrandName: string | null;
+    mentorLogoUrl: string | null;
+    reason: string;
+    removedAt: string;
+  } | null> => {
+    const res = await apiClient.get(`/me/mentor/removal-notice`);
+    if (res.status === 204 || !res.data) return null;
+    return res.data;
+  },
+
+  acknowledgeRemovalNotice: async (enrollmentId: string): Promise<void> => {
+    await apiClient.post(`/me/mentor/removal-notice/${enrollmentId}/acknowledge`);
   },
 
   getStudentMetrics: async (userId: string): Promise<Record<string, unknown>> => {
@@ -260,6 +279,24 @@ export const mentorService = {
   getStudentCohorts: async (studentUserId: string): Promise<MentorCohortDto[]> => {
     const res = await apiClient.get<MentorCohortDto[]>(
       `${MENTOR_BASE}/students/${studentUserId}/cohorts`
+    );
+    return res.data;
+  },
+
+  getCohortMembers: async (cohortId: string): Promise<MentorStudentDto[]> => {
+    const res = await apiClient.get<MentorStudentDto[]>(
+      `${MENTOR_BASE}/cohorts/${cohortId}/members`,
+    );
+    return res.data;
+  },
+
+  broadcastCohortNote: async (
+    cohortId: string,
+    data: { body: string; visibleToStudent?: boolean },
+  ): Promise<{ sent: number }> => {
+    const res = await apiClient.post<{ sent: number }>(
+      `${MENTOR_BASE}/cohorts/${cohortId}/broadcast-note`,
+      data,
     );
     return res.data;
   },
@@ -659,9 +696,10 @@ export const mentorService = {
 
   // ── Phase 4: Session bookings (mentor view) ──────────────────────────────
 
-  getMentorSessionBookings: async (upcoming?: boolean): Promise<SessionBookingDto[]> => {
-    const qs = upcoming != null ? `?upcoming=${upcoming}` : '';
-    const res = await apiClient.get<SessionBookingDto[]>(`${MENTOR_BASE}/session-bookings${qs}`);
+  getMentorSessionBookings: async (): Promise<SessionBookingDto[]> => {
+    const res = await apiClient.get<SessionBookingDto[]>(
+      `${MENTOR_BASE}/session-bookings`,
+    );
     return res.data;
   },
 
@@ -690,6 +728,38 @@ export const mentorService = {
     return res.data;
   },
 
+  // ── My Mentor catalog (enrolled students) ───────────────────────────────
+
+  getMyMentorOfferings: async (): Promise<SessionOfferingDto[]> => {
+    const res = await apiClient.get<SessionOfferingDto[]>(`/me/mentor/offerings`);
+    return res.data;
+  },
+
+  getMyMentorWebinars: async (): Promise<WebinarDto[]> => {
+    const res = await apiClient.get<WebinarDto[]>(`/me/mentor/webinars`);
+    return res.data;
+  },
+
+  bookMyMentorSession: async (
+    offeringId: string,
+    scheduledAt: string,
+  ): Promise<{ checkoutUrl: string | null; bookingId: string }> => {
+    const res = await apiClient.post<{ checkoutUrl: string | null; bookingId: string }>(
+      `/me/mentor/offerings/${offeringId}/book`,
+      { scheduledAt },
+    );
+    return res.data;
+  },
+
+  buyMyMentorWebinarTicket: async (
+    webinarId: string,
+  ): Promise<{ checkoutUrl: string | null; ticketId: string }> => {
+    const res = await apiClient.post<{ checkoutUrl: string | null; ticketId: string }>(
+      `/me/mentor/webinars/${webinarId}/tickets`,
+    );
+    return res.data;
+  },
+
   // ── Phase 4: Student bookings ────────────────────────────────────────────
 
   getMyBookings: async (): Promise<StudentBookingDto[]> => {
@@ -703,6 +773,14 @@ export const mentorService = {
       {},
     );
     return res.data;
+  },
+
+  hideMyBooking: async (bookingId: string): Promise<void> => {
+    await apiClient.delete(`/me/mentor/bookings/${bookingId}`);
+  },
+
+  hideMyTicket: async (ticketId: string): Promise<void> => {
+    await apiClient.delete(`/me/mentor/tickets/${ticketId}`);
   },
 
   resumeBookingCheckout: async (

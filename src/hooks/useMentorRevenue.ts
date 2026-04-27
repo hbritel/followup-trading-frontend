@@ -93,10 +93,13 @@ export const useDeleteSessionOffering = () => {
 
 // ── Session bookings — mentor view ───────────────────────────────────────────
 
-export const useMentorSessionBookings = (upcoming?: boolean) => {
+export const useMentorSessionBookings = () => {
+  // Backend returns all bookings; filtering (upcoming/past/cancelled/pending)
+  // is done client-side so the same cached payload powers every filter tab
+  // and the KPI ribbon without extra requests.
   return useQuery({
-    queryKey: [...MENTOR_BOOKINGS_KEY, { upcoming }],
-    queryFn: () => mentorService.getMentorSessionBookings(upcoming),
+    queryKey: MENTOR_BOOKINGS_KEY,
+    queryFn: () => mentorService.getMentorSessionBookings(),
     staleTime: 30 * 1000,
   });
 };
@@ -129,7 +132,7 @@ export const usePublicSessionOfferings = (slug: string | undefined) => {
 
 export const useBookSession = () => {
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       slug,
       offeringId,
       scheduledAt,
@@ -137,9 +140,107 @@ export const useBookSession = () => {
       slug: string;
       offeringId: string;
       scheduledAt: string;
-    }) => mentorService.bookSession(slug, offeringId, scheduledAt),
-    onError: () => {
+    }) => {
+      try {
+        return await mentorService.bookSession(slug, offeringId, scheduledAt);
+      } catch (error) {
+        if (detectEnrollmentRequired(error)) {
+          throw new MentorEnrollmentRequiredError();
+        }
+        throw error;
+      }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof MentorEnrollmentRequiredError) {
+        // Surfaced via the page; suppress generic toast.
+        return;
+      }
       toast.error('Failed to book session.');
+    },
+  });
+};
+
+// ── My Mentor catalog (enrolled students) ───────────────────────────────────
+
+const MY_MENTOR_OFFERINGS_KEY = ['mentor', 'me-offerings'];
+const MY_MENTOR_WEBINARS_KEY = ['mentor', 'me-webinars'];
+
+export const useMyMentorOfferings = () => {
+  return useQuery({
+    queryKey: MY_MENTOR_OFFERINGS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.getMyMentorOfferings();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [];
+        }
+        throw error;
+      }
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useMyMentorWebinars = () => {
+  return useQuery({
+    queryKey: MY_MENTOR_WEBINARS_KEY,
+    queryFn: async () => {
+      try {
+        return await mentorService.getMyMentorWebinars();
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return [];
+        }
+        throw error;
+      }
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useBookMyMentorSession = () => {
+  return useMutation({
+    mutationFn: async ({
+      offeringId,
+      scheduledAt,
+    }: {
+      offeringId: string;
+      scheduledAt: string;
+    }) => {
+      try {
+        return await mentorService.bookMyMentorSession(offeringId, scheduledAt);
+      } catch (error) {
+        if (detectEnrollmentRequired(error)) {
+          throw new MentorEnrollmentRequiredError();
+        }
+        throw error;
+      }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof MentorEnrollmentRequiredError) return;
+      toast.error('Failed to book session.');
+    },
+  });
+};
+
+export const useBuyMyMentorTicket = () => {
+  return useMutation({
+    mutationFn: async (webinarId: string) => {
+      try {
+        return await mentorService.buyMyMentorWebinarTicket(webinarId);
+      } catch (error) {
+        if (detectEnrollmentRequired(error)) {
+          throw new MentorEnrollmentRequiredError();
+        }
+        throw error;
+      }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof MentorEnrollmentRequiredError) return;
+      toast.error('Failed to purchase ticket.');
     },
   });
 };
@@ -181,12 +282,56 @@ export const useCancelMyBooking = () => {
   });
 };
 
+export const useHideMyBooking = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingId: string) => mentorService.hideMyBooking(bookingId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MY_BOOKINGS_KEY });
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof AxiosError && error.response?.data?.message
+        ? String(error.response.data.message)
+        : 'Failed to remove booking from view.';
+      toast.error(msg);
+    },
+  });
+};
+
+export const useHideMyTicket = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ticketId: string) => mentorService.hideMyTicket(ticketId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: MY_TICKETS_KEY });
+    },
+    onError: (error: unknown) => {
+      const msg = error instanceof AxiosError && error.response?.data?.message
+        ? String(error.response.data.message)
+        : 'Failed to remove ticket from view.';
+      toast.error(msg);
+    },
+  });
+};
+
 export class StripeNotConfiguredError extends Error {
   constructor() {
     super('STRIPE_CONNECT_NOT_CONFIGURED');
     this.name = 'StripeNotConfiguredError';
   }
 }
+
+export class MentorEnrollmentRequiredError extends Error {
+  constructor() {
+    super('MENTOR_ENROLLMENT_REQUIRED');
+    this.name = 'MentorEnrollmentRequiredError';
+  }
+}
+
+const detectEnrollmentRequired = (error: unknown): boolean =>
+  error instanceof AxiosError
+  && error.response?.status === 409
+  && error.response?.data?.error === 'MENTOR_ENROLLMENT_REQUIRED';
 
 export const useResumeBookingCheckout = () => {
   return useMutation({
@@ -297,9 +442,18 @@ export const usePublicWebinars = (slug: string | undefined) => {
 
 export const useBuyWebinarTicket = () => {
   return useMutation({
-    mutationFn: ({ slug, webinarId }: { slug: string; webinarId: string }) =>
-      mentorService.buyWebinarTicket(slug, webinarId),
-    onError: () => {
+    mutationFn: async ({ slug, webinarId }: { slug: string; webinarId: string }) => {
+      try {
+        return await mentorService.buyWebinarTicket(slug, webinarId);
+      } catch (error) {
+        if (detectEnrollmentRequired(error)) {
+          throw new MentorEnrollmentRequiredError();
+        }
+        throw error;
+      }
+    },
+    onError: (error: unknown) => {
+      if (error instanceof MentorEnrollmentRequiredError) return;
       toast.error('Failed to purchase ticket.');
     },
   });

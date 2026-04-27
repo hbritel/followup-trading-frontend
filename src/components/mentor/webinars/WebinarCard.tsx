@@ -2,17 +2,34 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Video, Users, Clock, Ticket, Loader2, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useBuyWebinarTicket } from '@/hooks/useMentorRevenue';
+import {
+  MentorEnrollmentRequiredError,
+  useBuyWebinarTicket,
+} from '@/hooks/useMentorRevenue';
 import { useAuth } from '@/contexts/auth-context';
 import type { WebinarDto } from '@/types/dto';
 
 interface Props {
   webinar: WebinarDto;
-  slug: string;
+  /**
+   * Slug-based public profile booking. Used by anonymous/discovery flows.
+   * Ignored when {@link Props.onBuy} is provided.
+   */
+  slug?: string;
+  /**
+   * Optional override for the buy action. When provided, the card delegates
+   * to this callback instead of running the slug-based mutation. Used on the
+   * "My Mentor" page where the student is already authenticated and slug may
+   * not exist (private mentor space without a public profile).
+   */
+  onBuy?: (webinarId: string) => void;
+  /** Pending state for the external onBuy mutation. */
+  isBuyPending?: boolean;
 }
 
-const WebinarCard: React.FC<Props> = ({ webinar, slug }) => {
+const WebinarCard: React.FC<Props> = ({ webinar, slug, onBuy, isBuyPending }) => {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -33,12 +50,18 @@ const WebinarCard: React.FC<Props> = ({ webinar, slug }) => {
   };
 
   const isUpcoming = new Date(webinar.startsAt) > new Date();
+  const pending = onBuy ? !!isBuyPending : buyTicket.isPending;
 
   const handleBuy = () => {
-    if (!isAuthenticated) {
-      navigate(`/auth/signup?returnTo=/m/${slug}`);
+    if (onBuy) {
+      onBuy(webinar.id);
       return;
     }
+    if (!isAuthenticated) {
+      navigate(`/auth/signup?returnTo=/m/${slug ?? ''}`);
+      return;
+    }
+    if (!slug) return;
     buyTicket.mutate(
       { slug, webinarId: webinar.id },
       {
@@ -49,7 +72,17 @@ const WebinarCard: React.FC<Props> = ({ webinar, slug }) => {
             navigate('/my-mentor');
           }
         },
-      }
+        onError: (error) => {
+          if (error instanceof MentorEnrollmentRequiredError) {
+            toast.error(
+              t(
+                'mentor.webinars.enrollmentRequired',
+                'You must be enrolled with this mentor to buy a ticket. Subscribe or join with an invite code first.',
+              ),
+            );
+          }
+        },
+      },
     );
   };
 
@@ -93,16 +126,16 @@ const WebinarCard: React.FC<Props> = ({ webinar, slug }) => {
         <Button
           className="w-full gap-2"
           onClick={handleBuy}
-          disabled={buyTicket.isPending}
+          disabled={pending}
         >
-          {buyTicket.isPending ? (
+          {pending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
-          ) : !isAuthenticated ? (
+          ) : !onBuy && !isAuthenticated ? (
             <LogIn className="w-4 h-4" />
           ) : (
             <Ticket className="w-4 h-4" />
           )}
-          {!isAuthenticated
+          {!onBuy && !isAuthenticated
             ? t('mentor.webinars.loginToBook', 'Log in to buy ticket')
             : webinar.ticketPriceCents === 0
             ? t('mentor.webinars.registerFree', 'Register free')

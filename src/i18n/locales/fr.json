@@ -3323,6 +3323,11 @@
     "manageLinkDesc": "Etudiants, invitations et branding sont desormais dans l'espace Mentor.",
     "openHub": "Ouvrir l'espace Mentor",
     "removeFromMenu": "Retirer l'etudiant",
+    "removalDialog": {
+      "reasonLabel": "Expliquez pourquoi vous retirez cet élève",
+      "reasonPlaceholder": "L'élève verra ce message dans sa page Mon Mentor. Soyez précis et respectueux.",
+      "reasonHint": "Au moins {{min}} caractères · visible par l'élève."
+    },
     "rowActions": "Actions",
     "fromSharing": "sur {{n}} partageant",
     "metricsLabels": {
@@ -3386,17 +3391,95 @@
     },
     "myMentor": {
       "title": "Mon Mentor",
+      "subtitle": "Annonces, sessions et confidentialité — tout votre mentor au même endroit.",
       "memberSince": "Membre depuis",
+      "viewPublicProfile": "Voir le profil public",
+      "actions": {
+        "menu": "Adhésion",
+        "managePrivacy": "Gérer la confidentialité",
+        "viewSubscription": "Voir l'abonnement"
+      },
+      "tabs": {
+        "overview": "Aperçu",
+        "sessions": "Sessions & webinaires",
+        "subscription": "Abonnement",
+        "privacy": "Confidentialité"
+      },
+      "kpi": {
+        "announcements": "Annonces",
+        "pinnedHint": "· {{n}} épinglée(s)",
+        "upcomingSessions": "Sessions à venir",
+        "webinarTickets": "Billets webinaires",
+        "privacy": "Partage"
+      },
+      "hero": {
+        "eyebrow": "Votre espace mentor",
+        "membership": "Adhésion",
+        "joinedOn": "Inscrit le {{date}}",
+        "statusFree": "Membre",
+        "experience": "Expérience de trading"
+      },
+      "about": {
+        "title": "À propos de votre mentor"
+      },
+      "sessions": {
+        "heading": "Mes sessions réservées",
+        "subtitle": "Vos sessions 1:1 passées et à venir avec votre mentor.",
+        "activeHeading": "Mes sessions à venir",
+        "activeSubtitle": "Sessions en attente de paiement ou confirmées et à venir.",
+        "pastHeading": "Sessions passées et annulées",
+        "pastSubtitle": "Masquées automatiquement 30 jours après la date de la session. Vous pouvez aussi supprimer chaque entrée manuellement."
+      },
+      "tickets": {
+        "heading": "Mes billets webinaires",
+        "subtitle": "Billets achetés pour les webinaires passés ou à venir.",
+        "activeHeading": "Mes billets actifs",
+        "activeSubtitle": "Billets en attente de paiement ou payés pour des webinaires à venir.",
+        "pastHeading": "Billets remboursés et annulés",
+        "pastSubtitle": "Masqués automatiquement 30 jours après l'achat. Vous pouvez aussi supprimer chaque entrée manuellement."
+      },
+      "catalog": {
+        "sessionsHeading": "Sessions 1:1 disponibles",
+        "sessionsSubtitle": "Réservez une session individuelle avec votre mentor.",
+        "webinarsHeading": "Webinaires à venir",
+        "webinarsSubtitle": "Sessions de groupe et ateliers en direct proposés par votre mentor.",
+        "bookingPending": "Réservation créée — paiement en attente.",
+        "ticketPending": "Billet réservé — paiement en attente."
+      },
+      "taxonomyTitle": "Niche",
+      "languagesTitle": "Langues",
+      "identity": {
+        "title": "Niche & langues"
+      },
+      "verifiedStats": {
+        "title": "Statistiques de trading vérifiées",
+        "subtitle": "Vérifiées de manière indépendante — les mêmes chiffres que votre mentor publie sur son profil public."
+      },
+      "faq": {
+        "title": "FAQ de votre mentor"
+      },
+      "paywall": {
+        "previewBadge": "Aperçu",
+        "teaserAria": "Aperçu des annonces récentes. Abonnez-vous pour débloquer le fil complet."
+      },
       "sharing": {
         "title": "Votre mentor peut voir :",
+        "subtitle": "Activez les catégories que votre mentor recevra. Les modifications sont enregistrées automatiquement.",
         "metrics": "Statistiques de performance",
+        "metricsDesc": "Taux de réussite, P&L, drawdown — statistiques agrégées uniquement.",
         "trades": "Historique des trades",
+        "tradesDesc": "Symbole, entrée/sortie, taille — enregistrements individuels des trades.",
         "psychology": "Journal psychologique",
+        "psychologyDesc": "Score de tilt, entrées de journal, signaux émotionnels.",
+        "saving": "Enregistrement…",
+        "saved": "Enregistré",
+        "autosaveHint": "Les modifications sont enregistrées automatiquement",
         "update": "Mettre à jour",
         "updated": "Préférences de partage mises à jour"
       },
       "leave": {
         "button": "Quitter l'espace mentor",
+        "helper": "Vous pouvez partir à tout moment — votre mentor ne verra plus vos données partagées immédiatement.",
         "confirmTitle": "Quitter l'espace mentor ?",
         "confirmDesc": "Vous perdrez l'accès aux annonces et votre mentor ne verra plus vos données partagées. Vous pourrez rejoindre plus tard avec un nouveau code d'invitation."
       },
@@ -3408,6 +3491,14 @@
       },
       "sharedNotes": {
         "title": "Notes de votre mentor"
+      },
+      "removalNotice": {
+        "eyebrow": "Fin du mentorat",
+        "title": "Votre mentor a mis fin au mentorat",
+        "titleNamed": "{{brand}} a mis fin au mentorat",
+        "removedAt": "Retiré le {{date}}",
+        "reasonLabel": "Message de votre mentor",
+        "acknowledge": "J'ai compris — fermer"
       }
     },
     "atRiskReasons": {
@@ -3445,7 +3536,29 @@
       "filterLabel": "Filtrer par cohorte",
       "assignLabel": "Assigner à une cohorte",
       "assignTitle": "Assigner des cohortes",
-      "noneYet": "Créez d'abord une cohorte pour y assigner des élèves."
+      "noneYet": "Créez d'abord une cohorte pour y assigner des élèves.",
+      "detail": {
+        "openDetails": "Ouvrir les détails",
+        "tabMembers": "Membres",
+        "tabSpecs": "Détails",
+        "tabBroadcast": "Diffusion",
+        "emptyMembers": "Aucun membre actif dans cette cohorte pour le moment.",
+        "joinedAt": "Inscrit le {{date}}",
+        "shareMetricsShort": "M",
+        "shareTradesShort": "T",
+        "sharePsyShort": "P",
+        "noShare": "Aucun partage",
+        "colorLabel": "Couleur",
+        "noDescription": "Aucune description.",
+        "memberCount": "Membres",
+        "broadcastLabel": "Message à tous les membres de la cohorte",
+        "broadcastPlaceholder": "Rédigez un message qui sera envoyé à chaque élève actif de cette cohorte…",
+        "visibleLabel": "Afficher ce message aux élèves",
+        "visibleHint": "Les membres verront ce message dans leur fil « Mon Mentor » et recevront une notification.",
+        "privateHint": "Enregistré comme note privée côté mentor pour chaque membre.",
+        "recipientHint": "{{n}} destinataires actifs",
+        "sendButton": "Envoyer à la cohorte"
+      }
     },
     "activity": {
       "title": "Activité récente",
@@ -3613,17 +3726,41 @@
       "statsTitle": "Statistiques",
       "studentsLabel": "Élèves",
       "experienceLabel": "Expérience",
+      "languagesLabel": "Langues",
       "priceLabel": "Prix mensuel",
       "yearsValue": "{{n}} ans",
       "ofMax": "sur {{max}} max",
       "cancelAnytime": "Annulable à tout moment",
       "testimonialsTitle": "Ce que disent les élèves",
+      "testimonialsEyebrow": "Témoignages",
+      "testimonialsCount": "avis",
+      "workWithEyebrow": "Travailler ensemble",
+      "liveEventsEyebrow": "Événements en direct",
+      "eyebrow": "Mentor en trading",
+      "spotsRibbon": "{{n}}/{{max}}",
       "poweredBy": "Propulsé par FollowUp Trading"
     },
     "directory": {
       "hero": {
         "title": "Trouvez un mentor en trading",
-        "subtitle": "Parcourez les mentors de trading vérifiés. Filtrez par niche, langue et prix pour trouver le meilleur profil."
+        "subtitle": "Parcourez les mentors de trading vérifiés. Filtrez par niche, langue et prix pour trouver le meilleur profil.",
+        "popular": "Populaires",
+        "slashHint": "Appuyez sur / pour rechercher",
+        "trust": {
+          "verifiedCount": "mentors vérifiés",
+          "stripe": "Paiements sécurisés via Stripe",
+          "refund": "Remboursement sous 14 jours"
+        }
+      },
+      "resultsHeading": "Mentors",
+      "activeFilters": {
+        "label": "Filtres actifs",
+        "removeTag": "Retirer {{label}}",
+        "removeLang": "Retirer {{label}}",
+        "removeFree": "Retirer le filtre gratuit",
+        "removePrice": "Retirer le filtre de prix",
+        "removeAcceptsNew": "Retirer le filtre accepte de nouveaux élèves",
+        "removeVerified": "Retirer le filtre vérifié uniquement"
       },
       "searchPlaceholder": "Rechercher des mentors…",
       "filters": {
@@ -3653,9 +3790,8 @@
         "free": "Gratuit",
         "new": "Nouveau",
         "acceptsNew": "Ouvert",
-        "studentsFew": "1–10 élèves",
-        "studentsMedium": "11–50 élèves",
-        "studentsMany": "50+ élèves",
+        "studentsCapacity": "{{n}}/{{max}} élèves",
+        "studentsCount": "{{n}} élèves",
         "monthlyPrice": "{{price}} / mois"
       },
       "empty": {
@@ -3907,9 +4043,22 @@
       "cancel": "Annuler",
       "upcoming": "À venir",
       "past": "Passées",
+      "filter": {
+        "upcoming": "À venir",
+        "past": "Passées",
+        "cancelled": "Annulées",
+        "pendingPayment": "En attente de paiement",
+        "all": "Toutes"
+      },
       "emptyUpcoming": "Aucune réservation à venir.",
       "emptyPast": "Aucune réservation passée.",
+      "emptyCancelled": "Aucune réservation annulée.",
+      "emptyPendingPayment": "Aucune réservation en attente de paiement.",
+      "emptyAll": "Aucune réservation pour le moment.",
       "studentEmpty": "Vous n'avez pas encore réservé de session.",
+      "studentEmptyActive": "Aucune session à venir.",
+      "studentEmptyPast": "Aucune session passée ou annulée à afficher.",
+      "hideBooking": "Retirer de mon affichage",
       "myBookings": "Mes sessions réservées",
       "joinMeeting": "Rejoindre la réunion",
       "pendingPayment": "Finalisez votre paiement pour confirmer cette session.",
@@ -3920,6 +4069,7 @@
       "confirmCancel": "Confirmer l'annulation",
       "publicTitle": "Sessions 1-à-1",
       "bookButton": "Réserver une session",
+      "enrollmentRequired": "Vous devez être inscrit chez ce mentor pour réserver une session. Abonnez-vous ou rejoignez avec un code d'invitation.",
       "cancelWindow": "Annulation jusqu'à {{n}}h avant",
       "bookDialogTitle": "Réserver : {{title}}",
       "bookDialogDesc": "Choisissez une date et un horaire pour votre session.",
@@ -3961,6 +4111,7 @@
       "free": "Gratuit",
       "seats": "{{n}} places",
       "buyTicket": "Acheter un billet",
+      "enrollmentRequired": "Vous devez être inscrit chez ce mentor pour acheter un billet. Abonnez-vous ou rejoignez avec un code d'invitation.",
       "registerFree": "S'inscrire gratuitement",
       "loginToBook": "Connectez-vous pour acheter",
       "ended": "Ce webinaire est terminé.",
@@ -3977,6 +4128,9 @@
       "purchasedOn": "Acheté le {{date}}",
       "ticketPaidHint": "Le lien de réunion sera partagé par le mentor avant l'événement.",
       "studentEmpty": "Vous n'avez pas encore acheté de billet de webinaire.",
+      "studentEmptyActive": "Aucun billet pour les webinaires à venir.",
+      "studentEmptyPast": "Aucun billet remboursé ou annulé à afficher.",
+      "hideTicket": "Retirer de mon affichage",
       "myTickets": "Mes billets de webinaire",
       "publicTitle": "Webinaires à venir",
       "paymentSuccess": "Billet confirmé !",
@@ -4248,11 +4402,18 @@
       "statsTitle": "Statistiques",
       "studentsLabel": "Élèves",
       "experienceLabel": "Expérience",
+      "languagesLabel": "Langues",
       "priceLabel": "Prix mensuel",
       "yearsValue": "{{n}} ans",
       "ofMax": "sur {{max}} max",
       "cancelAnytime": "Annulable à tout moment",
       "testimonialsTitle": "Ce que disent les élèves",
+      "testimonialsEyebrow": "Témoignages",
+      "testimonialsCount": "avis",
+      "workWithEyebrow": "Travailler ensemble",
+      "liveEventsEyebrow": "Événements en direct",
+      "eyebrow": "Mentor en trading",
+      "spotsRibbon": "{{n}}/{{max}}",
       "poweredBy": "Propulsé par FollowUp Trading"
     },
     "counts": {

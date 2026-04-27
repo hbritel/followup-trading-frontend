@@ -6,11 +6,16 @@ import {
   CalendarClock,
   CheckCircle2,
   CreditCard,
+  Globe,
   Loader2,
   LogIn,
   MessageSquarePlus,
+  Quote,
   ShieldCheck,
+  Sparkles,
   Star,
+  Tag,
+  TrendingUp,
   Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +23,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePublicMentorProfile, useJoinInstance, useDirectoryTags } from '@/hooks/useMentor';
-import { usePublicSessionOfferings, useBookSession, usePublicWebinars } from '@/hooks/useMentorRevenue';
+import {
+  usePublicSessionOfferings,
+  useBookSession,
+  usePublicWebinars,
+  MentorEnrollmentRequiredError,
+} from '@/hooks/useMentorRevenue';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
@@ -201,60 +212,121 @@ const ProfileHero: React.FC<{ profile: MentorPublicProfileDto }> = ({
   profile,
 }) => {
   const { t } = useTranslation();
-  const accent = profile.primaryColor || undefined;
+  const accent = profile.primaryColor || 'hsl(var(--primary))';
 
+  // Cinematic cover: radial accent glow + soft chromatic gradient. Layered
+  // behind the content with `pointer-events-none` so it never interferes
+  // with hit testing.
   return (
     <header
-      className="glass-card rounded-3xl p-6 sm:p-8 border border-border/50 relative overflow-hidden"
-      style={accent ? { boxShadow: `inset 4px 0 0 0 ${accent}` } : undefined}
+      className="relative overflow-hidden rounded-3xl border border-border/50 isolate motion-safe:transition-shadow motion-safe:duration-300 hover:shadow-xl"
     >
-      <div className="flex flex-col sm:flex-row items-start gap-5">
-        {profile.logoUrl ? (
-          <img
-            src={profile.logoUrl}
-            alt=""
-            className="h-20 w-20 rounded-2xl object-cover border border-border/50 shrink-0"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          <div
-            className="h-20 w-20 rounded-2xl flex items-center justify-center text-white font-semibold text-3xl shrink-0"
-            style={{
-              backgroundColor: profile.primaryColor || 'hsl(var(--primary))',
-            }}
-            aria-hidden="true"
-          >
-            {(profile.brandName ?? '?').charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              {profile.brandName}
-            </h1>
-            {profile.verified && <VerifiedBadge />}
-          </div>
-          {profile.headline && (
-            <p className="text-lg text-muted-foreground mt-2 max-w-2xl">
-              {profile.headline}
-            </p>
-          )}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            {profile.acceptsNewStudents ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full">
-                <CheckCircle2 className="w-3 h-3" />
-                {t('mentor.publicPage.acceptingNew', 'Accepting new students')}
-              </span>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          background: `radial-gradient(120% 80% at 0% 0%, ${accent}26 0%, transparent 55%), radial-gradient(80% 60% at 100% 100%, ${accent}1A 0%, transparent 50%), linear-gradient(180deg, hsl(var(--card)/0.6) 0%, hsl(var(--card)/0.95) 60%)`,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-3xl opacity-60 -z-10 pointer-events-none motion-safe:animate-pulse motion-reduce:hidden"
+        style={{ background: `${accent}22` }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-32 -right-16 w-96 h-96 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none motion-reduce:hidden"
+        style={{ background: `${accent}1A` }}
+      />
+
+      <div className="relative p-6 sm:p-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)] gap-6 lg:gap-10 items-start">
+          {/* Avatar / monogram with accent ring */}
+          <div className="relative shrink-0">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -m-1.5 rounded-3xl blur-md opacity-70"
+              style={{ background: `${accent}33` }}
+            />
+            {profile.logoUrl ? (
+              <img
+                src={profile.logoUrl}
+                alt=""
+                width={112}
+                height={112}
+                className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-3xl object-cover border-2 shadow-lg"
+                style={{ borderColor: `${accent}66` }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                }}
+              />
             ) : (
-              <span className="inline-flex items-center text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted border border-border/40 px-2 py-0.5 rounded-full">
-                {t('mentor.publicPage.closed', 'Waitlist')}
-              </span>
+              <div
+                className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-3xl flex items-center justify-center text-white font-bold text-4xl shadow-lg border-2"
+                style={{
+                  backgroundColor: accent,
+                  borderColor: `${accent}AA`,
+                }}
+                aria-hidden="true"
+              >
+                {(profile.brandName ?? '?').charAt(0).toUpperCase()}
+              </div>
             )}
-            {profile.cancellationPolicy && (
-              <CancellationPolicyChip policy={profile.cancellationPolicy} />
-            )}
+          </div>
+
+          {/* Title + headline + status chips */}
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="space-y-2">
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: accent }}
+              >
+                {t('mentor.publicPage.eyebrow', 'Trading mentor')}
+              </p>
+              <div className="flex items-start gap-3 flex-wrap">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
+                  {profile.brandName}
+                </h1>
+                {profile.verified && (
+                  <span className="mt-2 inline-flex">
+                    <VerifiedBadge />
+                  </span>
+                )}
+              </div>
+              {profile.headline && (
+                <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed pt-1">
+                  {profile.headline}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {profile.acceptsNewStudents ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-reduce:hidden" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  {t('mentor.publicPage.acceptingNew', 'Accepting new students')}
+                </span>
+              ) : (
+                <span className="inline-flex items-center text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted border border-border/40 px-2.5 py-1 rounded-full">
+                  {t('mentor.publicPage.closed', 'Waitlist')}
+                </span>
+              )}
+              {profile.cancellationPolicy && (
+                <CancellationPolicyChip policy={profile.cancellationPolicy} />
+              )}
+              {profile.maxStudents > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-background/60 border border-border/40 px-2.5 py-1 rounded-full">
+                  <Users className="w-3 h-3" aria-hidden="true" />
+                  {t('mentor.publicPage.spotsRibbon', '{{n}}/{{max}}', {
+                    n: profile.studentsCount,
+                    max: profile.maxStudents,
+                  })}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -262,23 +334,99 @@ const ProfileHero: React.FC<{ profile: MentorPublicProfileDto }> = ({
   );
 };
 
-const StatCard: React.FC<{
-  label: string;
-  value: React.ReactNode;
-  icon: React.ReactNode;
-  hint?: string;
-}> = ({ label, value, icon, hint }) => (
-  <div className="glass-card rounded-2xl p-5 flex flex-col gap-2">
-    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-      {icon}
-    </div>
-    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-      {label}
-    </p>
-    <p className="text-xl font-bold tracking-tight tabular-nums">{value}</p>
-    {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-  </div>
-);
+interface ByTheNumbersRibbonProps {
+  profile: MentorPublicProfileDto;
+  priceLabel: string | null;
+  languagesCount: number;
+}
+
+const ByTheNumbersRibbon: React.FC<ByTheNumbersRibbonProps> = ({
+  profile,
+  priceLabel,
+  languagesCount,
+}) => {
+  const { t } = useTranslation();
+  const accent = profile.primaryColor || 'hsl(var(--primary))';
+
+  const items: Array<{
+    label: string;
+    value: React.ReactNode;
+    icon: React.ReactNode;
+    sub?: string;
+  }> = [
+    {
+      label: t('mentor.publicPage.studentsLabel', 'Students'),
+      value: profile.studentsCount,
+      sub:
+        profile.maxStudents > 0
+          ? t('mentor.publicPage.ofMax', 'of {{max}} max', {
+              max: profile.maxStudents,
+            })
+          : undefined,
+      icon: <Users className="w-4 h-4" aria-hidden="true" />,
+    },
+  ];
+  if (profile.yearsTrading != null) {
+    items.push({
+      label: t('mentor.publicPage.experienceLabel', 'Experience'),
+      value: t('mentor.publicPage.yearsValue', '{{n}} yrs', {
+        n: profile.yearsTrading,
+      }),
+      icon: <TrendingUp className="w-4 h-4" aria-hidden="true" />,
+    });
+  }
+  if (languagesCount > 0) {
+    items.push({
+      label: t('mentor.publicPage.languagesLabel', 'Languages'),
+      value: languagesCount,
+      icon: <Globe className="w-4 h-4" aria-hidden="true" />,
+    });
+  }
+  if (priceLabel) {
+    items.push({
+      label: t('mentor.publicPage.priceLabel', 'Monthly price'),
+      value: priceLabel,
+      sub: t('mentor.publicPage.cancelAnytime', 'Cancel anytime'),
+      icon: <Sparkles className="w-4 h-4" aria-hidden="true" />,
+    });
+  }
+
+  // Grid spans the actual count of items so the strip never shows an empty
+  // cell — pricing-free mentors get a 3-up grid, monetised mentors get 4-up.
+  const gridClass =
+    items.length === 4
+      ? 'grid-cols-2 lg:grid-cols-4'
+      : items.length === 3
+        ? 'grid-cols-1 sm:grid-cols-3'
+        : items.length === 2
+          ? 'grid-cols-1 sm:grid-cols-2'
+          : 'grid-cols-1';
+
+  return (
+    <section
+      aria-label={t('mentor.publicPage.statsTitle', 'Stats')}
+      className={`grid ${gridClass} gap-px rounded-2xl overflow-hidden border border-border/50 bg-border/40`}
+    >
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="bg-card/95 px-4 py-4 sm:px-5 sm:py-5 flex flex-col gap-1.5 motion-safe:transition-colors motion-safe:duration-200 hover:bg-card"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <span style={{ color: accent }}>{item.icon}</span>
+            {item.label}
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight">
+            {item.value}
+          </div>
+          {item.sub && (
+            <div className="text-[11px] text-muted-foreground">{item.sub}</div>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+};
 
 const SubscribeCtaCard: React.FC<{
   profile: MentorPublicProfileDto;
@@ -355,6 +503,17 @@ const PublicMentorProfileContent: React.FC = () => {
             window.location.href = data.checkoutUrl;
           } else {
             navigate('/my-mentor');
+          }
+        },
+        onError: (error) => {
+          if (error instanceof MentorEnrollmentRequiredError) {
+            setBookingOffering(undefined);
+            toast.error(
+              t(
+                'mentor.sessions.enrollmentRequired',
+                'You must be enrolled with this mentor to book a session. Subscribe or join with an invite code first.',
+              ),
+            );
           }
         },
       }
@@ -526,9 +685,17 @@ const PublicMentorProfileContent: React.FC = () => {
     setDisclaimerOpen(true);
   };
 
+  const accent = profile.primaryColor || 'hsl(var(--primary))';
+  const activeOfferings = offerings.filter((o) => o.active);
+  const testimonialList = profile.testimonials ?? [];
+  const aggregateRating =
+    testimonialList.length > 0
+      ? testimonialList.reduce((sum, t) => sum + t.rating, 0) / testimonialList.length
+      : null;
+
   return (
     <main className="min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-10">
         <nav aria-label="Breadcrumb">
           <button
             type="button"
@@ -552,230 +719,340 @@ const PublicMentorProfileContent: React.FC = () => {
 
         <ProfileHero profile={profile} />
 
-        {/* Tags + Languages */}
-        {((profile.tagSlugs?.length ?? 0) > 0 || (profile.languageCodes?.length ?? 0) > 0) && (
-          <section className="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
-            {(profile.tagSlugs?.length ?? 0) > 0 && (
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                  {t('mentor.myMentor.taxonomyTitle', 'Niche')}
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(profile.tagSlugs ?? []).map((s) => (
-                    <span
-                      key={s}
-                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
-                    >
-                      {tagLabel(s)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {(profile.languageCodes?.length ?? 0) > 0 && (
-              <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                  {t('mentor.myMentor.languagesTitle', 'Languages')}
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(profile.languageCodes ?? []).map((c) => (
-                    <span
-                      key={c}
-                      className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-primary/8 text-primary border border-primary/20"
-                    >
-                      {languageName(c)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+        <ByTheNumbersRibbon
+          profile={profile}
+          priceLabel={priceLabel}
+          languagesCount={profile.languageCodes?.length ?? 0}
+        />
 
-        {/* About */}
-        {(profile.bio || profile.credentials || profile.yearsTrading != null) && (
-          <section
-            aria-labelledby="about-heading"
-            className="glass-card rounded-2xl p-5 sm:p-6 space-y-4"
-          >
-            <h2 id="about-heading" className="text-lg font-semibold">
-              {t('mentor.publicPage.aboutTitle', 'About')}
-            </h2>
-            {profile.bio && (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {profile.bio}
-              </p>
-            )}
-            {profile.credentials && (
-              <div>
-                <h3 className="text-sm font-medium mb-1.5">
-                  {t(
-                    'mentor.publicPage.credentialsTitle',
-                    'Credentials'
-                  )}
-                </h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {profile.credentials}
-                </p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Stats */}
-        <section
-          aria-labelledby="stats-heading"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-        >
-          <h2 id="stats-heading" className="sr-only">
-            {t('mentor.publicPage.statsTitle', 'Stats')}
-          </h2>
-          <StatCard
-            label={t('mentor.publicPage.studentsLabel', 'Students')}
-            value={profile.studentsCount}
-            icon={<Users className="w-4 h-4" aria-hidden="true" />}
-            hint={t(
-              'mentor.publicPage.ofMax',
-              'of {{max}} max',
-              { max: profile.maxStudents }
-            )}
-          />
-          {profile.yearsTrading != null && (
-            <StatCard
-              label={t('mentor.publicPage.experienceLabel', 'Experience')}
-              value={t('mentor.publicPage.yearsValue', '{{n}} yrs', {
-                n: profile.yearsTrading,
-              })}
-              icon={<CalendarClock className="w-4 h-4" aria-hidden="true" />}
-            />
-          )}
-          {priceLabel && (
-            <StatCard
-              label={t('mentor.publicPage.priceLabel', 'Monthly price')}
-              value={priceLabel}
-              icon={<Star className="w-4 h-4" aria-hidden="true" />}
-              hint={t('mentor.publicPage.cancelAnytime', 'Cancel anytime')}
-            />
-          )}
-        </section>
-
-        {/* Verified trading stats */}
-        {profile.showStatsPublicly && profile.stats && (
-          <VerifiedStatsPanel stats={profile.stats} />
-        )}
-
-        {/* Testimonials */}
-        {(profile.testimonials?.length ?? 0) > 0 && (
-          <section
-            aria-labelledby="testimonials-heading"
-            className="space-y-4"
-          >
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2
-                id="testimonials-heading"
-                className="text-lg font-semibold"
+        {/* Bento layout: main story column + sticky pricing rail on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-10 items-start">
+          {/* ── MAIN STORY COLUMN ─────────────────────────────────────────── */}
+          <div className="min-w-0 space-y-10">
+            {/* About — editorial-styled bio with serif-style ornament */}
+            {(profile.bio || profile.credentials) && (
+              <section
+                aria-labelledby="about-heading"
+                className="relative glass-card rounded-3xl p-6 sm:p-8 border border-border/50 overflow-hidden"
               >
-                {t(
-                  'mentor.publicPage.testimonialsTitle',
-                  'What students are saying'
-                )}
-              </h2>
-              {isAuthenticated && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 text-primary hover:text-primary hover:bg-primary/5"
-                  onClick={() => navigate('/my-mentor#my-testimonial-heading')}
-                >
-                  <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
-                  {t('mentor.publicPage.shareYourFeedback', 'Share your feedback')}
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(profile.testimonials ?? []).map((item, idx) => (
-                <article
-                  key={`${item.username}-${idx}`}
-                  className="glass-card rounded-2xl p-5 border border-border/50 space-y-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30"
-                >
-                  <StarRow rating={item.rating} />
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {item.body}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium">{item.username}</span>
-                    <span>
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Phase 4: 1-on-1 Sessions */}
-        {offerings.length > 0 && (
-          <section aria-labelledby="sessions-public-heading" className="space-y-4">
-            <h2
-              id="sessions-public-heading"
-              className="text-lg font-semibold flex items-center gap-2"
-            >
-              <Clock className="w-5 h-5 text-primary" aria-hidden="true" />
-              {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {offerings.filter((o) => o.active).map((offering) => (
                 <div
-                  key={offering.id}
-                  className="glass-card rounded-2xl p-5 border border-border/50 space-y-3"
+                  aria-hidden="true"
+                  className="absolute top-0 left-0 w-1.5 h-full"
+                  style={{ background: `linear-gradient(180deg, ${accent} 0%, ${accent}33 100%)` }}
+                />
+                <h2
+                  id="about-heading"
+                  className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-3"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-medium text-sm leading-snug">{offering.title}</h3>
-                    <span className="text-sm font-semibold shrink-0">
-                      {offering.priceCents === 0
-                        ? t('mentor.webinars.free', 'Free')
-                        : `${(currencySymbol[offering.currency] ?? offering.currency)}${(offering.priceCents / 100).toFixed(2)}`}
-                    </span>
-                  </div>
-                  {offering.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {offering.description}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {offering.durationMinutes}{t('mentor.sessions.min', ' min')}
+                  {t('mentor.publicPage.aboutTitle', 'About')}
+                </h2>
+                {profile.bio && (
+                  <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap text-foreground/90">
+                    {profile.bio}
                   </p>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setBookingOffering(offering)}
-                  >
-                    {t('mentor.sessions.bookButton', 'Book session')}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+                )}
+                {profile.credentials && (
+                  <div className="mt-5 pt-5 border-t border-border/40">
+                    <h3 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground mb-2 inline-flex items-center gap-1.5">
+                      <ShieldCheck
+                        className="w-3.5 h-3.5"
+                        style={{ color: accent }}
+                        aria-hidden="true"
+                      />
+                      {t('mentor.publicPage.credentialsTitle', 'Credentials')}
+                    </h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {profile.credentials}
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
 
-        {/* Phase 4: Webinars */}
-        {webinars.length > 0 && (
-          <section aria-labelledby="webinars-public-heading" className="space-y-4">
-            <h2
-              id="webinars-public-heading"
-              className="text-lg font-semibold flex items-center gap-2"
-            >
-              <Video className="w-5 h-5 text-primary" aria-hidden="true" />
-              {t('mentor.webinars.title', 'Webinars')}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {webinars.map((webinar) => (
-                <WebinarCard key={webinar.id} webinar={webinar} slug={profile.slug} />
-              ))}
-            </div>
-          </section>
-        )}
+            {/* Tags + Languages — tight chip ribbon under bio */}
+            {((profile.tagSlugs?.length ?? 0) > 0 ||
+              (profile.languageCodes?.length ?? 0) > 0) && (
+              <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(profile.tagSlugs?.length ?? 0) > 0 && (
+                  <div className="glass-card rounded-2xl p-5 border border-border/50">
+                    <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground mb-3 inline-flex items-center gap-1.5">
+                      <Tag
+                        className="w-3.5 h-3.5"
+                        style={{ color: accent }}
+                        aria-hidden="true"
+                      />
+                      {t('mentor.myMentor.taxonomyTitle', 'Niche')}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(profile.tagSlugs ?? []).map((s) => (
+                        <span
+                          key={s}
+                          className="text-xs font-medium px-3 py-1 rounded-full bg-muted/70 text-muted-foreground border border-border/40"
+                        >
+                          {tagLabel(s)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(profile.languageCodes?.length ?? 0) > 0 && (
+                  <div
+                    className="glass-card rounded-2xl p-5 border"
+                    style={{ borderColor: `${accent}33` }}
+                  >
+                    <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground mb-3 inline-flex items-center gap-1.5">
+                      <Globe
+                        className="w-3.5 h-3.5"
+                        style={{ color: accent }}
+                        aria-hidden="true"
+                      />
+                      {t('mentor.myMentor.languagesTitle', 'Languages')}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(profile.languageCodes ?? []).map((c) => (
+                        <span
+                          key={c}
+                          className="text-xs font-medium px-3 py-1 rounded-full"
+                          style={{
+                            backgroundColor: `${accent}14`,
+                            color: accent,
+                            border: `1px solid ${accent}33`,
+                          }}
+                        >
+                          {languageName(c)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Verified trading stats — magazine "by the numbers" feel */}
+            {profile.showStatsPublicly && profile.stats && (
+              <VerifiedStatsPanel stats={profile.stats} />
+            )}
+
+            {/* Testimonials — pull-quote editorial cards */}
+            {testimonialList.length > 0 && (
+              <section
+                aria-labelledby="testimonials-heading"
+                className="space-y-5"
+              >
+                <div className="flex items-end justify-between gap-3 flex-wrap">
+                  <div>
+                    <p
+                      className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+                      style={{ color: accent }}
+                    >
+                      {t('mentor.publicPage.testimonialsEyebrow', 'Social proof')}
+                    </p>
+                    <h2
+                      id="testimonials-heading"
+                      className="text-2xl sm:text-3xl font-bold tracking-tight mt-1"
+                    >
+                      {t(
+                        'mentor.publicPage.testimonialsTitle',
+                        'What students are saying',
+                      )}
+                    </h2>
+                    {aggregateRating != null && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <StarRow rating={aggregateRating} />
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                          {aggregateRating.toFixed(1)} · {testimonialList.length}{' '}
+                          {t(
+                            'mentor.publicPage.testimonialsCount',
+                            'reviews',
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {isAuthenticated && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-primary hover:text-primary hover:bg-primary/5"
+                      onClick={() => navigate('/my-mentor#my-testimonial-heading')}
+                    >
+                      <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+                      {t(
+                        'mentor.publicPage.shareYourFeedback',
+                        'Share your feedback',
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {testimonialList.map((item, idx) => (
+                    <article
+                      key={`${item.username}-${idx}`}
+                      className="relative glass-card rounded-2xl p-6 border border-border/50 motion-safe:transition-all motion-safe:duration-200 hover:-translate-y-0.5 hover:shadow-lg overflow-hidden"
+                      style={
+                        {
+                          '--tw-ring-color': accent,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <Quote
+                        className="absolute -top-2 -left-2 w-12 h-12 opacity-10"
+                        style={{ color: accent }}
+                        aria-hidden="true"
+                      />
+                      <div className="relative space-y-4">
+                        <StarRow rating={item.rating} />
+                        <p className="text-base leading-relaxed whitespace-pre-wrap">
+                          “{item.body}”
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/40">
+                          <span className="font-semibold text-foreground">
+                            {item.username}
+                          </span>
+                          <span className="tabular-nums">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 1-on-1 Sessions — premium cards with accent border-left */}
+            {activeOfferings.length > 0 && (
+              <section
+                aria-labelledby="sessions-public-heading"
+                className="space-y-5"
+              >
+                <div>
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+                    style={{ color: accent }}
+                  >
+                    {t('mentor.publicPage.workWithEyebrow', 'Work together')}
+                  </p>
+                  <h2
+                    id="sessions-public-heading"
+                    className="text-2xl sm:text-3xl font-bold tracking-tight mt-1 flex items-center gap-2"
+                  >
+                    <Clock className="w-6 h-6" style={{ color: accent }} aria-hidden="true" />
+                    {t('mentor.sessions.sectionTitle', '1-on-1 Sessions')}
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {activeOfferings.map((offering) => (
+                    <div
+                      key={offering.id}
+                      className="relative group glass-card rounded-2xl p-5 border border-border/50 motion-safe:transition-all motion-safe:duration-200 hover:-translate-y-0.5 hover:shadow-lg overflow-hidden"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="absolute top-0 left-0 w-1 h-full opacity-60 group-hover:opacity-100 motion-safe:transition-opacity"
+                        style={{ background: accent }}
+                      />
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h3 className="font-semibold text-base leading-snug pr-2">
+                          {offering.title}
+                        </h3>
+                        <div
+                          className="text-sm font-bold tabular-nums shrink-0 px-2.5 py-1 rounded-full"
+                          style={{
+                            backgroundColor: `${accent}14`,
+                            color: accent,
+                          }}
+                        >
+                          {offering.priceCents === 0
+                            ? t('mentor.webinars.free', 'Free')
+                            : `${currencySymbol[offering.currency] ?? offering.currency}${(offering.priceCents / 100).toFixed(2)}`}
+                        </div>
+                      </div>
+                      {offering.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-3">
+                          {offering.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                        <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span className="tabular-nums">
+                          {offering.durationMinutes}
+                          {t('mentor.sessions.min', ' min')}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full gap-1.5"
+                        onClick={() => setBookingOffering(offering)}
+                      >
+                        <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
+                        {t('mentor.sessions.bookButton', 'Book session')}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Webinars */}
+            {webinars.length > 0 && (
+              <section
+                aria-labelledby="webinars-public-heading"
+                className="space-y-5"
+              >
+                <div>
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+                    style={{ color: accent }}
+                  >
+                    {t('mentor.publicPage.liveEventsEyebrow', 'Live events')}
+                  </p>
+                  <h2
+                    id="webinars-public-heading"
+                    className="text-2xl sm:text-3xl font-bold tracking-tight mt-1 flex items-center gap-2"
+                  >
+                    <Video className="w-6 h-6" style={{ color: accent }} aria-hidden="true" />
+                    {t('mentor.webinars.title', 'Webinars')}
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {webinars.map((webinar) => (
+                    <WebinarCard
+                      key={webinar.id}
+                      webinar={webinar}
+                      slug={profile.slug}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* FAQ */}
+            {(profile.faq?.length ?? 0) > 0 && (
+              <PublicFaqSection faq={profile.faq ?? []} />
+            )}
+          </div>
+
+          {/* ── STICKY RIGHT RAIL (lg+) — pricing CTA + join code + contact ── */}
+          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            {profile.acceptsNewStudents && profile.pricing && priceLabel && (
+              <SubscribeCtaCard
+                profile={profile}
+                priceLabel={priceLabel}
+                onSubscribe={handleSubscribeClick}
+              />
+            )}
+            {profile.acceptsNewStudents && (
+              <JoinByCodeCard brandName={profile.brandName} />
+            )}
+            {profile.hasContactForm && (
+              <MentorContactForm
+                slug={profile.slug}
+                brandName={profile.brandName}
+              />
+            )}
+          </aside>
+        </div>
 
         {/* Phase 4: Session booking dialog with sticky offering summary */}
         <Dialog
@@ -833,30 +1110,6 @@ const PublicMentorProfileContent: React.FC = () => {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* FAQ */}
-        {(profile.faq?.length ?? 0) > 0 && (
-          <PublicFaqSection faq={profile.faq ?? []} />
-        )}
-
-        {/* Subscribe CTA + Join by code */}
-        {profile.acceptsNewStudents && (
-          <div className="space-y-4">
-            {profile.pricing && priceLabel && (
-              <SubscribeCtaCard
-                profile={profile}
-                priceLabel={priceLabel}
-                onSubscribe={handleSubscribeClick}
-              />
-            )}
-            <JoinByCodeCard brandName={profile.brandName} />
-          </div>
-        )}
-
-        {/* Contact form */}
-        {profile.hasContactForm && (
-          <MentorContactForm slug={profile.slug} brandName={profile.brandName} />
-        )}
 
         <footer className="flex items-center justify-between text-xs text-muted-foreground pt-6 pb-4">
           <span>

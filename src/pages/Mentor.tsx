@@ -44,7 +44,18 @@ import SessionOfferingEditor from '@/components/mentor/sessions/SessionOfferingE
 import SessionsKpiRibbon from '@/components/mentor/sessions/SessionsKpiRibbon';
 import InsightsKpiRibbon from '@/components/mentor/insights/InsightsKpiRibbon';
 import ComplianceKpiRibbon from '@/components/mentor/compliance/ComplianceKpiRibbon';
-import { useMyMentorFaq, useMyJurisdictions } from '@/hooks/useMentor';
+import {
+  useMyMentorFaq,
+  useMyJurisdictions,
+  useMentorAnnouncements,
+  useMentorActivity,
+  useMentorTestimonials,
+  useMonetizationSummary,
+  useMyMentorTags,
+  useMyMentorLanguages,
+  useMyLeads,
+  usePublicMentorStats,
+} from '@/hooks/useMentor';
 import {
   useCohortPolicies,
   useCohortPricing,
@@ -119,6 +130,12 @@ import {
   useMentorMetricsSummary,
   useMentorCohorts,
 } from '@/hooks/useMentor';
+import {
+  useMySessionOfferings,
+  useMentorSessionBookings,
+  useMyWebinars,
+  useFunnelReport,
+} from '@/hooks/useMentorRevenue';
 import { mentorService } from '@/services/mentor.service';
 import type {
   CreateInstanceRequestDto,
@@ -705,6 +722,33 @@ const Mentor: React.FC = () => {
 
   const deleteMutation = useDeleteInstance();
 
+  // Warm the cache for every below-the-fold and sibling-tab query on page
+  // mount. Without this, sub-components inside collapsibles / tabs only
+  // fetch when scrolled into view or activated, which the user perceives as
+  // "the page keeps loading as I scroll". React Query dedups identical
+  // queryKeys across components, so subscribing here is free for child
+  // components and costs one request each up-front. Combined with the
+  // global placeholderData option, this keeps the UI stable on remount.
+  useMySessionOfferings();
+  useMentorSessionBookings();
+  useMyWebinars();
+  const funnelRange = useMemo(() => {
+    const today = new Date();
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    return { from: fmt(monthAgo), to: fmt(today) };
+  }, []);
+  useFunnelReport(funnelRange.from, funnelRange.to);
+  useMentorAnnouncements();
+  useMentorActivity({ limit: 50 });
+  useMentorTestimonials();
+  useMonetizationSummary();
+  useMyMentorTags();
+  useMyMentorLanguages();
+  useMyMentorFaq();
+  useMyJurisdictions();
+  useMyLeads();
+
   const [selectedStudent, setSelectedStudent] = useState<string | undefined>(undefined);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -790,8 +834,8 @@ const Mentor: React.FC = () => {
     setDetailOpen(true);
   };
 
-  const handleRemoveStudent = (userId: string) => {
-    removeMutation.mutate(userId);
+  const handleRemoveStudent = (userId: string, reason: string) => {
+    removeMutation.mutate({ userId, reason });
   };
 
   const studentList = useMemo(() => students ?? [], [students]);
@@ -1285,6 +1329,7 @@ const Mentor: React.FC = () => {
               students={studentList}
               onSelectStudent={handleSelectStudent}
               onRemoveStudent={handleRemoveStudent}
+              isRemoving={removeMutation.isPending}
               searchQuery={searchQuery}
               sortBy={sortBy}
               visibleStudentIds={visibleStudentIds}

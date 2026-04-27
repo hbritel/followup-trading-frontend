@@ -57,11 +57,17 @@ interface Props {
 const SessionsKpiRibbon: React.FC<Props> = ({ showWebinars }) => {
   const { t } = useTranslation();
   const { data: offerings = [] } = useMySessionOfferings();
-  const { data: upcomingBookings = [] } = useMentorSessionBookings(true);
+  const { data: bookings = [] } = useMentorSessionBookings();
   const { data: webinars = [] } = useMyWebinars();
 
   const activeOfferings = offerings.filter((o) => o.active).length;
   const activeWebinars = webinars.filter((w) => w.status === 'PUBLISHED').length;
+  const now = Date.now();
+  const upcomingCount = bookings.filter(
+    (b) =>
+      (b.status === 'CONFIRMED' || b.status === 'PENDING_PAYMENT')
+      && new Date(b.scheduledAt).getTime() > now,
+  ).length;
 
   return (
     <div
@@ -81,9 +87,9 @@ const SessionsKpiRibbon: React.FC<Props> = ({ showWebinars }) => {
       />
       <KpiCard
         label={t('mentor.sessions.kpi.upcomingBookings', 'Upcoming bookings')}
-        value={upcomingBookings.length}
+        value={upcomingCount}
         icon={<Users className="w-4 h-4" />}
-        tone={upcomingBookings.length > 0 ? 'emerald' : 'primary'}
+        tone={upcomingCount > 0 ? 'emerald' : 'primary'}
       />
       {showWebinars && (
         <KpiCard

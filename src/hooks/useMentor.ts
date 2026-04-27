@@ -110,13 +110,59 @@ export const useMentorStudents = () => {
 export const useRemoveStudent = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId: string) => mentorService.removeStudent(userId),
+    mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
+      mentorService.removeStudent(userId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: STUDENTS_KEY });
-      toast.success('Student removed.');
+      toast.success('Student removed — they will see your message on next visit.');
     },
-    onError: () => {
-      toast.error('Failed to remove student.');
+    onError: (error: unknown) => {
+      const msg =
+        error instanceof AxiosError && error.response?.data?.message
+          ? String(error.response.data.message)
+          : 'Failed to remove student.';
+      toast.error(msg);
+    },
+  });
+};
+
+const REMOVAL_NOTICE_KEY = ['mentor', 'me-removal-notice'];
+
+export interface RemovalNoticeDto {
+  enrollmentId: string;
+  instanceId: string;
+  mentorBrandName: string | null;
+  mentorLogoUrl: string | null;
+  reason: string;
+  removedAt: string;
+}
+
+export const useMyRemovalNotice = () => {
+  return useQuery({
+    queryKey: REMOVAL_NOTICE_KEY,
+    queryFn: async () => {
+      try {
+        const res = await mentorService.getMyRemovalNotice();
+        return res ?? null;
+      } catch (error) {
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return null;
+        }
+        throw error;
+      }
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+};
+
+export const useAcknowledgeRemovalNotice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enrollmentId: string) =>
+      mentorService.acknowledgeRemovalNotice(enrollmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: REMOVAL_NOTICE_KEY });
     },
   });
 };
@@ -379,6 +425,7 @@ export const usePublicMentorInstance = (inviteCode: string | undefined) => {
 
 const COHORTS_KEY = ['mentor', 'cohorts'];
 const studentCohortsKey = (userId: string) => ['mentor', 'student-cohorts', userId];
+const cohortMembersKey = (cohortId: string) => ['mentor', 'cohort-members', cohortId];
 
 export const useMentorCohorts = () => {
   return useQuery({
@@ -419,6 +466,40 @@ export const useUpdateCohort = () => {
     },
     onError: () => {
       toast.error('Failed to update cohort.');
+    },
+  });
+};
+
+export const useCohortMembers = (cohortId: string | null) => {
+  return useQuery({
+    queryKey: cohortMembersKey(cohortId ?? ''),
+    queryFn: () => mentorService.getCohortMembers(cohortId!),
+    enabled: !!cohortId,
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useBroadcastCohortNote = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      cohortId,
+      body,
+      visibleToStudent,
+    }: {
+      cohortId: string;
+      body: string;
+      visibleToStudent: boolean;
+    }) => mentorService.broadcastCohortNote(cohortId, { body, visibleToStudent }),
+    onSuccess: (data, vars) => {
+      // Invalidate notes of every cohort member so the mentor's per-student
+      // note panels reflect the new entries on next open.
+      queryClient.invalidateQueries({ queryKey: ['mentor', 'student-notes'] });
+      queryClient.invalidateQueries({ queryKey: cohortMembersKey(vars.cohortId) });
+      toast.success(`Sent to ${data.sent} student${data.sent === 1 ? '' : 's'}.`);
+    },
+    onError: () => {
+      toast.error('Failed to send the message.');
     },
   });
 };

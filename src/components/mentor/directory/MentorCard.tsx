@@ -40,10 +40,23 @@ const StarRow: React.FC<{ rating: number; count: number }> = ({ rating, count })
   );
 };
 
-const studentBucket = (count: number, t: ReturnType<typeof useTranslation>['t']): string => {
-  if (count <= 10) return t('mentor.directory.card.studentsFew');
-  if (count <= 50) return t('mentor.directory.card.studentsMedium');
-  return t('mentor.directory.card.studentsMany');
+/**
+ * "{used}/{max} students" — concrete capacity instead of bucket ranges.
+ * Bucket labels hid mentor capacity (a 1-student space with 20 slots looked
+ * the same as a 9-student space with 10 slots) and made cards feel inert.
+ */
+const studentCapacityLabel = (
+  count: number,
+  max: number,
+  t: ReturnType<typeof useTranslation>['t'],
+): string => {
+  if (max > 0) {
+    return t('mentor.directory.card.studentsCapacity', '{{n}}/{{max}} students', {
+      n: count,
+      max,
+    });
+  }
+  return t('mentor.directory.card.studentsCount', '{{n}} students', { n: count });
 };
 
 const MentorCard: React.FC<MentorCardProps> = ({ card, tags }) => {
@@ -158,7 +171,9 @@ const MentorCard: React.FC<MentorCardProps> = ({ card, tags }) => {
             <StarRow rating={card.avgRating} count={card.testimonialCount} />
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Users className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>{studentBucket(card.studentCount, t)}</span>
+              <span className="tabular-nums">
+                {studentCapacityLabel(card.studentCount, card.maxStudents, t)}
+              </span>
             </div>
           </div>
 

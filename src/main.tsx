@@ -12,7 +12,14 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes
+      gcTime: 30 * 60 * 1000, // 30 minutes — keep cache long enough that
+                              // tab switches stay instant after navigation.
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      // Show last-known data while a background refetch runs instead of
+      // flashing the skeleton on every remount. Critical for the mentor /
+      // student dashboards where users tab back and forth frequently.
+      placeholderData: (previousData: unknown) => previousData,
       retry: (failureCount, error) => {
         // Do not retry on 4xx client errors (bad request, auth, not found, etc.)
         if (error instanceof AxiosError && error.response) {

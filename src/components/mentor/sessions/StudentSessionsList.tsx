@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { CalendarX, CreditCard, Video, Clock, XCircle, Loader2 } from 'lucide-react';
+import { CalendarX, CreditCard, Video, Clock, XCircle, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -16,10 +16,22 @@ import {
 import {
   useMyBookings,
   useCancelMyBooking,
+  useHideMyBooking,
   useResumeBookingCheckout,
   StripeNotConfiguredError,
 } from '@/hooks/useMentorRevenue';
 import type { SessionBookingStatus, StudentBookingDto } from '@/types/dto';
+
+type ListMode = 'all' | 'active' | 'past';
+
+const ACTIVE_STATUSES: SessionBookingStatus[] = ['PENDING_PAYMENT', 'CONFIRMED'];
+
+const isTerminalStatus = (s: SessionBookingStatus): boolean =>
+  s === 'CANCELLED_BY_STUDENT'
+  || s === 'CANCELLED_BY_MENTOR'
+  || s === 'COMPLETED'
+  || s === 'NO_SHOW'
+  || s === 'REFUNDED';
 
 const STATUS_COLORS: Record<SessionBookingStatus, string> = {
   PENDING_PAYMENT: 'text-amber-500 bg-amber-500/10',
@@ -39,9 +51,11 @@ const fmtPrice = (cents: number, currency: string) => {
 interface BookingRowProps {
   booking: StudentBookingDto;
   onRequestCancel: (booking: StudentBookingDto) => void;
+  onHide?: (booking: StudentBookingDto) => void;
+  hidePending?: boolean;
 }
 
-const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel }) => {
+const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel, onHide, hidePending }) => {
   const { t } = useTranslation();
   const resumeCheckout = useResumeBookingCheckout();
   const [offlineNotice, setOfflineNotice] = useState(false);
@@ -189,22 +203,68 @@ const BookingRow: React.FC<BookingRowProps> = ({ booking, onRequestCancel }) => 
             </Button>
           </div>
         )}
+        {onHide && (
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+              onClick={() => onHide(booking)}
+              disabled={hidePending}
+            >
+              {hidePending ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+              )}
+              {t('mentor.sessions.hideBooking', 'Remove from my view')}
+            </Button>
+          </div>
+        )}
       </div>
     </article>
   );
 };
 
-const StudentSessionsList: React.FC = () => {
+interface StudentSessionsListProps {
+  /** Filter mode: 'active' shows pending/confirmed, 'past' shows terminal statuses, 'all' shows everything. */
+  mode?: ListMode;
+  /** When true, render a "Remove from my view" action on terminal rows. */
+  showHide?: boolean;
+  /** Hide internal heading + empty illustration; the parent owns the section chrome. */
+  bare?: boolean;
+}
+
+const StudentSessionsList: React.FC<StudentSessionsListProps> = ({
+  mode = 'all',
+  showHide = false,
+  bare = false,
+}) => {
   const { t } = useTranslation();
-  const { data: bookings = [], isLoading } = useMyBookings();
+  const { data: allBookings = [], isLoading } = useMyBookings();
   const cancelMutation = useCancelMyBooking();
+  const hideMutation = useHideMyBooking();
   const [target, setTarget] = useState<StudentBookingDto | null>(null);
+  const [hidingId, setHidingId] = useState<string | null>(null);
+
+  const bookings = allBookings.filter((b) => {
+    if (mode === 'active') return ACTIVE_STATUSES.includes(b.status);
+    if (mode === 'past') return isTerminalStatus(b.status);
+    return true;
+  });
 
   const handleConfirm = () => {
     if (!target) return;
     cancelMutation.mutate(target.id, {
       onSuccess: () => setTarget(null),
       onError: () => setTarget(null),
+    });
+  };
+
+  const handleHide = (b: StudentBookingDto) => {
+    setHidingId(b.id);
+    hideMutation.mutate(b.id, {
+      onSettled: () => setHidingId(null),
     });
   };
 
@@ -219,14 +279,26 @@ const StudentSessionsList: React.FC = () => {
   }
 
   if (bookings.length === 0) {
+    if (bare) {
+      return (
+        <p className="text-xs text-muted-foreground py-2">
+          {mode === 'past'
+            ? t('mentor.sessions.studentEmptyPast', 'No past or cancelled sessions to display.')
+            : mode === 'active'
+              ? t('mentor.sessions.studentEmptyActive', 'No upcoming sessions.')
+              : t('mentor.sessions.studentEmpty', "You haven't booked any sessions yet.")}
+        </p>
+      );
+    }
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-center">
         <CalendarX className="w-8 h-8 text-muted-foreground/40" />
         <p className="text-sm text-muted-foreground">
-          {t(
-            'mentor.sessions.studentEmpty',
-            "You haven't booked any sessions yet."
-          )}
+          {mode === 'past'
+            ? t('mentor.sessions.studentEmptyPast', 'No past or cancelled sessions to display.')
+            : mode === 'active'
+              ? t('mentor.sessions.studentEmptyActive', 'No upcoming sessions.')
+              : t('mentor.sessions.studentEmpty', "You haven't booked any sessions yet.")}
         </p>
       </div>
     );
@@ -235,15 +307,23 @@ const StudentSessionsList: React.FC = () => {
   return (
     <>
       <section aria-labelledby="my-sessions-heading" className="space-y-3">
-        <h3
-          id="my-sessions-heading"
-          className="text-sm font-semibold text-muted-foreground uppercase tracking-wide"
-        >
-          {t('mentor.sessions.myBookings', 'My booked sessions')}
-        </h3>
+        {!bare && (
+          <h3
+            id="my-sessions-heading"
+            className="text-sm font-semibold text-muted-foreground uppercase tracking-wide"
+          >
+            {t('mentor.sessions.myBookings', 'My booked sessions')}
+          </h3>
+        )}
         <div className="space-y-2">
           {bookings.map((b) => (
-            <BookingRow key={b.id} booking={b} onRequestCancel={setTarget} />
+            <BookingRow
+              key={b.id}
+              booking={b}
+              onRequestCancel={setTarget}
+              onHide={showHide && isTerminalStatus(b.status) ? handleHide : undefined}
+              hidePending={hidingId === b.id}
+            />
           ))}
         </div>
       </section>

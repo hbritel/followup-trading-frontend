@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -98,6 +98,68 @@ const LANG_DISPLAY: Record<string, string> = {
   ja: '日本語',
   ru: 'Русский',
   hi: 'हिन्दी',
+};
+
+interface PriceRangeFilterProps {
+  maxPrice: number;
+  freeOnly: boolean;
+  onChange: (next: Partial<FilterValues>) => void;
+}
+
+/**
+ * Local-state slider with commit on release. While the user is dragging the
+ * thumb, only the local preview number updates; the URL + API query change
+ * once at thumb-up via {@code onValueCommit}.
+ */
+const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
+  maxPrice,
+  freeOnly,
+  onChange,
+}) => {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(maxPrice);
+
+  useEffect(() => {
+    setDraft(maxPrice);
+  }, [maxPrice]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Switch
+          id="free-only"
+          checked={freeOnly}
+          onCheckedChange={(v) =>
+            onChange({ freeOnly: v, minPrice: 0, maxPrice: v ? 0 : MAX_PRICE })
+          }
+        />
+        <Label htmlFor="free-only" className="text-sm cursor-pointer">
+          {t('mentor.directory.filters.priceFree')}
+        </Label>
+      </div>
+
+      {!freeOnly && (
+        <div className="space-y-2 px-1">
+          <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+            <span>$0</span>
+            <span>
+              ${draft < MAX_PRICE ? draft : t('mentor.directory.filters.priceMax')}
+            </span>
+          </div>
+          <Slider
+            min={0}
+            max={MAX_PRICE}
+            step={5}
+            value={[draft]}
+            onValueChange={([val]) => setDraft(val)}
+            onValueCommit={([val]) => onChange({ maxPrice: val })}
+            className="w-full"
+            aria-label={t('mentor.directory.filters.priceRange')}
+          />
+        </div>
+      )}
+    </div>
+  );
 };
 
 const FilterRail: React.FC<FilterRailProps> = ({
@@ -223,38 +285,14 @@ const FilterRail: React.FC<FilterRailProps> = ({
       {/* Divider */}
       <div className="border-t border-border/40" />
 
-      {/* Price range */}
+      {/* Price range — local drag state with commit on release. Avoids
+          firing one URL update + API request per pixel of slider travel. */}
       <CollapsibleSection title={t('mentor.directory.filters.priceRange')}>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="free-only"
-              checked={values.freeOnly}
-              onCheckedChange={(v) => onChange({ freeOnly: v, minPrice: 0, maxPrice: v ? 0 : MAX_PRICE })}
-            />
-            <Label htmlFor="free-only" className="text-sm cursor-pointer">
-              {t('mentor.directory.filters.priceFree')}
-            </Label>
-          </div>
-
-          {!values.freeOnly && (
-            <div className="space-y-2 px-1">
-              <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                <span>$0</span>
-                <span>${values.maxPrice < MAX_PRICE ? values.maxPrice : t('mentor.directory.filters.priceMax')}</span>
-              </div>
-              <Slider
-                min={0}
-                max={MAX_PRICE}
-                step={5}
-                value={[values.maxPrice]}
-                onValueChange={([val]) => onChange({ maxPrice: val })}
-                className="w-full"
-                aria-label={t('mentor.directory.filters.priceRange')}
-              />
-            </div>
-          )}
-        </div>
+        <PriceRangeFilter
+          maxPrice={values.maxPrice}
+          freeOnly={values.freeOnly}
+          onChange={onChange}
+        />
       </CollapsibleSection>
 
       {/* Divider */}

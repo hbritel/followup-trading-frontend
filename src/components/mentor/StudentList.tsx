@@ -1,30 +1,34 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MoreHorizontal, Trash2, BarChart3, TrendingUp, Brain } from 'lucide-react';
+import { MoreHorizontal, Trash2, BarChart3, TrendingUp, Brain, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import StudentCohortChips from './StudentCohortChips';
 import type { MentorStudentDto } from '@/types/dto';
+
+const MIN_REMOVAL_REASON = 10;
+const MAX_REMOVAL_REASON = 2000;
 
 interface StudentListProps {
   students: MentorStudentDto[];
   onSelectStudent: (userId: string) => void;
-  onRemoveStudent: (userId: string) => void;
+  onRemoveStudent: (userId: string, reason: string) => void;
+  isRemoving?: boolean;
   searchQuery?: string;
   sortBy?: 'joined' | 'sharing';
   /**
@@ -63,6 +67,7 @@ const StudentList: React.FC<StudentListProps> = ({
   students,
   onSelectStudent,
   onRemoveStudent,
+  isRemoving = false,
   searchQuery = '',
   sortBy = 'joined',
   visibleStudentIds,
@@ -70,12 +75,24 @@ const StudentList: React.FC<StudentListProps> = ({
 }) => {
   const { t } = useTranslation();
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  const [removeReason, setRemoveReason] = useState('');
 
-  const handleConfirmRemove = () => {
-    if (removeTarget) {
-      onRemoveStudent(removeTarget);
-      setRemoveTarget(null);
-    }
+  // Reset the reason whenever the modal opens for a new target so a previous
+  // draft never leaks across removals.
+  useEffect(() => {
+    if (removeTarget !== null) setRemoveReason('');
+  }, [removeTarget]);
+
+  const trimmedReason = removeReason.trim();
+  const reasonValid =
+    trimmedReason.length >= MIN_REMOVAL_REASON
+    && trimmedReason.length <= MAX_REMOVAL_REASON;
+
+  const handleConfirmRemove = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!removeTarget || !reasonValid) return;
+    onRemoveStudent(removeTarget, trimmedReason);
+    setRemoveTarget(null);
   };
 
   const filteredStudents = useMemo(() => {
@@ -202,33 +219,88 @@ const StudentList: React.FC<StudentListProps> = ({
         </table>
       </div>
 
-      <AlertDialog
+      <Dialog
         open={removeTarget !== null}
-        onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               {t('mentor.removeStudent', 'Remove Student')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
+            </DialogTitle>
+            <DialogDescription>
               {t(
                 'mentor.removeConfirm',
-                'Are you sure you want to remove this student? They will need a new invite to rejoin.'
+                'Are you sure you want to remove this student? They will need a new invite to rejoin.',
               )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmRemove}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('common.remove', 'Remove')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleConfirmRemove} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="remove-reason" className="text-sm font-medium">
+                {t(
+                  'mentor.removalDialog.reasonLabel',
+                  'Explain why you are removing this student',
+                )}
+                <span className="text-destructive ml-0.5" aria-hidden="true">
+                  *
+                </span>
+              </Label>
+              <Textarea
+                id="remove-reason"
+                value={removeReason}
+                onChange={(e) => setRemoveReason(e.target.value)}
+                rows={5}
+                maxLength={MAX_REMOVAL_REASON}
+                placeholder={t(
+                  'mentor.removalDialog.reasonPlaceholder',
+                  'The student will see this message in their My Mentor page. Be specific and respectful.',
+                )}
+                required
+                aria-describedby="remove-reason-hint"
+              />
+              <div
+                id="remove-reason-hint"
+                className="flex items-center justify-between text-[11px] text-muted-foreground"
+              >
+                <span>
+                  {t(
+                    'mentor.removalDialog.reasonHint',
+                    'Min {{min}} characters · shown to the student.',
+                    { min: MIN_REMOVAL_REASON },
+                  )}
+                </span>
+                <span className="tabular-nums">
+                  {trimmedReason.length}/{MAX_REMOVAL_REASON}
+                </span>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRemoveTarget(null)}
+              >
+                {t('common.cancel', 'Cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={!reasonValid || isRemoving}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
+              >
+                {isRemoving && (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                )}
+                {t('common.remove', 'Remove')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

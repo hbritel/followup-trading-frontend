@@ -110,6 +110,10 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       label: t('sidebar.mentor', 'Mentor'),
       items: [
         { href: '/mentor', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
+        ...(hasMyMentor
+          ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
+          : []),
+        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon, matchPrefixes: ['/m/'] },
       ],
     },
     {
@@ -119,10 +123,6 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { href: '/leaderboard', label: t('sidebar.leaderboard', 'Leaderboard'), icon: AwardIcon },
         { href: '/social/feed', label: t('sidebar.marketFeed', 'Market Feed'), icon: NewspaperIcon, featureKey: 'market_feed', requiredPlan: 'STARTER' as const },
         { href: '/marketplace', label: t('sidebar.marketplace', 'Marketplace'), icon: ShoppingBagIcon },
-        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon, matchPrefixes: ['/m/'] },
-        ...(hasMyMentor
-          ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
-          : []),
         { href: '/study-groups', label: t('sidebar.studyGroups', 'Study Groups'), icon: UsersRoundIcon, requiredPlan: 'ELITE' as const },
       ],
     },

@@ -38,6 +38,7 @@ import {
   useDeleteSessionOffering,
 } from '@/hooks/useMentorRevenue';
 import ErrorState from '@/components/ui/ErrorState';
+import MoneyInput from '@/components/ui/MoneyInput';
 import MentorCohortPicker from '@/components/mentor/cohorts/MentorCohortPicker';
 import { useMentorCohorts } from '@/hooks/useMentor';
 import { Users } from 'lucide-react';
@@ -131,20 +132,12 @@ const OfferingForm: React.FC<OfferingFormProps> = ({ value, onChange }) => {
           <Label htmlFor="offering-price">
             {t('mentor.sessions.editor.price', 'Price')}
           </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
-              {value.currency === 'USD' ? '$' : value.currency === 'EUR' ? '€' : '£'}
-            </span>
-            <Input
-              id="offering-price"
-              type="number"
-              min={0}
-              step={0.01}
-              value={(value.priceCents / 100).toFixed(2)}
-              onChange={(e) => set('priceCents', Math.round(parseFloat(e.target.value) * 100))}
-              className="pl-7"
-            />
-          </div>
+          <MoneyInput
+            id="offering-price"
+            valueCents={value.priceCents}
+            currency={value.currency}
+            onChangeCents={(cents) => set('priceCents', cents)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="offering-currency">

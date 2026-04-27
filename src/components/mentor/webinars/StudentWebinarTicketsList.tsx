@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ticket, Video, CalendarX } from 'lucide-react';
-import { useMyWebinarTickets } from '@/hooks/useMentorRevenue';
+import { Ticket, CalendarX, Trash2, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useHideMyTicket, useMyWebinarTickets } from '@/hooks/useMentorRevenue';
 import type { WebinarTicketDto, WebinarTicketStatus } from '@/types/dto';
+
+type TicketListMode = 'all' | 'active' | 'past';
+
+const ACTIVE_TICKET_STATUSES: WebinarTicketStatus[] = ['PENDING_PAYMENT', 'PAID'];
+const isTerminalTicketStatus = (s: WebinarTicketStatus): boolean =>
+  s === 'REFUNDED' || s === 'CANCELLED';
 
 const STATUS_COLORS: Record<WebinarTicketStatus, string> = {
   PENDING_PAYMENT: 'text-amber-500 bg-amber-500/10',
@@ -11,7 +18,13 @@ const STATUS_COLORS: Record<WebinarTicketStatus, string> = {
   CANCELLED: 'text-destructive bg-destructive/10',
 };
 
-const TicketCard: React.FC<{ ticket: WebinarTicketDto }> = ({ ticket }) => {
+interface TicketCardProps {
+  ticket: WebinarTicketDto;
+  onHide?: (ticket: WebinarTicketDto) => void;
+  hidePending?: boolean;
+}
+
+const TicketCard: React.FC<TicketCardProps> = ({ ticket, onHide, hidePending }) => {
   const { t } = useTranslation();
   const fmtDate = new Date(ticket.createdAt).toLocaleDateString(undefined, {
     dateStyle: 'medium',
@@ -49,14 +62,60 @@ const TicketCard: React.FC<{ ticket: WebinarTicketDto }> = ({ ticket }) => {
             )}
           </p>
         )}
+        {onHide && (
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+              onClick={() => onHide(ticket)}
+              disabled={hidePending}
+            >
+              {hidePending ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+              )}
+              {t('mentor.webinars.hideTicket', 'Remove from my view')}
+            </Button>
+          </div>
+        )}
       </div>
     </article>
   );
 };
 
-const StudentWebinarTicketsList: React.FC = () => {
+interface StudentWebinarTicketsListProps {
+  /** Filter mode: 'active' shows pending/paid, 'past' shows refunded/cancelled, 'all' shows everything. */
+  mode?: TicketListMode;
+  /** When true, render a "Remove from my view" action on terminal rows. */
+  showHide?: boolean;
+  /** Hide internal heading + empty illustration; the parent owns the section chrome. */
+  bare?: boolean;
+}
+
+const StudentWebinarTicketsList: React.FC<StudentWebinarTicketsListProps> = ({
+  mode = 'all',
+  showHide = false,
+  bare = false,
+}) => {
   const { t } = useTranslation();
-  const { data: tickets = [], isLoading } = useMyWebinarTickets();
+  const { data: allTickets = [], isLoading } = useMyWebinarTickets();
+  const hideMutation = useHideMyTicket();
+  const [hidingId, setHidingId] = useState<string | null>(null);
+
+  const tickets = allTickets.filter((tk) => {
+    if (mode === 'active') return ACTIVE_TICKET_STATUSES.includes(tk.status);
+    if (mode === 'past') return isTerminalTicketStatus(tk.status);
+    return true;
+  });
+
+  const handleHide = (tk: WebinarTicketDto) => {
+    setHidingId(tk.id);
+    hideMutation.mutate(tk.id, {
+      onSettled: () => setHidingId(null),
+    });
+  };
 
   if (isLoading) {
     return (
@@ -69,30 +128,41 @@ const StudentWebinarTicketsList: React.FC = () => {
   }
 
   if (tickets.length === 0) {
+    const emptyMsg =
+      mode === 'past'
+        ? t('mentor.webinars.studentEmptyPast', 'No refunded or cancelled tickets to display.')
+        : mode === 'active'
+          ? t('mentor.webinars.studentEmptyActive', 'No upcoming webinar tickets.')
+          : t('mentor.webinars.studentEmpty', "You haven't purchased any webinar tickets yet.");
+    if (bare) {
+      return <p className="text-xs text-muted-foreground py-2">{emptyMsg}</p>;
+    }
     return (
       <div className="flex flex-col items-center gap-2 py-8 text-center">
         <CalendarX className="w-8 h-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">
-          {t('mentor.webinars.studentEmpty', "You haven't purchased any webinar tickets yet.")}
-        </p>
+        <p className="text-sm text-muted-foreground">{emptyMsg}</p>
       </div>
     );
   }
 
   return (
-    <section
-      aria-labelledby="my-tickets-heading"
-      className="space-y-3"
-    >
-      <h3
-        id="my-tickets-heading"
-        className="text-sm font-semibold text-muted-foreground uppercase tracking-wide"
-      >
-        {t('mentor.webinars.myTickets', 'My webinar tickets')}
-      </h3>
+    <section aria-labelledby="my-tickets-heading" className="space-y-3">
+      {!bare && (
+        <h3
+          id="my-tickets-heading"
+          className="text-sm font-semibold text-muted-foreground uppercase tracking-wide"
+        >
+          {t('mentor.webinars.myTickets', 'My webinar tickets')}
+        </h3>
+      )}
       <div className="space-y-2">
         {tickets.map((tk) => (
-          <TicketCard key={tk.id} ticket={tk} />
+          <TicketCard
+            key={tk.id}
+            ticket={tk}
+            onHide={showHide && isTerminalTicketStatus(tk.status) ? handleHide : undefined}
+            hidePending={hidingId === tk.id}
+          />
         ))}
       </div>
     </section>

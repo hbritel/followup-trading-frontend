@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarX, Loader2, Video, Clock, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -167,11 +167,110 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onCancel }) => {
   );
 };
 
+type BookingFilter = 'upcoming' | 'past' | 'cancelled' | 'pendingPayment' | 'all';
+
+const TERMINAL_STATUSES: SessionBookingStatus[] = [
+  'COMPLETED',
+  'NO_SHOW',
+  'REFUNDED',
+];
+const CANCELLED_STATUSES: SessionBookingStatus[] = [
+  'CANCELLED_BY_STUDENT',
+  'CANCELLED_BY_MENTOR',
+];
+
 const MentorSessionsList: React.FC = () => {
   const { t } = useTranslation();
-  const [upcoming, setUpcoming] = useState(true);
-  const { data: bookings = [], isLoading } = useMentorSessionBookings(upcoming);
+  const [filter, setFilter] = useState<BookingFilter>('upcoming');
+  const { data: bookings = [], isLoading } = useMentorSessionBookings();
   const [cancelTarget, setCancelTarget] = useState<SessionBookingDto | undefined>(undefined);
+
+  // Per-filter counts so each tab shows how many rows match — cheap, comes
+  // from a single fetched payload thanks to the cache rework on the hook.
+  const counts = useMemo(() => {
+    const now = Date.now();
+    const isFuture = (b: SessionBookingDto) =>
+      new Date(b.scheduledAt).getTime() > now;
+    return {
+      upcoming: bookings.filter(
+        (b) =>
+          (b.status === 'CONFIRMED' || b.status === 'PENDING_PAYMENT')
+          && isFuture(b),
+      ).length,
+      past: bookings.filter(
+        (b) =>
+          TERMINAL_STATUSES.includes(b.status)
+          || ((b.status === 'CONFIRMED' || b.status === 'PENDING_PAYMENT')
+            && !isFuture(b)),
+      ).length,
+      cancelled: bookings.filter((b) => CANCELLED_STATUSES.includes(b.status))
+        .length,
+      pendingPayment: bookings.filter((b) => b.status === 'PENDING_PAYMENT')
+        .length,
+      all: bookings.length,
+    };
+  }, [bookings]);
+
+  const visibleBookings = useMemo(() => {
+    const now = Date.now();
+    const isFuture = (b: SessionBookingDto) =>
+      new Date(b.scheduledAt).getTime() > now;
+    const sorted = [...bookings].sort(
+      (a, b) =>
+        new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+    );
+    switch (filter) {
+      case 'upcoming':
+        return sorted
+          .filter(
+            (b) =>
+              (b.status === 'CONFIRMED' || b.status === 'PENDING_PAYMENT')
+              && isFuture(b),
+          )
+          .reverse(); // soonest first
+      case 'past':
+        return sorted.filter(
+          (b) =>
+            TERMINAL_STATUSES.includes(b.status)
+            || ((b.status === 'CONFIRMED' || b.status === 'PENDING_PAYMENT')
+              && !isFuture(b)),
+        );
+      case 'cancelled':
+        return sorted.filter((b) => CANCELLED_STATUSES.includes(b.status));
+      case 'pendingPayment':
+        return sorted.filter((b) => b.status === 'PENDING_PAYMENT');
+      case 'all':
+      default:
+        return sorted;
+    }
+  }, [bookings, filter]);
+
+  const filterTabs: Array<{ key: BookingFilter; label: string }> = [
+    { key: 'all', label: t('mentor.sessions.filter.all', 'All') },
+    { key: 'upcoming', label: t('mentor.sessions.filter.upcoming', 'Upcoming') },
+    { key: 'past', label: t('mentor.sessions.filter.past', 'Past') },
+    { key: 'cancelled', label: t('mentor.sessions.filter.cancelled', 'Cancelled') },
+    { key: 'pendingPayment', label: t('mentor.sessions.filter.pendingPayment', 'Pending payment') },
+  ];
+
+  const emptyLabel = (() => {
+    switch (filter) {
+      case 'upcoming':
+        return t('mentor.sessions.emptyUpcoming', 'No upcoming bookings yet.');
+      case 'past':
+        return t('mentor.sessions.emptyPast', 'No past bookings found.');
+      case 'cancelled':
+        return t('mentor.sessions.emptyCancelled', 'No cancelled bookings.');
+      case 'pendingPayment':
+        return t(
+          'mentor.sessions.emptyPendingPayment',
+          'No bookings waiting for payment.',
+        );
+      case 'all':
+      default:
+        return t('mentor.sessions.emptyAll', 'No bookings yet.');
+    }
+  })();
 
   return (
     <div className="space-y-4">
@@ -180,16 +279,22 @@ const MentorSessionsList: React.FC = () => {
           {t('mentor.sessions.bookingsTitle', 'Session bookings')}
         </h3>
         <Tabs
-          value={upcoming ? 'upcoming' : 'past'}
-          onValueChange={(v) => setUpcoming(v === 'upcoming')}
+          value={filter}
+          onValueChange={(v) => setFilter(v as BookingFilter)}
         >
-          <TabsList className="h-8">
-            <TabsTrigger value="upcoming" className="text-xs px-3 h-7">
-              {t('mentor.sessions.upcoming', 'Upcoming')}
-            </TabsTrigger>
-            <TabsTrigger value="past" className="text-xs px-3 h-7">
-              {t('mentor.sessions.past', 'Past')}
-            </TabsTrigger>
+          <TabsList className="h-8 flex-wrap">
+            {filterTabs.map((tab) => (
+              <TabsTrigger
+                key={tab.key}
+                value={tab.key}
+                className="text-xs px-3 h-7 gap-1.5"
+              >
+                {tab.label}
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {counts[tab.key]}
+                </span>
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
       </div>
@@ -200,18 +305,14 @@ const MentorSessionsList: React.FC = () => {
             <div key={i} className="h-20 rounded-xl bg-muted/30 animate-pulse" />
           ))}
         </div>
-      ) : bookings.length === 0 ? (
+      ) : visibleBookings.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <CalendarX className="w-8 h-8 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {upcoming
-              ? t('mentor.sessions.emptyUpcoming', 'No upcoming bookings yet.')
-              : t('mentor.sessions.emptyPast', 'No past bookings found.')}
-          </p>
+          <p className="text-sm text-muted-foreground">{emptyLabel}</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {bookings.map((b) => (
+          {visibleBookings.map((b) => (
             <BookingCard key={b.id} booking={b} onCancel={setCancelTarget} />
           ))}
         </div>

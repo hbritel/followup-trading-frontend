@@ -165,18 +165,18 @@ const PublicProfileSection: React.FC<Props> = ({ instance }) => {
         </div>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="public-profile-body"
-          className="gap-1"
+          aria-label={open ? t('common.collapse', 'Collapse') : t('common.expand', 'Expand')}
+          className="h-8 w-8"
         >
           {open ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
-          {open ? t('common.collapse', 'Collapse') : t('common.expand', 'Expand')}
         </Button>
       </div>
 
