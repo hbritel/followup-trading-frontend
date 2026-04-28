@@ -621,6 +621,14 @@
   "admin": {
     "administration": "Administración",
     "administrationDescription": "Gestione usuarios, roles y configuración del sistema",
+    "section": {
+      "overview": "Vista",
+      "users": "Usuarios",
+      "revenue": "Ingresos",
+      "mentors": "Mentores",
+      "compliance": "Cumplimiento",
+      "system": "Sistema"
+    },
     "systemManagement": "Gestión del sistema",
     "search": "Buscar...",
     "users": "Usuarios",
@@ -815,6 +823,14 @@
       "suspendDescription": "El mentor no podrá aceptar nuevos alumnos. Las sesiones existentes continúan.",
       "suspendAction": "Suspender",
       "instanceIdLabel": "ID instancia mentor",
+      "mentorLabel": "Mentor",
+      "mentorPlaceholder": "Seleccionar un mentor por nombre, slug o ID",
+      "mentorSearchPlaceholder": "Buscar por nombre, slug o ID…",
+      "mentorNoResult": "Ningún mentor encontrado.",
+      "verified": "Verificado",
+      "inactive": "Inactivo",
+      "alreadySuspended": "Suspendido",
+      "alreadySuspendedHint": "Este mentor ya está suspendido — levante la suspensión actual antes de emitir una nueva.",
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Infracción de política, control de sanciones, etc.",
       "liftTitle": "¿Levantar suspensión?",
@@ -3079,6 +3095,16 @@
     "evalsPassed": "Evals superadas"
   },
   "mentor": {
+    "strike": {
+      "warningTitle": "Mentoría suspendida",
+      "warningDescription": "Su mentoría ha sido suspendida por el equipo administrativo.",
+      "bannedTitle": "Cuenta FollowUp Trading suspendida",
+      "bannedDescription": "Su cuenta está bloqueada tras infracciones repetidas. Contacte al soporte para impugnar.",
+      "reasonLabel": "Motivo",
+      "cooldownLine": "Podrá crear una nueva mentoría a partir del {{date}}.",
+      "lastChance": "Otra infracción resultará en la suspensión completa de su cuenta FollowUp Trading.",
+      "dismiss": "Entendido"
+    },
     "title": "Hub del Mentor",
     "editInstance": "Editar instancia",
     "createSpace": "Crea tu espacio de mentor",

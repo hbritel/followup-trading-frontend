@@ -662,6 +662,14 @@
   "admin": {
     "administration": "Administration",
     "administrationDescription": "Manage users, roles, and system settings",
+    "section": {
+      "overview": "Overview",
+      "users": "Users",
+      "revenue": "Revenue",
+      "mentors": "Mentors",
+      "compliance": "Compliance",
+      "system": "System"
+    },
     "aiUsageTab": "AI Usage",
     "aiUsage": {
       "sectionTitle": "AI Coach Usage",
@@ -824,6 +832,14 @@
       "suspendDescription": "The mentor will be prevented from accepting new students. Existing sessions continue.",
       "suspendAction": "Suspend",
       "instanceIdLabel": "Mentor instance ID",
+      "mentorLabel": "Mentor",
+      "mentorPlaceholder": "Select a mentor by name, slug, or ID",
+      "mentorSearchPlaceholder": "Search by name, slug, or ID…",
+      "mentorNoResult": "No mentor found.",
+      "verified": "Verified",
+      "inactive": "Inactive",
+      "alreadySuspended": "Suspended",
+      "alreadySuspendedHint": "This mentor is already suspended — lift the current suspension before issuing a new one.",
       "reasonLabel": "Reason",
       "reasonPlaceholder": "Policy violation, sanctions hit, etc.",
       "liftTitle": "Lift suspension?",
@@ -3264,6 +3280,16 @@
     "evalsPassed": "Evals Passed"
   },
   "mentor": {
+    "strike": {
+      "warningTitle": "Mentorship suspended",
+      "warningDescription": "Your mentorship has been suspended by the admin team.",
+      "bannedTitle": "FollowUp Trading account suspended",
+      "bannedDescription": "Your account is now blocked after repeated violations. Contact support to dispute.",
+      "reasonLabel": "Reason",
+      "cooldownLine": "You'll be able to create a new mentorship from {{date}}.",
+      "lastChance": "Another violation will result in the full suspension of your FollowUp Trading account.",
+      "dismiss": "Got it"
+    },
     "createInstance": "Create Mentor Instance",
     "editInstance": "Mentor Instance",
     "editInstanceDesc": "Manage your mentor program",

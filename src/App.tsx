@@ -72,6 +72,7 @@ import { useFingerprint } from '@/hooks/useFingerprint';
 import { PreferencesProvider } from '@/contexts/preferences-context';
 import { FeatureFlagsProvider } from '@/contexts/feature-flags-context';
 import { FeatureGate } from '@/components/guards/FeatureGate';
+import MentorshipGate from '@/components/feature/MentorshipGate';
 import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import PlanChangeListener from '@/components/subscription/PlanChangeListener';
@@ -142,9 +143,9 @@ function App() {
                     <Route path="/prop-firm/evaluation/:id" element={<FeatureGate featureKey="prop_firm" requiredPlan="STARTER"><PropFirmEvaluationDetail /></FeatureGate>} />
                     <Route path="/social/feed" element={<FeatureGate featureKey="market_feed" requiredPlan="STARTER"><SocialFeed /></FeatureGate>} />
                     <Route path="/ai-coach" element={<FeatureGate featureKey="ai_chat" requiredPlan="STARTER"><AiCoach /></FeatureGate>} />
-                    <Route path="/mentor" element={<FeatureGate requiredPlan="TEAM"><Mentor /></FeatureGate>} />
-                    <Route path="/mentor/dashboard" element={<Navigate to="/mentor" replace />} />
-                    <Route path="/my-mentor" element={<MyMentor />} />
+                    <Route path="/mentor" element={<MentorshipGate><FeatureGate requiredPlan="TEAM"><Mentor /></FeatureGate></MentorshipGate>} />
+                    <Route path="/mentor/dashboard" element={<MentorshipGate><Navigate to="/mentor" replace /></MentorshipGate>} />
+                    <Route path="/my-mentor" element={<MentorshipGate><MyMentor /></MentorshipGate>} />
                     <Route path="/study-groups" element={<FeatureGate requiredPlan="ELITE"><StudyGroups /></FeatureGate>} />
                     <Route path="/propfirm-admin" element={<FeatureGate requiredPlan="ELITE"><PropFirmAdmin /></FeatureGate>} />
                     <Route path="/options" element={<FeatureGate requiredPlan="PRO"><OptionSpreads /></FeatureGate>} />
@@ -155,10 +156,10 @@ function App() {
                   </Route>
 
                   {/* Public routes — no auth required */}
-                  <Route path="/become-a-mentor" element={<BecomeMentor />} />
-                  <Route path="/mentors" element={<MentorDirectory />} />
-                  <Route path="/join/:inviteCode" element={<JoinMentor />} />
-                  <Route path="/m/:slug" element={<PublicMentorProfile />} />
+                  <Route path="/become-a-mentor" element={<MentorshipGate redirectTo="/"><BecomeMentor /></MentorshipGate>} />
+                  <Route path="/mentors" element={<MentorshipGate redirectTo="/"><MentorDirectory /></MentorshipGate>} />
+                  <Route path="/join/:inviteCode" element={<MentorshipGate redirectTo="/"><JoinMentor /></MentorshipGate>} />
+                  <Route path="/m/:slug" element={<MentorshipGate redirectTo="/"><PublicMentorProfile /></MentorshipGate>} />
                   <Route path="/payment/success" element={<PaymentSuccess />} />
                   <Route path="/payment/canceled" element={<PaymentCanceled />} />
                   <Route path="/pricing" element={<Pricing />} />

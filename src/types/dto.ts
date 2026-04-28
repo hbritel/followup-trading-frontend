@@ -2332,3 +2332,40 @@ export interface AdminSuspensionDto {
   suspendedAt: string;
   liftedAt?: string | null;
 }
+
+export interface AdminMentorListItemDto {
+  id: string;
+  brandName: string;
+  slug: string | null;
+  active: boolean;
+  verified: boolean;
+}
+
+export interface MentorStrikeStatusDto {
+  unacknowledgedStrikeId: string | null;
+  unacknowledgedReason: string | null;
+  unacknowledgedLevel: number | null;
+  unacknowledgedIssuedAt: string | null;
+  cooldownUntil: string | null;
+  accountBanned: boolean;
+}
+
+export type MentorStrikeCategory =
+  | 'FRAUD'
+  | 'ILLEGAL_CONTENT'
+  | 'TOS_VIOLATION'
+  | 'QUALITY_COMPLAINT'
+  | 'SANCTIONS_HIT'
+  | 'TEMPORARY_HOLD'
+  | 'MENTOR_INCAPACITATED'
+  | 'PLATFORM_ERROR';
+
+export type MentorSuspensionType = 'TEMPORARY' | 'PERMANENT_BAN' | 'PRECAUTIONARY';
+
+export interface MentorSuspensionImpactDto {
+  subscriptionsAffected: number;
+  bookingsRefundable: number;
+  ticketsRefundable: number;
+  bookingsRefundCents: number;
+  currency: string;
+}

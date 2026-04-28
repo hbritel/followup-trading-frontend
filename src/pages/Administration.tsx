@@ -1,4 +1,4 @@
-import { useState, useDeferredValue, useMemo } from 'react';
+import React, { useState, useDeferredValue, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -92,6 +92,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 import {
   useAdminUsers,
   useAdminSearchUsers,
@@ -261,10 +262,11 @@ function ConfirmActionDialog({ confirmAction, onConfirm, onClose }: {
 
 // ── Users Tab ─────────────────────────────────────────────────────────────────
 
-function UsersTab({ searchQuery }: { searchQuery: string }) {
+function UsersTab() {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const deferredSearch = useDeferredValue(searchQuery.trim());
 
   const listQuery = useAdminUsers(page, 20);
@@ -352,7 +354,20 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
   }
 
   return (
-    <>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative w-full sm:w-[280px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder={t('admin.searchUsers')}
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="rounded-lg border overflow-x-auto">
         <table className="w-full min-w-[860px]">
           <thead>
@@ -457,10 +472,14 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
                         disabled={setStatusMutation.isPending}
                         aria-label={user.enabled ? t('admin.disableUser') : t('admin.enableUser')}
                       />
-                      <span className={cn(
-                        'text-xs font-medium',
-                        user.enabled ? 'text-emerald-500' : 'text-muted-foreground',
-                      )}>
+                      <span
+                        className={cn(
+                          'inline-block h-2 w-2 rounded-full',
+                          user.enabled ? 'bg-emerald-500' : 'bg-muted-foreground/40',
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">
                         {user.enabled ? t('admin.active') : t('admin.inactive')}
                       </span>
                     </div>
@@ -469,7 +488,7 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-xs text-muted-foreground">{fmtDate(user.lastLoginAt)}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(user.lastLoginAt)}</span>
                         </TooltipTrigger>
                         <TooltipContent>{fmtDateFull(user.lastLoginAt)}</TooltipContent>
                       </Tooltip>
@@ -667,7 +686,7 @@ function UsersTab({ searchQuery }: { searchQuery: string }) {
           onOpenChange={(open) => { if (!open) setFeatureOverrideUser(null); }}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -1146,6 +1165,7 @@ function DashboardTab() {
 
 function SubscriptionsTab() {
   const { t } = useTranslation();
+  const mentorshipEnabled = useMentorshipEnabled();
   const [page, setPage] = useState(0);
   const { data, isLoading, isError } = useAdminSubscriptions(page, 20);
   const changePlanMutation = useChangeUserPlan();
@@ -1163,7 +1183,12 @@ function SubscriptionsTab() {
     return <p className="text-sm text-destructive py-4">{t('common.errorLoadingData')}</p>;
   }
 
-  const subs = data?.content ?? [];
+  // Hide TEAM-plan subscribers entirely while the mentorship feature is OFF —
+  // the plan should not exist as far as the admin is concerned.
+  const allSubs = data?.content ?? [];
+  const subs = mentorshipEnabled
+    ? allSubs
+    : allSubs.filter((s) => s.plan !== 'TEAM');
 
   return (
     <>
@@ -1907,6 +1932,7 @@ function PromoFormDialog({
   initial: Partial<PromoCodeDto> | null;
 }) {
   const { t } = useTranslation();
+  const mentorshipEnabled = useMentorshipEnabled();
   const createMutation = useCreatePromo();
   const updateMutation = useUpdatePromo();
   const [form, setForm] = useState<Partial<PromoCodeDto>>(initial ?? EMPTY_PROMO);
@@ -2002,7 +2028,9 @@ function PromoFormDialog({
                   <SelectItem value="STARTER">Starter</SelectItem>
                   <SelectItem value="PRO">Pro</SelectItem>
                   <SelectItem value="ELITE">Elite</SelectItem>
-                  <SelectItem value="TEAM">Team</SelectItem>
+                  {mentorshipEnabled && (
+                    <SelectItem value="TEAM">Team</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -2348,7 +2376,120 @@ function PromotionsTab() {
 const Administration = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [searchQuery, setSearchQuery] = useState('');
+  const mentorshipEnabled = useMentorshipEnabled();
+
+  // Sub-nav model — grouped to avoid the 13-tab horizontal sprawl.
+  // Sections render as small uppercase labels on lg+; on narrow screens the
+  // labels collapse and triggers fall back to a horizontal scrollable strip.
+  const tabSections: Array<{
+    id: string;
+    label: string;
+    items: Array<{ value: string; icon: React.ReactNode; label: string }>;
+  }> = [
+    {
+      id: 'overview',
+      label: t('admin.section.overview', 'Vue'),
+      items: [
+        {
+          value: 'dashboard',
+          icon: <BarChart3 className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.dashboard', 'Tableau de bord'),
+        },
+      ],
+    },
+    {
+      id: 'users',
+      label: t('admin.section.users', 'Utilisateurs'),
+      items: [
+        {
+          value: 'users',
+          icon: <Users className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.users'),
+        },
+        {
+          value: 'subscriptions',
+          icon: <CreditCard className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.subscriptions', 'Abonnements'),
+        },
+        {
+          value: 'brokerConnections',
+          icon: <Plug className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.brokerConnections', 'Connexions'),
+        },
+      ],
+    },
+    {
+      id: 'revenue',
+      label: t('admin.section.revenue', 'Revenus'),
+      items: [
+        {
+          value: 'billing',
+          icon: <Wallet className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.billing', 'Facturation'),
+        },
+        {
+          value: 'promotions',
+          icon: <Tag className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.promotions', 'Promotions'),
+        },
+        {
+          value: 'aiUsage',
+          icon: <Sparkles className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.aiUsageTab', 'AI Usage'),
+        },
+      ],
+    },
+    {
+      id: 'mentors',
+      label: t('admin.section.mentors', 'Mentors'),
+      items: mentorshipEnabled
+        ? [
+            {
+              value: 'mentorModeration',
+              icon: <UserCheck className="h-4 w-4" strokeWidth={1.75} />,
+              label: t('admin.mentorModeration', 'Modération'),
+            },
+            {
+              value: 'mentorSuspensions',
+              icon: <ShieldOff className="h-4 w-4" strokeWidth={1.75} />,
+              label: t('admin.mentorSuspensions', 'Suspensions'),
+            },
+          ]
+        : [],
+    },
+    {
+      id: 'compliance',
+      label: t('admin.section.compliance', 'Conformité'),
+      items: [
+        {
+          value: 'auditLog',
+          icon: <FileText className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.auditLog'),
+        },
+        {
+          value: 'dac7',
+          icon: <Receipt className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.dac7.tab', 'DAC7'),
+        },
+        {
+          value: 'dsa',
+          icon: <Scale className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.dsa.tab', 'DSA'),
+        },
+      ],
+    },
+    {
+      id: 'system',
+      label: t('admin.section.system', 'Système'),
+      items: [
+        {
+          value: 'system',
+          icon: <ToggleLeft className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.system', 'Système'),
+        },
+      ],
+    },
+  ];
 
   return (
     <DashboardLayout pageTitle={t('admin.administration')}>
@@ -2359,125 +2500,104 @@ const Administration = () => {
             <h1 className="text-2xl font-bold">{t('admin.administration')}</h1>
             <p className="text-sm text-muted-foreground">{t('admin.administrationDescription')}</p>
           </div>
-          {activeTab === 'users' && (
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={t('admin.searchUsers')}
-                className="pl-8 w-full sm:w-[260px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchQuery(''); }}>
-          <TabsList>
-            <TabsTrigger value="dashboard" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              {t('admin.dashboard', 'Dashboard')}
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              {t('admin.users')}
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              {t('admin.subscriptions', 'Subscriptions')}
-            </TabsTrigger>
-            <TabsTrigger value="auditLog" className="gap-2">
-              <FileText className="h-4 w-4" />
-              {t('admin.auditLog')}
-            </TabsTrigger>
-            <TabsTrigger value="brokerConnections" className="gap-2">
-              <Plug className="h-4 w-4" />
-              {t('admin.brokerConnections', 'Connections')}
-            </TabsTrigger>
-            <TabsTrigger value="promotions" className="gap-2">
-              <Tag className="h-4 w-4" />
-              {t('admin.promotions', 'Promotions')}
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-2">
-              <Wallet className="h-4 w-4" />
-              {t('admin.billing', 'Billing')}
-            </TabsTrigger>
-            <TabsTrigger value="aiUsage" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              {t('admin.aiUsageTab', 'AI Usage')}
-            </TabsTrigger>
-            <TabsTrigger value="mentorModeration" className="gap-2">
-              <UserCheck className="h-4 w-4" />
-              {t('admin.mentorModeration', 'Mentors')}
-            </TabsTrigger>
-            <TabsTrigger value="mentorSuspensions" className="gap-2">
-              <ShieldOff className="h-4 w-4" />
-              {t('admin.mentorSuspensions', 'Suspensions')}
-            </TabsTrigger>
-            <TabsTrigger value="dac7" className="gap-2">
-              <Receipt className="h-4 w-4" />
-              {t('admin.dac7.tab', 'DAC7')}
-            </TabsTrigger>
-            <TabsTrigger value="dsa" className="gap-2">
-              <Scale className="h-4 w-4" />
-              {t('admin.dsa.tab', 'DSA')}
-            </TabsTrigger>
-            <TabsTrigger value="system" className="gap-2">
-              <ToggleLeft className="h-4 w-4" />
-              {t('admin.system', 'System')}
-            </TabsTrigger>
-          </TabsList>
+        <Tabs
+          orientation="vertical"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-col lg:flex-row gap-6"
+        >
+          {/* Vertical sub-nav (Stripe/Linear-style). Falls back to a horizontal
+              scrollable strip on narrow screens — admin is desktop-first. */}
+          <aside
+            className="lg:w-60 lg:shrink-0"
+            aria-label={t('admin.adminNavigation', 'Navigation administration')}
+          >
+            <TabsList className="flex flex-row gap-1 overflow-x-auto bg-transparent p-0 h-auto items-stretch lg:flex-col lg:gap-y-0.5 lg:overflow-visible lg:sticky lg:top-4 lg:self-start lg:items-stretch lg:bg-muted/30 lg:border lg:border-border/40 lg:rounded-xl lg:p-2">
+              {tabSections
+                .filter((section) => section.items.length > 0)
+                .map((section, idx) => (
+                <React.Fragment key={section.id}>
+                  {idx > 0 && <div className="hidden lg:block h-3" aria-hidden="true" />}
+                  <div
+                    className="hidden lg:block px-3 pt-1.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60"
+                    aria-hidden="true"
+                  >
+                    {section.label}
+                  </div>
+                  {section.items.map((item) => (
+                    <TabsTrigger
+                      key={item.value}
+                      value={item.value}
+                      className="shrink-0 gap-2.5 px-3 py-1.5 text-sm transition-colors hover:bg-muted/40 lg:w-full lg:justify-start lg:rounded-md lg:data-[state=inactive]:text-muted-foreground"
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </React.Fragment>
+              ))}
+            </TabsList>
+          </aside>
 
-          <TabsContent value="dashboard" className="mt-6">
-            <DashboardTab />
-          </TabsContent>
+          {/* Content column */}
+          <div className="flex-1 min-w-0">
+            <TabsContent value="dashboard" className="mt-0">
+              <DashboardTab />
+            </TabsContent>
 
-          <TabsContent value="users" className="mt-6">
-            <UsersTab searchQuery={searchQuery} />
-          </TabsContent>
+            <TabsContent value="users" className="mt-0">
+              <UsersTab />
+            </TabsContent>
 
-          <TabsContent value="subscriptions" className="mt-6">
-            <SubscriptionsTab />
-          </TabsContent>
+            <TabsContent value="subscriptions" className="mt-0">
+              <SubscriptionsTab />
+            </TabsContent>
 
-          <TabsContent value="auditLog" className="mt-6">
-            <AuditLogsTab />
-          </TabsContent>
+            <TabsContent value="auditLog" className="mt-0">
+              <AuditLogsTab />
+            </TabsContent>
 
-          <TabsContent value="brokerConnections" className="mt-6">
-            <BrokerConnectionsTab />
-          </TabsContent>
+            <TabsContent value="brokerConnections" className="mt-0">
+              <BrokerConnectionsTab />
+            </TabsContent>
 
-          <TabsContent value="promotions" className="mt-6">
-            <PromotionsTab />
-          </TabsContent>
+            <TabsContent value="promotions" className="mt-0">
+              <PromotionsTab />
+            </TabsContent>
 
+            <TabsContent value="billing" className="mt-0">
+              <BillingTab />
+            </TabsContent>
 
-          <TabsContent value="billing" className="mt-6">
-            <BillingTab />
-          </TabsContent>
-          <TabsContent value="aiUsage" className="mt-6">
-            <AiUsageTab />
-          </TabsContent>
-          <TabsContent value="mentorModeration" className="mt-6">
-            <div className="space-y-8">
-              <AdminMentorVerificationQueue />
-              <AdminMentorComplaintQueue />
-            </div>
-          </TabsContent>
-          <TabsContent value="mentorSuspensions" className="mt-6">
-            <AdminMentorSuspensionsTab />
-          </TabsContent>
-          <TabsContent value="dac7" className="mt-6">
-            <AdminDac7Tab />
-          </TabsContent>
-          <TabsContent value="dsa" className="mt-6">
-            <AdminDsaTab />
-          </TabsContent>
-          <TabsContent value="system" className="mt-6">
-            <FeatureFlagsTab />
-          </TabsContent>
+            <TabsContent value="aiUsage" className="mt-0">
+              <AiUsageTab />
+            </TabsContent>
+
+            <TabsContent value="mentorModeration" className="mt-0">
+              <div className="space-y-8">
+                <AdminMentorVerificationQueue />
+                <AdminMentorComplaintQueue />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="mentorSuspensions" className="mt-0">
+              <AdminMentorSuspensionsTab />
+            </TabsContent>
+
+            <TabsContent value="dac7" className="mt-0">
+              <AdminDac7Tab />
+            </TabsContent>
+
+            <TabsContent value="dsa" className="mt-0">
+              <AdminDsaTab />
+            </TabsContent>
+
+            <TabsContent value="system" className="mt-0">
+              <FeatureFlagsTab />
+            </TabsContent>
+          </div>
         </Tabs>
       </PageTransition>
     </DashboardLayout>

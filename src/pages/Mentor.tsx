@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StudentList from '@/components/mentor/StudentList';
+import MentorStrikeBanner from '@/components/mentor/MentorStrikeBanner';
 import StudentDetailModal from '@/components/mentor/StudentDetailModal';
 import AnnouncementsSection from '@/components/mentor/AnnouncementsSection';
 import AtRiskDialog from '@/components/mentor/AtRiskDialog';
@@ -895,7 +896,10 @@ const Mentor: React.FC = () => {
   if (!instance) {
     return (
       <DashboardLayout pageTitle={t('mentor.title', 'Mentor Hub')}>
-        <OnboardingCard />
+        <div className="space-y-6">
+          <MentorStrikeBanner />
+          <OnboardingCard />
+        </div>
       </DashboardLayout>
     );
   }
@@ -988,6 +992,9 @@ const Mentor: React.FC = () => {
   return (
     <DashboardLayout pageTitle={pageTitle}>
       <div className="space-y-6">
+        {/* Disciplinary banner — renders nothing when no active strike. */}
+        <MentorStrikeBanner />
+
         {/* Page header: H1 title + description + Manage dropdown */}
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">

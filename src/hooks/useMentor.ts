@@ -358,7 +358,7 @@ export const useLeaveInstance = () => {
   });
 };
 
-export const useMyMentorInstance = () => {
+export const useMyMentorInstance = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: MY_MENTOR_KEY,
     queryFn: async () => {
@@ -373,6 +373,7 @@ export const useMyMentorInstance = () => {
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
+    enabled: options?.enabled ?? true,
   });
 };
 
@@ -1259,6 +1260,44 @@ export const useSubmitComplaint = (slug: string) => {
       mentorService.submitComplaint(slug, submission),
     onError: () => {
       toast.error('Failed to submit report.');
+    },
+  });
+};
+
+// ── Strikes ──────────────────────────────────────────────────
+
+const STRIKE_STATUS_KEY = ['mentor', 'strike-status'];
+
+export const useMentorStrikeStatus = () =>
+  useQuery({
+    queryKey: STRIKE_STATUS_KEY,
+    queryFn: mentorService.getStrikeStatus,
+    staleTime: 60 * 1000,
+    // Failure here should not break the dashboard — banner just stays hidden.
+    retry: false,
+  });
+
+export const useAcknowledgeStrike = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (strikeId: string) => mentorService.acknowledgeStrike(strikeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STRIKE_STATUS_KEY });
+    },
+  });
+};
+
+export const useSubmitStrikeAppeal = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ strikeId, justification }: { strikeId: string; justification: string }) =>
+      mentorService.submitStrikeAppeal(strikeId, justification),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STRIKE_STATUS_KEY });
+      toast.success('Recours soumis. Trust & Safety reviendra vers vous sous 7 jours ouvrés.');
+    },
+    onError: () => {
+      toast.error('Échec de la soumission du recours.');
     },
   });
 };

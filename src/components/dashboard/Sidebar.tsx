@@ -42,6 +42,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/auth-context';
 import { useMyMentorInstance } from '@/hooks/useMentor';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-sections';
 
@@ -57,9 +58,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const { t } = useTranslation();
   const location = useLocation();
   const { isEnabled, hasPlan } = useFeatureFlags();
+  const mentorshipEnabled = useMentorshipEnabled();
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
-  const { data: myMentorInstance } = useMyMentorInstance();
+  // Skip the mentor instance lookup when the master switch is OFF — saves a
+  // 503 round-trip on every page load while the feature is gated.
+  const { data: myMentorInstance } = useMyMentorInstance({ enabled: mentorshipEnabled });
   const hasMyMentor = !!myMentorInstance;
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>(getInitialCollapsed);
 
@@ -108,13 +112,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     },
     {
       label: t('sidebar.mentor', 'Mentor'),
-      items: [
-        { href: '/mentor', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
-        ...(hasMyMentor
-          ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
-          : []),
-        { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon, matchPrefixes: ['/m/'] },
-      ],
+      items: mentorshipEnabled
+        ? [
+            { href: '/mentor', label: t('sidebar.mentorDashboard', 'Mentor Dashboard'), icon: UsersIcon, requiredPlan: 'TEAM' as const },
+            ...(hasMyMentor
+              ? [{ href: '/my-mentor', label: t('sidebar.myMentor', 'My Mentor'), icon: GraduationCapIcon }]
+              : []),
+            { href: '/mentors', label: t('sidebar.browseMentors', 'Browse Mentors'), icon: CompassIcon, matchPrefixes: ['/m/'] },
+          ]
+        : [],
     },
     {
       label: t('sidebar.social'),

@@ -1,10 +1,14 @@
 import apiClient from './apiClient';
 import type {
+  AdminMentorListItemDto,
   AdminSuspensionDto,
   Dac7SellerDto,
   DsaTransparencyReportDto,
   MentorComplaintDto,
   MentorComplaintStatus,
+  MentorStrikeCategory,
+  MentorSuspensionType,
+  MentorSuspensionImpactDto,
   VerificationCandidateDto,
 } from '@/types/dto';
 
@@ -78,10 +82,32 @@ export const adminMentorService = {
 
   // ── Suspensions ──────────────────────────────────────────────────────────────
 
-  suspendMentor: async (instanceId: string, reason: string): Promise<AdminSuspensionDto> => {
+  suspendMentor: async (
+    instanceId: string,
+    reason: string,
+    category: MentorStrikeCategory = 'TOS_VIOLATION',
+    type: MentorSuspensionType = 'TEMPORARY',
+  ): Promise<AdminSuspensionDto> => {
     const res = await apiClient.post<AdminSuspensionDto>(
       `${ADMIN_MENTOR_BASE}/${instanceId}/suspend`,
-      { reason }
+      { reason, category, type },
+    );
+    return res.data;
+  },
+
+  /**
+   * Pre-suspension impact preview — returns the count of subscriptions that
+   * will be cancelled, bookings/tickets that will be refunded, and the total
+   * refund amount. Powers the SuspendDialog "X students affected, Y €" panel.
+   */
+  getSuspensionImpact: async (
+    instanceId: string,
+    category: MentorStrikeCategory,
+    type: MentorSuspensionType,
+  ): Promise<MentorSuspensionImpactDto> => {
+    const res = await apiClient.get<MentorSuspensionImpactDto>(
+      `${ADMIN_MENTOR_BASE}/${instanceId}/suspend/impact`,
+      { params: { category, type } },
     );
     return res.data;
   },
@@ -97,6 +123,13 @@ export const adminMentorService = {
   listActiveSuspensions: async (): Promise<AdminSuspensionDto[]> => {
     const res = await apiClient.get<AdminSuspensionDto[]>(
       `${ADMIN_MENTOR_BASE}/suspensions`
+    );
+    return res.data;
+  },
+
+  listAllMentors: async (): Promise<AdminMentorListItemDto[]> => {
+    const res = await apiClient.get<AdminMentorListItemDto[]>(
+      `${ADMIN_MENTOR_BASE}/list`
     );
     return res.data;
   },

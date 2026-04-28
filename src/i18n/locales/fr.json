@@ -643,6 +643,14 @@
   "admin": {
     "administration": "Administration",
     "administrationDescription": "Gérer les utilisateurs, les roles et les paramètres système",
+    "section": {
+      "overview": "Vue",
+      "users": "Utilisateurs",
+      "revenue": "Revenus",
+      "mentors": "Mentors",
+      "compliance": "Conformité",
+      "system": "Système"
+    },
     "systemManagement": "Gestion du système",
     "search": "Rechercher...",
     "users": "Utilisateurs",
@@ -776,6 +784,14 @@
       "suspendDescription": "Le mentor ne pourra plus accepter de nouveaux élèves. Les sessions en cours continuent.",
       "suspendAction": "Suspendre",
       "instanceIdLabel": "ID instance mentor",
+      "mentorLabel": "Mentor",
+      "mentorPlaceholder": "Sélectionner un mentor par nom, slug ou ID",
+      "mentorSearchPlaceholder": "Rechercher par nom, slug ou ID…",
+      "mentorNoResult": "Aucun mentor trouvé.",
+      "verified": "Vérifié",
+      "inactive": "Inactif",
+      "alreadySuspended": "Suspendu",
+      "alreadySuspendedHint": "Ce mentor est déjà suspendu — levez la suspension actuelle avant d'en émettre une nouvelle.",
       "reasonLabel": "Motif",
       "reasonPlaceholder": "Violation de politique, contrôle sanctions, etc.",
       "liftTitle": "Lever la suspension ?",
@@ -3250,6 +3266,16 @@
     "evalsPassed": "Évals réussies"
   },
   "mentor": {
+    "strike": {
+      "warningTitle": "Mentorship suspendu",
+      "warningDescription": "Votre mentorship a été suspendu par l'équipe administrative.",
+      "bannedTitle": "Compte FollowUp Trading suspendu",
+      "bannedDescription": "Votre compte est désormais bloqué suite à des infractions répétées. Contactez le support pour toute contestation.",
+      "reasonLabel": "Motif",
+      "cooldownLine": "Vous pourrez créer un nouveau mentorship à partir du {{date}}.",
+      "lastChance": "Une nouvelle infraction entraînera la suspension complète de votre compte FollowUp Trading.",
+      "dismiss": "J'ai compris"
+    },
     "createInstance": "Creer une instance mentor",
     "editInstance": "Instance Mentor",
     "editInstanceDesc": "Gerez votre programme de mentorat",

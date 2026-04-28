@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShieldOff, Loader2, AlertTriangle, ShieldCheck, ScanLine } from 'lucide-react';
+import {
+  ShieldOff,
+  Loader2,
+  AlertTriangle,
+  ShieldCheck,
+  ScanLine,
+  Check,
+  ChevronsUpDown,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -25,14 +32,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import {
   useActiveSuspensions,
+  useAllMentors,
   useSuspendMentor,
+  useSuspensionImpact,
   useLiftSuspension,
   useRescreenSanctions,
 } from '@/hooks/useAdminMentor';
-import type { AdminSuspensionDto } from '@/types/dto';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type {
+  AdminSuspensionDto,
+  MentorStrikeCategory,
+  MentorSuspensionType,
+} from '@/types/dto';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -54,24 +83,70 @@ interface SuspendDialogProps {
 function SuspendDialog({ open, onOpenChange }: SuspendDialogProps) {
   const { t } = useTranslation();
   const suspend = useSuspendMentor();
+  const { data: mentors = [], isLoading: mentorsLoading } = useAllMentors();
+  const { data: activeSuspensions = [] } = useActiveSuspensions();
   const [instanceId, setInstanceId] = useState('');
   const [reason, setReason] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [category, setCategory] = useState<MentorStrikeCategory>('TOS_VIOLATION');
+  const [suspensionType, setSuspensionType] = useState<MentorSuspensionType>('TEMPORARY');
+  const { data: impact } = useSuspensionImpact(
+    instanceId || undefined,
+    category,
+    suspensionType,
+  );
 
-  const canSubmit = instanceId.trim().length > 0 && reason.trim().length > 0;
+  // Cross-reference active suspensions so already-suspended mentors get a clear
+  // marker in the picker (and can't be re-suspended by mistake).
+  const suspendedSet = useMemo(
+    () => new Set(activeSuspensions.map((s) => s.mentorInstanceId)),
+    [activeSuspensions],
+  );
+
+  const sortedMentors = useMemo(
+    () =>
+      [...mentors].sort((a, b) =>
+        (a.brandName ?? '').localeCompare(b.brandName ?? '', undefined, {
+          sensitivity: 'base',
+        }),
+      ),
+    [mentors],
+  );
+
+  const selected = sortedMentors.find((m) => m.id === instanceId);
+  const selectedAlreadySuspended = selected ? suspendedSet.has(selected.id) : false;
+
+  const canSubmit =
+    instanceId.trim().length > 0
+    && reason.trim().length > 0
+    && !selectedAlreadySuspended;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     suspend.mutate(
-      { instanceId: instanceId.trim(), reason: reason.trim() },
+      {
+        instanceId: instanceId.trim(),
+        reason: reason.trim(),
+        category,
+        type: suspensionType,
+      },
       {
         onSuccess: () => {
           onOpenChange(false);
           setInstanceId('');
           setReason('');
+          setCategory('TOS_VIOLATION');
+          setSuspensionType('TEMPORARY');
         },
-      }
+      },
     );
+  };
+
+  const fmtMoney = (cents: number, currency: string): string => {
+    if (!cents) return '0';
+    const sym = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : '€';
+    return `${sym}${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -88,16 +163,179 @@ function SuspendDialog({ open, onOpenChange }: SuspendDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="suspend-id">
-              {t('admin.suspensions.instanceIdLabel', 'Mentor instance ID')}
+            <Label htmlFor="suspend-mentor">
+              {t('admin.suspensions.mentorLabel', 'Mentor')}
             </Label>
-            <Input
-              id="suspend-id"
-              value={instanceId}
-              onChange={(e) => setInstanceId(e.target.value)}
-              placeholder="uuid"
-              required
-            />
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="suspend-mentor"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pickerOpen}
+                  className="w-full justify-between font-normal"
+                  disabled={mentorsLoading}
+                >
+                  {selected ? (
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="truncate">{selected.brandName}</span>
+                      {selected.slug && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          /{selected.slug}
+                        </span>
+                      )}
+                      {!selected.active && (
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                          {t('admin.suspensions.inactive', 'Inactive')}
+                        </Badge>
+                      )}
+                      {selectedAlreadySuspended && (
+                        <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                          {t('admin.suspensions.alreadySuspended', 'Suspendu')}
+                        </Badge>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {mentorsLoading
+                        ? t('common.loading', 'Loading…')
+                        : t(
+                            'admin.suspensions.mentorPlaceholder',
+                            'Select a mentor by name, slug, or ID',
+                          )}
+                    </span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command
+                  filter={(value, search) => {
+                    const q = search.trim().toLowerCase();
+                    if (!q) return 1;
+                    return value.toLowerCase().includes(q) ? 1 : 0;
+                  }}
+                >
+                  <CommandInput
+                    placeholder={t(
+                      'admin.suspensions.mentorSearchPlaceholder',
+                      'Search by name, slug, or ID…',
+                    )}
+                  />
+                  <CommandList>
+                    <CommandEmpty>
+                      {t('admin.suspensions.mentorNoResult', 'No mentor found.')}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {sortedMentors.map((m) => {
+                        const tokens = [m.brandName, m.slug ?? '', m.id]
+                          .filter(Boolean)
+                          .join(' ');
+                        return (
+                          <CommandItem
+                            key={m.id}
+                            value={tokens}
+                            onSelect={() => {
+                              setInstanceId(m.id);
+                              setPickerOpen(false);
+                            }}
+                            className="gap-2"
+                          >
+                            <Check
+                              className={cn(
+                                'h-4 w-4 shrink-0',
+                                instanceId === m.id ? 'opacity-100' : 'opacity-0',
+                              )}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium truncate">{m.brandName}</span>
+                                {m.verified && (
+                                  <ShieldCheck
+                                    className="h-3.5 w-3.5 text-emerald-500 shrink-0"
+                                    aria-label={t('admin.suspensions.verified', 'Verified')}
+                                  />
+                                )}
+                                {!m.active && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] px-1 py-0"
+                                  >
+                                    {t('admin.suspensions.inactive', 'Inactive')}
+                                  </Badge>
+                                )}
+                                {suspendedSet.has(m.id) && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-[10px] px-1 py-0"
+                                  >
+                                    {t('admin.suspensions.alreadySuspended', 'Suspendu')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground font-mono truncate">
+                                {m.slug ? `/${m.slug}` : m.id}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            {selected && (
+              <p className="text-[10px] text-muted-foreground font-mono">
+                {selected.id}
+              </p>
+            )}
+            {selectedAlreadySuspended && (
+              <p className="text-xs text-destructive">
+                {t(
+                  'admin.suspensions.alreadySuspendedHint',
+                  'Ce mentor est déjà suspendu — levez la suspension actuelle avant d\'en émettre une nouvelle.',
+                )}
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="suspend-category">
+                {t('admin.suspensions.categoryLabel', 'Catégorie')}
+              </Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as MentorStrikeCategory)}>
+                <SelectTrigger id="suspend-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TOS_VIOLATION">{t('admin.suspensions.cat.TOS_VIOLATION', 'Violation TOS')}</SelectItem>
+                  <SelectItem value="QUALITY_COMPLAINT">{t('admin.suspensions.cat.QUALITY_COMPLAINT', 'Plainte qualité')}</SelectItem>
+                  <SelectItem value="FRAUD">{t('admin.suspensions.cat.FRAUD', 'Fraude')}</SelectItem>
+                  <SelectItem value="ILLEGAL_CONTENT">{t('admin.suspensions.cat.ILLEGAL_CONTENT', 'Contenu illégal')}</SelectItem>
+                  <SelectItem value="SANCTIONS_HIT">{t('admin.suspensions.cat.SANCTIONS_HIT', 'Sanctions')}</SelectItem>
+                  <SelectItem value="TEMPORARY_HOLD">{t('admin.suspensions.cat.TEMPORARY_HOLD', 'Investigation')}</SelectItem>
+                  <SelectItem value="MENTOR_INCAPACITATED">{t('admin.suspensions.cat.MENTOR_INCAPACITATED', 'Mentor incapacité')}</SelectItem>
+                  <SelectItem value="PLATFORM_ERROR">{t('admin.suspensions.cat.PLATFORM_ERROR', 'Erreur plateforme')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="suspend-type">
+                {t('admin.suspensions.typeLabel', 'Type')}
+              </Label>
+              <Select value={suspensionType} onValueChange={(v) => setSuspensionType(v as MentorSuspensionType)}>
+                <SelectTrigger id="suspend-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TEMPORARY">{t('admin.suspensions.type.TEMPORARY', 'Temporaire')}</SelectItem>
+                  <SelectItem value="PRECAUTIONARY">{t('admin.suspensions.type.PRECAUTIONARY', 'Précautionnel')}</SelectItem>
+                  <SelectItem value="PERMANENT_BAN">{t('admin.suspensions.type.PERMANENT_BAN', 'Bannissement définitif')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="suspend-reason">
@@ -116,6 +354,27 @@ function SuspendDialog({ open, onOpenChange }: SuspendDialogProps) {
               required
             />
           </div>
+          {selected && impact && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1.5 text-xs">
+              <p className="font-semibold text-amber-600 dark:text-amber-400">
+                {t('admin.suspensions.impactTitle', 'Impact estimé')}
+              </p>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>
+                  · {t('admin.suspensions.impact.subs', '{{n}} abonnement(s) annulé(s)', { n: impact.subscriptionsAffected })}
+                </li>
+                <li>
+                  · {t('admin.suspensions.impact.bookings', '{{n}} réservation(s) remboursée(s) — {{amount}}', {
+                    n: impact.bookingsRefundable,
+                    amount: fmtMoney(impact.bookingsRefundCents, impact.currency),
+                  })}
+                </li>
+                <li>
+                  · {t('admin.suspensions.impact.tickets', '{{n}} billet(s) webinaire remboursé(s)', { n: impact.ticketsRefundable })}
+                </li>
+              </ul>
+            </div>
+          )}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"

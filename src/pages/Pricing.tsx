@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import PlanCard from '@/components/subscription/PlanCard';
 import { useSubscription, usePlans, useCreateCheckout, useInvalidateSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/auth-context';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 import { promoService, type PromoValidationResult } from '@/services/promo.service';
 import { toast } from '@/hooks/use-toast';
 import type { PlanDto } from '@/types/dto';
@@ -82,7 +83,13 @@ const Pricing: React.FC = () => {
   const createCheckout = useCreateCheckout();
   const invalidateSubscription = useInvalidateSubscription();
 
-  const displayPlans = plans ?? STATIC_PLANS;
+  const mentorshipEnabled = useMentorshipEnabled();
+  // Hide the TEAM plan entirely while the mentor master flag is OFF — selling
+  // a tier whose only added value is mentor capabilities would be misleading.
+  const allPlans = plans ?? STATIC_PLANS;
+  const displayPlans = mentorshipEnabled
+    ? allPlans
+    : allPlans.filter((p) => p.name !== 'TEAM');
   const currentPlan = subscription?.plan ?? null;
 
   const handlePromoBlur = async () => {

@@ -58,6 +58,7 @@ import type {
   CreateSessionOfferingDto,
   CreateWebinarDto,
   CreateSearchAlertDto,
+  MentorStrikeStatusDto,
 } from '@/types/dto';
 
 const MENTOR_BASE = '/mentor';
@@ -916,5 +917,27 @@ export const mentorService = {
 
   deleteCohortPricing: async (cohortId: string): Promise<void> => {
     await apiClient.delete(`/mentor/cohorts/${cohortId}/pricing`);
+  },
+
+  // ── Strikes ──────────────────────────────────────────────────────────────
+
+  getStrikeStatus: async (): Promise<MentorStrikeStatusDto> => {
+    const res = await apiClient.get<MentorStrikeStatusDto>(`${MENTOR_BASE}/strikes/active`);
+    return res.data;
+  },
+
+  acknowledgeStrike: async (strikeId: string): Promise<void> => {
+    await apiClient.post(`${MENTOR_BASE}/strikes/${strikeId}/acknowledge`);
+  },
+
+  submitStrikeAppeal: async (
+    strikeId: string,
+    justification: string,
+  ): Promise<{ id: string; strikeId: string; status: string; createdAt: string }> => {
+    const res = await apiClient.post(
+      `${MENTOR_BASE}/strikes/${strikeId}/appeal`,
+      { justification },
+    );
+    return res.data as { id: string; strikeId: string; status: string; createdAt: string };
   },
 };

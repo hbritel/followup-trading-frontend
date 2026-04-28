@@ -243,10 +243,22 @@ apiClient.interceptors.response.use(
 
         // --- 503 Service Unavailable / Circuit Breaker ---
         if (status === 503) {
-            toast.error('Service is temporarily unavailable. Please try again later.');
+            // Feature-flag gates (e.g. mentorship master switch OFF) also return
+            // 503. Those are expected by callers that probe the surface on every
+            // page load — surfacing a toast every time would spam the user.
+            const errorCode = (error.response?.data as { error?: string } | undefined)?.error;
+            const isFeatureGated = errorCode === 'MENTORSHIP_DISABLED';
+            if (!isFeatureGated) {
+                toast.error('Service is temporarily unavailable. Please try again later.');
+            }
             const cbError = Object.assign(new Error(
-                'Broker service is temporarily unavailable. Please try again later.'
-            ), { isServiceUnavailable: true, originalError: error });
+                'Service is temporarily unavailable. Please try again later.'
+            ), {
+                isServiceUnavailable: true,
+                isFeatureDisabled: isFeatureGated,
+                errorCode,
+                originalError: error,
+            });
             return Promise.reject(cbError);
         }
 

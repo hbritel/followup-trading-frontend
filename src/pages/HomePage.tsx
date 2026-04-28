@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/auth-context';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 import { PLAN_FEATURES } from '@/lib/planFeatures';
 import {
   BarChart3,
@@ -120,6 +121,12 @@ const HomePage = () => {
   const [billingAnnual, setBillingAnnual] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { t } = useTranslation();
+  const mentorshipEnabled = useMentorshipEnabled();
+  // Drop the "Team" plan and the mentor CTAs entirely while the master flag
+  // is OFF — no point advertising a feature users can't reach.
+  const visiblePlans = mentorshipEnabled
+    ? PLANS
+    : PLANS.filter((p) => p.name !== 'Team');
 
   // Authenticated users can still browse the landing page — the nav swaps
   // its Login/Sign up CTAs for a "Go to dashboard" link, and primary hero
@@ -278,57 +285,59 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ── Mentor CTAs (2-col grid: find a mentor + become a mentor) ── */}
-      <section className="py-14 md:py-20 px-4 bg-muted/20">
-        <div className="container mx-auto max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-5">
-            {/* Looking for a mentor */}
-            <div className="rounded-2xl border border-border/60 bg-card p-7 md:p-8 flex flex-col gap-5">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+      {/* ── Mentor CTAs (gated by master flag) ─────────────────────────── */}
+      {mentorshipEnabled && (
+        <section className="py-14 md:py-20 px-4 bg-muted/20">
+          <div className="container mx-auto max-w-5xl">
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Looking for a mentor */}
+              <div className="rounded-2xl border border-border/60 bg-card p-7 md:p-8 flex flex-col gap-5">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-6 w-6 text-primary" aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold mb-1.5">
+                    {t('mentor.directory.home.ctaSection.title')}
+                  </h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {t('mentor.directory.home.ctaSection.body')}
+                  </p>
+                </div>
+                <Link to="/mentors" className="mt-auto">
+                  <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto whitespace-nowrap">
+                    {t('mentor.directory.home.ctaSection.button')}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold mb-1.5">
-                  {t('mentor.directory.home.ctaSection.title')}
-                </h2>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {t('mentor.directory.home.ctaSection.body')}
-                </p>
-              </div>
-              <Link to="/mentors" className="mt-auto">
-                <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto whitespace-nowrap">
-                  {t('mentor.directory.home.ctaSection.button')}
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
 
-            {/* Are you a mentor */}
-            <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/5 to-pink-500/5 p-7 md:p-8 flex flex-col gap-5">
-              <div className="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center shrink-0">
-                <Star className="h-6 w-6 text-fuchsia-500" aria-hidden="true" />
+              {/* Are you a mentor */}
+              <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/5 to-pink-500/5 p-7 md:p-8 flex flex-col gap-5">
+                <div className="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center shrink-0">
+                  <Star className="h-6 w-6 text-fuchsia-500" aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold mb-1.5">
+                    {t('home.mentorCta.title')}
+                  </h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {t('home.mentorCta.body')}
+                  </p>
+                </div>
+                <Link to="/become-a-mentor" className="mt-auto">
+                  <Button
+                    size="lg"
+                    className="gap-2 w-full sm:w-auto whitespace-nowrap bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:from-fuchsia-600 hover:to-pink-600 border-0 shadow-md shadow-fuchsia-500/15"
+                  >
+                    {t('home.mentorCta.button')}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold mb-1.5">
-                  {t('home.mentorCta.title')}
-                </h2>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {t('home.mentorCta.body')}
-                </p>
-              </div>
-              <Link to="/become-a-mentor" className="mt-auto">
-                <Button
-                  size="lg"
-                  className="gap-2 w-full sm:w-auto whitespace-nowrap bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:from-fuchsia-600 hover:to-pink-600 border-0 shadow-md shadow-fuchsia-500/15"
-                >
-                  {t('home.mentorCta.button')}
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Pricing ─────────────────────────────────────────────────── */}
       <section id="pricing" className="py-20 md:py-28 px-4">
@@ -355,8 +364,13 @@ const HomePage = () => {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {PLANS.map(plan => {
+          <div
+            className={cn(
+              'grid grid-cols-1 md:grid-cols-2 gap-4',
+              visiblePlans.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+            )}
+          >
+            {visiblePlans.map(plan => {
               const price = billingAnnual ? plan.annual : plan.price;
               const planKey = plan.name.toUpperCase();
               const features = (PLAN_FEATURES[planKey] ?? []).filter(f => f.included);

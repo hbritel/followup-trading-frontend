@@ -121,6 +121,7 @@ export const useDsaTransparency = (year: number) =>
 // ── Suspensions ──────────────────────────────────────────────────────────────
 
 const SUSPENSIONS_KEY = ['admin', 'mentor', 'suspensions'];
+const ALL_MENTORS_KEY = ['admin', 'mentor', 'list'];
 
 export const useActiveSuspensions = () =>
   useQuery({
@@ -129,11 +130,28 @@ export const useActiveSuspensions = () =>
     staleTime: 30 * 1000,
   });
 
+export const useAllMentors = () =>
+  useQuery({
+    queryKey: ALL_MENTORS_KEY,
+    queryFn: adminMentorService.listAllMentors,
+    staleTime: 60 * 1000,
+  });
+
 export const useSuspendMentor = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ instanceId, reason }: { instanceId: string; reason: string }) =>
-      adminMentorService.suspendMentor(instanceId, reason),
+    mutationFn: ({
+      instanceId,
+      reason,
+      category,
+      type,
+    }: {
+      instanceId: string;
+      reason: string;
+      category?: import('@/types/dto').MentorStrikeCategory;
+      type?: import('@/types/dto').MentorSuspensionType;
+    }) =>
+      adminMentorService.suspendMentor(instanceId, reason, category, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SUSPENSIONS_KEY });
       queryClient.invalidateQueries({ queryKey: VERIFICATION_CANDIDATES_KEY });
@@ -144,6 +162,24 @@ export const useSuspendMentor = () => {
     },
   });
 };
+
+/**
+ * Reactive impact preview for the SuspendDialog. Returns the financial blast
+ * radius (subs cancelled, bookings/tickets refunded, refund amount) for a
+ * given mentor + category + type.
+ */
+export const useSuspensionImpact = (
+  instanceId: string | undefined,
+  category: import('@/types/dto').MentorStrikeCategory,
+  type: import('@/types/dto').MentorSuspensionType,
+) =>
+  useQuery({
+    queryKey: ['admin', 'mentor', 'suspend-impact', instanceId, category, type],
+    queryFn: () => adminMentorService.getSuspensionImpact(instanceId!, category, type),
+    enabled: !!instanceId,
+    staleTime: 30 * 1000,
+    retry: 0,
+  });
 
 export const useLiftSuspension = () => {
   const queryClient = useQueryClient();

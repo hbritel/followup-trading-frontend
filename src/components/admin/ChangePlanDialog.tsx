@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 
 export const ADMIN_PLAN_OPTIONS: { value: string; label: string }[] = [
   { value: 'FREE', label: 'Free' },
@@ -55,6 +56,10 @@ export function ChangePlanDialog({
   confirmLabel,
 }: ChangePlanDialogProps) {
   const { t } = useTranslation();
+  const mentorshipEnabled = useMentorshipEnabled();
+  const planOptions = mentorshipEnabled
+    ? ADMIN_PLAN_OPTIONS
+    : ADMIN_PLAN_OPTIONS.filter((p) => p.value !== 'TEAM');
   const [selectedPlan, setSelectedPlan] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('permanent');
   const [customDays, setCustomDays] = useState('');
@@ -95,7 +100,7 @@ export function ChangePlanDialog({
                 <SelectValue placeholder={t('admin.selectPlan', 'Select plan')} />
               </SelectTrigger>
               <SelectContent>
-                {ADMIN_PLAN_OPTIONS.map((p) => (
+                {planOptions.map((p) => (
                   <SelectItem key={p.value} value={p.value}>
                     {p.label}
                   </SelectItem>

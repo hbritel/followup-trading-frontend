@@ -79,6 +79,7 @@ import { PropFirmSettings } from "@/components/settings/PropFirmSettings";
 import SearchAlertsList from "@/components/mentor/alerts/SearchAlertsList";
 import { ProfileTab, SubscriptionTab } from '@/pages/AccountManagement';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useMentorshipEnabled } from '@/hooks/useFeatureConfig';
 import { useMyMentorInstance } from '@/hooks/useMentor';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Users as UsersIcon, GraduationCap, Building2 as Building2Icon } from 'lucide-react';
@@ -143,9 +144,12 @@ const Settings = () => {
         navigate('/');
     };
     const { hasPlan } = useFeatureFlags();
-    const { data: myMentorInstance } = useMyMentorInstance();
+    const mentorshipEnabled = useMentorshipEnabled();
+    // Skip the mentor instance probe when the master flag is OFF — otherwise
+    // every Settings load fires a 503 against `/mentor/instance`.
+    const { data: myMentorInstance } = useMyMentorInstance({ enabled: mentorshipEnabled });
     const isTeamPlan = hasPlan('TEAM');
-    const isInMentorInstance = !!myMentorInstance;
+    const isInMentorInstance = mentorshipEnabled && !!myMentorInstance;
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -463,7 +467,7 @@ const Settings = () => {
                             <Brain className="h-4 w-4" />
                             {t("settings.aiProvider", "AI Provider")}
                         </TabsTrigger>
-                        {isTeamPlan && (
+                        {isTeamPlan && mentorshipEnabled && (
                             <TabsTrigger value="mentor" className="gap-2 rounded-lg px-4 py-2">
                                 <UsersIcon className="h-4 w-4" />
                                 {t("settings.mentor", "Mentor")}
@@ -482,10 +486,12 @@ const Settings = () => {
                                 {t("settings.myMentor", "My Mentor")}
                             </TabsTrigger>
                         )}
-                        <TabsTrigger value="search-alerts" className="gap-2 rounded-lg px-4 py-2">
-                            <Bell className="h-4 w-4" />
-                            {t('mentor.alerts.tabTitle', 'Search alerts')}
-                        </TabsTrigger>
+                        {mentorshipEnabled && (
+                            <TabsTrigger value="search-alerts" className="gap-2 rounded-lg px-4 py-2">
+                                <Bell className="h-4 w-4" />
+                                {t('mentor.alerts.tabTitle', 'Search alerts')}
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     {/* ========== PROFILE TAB ========== */}
