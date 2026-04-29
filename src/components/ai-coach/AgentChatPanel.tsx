@@ -1,10 +1,22 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AgentOrchestrationView from './AgentOrchestrationView';
+import UsageLimitIndicator from '@/components/subscription/UsageLimitIndicator';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
+import { useSubscription } from '@/hooks/useSubscription';
+
+const AI_PLAN_CAPS: Record<string, number> = {
+  FREE: 0,
+  STARTER: 5,
+  PRO: 30,
+  ELITE: 150,
+  TEAM: 150,
+};
 
 interface AgentChatPanelProps {
   className?: string;
@@ -19,6 +31,9 @@ interface AgentChatPanelProps {
  */
 const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) => {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
+  const { currentPlan } = useFeatureFlags();
+  const { data: subscription } = useSubscription();
   const {
     ask,
     cancel,
@@ -32,6 +47,24 @@ const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) =>
 
   const [input, setInput] = useState('');
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+
+  const showUsageCounter =
+    currentPlan === 'STARTER' || currentPlan === 'PRO' || currentPlan === 'ELITE' || currentPlan === 'TEAM';
+  const aiMessagesToday = subscription?.usage?.aiMessagesToday ?? 0;
+  const aiMessagesMax =
+    subscription?.usage?.aiMessagesMax ?? AI_PLAN_CAPS[currentPlan] ?? 0;
+
+  // Multi-agent calls debit the same daily counter as single-agent ones
+  // (server-side: CoachOrchestrator delegates to CoachMessageQuotaService).
+  // Refresh the counter as soon as a stream completes (success or error)
+  // so the indicator stays in sync with the server.
+  const wasStreamingRef = useRef(isStreaming);
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) {
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    }
+    wasStreamingRef.current = isStreaming;
+  }, [isStreaming, queryClient]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
@@ -64,6 +97,17 @@ const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) =>
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col gap-3', className)}>
+      {showUsageCounter && (
+        <div className="flex items-center justify-end px-1 -mb-1 flex-shrink-0">
+          <UsageLimitIndicator
+            used={aiMessagesToday}
+            max={aiMessagesMax}
+            label={t('ai.messagesToday', 'today')}
+            showBar={false}
+            className="flex-row items-center gap-1.5"
+          />
+        </div>
+      )}
       <div className="flex-1 min-h-0">
         {hasRun ? (
           <AgentOrchestrationView
