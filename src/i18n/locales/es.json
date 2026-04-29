@@ -2333,6 +2333,61 @@
     "uploadFailed": "Error de subida",
     "uploadFailedDescription": "No se pudo subir el avatar. Intentelo de nuevo."
   },
+  "aiCoach": {
+    "agents": {
+      "risk": {
+        "label": "Riesgo",
+        "description": "Drawdown, sizing, reglas prop firm, R-multiple"
+      },
+      "psychology": {
+        "label": "Psicología",
+        "description": "Tilt, emociones, patrones de comportamiento"
+      },
+      "strategy": {
+        "label": "Estrategia",
+        "description": "Conformidad playbook, edge, violaciones de reglas"
+      },
+      "data": {
+        "label": "Datos",
+        "description": "Consultas SQL de solo lectura sobre tus trades"
+      },
+      "education": {
+        "label": "Aprendizaje",
+        "description": "Skill gaps, learning paths, recursos"
+      }
+    },
+    "orchestration": {
+      "routing": "Seleccionando agentes...",
+      "synthesis": "Síntesis",
+      "cancel": "Cancelar",
+      "retry": "Reintentar",
+      "useMultiAgent": "Modo multi-agente (beta)",
+      "agentRunning": "Ejecutando...",
+      "agentDone": "Hecho",
+      "agentError": "Error"
+    },
+    "briefingCard": {
+      "viewDetails": "Ver briefing completo"
+    },
+    "tiltGauge": {
+      "tooltip": "Su tilt actual: {{score}}. Haga clic para ver detalles"
+    },
+    "nlq": {
+      "sectionTitle": "Ask the AI",
+      "sectionSubtitle": "Try a suggestion",
+      "prompt1": "My best month",
+      "prompt2": "My losses on Fridays",
+      "prompt3": "My top 3 symbols",
+      "prompt4": "My win rate by hour",
+      "prompt5": "My trades on Vantage this week"
+    },
+    "emotionPrompt": {
+      "title": "How did you feel about this trade?",
+      "subtitle": "A few seconds now — a sharper diagnosis later.",
+      "later": "Later",
+      "skipAll": "Don't ask again"
+    }
+  },
   "ai": {
     "title": "Entrenador de Trading IA",
     "placeholder": "Pregunta sobre tu trading...",
@@ -4259,29 +4314,6 @@
       "acceptsNew": "accepts new",
       "verified": "verified",
       "tabTitle": "Alertas de búsqueda"
-    }
-  },
-  "aiCoach": {
-    "briefingCard": {
-      "viewDetails": "Ver briefing completo"
-    },
-    "tiltGauge": {
-      "tooltip": "Su tilt actual: {{score}}. Haga clic para ver detalles"
-    },
-    "nlq": {
-      "sectionTitle": "Ask the AI",
-      "sectionSubtitle": "Try a suggestion",
-      "prompt1": "My best month",
-      "prompt2": "My losses on Fridays",
-      "prompt3": "My top 3 symbols",
-      "prompt4": "My win rate by hour",
-      "prompt5": "My trades on Vantage this week"
-    },
-    "emotionPrompt": {
-      "title": "How did you feel about this trade?",
-      "subtitle": "A few seconds now — a sharper diagnosis later.",
-      "later": "Later",
-      "skipAll": "Don't ask again"
     }
   }
 }

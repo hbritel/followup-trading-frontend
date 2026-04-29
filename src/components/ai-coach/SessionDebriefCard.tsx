@@ -15,7 +15,7 @@ const ScoreCircle: React.FC<{ score: number }> = ({ score }) => {
   return (
     <div
       className={cn(
-        'h-12 w-12 rounded-full border-2 flex items-center justify-center font-bold text-lg flex-shrink-0',
+        'h-12 w-12 rounded-full border-2 flex items-center justify-center font-bold text-lg tabular-nums flex-shrink-0',
         score >= 8 ? 'border-green-500/40 bg-green-500/10' :
         score >= 5 ? 'border-yellow-500/40 bg-yellow-500/10' :
         'border-red-500/40 bg-red-500/10',
@@ -141,7 +141,7 @@ const SessionDebriefCard: React.FC<SessionDebriefCardProps> = ({ accountId }) =>
       </div>
 
       {debrief ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Score + stats row */}
           <div className="flex items-center gap-4">
             {debrief.sessionScore !== undefined && (
@@ -149,18 +149,21 @@ const SessionDebriefCard: React.FC<SessionDebriefCardProps> = ({ accountId }) =>
             )}
             <div className="flex gap-4 flex-wrap text-sm text-muted-foreground">
               {debrief.tradesCount !== undefined && (
-                <span><strong className="text-foreground">{debrief.tradesCount}</strong> trades</span>
+                <span><strong className="text-foreground tabular-nums">{debrief.tradesCount}</strong> trades</span>
               )}
               {debrief.sessionPnl !== undefined && (
                 <span>
                   P&L:{' '}
-                  <strong className={debrief.sessionPnl >= 0 ? 'text-green-500' : 'text-red-500'}>
+                  <strong className={cn(
+                    'tabular-nums',
+                    debrief.sessionPnl >= 0 ? 'text-green-500' : 'text-red-500'
+                  )}>
                     {debrief.sessionPnl >= 0 ? '+' : ''}{debrief.sessionPnl.toFixed(2)}
                   </strong>
                 </span>
               )}
               {debrief.winRate !== undefined && (
-                <span>Win rate: <strong className="text-foreground">{debrief.winRate.toFixed(0)}%</strong></span>
+                <span>Win rate: <strong className="text-foreground tabular-nums">{debrief.winRate.toFixed(0)}%</strong></span>
               )}
             </div>
           </div>

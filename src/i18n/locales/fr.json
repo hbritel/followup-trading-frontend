@@ -2536,6 +2536,61 @@
     "viewProfile": "Voir le profil public",
     "saveChanges": "Sauvegarder"
   },
+  "aiCoach": {
+    "agents": {
+      "risk": {
+        "label": "Risque",
+        "description": "Analyse de drawdown, sizing, règles prop firm, R-multiple"
+      },
+      "psychology": {
+        "label": "Psychologie",
+        "description": "Tilt, émotions, patterns comportementaux"
+      },
+      "strategy": {
+        "label": "Stratégie",
+        "description": "Conformité playbook, edge, violations de règles"
+      },
+      "data": {
+        "label": "Données",
+        "description": "Requêtes SQL en lecture seule sur vos trades"
+      },
+      "education": {
+        "label": "Apprentissage",
+        "description": "Skill gaps, learning paths, ressources"
+      }
+    },
+    "orchestration": {
+      "routing": "Sélection des agents...",
+      "synthesis": "Synthèse",
+      "cancel": "Annuler",
+      "retry": "Réessayer",
+      "useMultiAgent": "Mode multi-agent (beta)",
+      "agentRunning": "En cours...",
+      "agentDone": "Terminé",
+      "agentError": "Erreur"
+    },
+    "briefingCard": {
+      "viewDetails": "Voir le briefing complet"
+    },
+    "tiltGauge": {
+      "tooltip": "Votre tilt actuel : {{score}}. Cliquer pour voir détails"
+    },
+    "nlq": {
+      "sectionTitle": "Demandez à l'IA",
+      "sectionSubtitle": "Suggestions pour démarrer",
+      "prompt1": "Mon meilleur mois",
+      "prompt2": "Mes pertes vendredi",
+      "prompt3": "Mon top 3 symboles",
+      "prompt4": "Mon win rate par heure",
+      "prompt5": "Mes trades sur Vantage cette semaine"
+    },
+    "emotionPrompt": {
+      "title": "Comment vous sentiez-vous sur ce trade ?",
+      "subtitle": "Quelques secondes maintenant — un meilleur diagnostic plus tard.",
+      "later": "Plus tard",
+      "skipAll": "Ne plus me demander"
+    }
+  },
   "ai": {
     "title": "Coach IA de Trading",
     "placeholder": "Posez une question sur votre trading...",
@@ -5089,29 +5144,6 @@
       "halfKellyTitle": "Demi-Kelly (recommandé)",
       "aggressiveTitle": "0,7 × Kelly (agressif)",
       "fullKellyTitle": "Kelly complet (ne pas utiliser en pratique)"
-    }
-  },
-  "aiCoach": {
-    "briefingCard": {
-      "viewDetails": "Voir le briefing complet"
-    },
-    "tiltGauge": {
-      "tooltip": "Votre tilt actuel : {{score}}. Cliquer pour voir détails"
-    },
-    "nlq": {
-      "sectionTitle": "Demandez à l'IA",
-      "sectionSubtitle": "Suggestions pour démarrer",
-      "prompt1": "Mon meilleur mois",
-      "prompt2": "Mes pertes vendredi",
-      "prompt3": "Mon top 3 symboles",
-      "prompt4": "Mon win rate par heure",
-      "prompt5": "Mes trades sur Vantage cette semaine"
-    },
-    "emotionPrompt": {
-      "title": "Comment vous sentiez-vous sur ce trade ?",
-      "subtitle": "Quelques secondes maintenant — un meilleur diagnostic plus tard.",
-      "later": "Plus tard",
-      "skipAll": "Ne plus me demander"
     }
   }
 }
