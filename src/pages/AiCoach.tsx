@@ -13,15 +13,18 @@ import ActivityCard from '@/components/ai-coach/ActivityCard';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
+import AgentChatPanel from '@/components/ai-coach/AgentChatPanel';
 import CoachTour from '@/components/ai-coach/CoachTour';
 import { useCoachChat } from '@/hooks/useCoachChat';
+import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
   MessageSquare, LayoutDashboard, Sun, Moon,
-  HelpCircle, Info, ChevronDown, Sparkles, Brain,
+  HelpCircle, Info, ChevronDown, Sparkles, Brain, Network,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const InfoTip: React.FC<{ text: string }> = ({ text }) => (
@@ -120,6 +123,15 @@ const AiCoach: React.FC = () => {
   const [mobileTab, setMobileTab] = useState<'chat' | 'coach'>('coach');
   const [tourOpen, setTourOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const { hasPlan } = useFeatureFlags();
+  const multiAgentAllowed = hasPlan('PRO');
+  const [useMultiAgent, setUseMultiAgent] = useState(false);
+  // Force-disable multi-agent if the user is downgraded mid-session below PRO.
+  useEffect(() => {
+    if (!multiAgentAllowed && useMultiAgent) {
+      setUseMultiAgent(false);
+    }
+  }, [multiAgentAllowed, useMultiAgent]);
   const { accountId } = useAccountFilter(selectedAccount);
 
   // Lightweight read-only view of the chat thread so we know whether to show
@@ -256,6 +268,36 @@ const AiCoach: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {multiAgentAllowed && (
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <label
+                    htmlFor="multi-agent-toggle"
+                    className={cn(
+                      'hidden lg:inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors',
+                      useMultiAgent
+                        ? 'border-primary/40 bg-primary/5 text-primary'
+                        : 'border-border/50 text-muted-foreground hover:bg-muted/30',
+                    )}
+                  >
+                    <Network className="h-3.5 w-3.5" />
+                    {t('aiCoach.orchestration.useMultiAgent', 'Multi-agent mode (beta)')}
+                    <Switch
+                      id="multi-agent-toggle"
+                      checked={useMultiAgent}
+                      onCheckedChange={setUseMultiAgent}
+                      aria-label={t('aiCoach.orchestration.useMultiAgent', 'Multi-agent mode (beta)')}
+                    />
+                  </label>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
+                  {t(
+                    'aiCoach.orchestration.useMultiAgentTooltip',
+                    'Routes your question to specialised agents (risk, psychology, strategy, data, education) and synthesises their answers. PRO+ only.',
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <AccountSelector value={selectedAccount} onChange={setSelectedAccount} className="w-44 hidden lg:flex" />
             <Button
               variant="ghost"
@@ -310,18 +352,22 @@ const AiCoach: React.FC = () => {
         <div className="lg:hidden flex-1 min-h-0">
           {mobileTab === 'chat' ? (
             <div className="flex h-full flex-col">
-              {isChatEmpty && (
+              {!useMultiAgent && isChatEmpty && (
                 <NlqIntroSection
                   onSelect={handlePromptSelect}
                   disabled={introGenerating || pendingPrompt !== null}
                 />
               )}
               <div className="flex-1 min-h-0">
-                <CoachChat
-                  className="h-full"
-                  pendingPrompt={pendingPrompt}
-                  onPromptConsumed={handlePromptConsumed}
-                />
+                {useMultiAgent ? (
+                  <AgentChatPanel className="h-full" />
+                ) : (
+                  <CoachChat
+                    className="h-full"
+                    pendingPrompt={pendingPrompt}
+                    onPromptConsumed={handlePromptConsumed}
+                  />
+                )}
               </div>
             </div>
           ) : (
@@ -334,18 +380,22 @@ const AiCoach: React.FC = () => {
         {/* Desktop: fixed-ratio flex layout */}
         <div className="hidden lg:flex flex-1 min-h-0 gap-3">
           <div className="flex-1 min-w-0 flex flex-col">
-            {isChatEmpty && (
+            {!useMultiAgent && isChatEmpty && (
               <NlqIntroSection
                 onSelect={handlePromptSelect}
                 disabled={introGenerating || pendingPrompt !== null}
               />
             )}
             <div className="flex-1 min-h-0">
-              <CoachChat
-                className="h-full"
-                pendingPrompt={pendingPrompt}
-                onPromptConsumed={handlePromptConsumed}
-              />
+              {useMultiAgent ? (
+                <AgentChatPanel className="h-full" />
+              ) : (
+                <CoachChat
+                  className="h-full"
+                  pendingPrompt={pendingPrompt}
+                  onPromptConsumed={handlePromptConsumed}
+                />
+              )}
             </div>
           </div>
           <div className="w-[380px] flex-shrink-0 overflow-y-auto">

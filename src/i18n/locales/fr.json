@@ -2567,7 +2567,8 @@
       "useMultiAgent": "Mode multi-agent (beta)",
       "agentRunning": "En cours...",
       "agentDone": "Terminé",
-      "agentError": "Erreur"
+      "agentError": "Erreur",
+      "useMultiAgentTooltip": "Route votre question vers les agents spécialisés (risque, psychologie, stratégie, données, apprentissage) puis synthétise leurs réponses. PRO+ uniquement."
     },
     "briefingCard": {
       "viewDetails": "Voir le briefing complet"

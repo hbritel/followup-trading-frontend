@@ -2364,7 +2364,8 @@
       "useMultiAgent": "Modo multi-agente (beta)",
       "agentRunning": "Ejecutando...",
       "agentDone": "Hecho",
-      "agentError": "Error"
+      "agentError": "Error",
+      "useMultiAgentTooltip": "Enruta tu pregunta a agentes especializados (riesgo, psicología, estrategia, datos, aprendizaje) y sintetiza sus respuestas. Solo PRO+."
     },
     "briefingCard": {
       "viewDetails": "Ver briefing completo"
