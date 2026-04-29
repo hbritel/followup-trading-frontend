@@ -77,6 +77,7 @@ import { PageFiltersProvider } from '@/contexts/page-filters-context';
 import { WebSocketProvider } from '@/providers/WebSocketProvider';
 import PlanChangeListener from '@/components/subscription/PlanChangeListener';
 import GlobalLiveListeners from '@/components/live/GlobalLiveListeners';
+import PostTradeEmotionDialog from '@/components/ai-coach/PostTradeEmotionDialog';
 import CookieBanner from '@/components/legal/CookieBanner';
 
 function App() {
@@ -112,6 +113,7 @@ function App() {
                       <WebSocketProvider>
                         <PlanChangeListener />
                         <GlobalLiveListeners />
+                        <PostTradeEmotionDialog />
                         <ProtectedRoute />
                       </WebSocketProvider>
                     }

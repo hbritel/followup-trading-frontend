@@ -48,6 +48,21 @@ const SHARE_DATA_STORAGE_KEY = 'coachChat.shareUserData';
 
 interface CoachChatProps {
   className?: string;
+  /**
+   * When set to a non-empty string, the chat will populate the composer with
+   * this text and immediately send it. Cleared via {@link onPromptConsumed}
+   * once the parent should stop driving the input.
+   *
+   * <p>This is the seam used by NLQ quick-prompt chips on the AI Coach page —
+   * the parent owns the prompt state and the chat owns the actual send.</p>
+   */
+  pendingPrompt?: string | null;
+  /**
+   * Called once the {@code pendingPrompt} has been forwarded to {@code send}.
+   * Parents should reset their prompt state in this callback so the same chip
+   * can be re-clicked later without firing twice.
+   */
+  onPromptConsumed?: () => void;
 }
 
 /**
@@ -58,7 +73,11 @@ interface CoachChatProps {
  * closing the tab or navigating away is safe; the message keeps generating
  * server-side and resumes on return.</p>
  */
-const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
+const CoachChat: React.FC<CoachChatProps> = ({
+  className,
+  pendingPrompt,
+  onPromptConsumed,
+}) => {
   const { t, i18n } = useTranslation();
   const { currentPlan } = useFeatureFlags();
   const {
@@ -139,6 +158,25 @@ const CoachChat: React.FC<CoachChatProps> = ({ className }) => {
       if (el) el.scrollTop = el.scrollHeight;
     });
   }, [messages]);
+
+  // Externally-driven prompt: when the parent injects a pendingPrompt, mirror
+  // it into the composer for visual feedback, then immediately send. Guarded
+  // against re-fires on prop identity churn by gating on the actual string.
+  const lastPromptRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingPrompt) return;
+    if (lastPromptRef.current === pendingPrompt) return;
+    if (isGenerating) return;
+    lastPromptRef.current = pendingPrompt;
+    setInput(pendingPrompt);
+    // Defer the actual send by a tick so React paints the composer text first.
+    const id = window.setTimeout(() => {
+      setInput('');
+      send(pendingPrompt, { shareUserData });
+      onPromptConsumed?.();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [pendingPrompt, isGenerating, send, shareUserData, onPromptConsumed]);
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {

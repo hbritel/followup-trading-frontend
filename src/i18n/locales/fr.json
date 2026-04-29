@@ -1954,7 +1954,7 @@
     "linkedAccountsDescription": "Gérez vos comptes de trading et d'investissement connectés",
     "unknown": "inconnu",
     "disabled": "désactivé",
-    "statusConnected": "actif",
+    "statusConnected": "Connecté",
     "statusActive": "actif",
     "statusPending": "en attente",
     "statusPaused": "en pause",
@@ -2035,7 +2035,6 @@
     "allDemoAccounts": "Tous les comptes démo",
     "noAccountsConnected": "Aucun compte connecté",
     "suspendedAccounts": "Comptes suspendus",
-    "statusConnected": "Connecté",
     "statusDisconnectedShort": "Hors ligne",
     "statusErrorShort": "Erreur",
     "statusPendingShort": "En attente",
@@ -2569,6 +2568,27 @@
       "agentRunning": "En cours...",
       "agentDone": "Terminé",
       "agentError": "Erreur"
+    },
+    "briefingCard": {
+      "viewDetails": "Voir le briefing complet"
+    },
+    "tiltGauge": {
+      "tooltip": "Votre tilt actuel : {{score}}. Cliquer pour voir détails"
+    },
+    "nlq": {
+      "sectionTitle": "Demandez à l'IA",
+      "sectionSubtitle": "Suggestions pour démarrer",
+      "prompt1": "Mon meilleur mois",
+      "prompt2": "Mes pertes vendredi",
+      "prompt3": "Mon top 3 symboles",
+      "prompt4": "Mon win rate par heure",
+      "prompt5": "Mes trades sur Vantage cette semaine"
+    },
+    "emotionPrompt": {
+      "title": "Comment vous sentiez-vous sur ce trade ?",
+      "subtitle": "Quelques secondes maintenant — un meilleur diagnostic plus tard.",
+      "later": "Plus tard",
+      "skipAll": "Ne plus me demander"
     }
   },
   "ai": {

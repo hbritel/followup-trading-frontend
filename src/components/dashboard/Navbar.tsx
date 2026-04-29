@@ -28,6 +28,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { useTranslation } from 'react-i18next';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MarketClocks from '@/components/dashboard/MarketClocks';
+import TiltGauge from '@/components/ai-coach/TiltGauge';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useBrokerConnections } from '@/hooks/useBrokers';
 
 interface NavbarProps {
   onOpenCommandPalette?: () => void;
@@ -37,6 +40,17 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+
+  // Plan + connection gating for the compact tilt badge — PRO+ with at least one active broker connection
+  const { data: subscription } = useSubscription();
+  const { data: connections } = useBrokerConnections();
+  const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3, TEAM: 4 };
+  const userPlanRank = PLAN_RANK[subscription?.plan ?? 'FREE'] ?? 0;
+  const hasActiveConnection = !!connections?.some(
+    (c) => c.status === 'CONNECTED' && c.enabled && !c.suspendedByPlan,
+  );
+  const showTiltBadge = userPlanRank >= PLAN_RANK.PRO && hasActiveConnection;
+
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -79,6 +93,11 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette }) => {
         </div>
 
         <div className="ml-auto flex items-center gap-1 md:gap-2">
+          {/* Tilt badge — PRO+ with active broker connection */}
+          {showTiltBadge && (
+            <TiltGauge variant="compact" />
+          )}
+
           {/* AI Trading Coach — always visible */}
           <Button
             variant="ghost"

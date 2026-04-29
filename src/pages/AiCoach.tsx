@@ -1,4 +1,4 @@
-import React, { useId, useState, useEffect, useMemo } from 'react';
+import React, { useId, useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDisclaimer } from '@/hooks/useDisclaimer';
@@ -8,11 +8,13 @@ import BriefingCard from '@/components/ai-coach/BriefingCard';
 import SessionDebriefCard from '@/components/ai-coach/SessionDebriefCard';
 import PsychologyCorrelation from '@/components/ai-coach/PsychologyCorrelation';
 import CoachStreak from '@/components/ai-coach/CoachStreak';
+import NlqQuickPrompts from '@/components/ai-coach/NlqQuickPrompts';
 import ActivityCard from '@/components/ai-coach/ActivityCard';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
 import CoachTour from '@/components/ai-coach/CoachTour';
+import { useCoachChat } from '@/hooks/useCoachChat';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import {
@@ -85,6 +87,31 @@ const CollapsibleSection: React.FC<{
   );
 };
 
+// ---- NLQ section (visible only when chat is empty) ----
+const NlqIntroSection: React.FC<{
+  onSelect: (prompt: string) => void;
+  disabled?: boolean;
+}> = ({ onSelect, disabled }) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      aria-labelledby="nlq-section-title"
+      className="rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 via-background to-background p-4 mb-3"
+    >
+      <h2
+        id="nlq-section-title"
+        className="text-sm font-semibold text-foreground"
+      >
+        {t('aiCoach.nlq.sectionTitle', "Demandez à l'IA")}
+      </h2>
+      <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+        {t('aiCoach.nlq.sectionSubtitle', 'Suggestions pour démarrer')}
+      </p>
+      <NlqQuickPrompts onSelect={onSelect} disabled={disabled} />
+    </section>
+  );
+};
+
 // ---- Main page ----
 
 const AiCoach: React.FC = () => {
@@ -94,6 +121,25 @@ const AiCoach: React.FC = () => {
   const [tourOpen, setTourOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
   const { accountId } = useAccountFilter(selectedAccount);
+
+  // Lightweight read-only view of the chat thread so we know whether to show
+  // the NLQ intro section. We intentionally use a separate hook instance here:
+  // only the messages list is read, and the parent never calls send() — that
+  // is owned by the CoachChat component instance via pendingPrompt below.
+  const { messages: introMessages, isGenerating: introGenerating } = useCoachChat();
+  const isChatEmpty = introMessages.length === 0;
+
+  // Pending NLQ prompt forwarded to CoachChat. CoachChat consumes it once and
+  // we clear it via the onPromptConsumed callback so the same chip can be
+  // re-clicked in a future empty state.
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const handlePromptSelect = useCallback((prompt: string) => {
+    if (introGenerating) return;
+    setPendingPrompt(prompt);
+  }, [introGenerating]);
+  const handlePromptConsumed = useCallback(() => {
+    setPendingPrompt(null);
+  }, []);
 
   useEffect(() => {
     const seen = localStorage.getItem('ai-coach-tour-seen');
@@ -263,7 +309,21 @@ const AiCoach: React.FC = () => {
         {/* Mobile: stacked panels with tab switcher */}
         <div className="lg:hidden flex-1 min-h-0">
           {mobileTab === 'chat' ? (
-            <CoachChat className="h-full" />
+            <div className="flex h-full flex-col">
+              {isChatEmpty && (
+                <NlqIntroSection
+                  onSelect={handlePromptSelect}
+                  disabled={introGenerating || pendingPrompt !== null}
+                />
+              )}
+              <div className="flex-1 min-h-0">
+                <CoachChat
+                  className="h-full"
+                  pendingPrompt={pendingPrompt}
+                  onPromptConsumed={handlePromptConsumed}
+                />
+              </div>
+            </div>
           ) : (
             <div className="h-full overflow-y-auto">
               {coachingPanel}
@@ -273,8 +333,20 @@ const AiCoach: React.FC = () => {
 
         {/* Desktop: fixed-ratio flex layout */}
         <div className="hidden lg:flex flex-1 min-h-0 gap-3">
-          <div className="flex-1 min-w-0">
-            <CoachChat className="h-full" />
+          <div className="flex-1 min-w-0 flex flex-col">
+            {isChatEmpty && (
+              <NlqIntroSection
+                onSelect={handlePromptSelect}
+                disabled={introGenerating || pendingPrompt !== null}
+              />
+            )}
+            <div className="flex-1 min-h-0">
+              <CoachChat
+                className="h-full"
+                pendingPrompt={pendingPrompt}
+                onPromptConsumed={handlePromptConsumed}
+              />
+            </div>
           </div>
           <div className="w-[380px] flex-shrink-0 overflow-y-auto">
             {coachingPanel}

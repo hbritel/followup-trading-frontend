@@ -34,6 +34,8 @@ import { useLiveTrades } from '@/hooks/useLiveTrades';
 import { useLiveAlerts } from '@/hooks/useLiveAlerts';
 import XpProgressBar from '@/components/gamification/XpProgressBar';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
+import BriefingCard from '@/components/ai-coach/BriefingCard';
+import { useSubscription } from '@/hooks/useSubscription';
 
 function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -47,6 +49,13 @@ const Dashboard = () => {
   const [customEnd, setCustomEnd] = usePageFilter<Date | null>('dashboard', 'customEnd', null);
 
   const { accountIds, accountId: apiAccountId } = useAccountFilter(selectedAccountId);
+
+  // Plan-gating for AI Coach widgets — STARTER+ unlocks the morning briefing
+  const { data: subscription } = useSubscription();
+  const PLAN_RANK: Record<string, number> = { FREE: 0, STARTER: 1, PRO: 2, ELITE: 3, TEAM: 4 };
+  const userPlanRank = PLAN_RANK[subscription?.plan ?? 'FREE'] ?? 0;
+  const showBriefingBanner = userPlanRank >= PLAN_RANK.STARTER;
+
 
   // Compute date range from preset or custom dates
   const dateRange = datePreset === 'custom'
@@ -156,6 +165,11 @@ const Dashboard = () => {
   return (
     <DashboardLayout pageTitle={t('pages.dashboard')}>
       <PageTransition className="flex flex-col gap-6">
+
+        {/* AI Coach — compact morning briefing banner (STARTER+) */}
+        {showBriefingBanner && (
+          <BriefingCard variant="compact" accountId={apiAccountId} />
+        )}
 
         {/* Filters bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

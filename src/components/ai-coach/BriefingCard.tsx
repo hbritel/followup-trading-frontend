@@ -1,9 +1,11 @@
 import React from 'react';
-import { RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Loader2, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBriefing, useGenerateBriefing } from '@/hooks/useBriefing';
+import { cn } from '@/lib/utils';
 
 const formatInline = (text: string): string =>
   text
@@ -70,15 +72,122 @@ const SimpleMarkdown: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
+/**
+ * Splits a multi-line warnings/strengths string into a list of items.
+ * Backend may emit bullet markers ("-", "*", "•") or one-per-line plain text.
+ */
+const splitItems = (text: string | undefined | null, max?: number): string[] => {
+  if (!text) return [];
+  const lines = text
+    .split(/\r?\n+/)
+    .map(l => l.replace(/^\s*[-*•]\s*/, '').trim())
+    .filter(l => l.length > 0);
+  return typeof max === 'number' ? lines.slice(0, max) : lines;
+};
+
 interface BriefingCardProps {
   accountId?: string;
+  /** Layout variant. 'full' (default) renders the full briefing; 'compact' renders a banner with the first 2 warnings + 2 strengths and a CTA. */
+  variant?: 'full' | 'compact';
 }
 
-const BriefingCard: React.FC<BriefingCardProps> = ({ accountId }) => {
+const BriefingCard: React.FC<BriefingCardProps> = ({ accountId, variant = 'full' }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: briefing, isLoading } = useBriefing(accountId);
   const { mutate: generate, isPending: isGenerating } = useGenerateBriefing(accountId);
 
+  // ---------------- Compact variant ----------------
+  if (variant === 'compact') {
+    if (isLoading) {
+      return (
+        <div data-testid="briefing-compact-skeleton" className="rounded-xl border border-border/60 bg-card/50 p-4 space-y-2">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+        </div>
+      );
+    }
+
+    if (!briefing) {
+      // No briefing yet — render nothing in compact mode (Dashboard hides the banner)
+      return null;
+    }
+
+    const warningItems = splitItems(briefing.warnings, 2);
+    const strengthItems = splitItems(briefing.strengths, 2);
+
+    return (
+      <div
+        data-testid="briefing-compact"
+        className={cn(
+          'group relative rounded-xl border border-amber-200/50 dark:border-amber-800/40',
+          'bg-gradient-to-br from-amber-50/70 via-card to-card dark:from-amber-950/20 dark:via-card dark:to-card',
+          'p-4 transition-shadow duration-200 hover:shadow-md',
+        )}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <Sparkles className="h-4 w-4 text-amber-500 flex-shrink-0" />
+            <div className="flex flex-col">
+              <h3 className="text-sm font-semibold text-foreground">
+                {t('ai.morningBriefing', 'Morning Briefing')}
+              </h3>
+              <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
+                {new Date(briefing.briefingDate).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/ai-coach')}
+            className="h-7 text-xs gap-1 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300"
+          >
+            {t('aiCoach.briefingCard.viewDetails', 'View full briefing')}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
+        {(warningItems.length > 0 || strengthItems.length > 0) && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {warningItems.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  {t('ai.debriefImprovements', 'Warnings')}
+                </span>
+                <ul className="space-y-1">
+                  {warningItems.map((item, i) => (
+                    <li key={i} className="flex gap-1.5 text-muted-foreground">
+                      <span className="text-amber-500 mt-0.5">•</span>
+                      <span className="line-clamp-2">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {strengthItems.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  {t('ai.debriefStrengths', 'Strengths')}
+                </span>
+                <ul className="space-y-1">
+                  {strengthItems.map((item, i) => (
+                    <li key={i} className="flex gap-1.5 text-muted-foreground">
+                      <span className="text-emerald-500 mt-0.5">•</span>
+                      <span className="line-clamp-2">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ---------------- Full variant (unchanged behavior) ----------------
   if (isLoading) {
     return (
       <div className="space-y-3">
