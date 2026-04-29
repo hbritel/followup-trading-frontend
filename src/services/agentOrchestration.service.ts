@@ -136,7 +136,9 @@ function dispatchSseFrame(raw: string, handlers: AgentStreamHandlers): void {
       if (parsed.type === 'agent_token') handlers.onAgentToken(parsed.agent, parsed.token);
       break;
     case 'agent_done':
-      if (parsed.type === 'agent_done') handlers.onAgentDone(parsed.agent, parsed.citations ?? []);
+      if (parsed.type === 'agent_done') {
+        handlers.onAgentDone(parsed.agent, parsed.citations ?? [], parsed.content ?? '');
+      }
       break;
     case 'synthesis_token':
       if (parsed.type === 'synthesis_token') handlers.onSynthesisToken(parsed.token);

@@ -2365,7 +2365,8 @@
       "agentRunning": "Ejecutando...",
       "agentDone": "Hecho",
       "agentError": "Error",
-      "useMultiAgentTooltip": "Enruta tu pregunta a agentes especializados (riesgo, psicología, estrategia, datos, aprendizaje) y sintetiza sus respuestas. Solo PRO+."
+      "useMultiAgentTooltip": "Enruta tu pregunta a agentes especializados (riesgo, psicología, estrategia, datos, aprendizaje) y sintetiza sus respuestas. Solo PRO+.",
+      "agentNoOutput": "Este agente no devolvió ningún razonamiento."
     },
     "briefingCard": {
       "viewDetails": "Ver briefing completo"

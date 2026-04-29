@@ -34,7 +34,7 @@ const AgentStep: React.FC<AgentStepProps> = ({ agent, state }) => {
         isError && 'border-destructive/40 bg-destructive/5',
       )}
     >
-      {isPending && !hasContent && (
+      {(isPending || isStreaming) && !hasContent && (
         <div className="space-y-2" aria-hidden>
           <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
           <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
@@ -42,7 +42,7 @@ const AgentStep: React.FC<AgentStepProps> = ({ agent, state }) => {
         </div>
       )}
 
-      {!isPending && hasContent && (
+      {hasContent && (
         <div className="prose prose-sm max-w-none break-words text-foreground">
           {renderChatMarkdown(state.partialContent)}
           {isStreaming && (
@@ -52,6 +52,12 @@ const AgentStep: React.FC<AgentStepProps> = ({ agent, state }) => {
             />
           )}
         </div>
+      )}
+
+      {state.status === 'done' && !hasContent && (
+        <p className="text-xs italic text-muted-foreground">
+          {t('aiCoach.orchestration.agentNoOutput', 'This agent did not return any reasoning.')}
+        </p>
       )}
 
       {isError && (

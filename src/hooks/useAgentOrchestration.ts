@@ -127,12 +127,20 @@ export function useAgentOrchestration() {
               })),
             );
           },
-          onAgentDone: (agent, citations) => {
+          onAgentDone: (agent, citations, content) => {
             setState((prev) =>
               patchAgent(prev, agent, (s) => ({
                 ...s,
                 status: 'done',
                 finalCitations: citations,
+                // Backend BaseAgent emits the full reasoning in one shot via
+                // AgentDone (no per-token streaming yet), so the partial
+                // content is empty until the agent finishes. Substitute the
+                // final content here when available so the AgentStep panel
+                // shows the agent's reasoning instead of staying blank.
+                partialContent: content && content.trim().length > 0
+                  ? content
+                  : s.partialContent,
               })),
             );
           },

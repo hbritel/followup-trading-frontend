@@ -70,7 +70,7 @@ describe('useAgentOrchestration', () => {
     expect(result.current.agentStates.get('risk')?.partialContent).toBe('Your drawdown');
 
     act(() => {
-      handlers.onAgentDone('risk', ['trade:abc']);
+      handlers.onAgentDone('risk', ['trade:abc'], '');
     });
     expect(result.current.agentStates.get('risk')?.status).toBe('done');
     expect(result.current.agentStates.get('risk')?.finalCitations).toEqual(['trade:abc']);

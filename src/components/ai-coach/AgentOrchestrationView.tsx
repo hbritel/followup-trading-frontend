@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, RotateCw, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,37 @@ const AgentOrchestrationView: React.FC<AgentOrchestrationViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<AgentType>>(() => new Set());
+  const [userOverrode, setUserOverrode] = useState<Set<AgentType>>(() => new Set());
+
+  // Auto-expand each agent once it transitions to a state that has reasoning
+  // worth reading (running/done with content, or error). Respect explicit user
+  // overrides so a manual collapse stays collapsed.
+  useEffect(() => {
+    setExpanded((prev) => {
+      let mutated = false;
+      const next = new Set(prev);
+      for (const agent of selectedAgents) {
+        if (userOverrode.has(agent)) continue;
+        const state = agentStates.get(agent);
+        if (!state) continue;
+        const hasContent = state.partialContent.trim().length > 0;
+        const shouldExpand =
+          state.status === 'error' || (state.status === 'done' && hasContent);
+        if (shouldExpand && !next.has(agent)) {
+          next.add(agent);
+          mutated = true;
+        }
+      }
+      return mutated ? next : prev;
+    });
+  }, [agentStates, selectedAgents, userOverrode]);
 
   const toggleExpanded = (agent: AgentType) => {
+    setUserOverrode((prev) => {
+      const next = new Set(prev);
+      next.add(agent);
+      return next;
+    });
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(agent)) next.delete(agent);
@@ -66,6 +95,16 @@ const AgentOrchestrationView: React.FC<AgentOrchestrationViewProps> = ({
 
   const isRouting = isStreaming && selectedAgents.length === 0;
   const hasSynthesis = synthesisContent.trim().length > 0;
+  // Synthesis runs AFTER all agents complete. Hide its skeleton placeholder
+  // while agents are still pending/running to avoid two unrelated grey
+  // banners stacking up during fan-out.
+  const allAgentsTerminal =
+    selectedAgents.length > 0 &&
+    selectedAgents.every((a) => {
+      const s = agentStates.get(a)?.status;
+      return s === 'done' || s === 'error';
+    });
+  const showSynthesisSkeleton = isStreaming && allAgentsTerminal && !hasSynthesis;
 
   return (
     <div
@@ -152,7 +191,7 @@ const AgentOrchestrationView: React.FC<AgentOrchestrationViewProps> = ({
           </div>
         )}
 
-        {(hasSynthesis || (!isRouting && selectedAgents.length > 0)) && (
+        {(hasSynthesis || showSynthesisSkeleton) && (
           <section
             aria-labelledby="agent-orchestration-synthesis-title"
             className="rounded-lg border border-primary/20 bg-primary/5 p-3"
