@@ -1285,6 +1285,7 @@ export interface AdminDunningUserDto {
   dunningStep: number;
   gracePeriodEndsAt: string;
   daysRemaining: number;
+  mock?: boolean;
 }
 
 export interface AdminCouponDto {
@@ -1296,6 +1297,7 @@ export interface AdminCouponDto {
   maxRedemptions?: number;
   timesRedeemed: number;
   valid: boolean;
+  promotionCode?: string;
 }
 
 export interface AdminMetricsDto {
@@ -1305,6 +1307,17 @@ export interface AdminMetricsDto {
   estimatedLtv: number;
   totalPaidUsers: number;
   totalFreeUsers: number;
+  netMrr?: number;
+  grossMrr?: number;
+  avgTenureMonths?: number;
+  paymentFailureRate?: number;
+  refundRate?: number;
+  topPlan?: string;
+}
+
+export interface AdminRevenuePointDto {
+  date: string;
+  amount: number;
 }
 
 export interface PlaybookSuggestionDto {

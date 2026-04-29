@@ -246,8 +246,11 @@ apiClient.interceptors.response.use(
             // Feature-flag gates (e.g. mentorship master switch OFF) also return
             // 503. Those are expected by callers that probe the surface on every
             // page load — surfacing a toast every time would spam the user.
-            const errorCode = (error.response?.data as { error?: string } | undefined)?.error;
-            const isFeatureGated = errorCode === 'MENTORSHIP_DISABLED';
+            const responseBody = error.response?.data as
+                | { error?: string; errorCode?: string }
+                | undefined;
+            const code = responseBody?.errorCode ?? responseBody?.error;
+            const isFeatureGated = code === 'MENTORSHIP_DISABLED';
             if (!isFeatureGated) {
                 toast.error('Service is temporarily unavailable. Please try again later.');
             }
@@ -256,7 +259,7 @@ apiClient.interceptors.response.use(
             ), {
                 isServiceUnavailable: true,
                 isFeatureDisabled: isFeatureGated,
-                errorCode,
+                errorCode: code,
                 originalError: error,
             });
             return Promise.reject(cbError);

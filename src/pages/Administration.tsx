@@ -128,6 +128,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import BillingTab from '@/components/admin/BillingTab';
 import AiUsageTab from '@/components/admin/AiUsageTab';
+import AdminAiTab from '@/components/admin/AdminAiTab';
 import AdminMentorVerificationQueue from '@/components/admin/AdminMentorVerificationQueue';
 import AdminMentorComplaintQueue from '@/components/admin/AdminMentorComplaintQueue';
 import AdminDac7Tab from '@/components/admin/AdminDac7Tab';
@@ -1199,7 +1200,7 @@ function SubscriptionsTab() {
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.user', 'User')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.plan', 'Plan')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.status')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.billing', 'Billing')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.billing.title', 'Billing')}</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.periodEnd', 'Period End')}</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('admin.actions')}</th>
             </tr>
@@ -2425,7 +2426,7 @@ const Administration = () => {
         {
           value: 'billing',
           icon: <Wallet className="h-4 w-4" strokeWidth={1.75} />,
-          label: t('admin.billing', 'Facturation'),
+          label: t('admin.billing.title', 'Facturation'),
         },
         {
           value: 'promotions',
@@ -2460,22 +2461,30 @@ const Administration = () => {
     {
       id: 'compliance',
       label: t('admin.section.compliance', 'Conformité'),
+      // DAC7 + DSA only make sense when the mentor marketplace is live —
+      // DAC7 reports mentor-as-vendor revenue to EU tax authorities, DSA
+      // covers content-moderation transparency on the mentor surface. Both
+      // hide when the mentorship master switch is OFF.
       items: [
         {
           value: 'auditLog',
           icon: <FileText className="h-4 w-4" strokeWidth={1.75} />,
           label: t('admin.auditLog'),
         },
-        {
-          value: 'dac7',
-          icon: <Receipt className="h-4 w-4" strokeWidth={1.75} />,
-          label: t('admin.dac7.tab', 'DAC7'),
-        },
-        {
-          value: 'dsa',
-          icon: <Scale className="h-4 w-4" strokeWidth={1.75} />,
-          label: t('admin.dsa.tab', 'DSA'),
-        },
+        ...(mentorshipEnabled
+          ? [
+              {
+                value: 'dac7',
+                icon: <Receipt className="h-4 w-4" strokeWidth={1.75} />,
+                label: t('admin.dac7.tab', 'DAC7'),
+              },
+              {
+                value: 'dsa',
+                icon: <Scale className="h-4 w-4" strokeWidth={1.75} />,
+                label: t('admin.dsa.tab', 'DSA'),
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -2486,6 +2495,11 @@ const Administration = () => {
           value: 'system',
           icon: <ToggleLeft className="h-4 w-4" strokeWidth={1.75} />,
           label: t('admin.system', 'Système'),
+        },
+        {
+          value: 'aiConfig',
+          icon: <Sparkles className="h-4 w-4" strokeWidth={1.75} />,
+          label: t('admin.ai.tabLabel', 'AI'),
         },
       ],
     },
@@ -2596,6 +2610,10 @@ const Administration = () => {
 
             <TabsContent value="system" className="mt-0">
               <FeatureFlagsTab />
+            </TabsContent>
+
+            <TabsContent value="aiConfig" className="mt-0">
+              <AdminAiTab />
             </TabsContent>
           </div>
         </Tabs>

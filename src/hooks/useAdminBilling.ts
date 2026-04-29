@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminBillingService, type CreateCouponRequest } from '@/services/adminBilling.service';
+import { adminBillingService, type CreateCouponRequest, type RevenuePeriod } from '@/services/adminBilling.service';
 import { toast } from '@/hooks/use-toast';
 
 // ── Query keys ───────────────────────────────────────────────────────────────
@@ -16,6 +16,13 @@ export const useAdminRevenue = () =>
   useQuery({
     queryKey: BILLING_REVENUE_KEY,
     queryFn: () => adminBillingService.getRevenue(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useAdminRevenueSeries = (period: RevenuePeriod) =>
+  useQuery({
+    queryKey: [...BILLING_REVENUE_KEY, 'series', period],
+    queryFn: () => adminBillingService.getRevenueSeries(period),
     staleTime: 5 * 60 * 1000,
   });
 

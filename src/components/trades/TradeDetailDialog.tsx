@@ -255,6 +255,34 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
   const direction = trade.type?.toUpperCase() || trade.direction?.toUpperCase() || '-';
   const status = trade.status?.toUpperCase() || '-';
 
+  const directionLabel =
+    direction === 'LONG'
+      ? t('trades.long', 'Long')
+      : direction === 'SHORT'
+      ? t('trades.short', 'Short')
+      : direction;
+
+  const statusLabel =
+    status === 'CLOSED'
+      ? t('trades.closed', 'Closed')
+      : status === 'OPEN'
+      ? t('trades.open', 'Open')
+      : status === 'CANCELLED'
+      ? t('trades.cancelled', 'Cancelled')
+      : status === 'PLANNED'
+      ? t('trades.planned', 'Planned')
+      : status;
+
+  const accountTypeLabel = (() => {
+    const a = trade.accountType?.toUpperCase();
+    if (!a) return '-';
+    if (a === 'REAL') return t('trades.accountReal', 'Real');
+    if (a === 'DEMO') return t('trades.accountDemo', 'Demo');
+    if (a === 'PAPER') return t('trades.accountPaper', 'Paper');
+    if (a === 'LIVE') return t('trades.accountLive', 'Live');
+    return trade.accountType;
+  })();
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { setEditing(false); } onOpenChange(o); }}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
@@ -263,18 +291,18 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
             <DialogTitle className="flex items-center gap-3">
               <span className="text-xl font-bold">{trade.symbol}</span>
               <Badge variant={direction === 'LONG' ? 'default' : 'secondary'}>
-                {direction}
+                {directionLabel}
               </Badge>
               {status === 'PLANNED' ? (
                 <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1">
                   <Target className="h-3 w-3" />
-                  Planned
+                  {statusLabel}
                 </Badge>
               ) : status === 'CANCELLED' ? (
-                <Badge variant="destructive">{status}</Badge>
+                <Badge variant="destructive">{statusLabel}</Badge>
               ) : (
                 <Badge variant={status === 'CLOSED' ? 'outline' : 'default'}>
-                  {status}
+                  {statusLabel}
                 </Badge>
               )}
             </DialogTitle>
@@ -679,7 +707,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
           {/* Metadata */}
           <Separator />
           <div className="grid grid-cols-2 gap-4 text-xs">
-            <Field label={t('trades.accountType', 'Account')} value={trade.accountType || '-'} />
+            <Field label={t('trades.accountType', 'Account')} value={accountTypeLabel} />
             <Field label={t('trades.currency', 'Currency')} value={trade.currency || '-'} />
             <Field label={t('trades.createdAt', 'Created')} value={formatDate(trade.createdAt)} />
             <Field label={t('trades.updatedAt', 'Updated')} value={formatDate(trade.updatedAt)} />

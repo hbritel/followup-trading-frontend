@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,18 +10,19 @@ interface EmotionPickerProps {
   tradeId: string;
 }
 
-const EMOTIONS: Array<{ value: string; label: string; emoji: string }> = [
-  { value: 'CALM', label: 'Calm', emoji: '😌' },
-  { value: 'CONFIDENT', label: 'Confident', emoji: '💪' },
-  { value: 'STRESSED', label: 'Stressed', emoji: '😰' },
-  { value: 'FOMO', label: 'FOMO', emoji: '🤯' },
-  { value: 'REVENGE', label: 'Revenge', emoji: '😤' },
-  { value: 'DISCIPLINED', label: 'Disciplined', emoji: '🎯' },
-  { value: 'FEARFUL', label: 'Fearful', emoji: '😨' },
-  { value: 'EUPHORIC', label: 'Euphoric', emoji: '🤑' },
+const EMOTIONS: Array<{ value: string; i18nKey: string; emoji: string }> = [
+  { value: 'CALM', i18nKey: 'emotions.calm', emoji: '😌' },
+  { value: 'CONFIDENT', i18nKey: 'emotions.confident', emoji: '💪' },
+  { value: 'STRESSED', i18nKey: 'emotions.stressed', emoji: '😰' },
+  { value: 'FOMO', i18nKey: 'emotions.fomo', emoji: '🤯' },
+  { value: 'REVENGE', i18nKey: 'emotions.revenge', emoji: '😤' },
+  { value: 'DISCIPLINED', i18nKey: 'emotions.disciplined', emoji: '🎯' },
+  { value: 'FEARFUL', i18nKey: 'emotions.fearful', emoji: '😨' },
+  { value: 'EUPHORIC', i18nKey: 'emotions.euphoric', emoji: '🤑' },
 ];
 
 const EmotionPicker: React.FC<EmotionPickerProps> = ({ tradeId }) => {
+  const { t } = useTranslation();
   const { data: existing, isLoading } = useEmotionLog(tradeId);
   const { mutate: logEmotion, isPending } = useLogEmotion(tradeId);
 
@@ -71,7 +73,7 @@ const EmotionPicker: React.FC<EmotionPickerProps> = ({ tradeId }) => {
             )}
           >
             <span>{em.emoji}</span>
-            <span>{em.label}</span>
+            <span>{t(em.i18nKey)}</span>
           </button>
         ))}
       </div>
@@ -80,7 +82,7 @@ const EmotionPicker: React.FC<EmotionPickerProps> = ({ tradeId }) => {
       {selectedEmotion && (
         <>
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">Confidence level</p>
+            <p className="text-xs text-muted-foreground font-medium">{t('emotions.confidenceLevel', 'Confidence level')}</p>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -99,11 +101,11 @@ const EmotionPicker: React.FC<EmotionPickerProps> = ({ tradeId }) => {
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">Notes (optional)</p>
+            <p className="text-xs text-muted-foreground font-medium">{t('emotions.notesOptional', 'Notes (optional)')}</p>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What were you feeling during this trade?"
+              placeholder={t('emotions.notesPlaceholder', 'What were you feeling during this trade?')}
               rows={2}
               maxLength={300}
               className="text-sm resize-none"
@@ -121,7 +123,7 @@ const EmotionPicker: React.FC<EmotionPickerProps> = ({ tradeId }) => {
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Save Psychology Entry
+            {t('emotions.savePsychology', 'Save Psychology Entry')}
           </Button>
         </>
       )}

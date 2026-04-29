@@ -2,6 +2,74 @@ import apiClient from './apiClient';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+export interface AiProviderEntry {
+  name: string;
+  displayName?: string;
+  available: boolean;
+  custom?: boolean;
+}
+
+export interface AiDefaultProviderDto {
+  current: string;
+  available: AiProviderEntry[];
+}
+
+export type AiProviderTypeValue =
+  | 'OLLAMA'
+  | 'OPENAI_COMPATIBLE'
+  | 'GEMINI'
+  | 'ANTHROPIC'
+  | 'OPENROUTER';
+
+export interface SystemAiProviderDto {
+  id: string;
+  name: string;
+  displayName: string;
+  providerType: AiProviderTypeValue;
+  baseUrl: string | null;
+  modelName: string;
+  maxTokens: number | null;
+  temperature: number | null;
+  timeoutSeconds: number | null;
+  active: boolean;
+  hasApiKey: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSystemAiProviderRequest {
+  name: string;
+  displayName?: string;
+  providerType: AiProviderTypeValue;
+  baseUrl?: string;
+  apiKey?: string;
+  modelName: string;
+  maxTokens?: number;
+  temperature?: number;
+  timeoutSeconds?: number;
+  active?: boolean;
+}
+
+export interface TestSystemAiProviderResponse {
+  available: boolean;
+  models: string[];
+  modelMismatch: boolean;
+  configuredModel: string | null;
+  error?: string;
+}
+
+export interface UpdateSystemAiProviderRequest {
+  displayName?: string;
+  providerType?: AiProviderTypeValue;
+  baseUrl?: string;
+  apiKey?: string;
+  modelName?: string;
+  maxTokens?: number;
+  temperature?: number;
+  timeoutSeconds?: number;
+  active?: boolean;
+}
+
 export interface AdminUserDto {
   id: string;
   username: string;
@@ -244,6 +312,44 @@ export const adminService = {
    */
   getRoles: async (): Promise<RoleDto[]> => {
     const response = await apiClient.get<RoleDto[]>('/admin/roles');
+    return response.data;
+  },
+
+  // ── AI default provider ────────────────────────────────────────────────────
+
+  getAiDefaultProvider: async (): Promise<AiDefaultProviderDto> => {
+    const response = await apiClient.get<AiDefaultProviderDto>('/admin/ai/default-provider');
+    return response.data;
+  },
+
+  updateAiDefaultProvider: async (provider: string): Promise<AiDefaultProviderDto> => {
+    const response = await apiClient.put<AiDefaultProviderDto>('/admin/ai/default-provider', { provider });
+    return response.data;
+  },
+
+  // ── Custom (admin-managed) AI providers ────────────────────────────────────
+
+  listSystemAiProviders: async (): Promise<SystemAiProviderDto[]> => {
+    const response = await apiClient.get<SystemAiProviderDto[]>('/admin/ai/providers');
+    return response.data;
+  },
+
+  createSystemAiProvider: async (req: CreateSystemAiProviderRequest): Promise<SystemAiProviderDto> => {
+    const response = await apiClient.post<SystemAiProviderDto>('/admin/ai/providers', req);
+    return response.data;
+  },
+
+  updateSystemAiProvider: async (id: string, req: UpdateSystemAiProviderRequest): Promise<SystemAiProviderDto> => {
+    const response = await apiClient.put<SystemAiProviderDto>(`/admin/ai/providers/${id}`, req);
+    return response.data;
+  },
+
+  deleteSystemAiProvider: async (id: string): Promise<void> => {
+    await apiClient.delete(`/admin/ai/providers/${id}`);
+  },
+
+  testSystemAiProvider: async (id: string): Promise<TestSystemAiProviderResponse> => {
+    const response = await apiClient.post<TestSystemAiProviderResponse>(`/admin/ai/providers/${id}/test`);
     return response.data;
   },
 

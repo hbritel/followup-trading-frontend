@@ -361,7 +361,25 @@ const EmptyState: React.FC<{ t: (k: string, fb?: string) => string }> = ({ t }) 
   </div>
 );
 
+/** Locale-aware "MMM d, HH:mm" or just "HH:mm" if today. */
+function formatChatTimestamp(iso: string, lang: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const locale = lang.startsWith('fr') ? 'fr-FR' : lang.startsWith('es') ? 'es-ES' : 'en-US';
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  return sameDay
+    ? new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(d)
+    : new Intl.DateTimeFormat(locale, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      }).format(d);
+}
+
 const MessageBubble: React.FC<{ message: CoachViewMessage }> = ({ message }) => {
+  const { i18n } = useTranslation();
   const isUser = message.role === 'USER';
   const showCaret =
     !isUser && (message.status === 'STREAMING' || message.status === 'PENDING');
@@ -376,8 +394,16 @@ const MessageBubble: React.FC<{ message: CoachViewMessage }> = ({ message }) => 
         ? '…'
         : '';
 
+  const timestamp = formatChatTimestamp(message.createdAt, i18n.language);
+  const fullTimestamp = (() => {
+    const d = new Date(message.createdAt);
+    if (Number.isNaN(d.getTime())) return '';
+    const locale = i18n.language.startsWith('fr') ? 'fr-FR' : i18n.language.startsWith('es') ? 'es-ES' : 'en-US';
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium' }).format(d);
+  })();
+
   return (
-    <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex flex-col', isUser ? 'items-end' : 'items-start')}>
       <div
         className={cn(
           // break-words + whitespace-pre-wrap handles unbroken tokens AND
@@ -395,6 +421,15 @@ const MessageBubble: React.FC<{ message: CoachViewMessage }> = ({ message }) => 
           <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-current align-middle opacity-60" />
         )}
       </div>
+      {timestamp && (
+        <time
+          dateTime={message.createdAt}
+          title={fullTimestamp}
+          className="mt-1 px-1 text-[10px] text-muted-foreground/70 tabular-nums"
+        >
+          {timestamp}
+        </time>
+      )}
     </div>
   );
 };

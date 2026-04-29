@@ -2,12 +2,15 @@ import apiClient from './apiClient';
 import { config } from '@/config';
 import type {
   AdminRevenueDto,
+  AdminRevenuePointDto,
   AdminInvoiceDto,
   AdminTaxLineDto,
   AdminDunningUserDto,
   AdminCouponDto,
   AdminMetricsDto,
 } from '@/types/dto';
+
+export type RevenuePeriod = '7d' | '30d' | '90d' | '1y';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -27,16 +30,26 @@ export const adminBillingService = {
     return response.data;
   },
 
+  getRevenueSeries: async (period: RevenuePeriod): Promise<AdminRevenuePointDto[]> => {
+    const response = await apiClient.get<AdminRevenuePointDto[]>('/admin/billing/revenue/series', {
+      params: { period },
+    });
+    return response.data;
+  },
+
   getInvoices: async (
     limit = 20,
     startingAfter?: string,
-  ): Promise<AdminInvoiceDto[]> => {
-    const response = await apiClient.get<AdminInvoiceDto[]>('/admin/billing/invoices', {
-      params: {
-        limit,
-        ...(startingAfter ? { startingAfter } : {}),
+  ): Promise<{ data: AdminInvoiceDto[]; hasMore: boolean }> => {
+    const response = await apiClient.get<{ data: AdminInvoiceDto[]; hasMore: boolean }>(
+      '/admin/billing/invoices',
+      {
+        params: {
+          limit,
+          ...(startingAfter ? { startingAfter } : {}),
+        },
       },
-    });
+    );
     return response.data;
   },
 
