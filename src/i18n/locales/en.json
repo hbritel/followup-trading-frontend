@@ -2563,6 +2563,40 @@
     "viewProfile": "View public profile",
     "saveChanges": "Save Changes"
   },
+  "aiCoach": {
+    "agents": {
+      "risk": {
+        "label": "Risk",
+        "description": "Drawdown, sizing, prop firm rules, R-multiple"
+      },
+      "psychology": {
+        "label": "Psychology",
+        "description": "Tilt, emotions, behavioral patterns"
+      },
+      "strategy": {
+        "label": "Strategy",
+        "description": "Playbook compliance, edge, rule violations"
+      },
+      "data": {
+        "label": "Data",
+        "description": "Read-only SQL queries on your trades"
+      },
+      "education": {
+        "label": "Learning",
+        "description": "Skill gaps, learning paths, resources"
+      }
+    },
+    "orchestration": {
+      "routing": "Selecting agents...",
+      "synthesis": "Synthesis",
+      "cancel": "Cancel",
+      "retry": "Retry",
+      "useMultiAgent": "Multi-agent mode (beta)",
+      "agentRunning": "Running...",
+      "agentDone": "Done",
+      "agentError": "Error"
+    }
+  },
   "ai": {
     "title": "AI Trading Coach",
     "placeholder": "Ask about your trading...",

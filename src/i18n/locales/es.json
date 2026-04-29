@@ -2334,6 +2334,40 @@
     "uploadFailed": "Error de subida",
     "uploadFailedDescription": "No se pudo subir el avatar. Intentelo de nuevo."
   },
+  "aiCoach": {
+    "agents": {
+      "risk": {
+        "label": "Riesgo",
+        "description": "Drawdown, sizing, reglas prop firm, R-multiple"
+      },
+      "psychology": {
+        "label": "Psicología",
+        "description": "Tilt, emociones, patrones de comportamiento"
+      },
+      "strategy": {
+        "label": "Estrategia",
+        "description": "Conformidad playbook, edge, violaciones de reglas"
+      },
+      "data": {
+        "label": "Datos",
+        "description": "Consultas SQL de solo lectura sobre tus trades"
+      },
+      "education": {
+        "label": "Aprendizaje",
+        "description": "Skill gaps, learning paths, recursos"
+      }
+    },
+    "orchestration": {
+      "routing": "Seleccionando agentes...",
+      "synthesis": "Síntesis",
+      "cancel": "Cancelar",
+      "retry": "Reintentar",
+      "useMultiAgent": "Modo multi-agente (beta)",
+      "agentRunning": "Ejecutando...",
+      "agentDone": "Hecho",
+      "agentError": "Error"
+    }
+  },
   "ai": {
     "title": "Entrenador de Trading IA",
     "placeholder": "Pregunta sobre tu trading...",
