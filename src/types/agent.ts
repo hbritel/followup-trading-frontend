@@ -48,7 +48,7 @@ export interface AgentStreamHandlers {
   onRouting: (agents: AgentType[]) => void;
   onAgentStart: (agent: AgentType) => void;
   onAgentToken: (agent: AgentType, token: string) => void;
-  onAgentDone: (agent: AgentType, citations: string[]) => void;
+  onAgentDone: (agent: AgentType, citations: string[], content: string) => void;
   onSynthesisToken: (token: string) => void;
   onDone: () => void;
   onError: (message: string, agent?: AgentType) => void;
@@ -59,7 +59,7 @@ export type AgentSseEvent =
   | { type: 'routing'; agents: AgentType[] }
   | { type: 'agent_start'; agent: AgentType }
   | { type: 'agent_token'; agent: AgentType; token: string }
-  | { type: 'agent_done'; agent: AgentType; citations: string[] }
+  | { type: 'agent_done'; agent: AgentType; citations: string[]; content?: string | null }
   | { type: 'synthesis_token'; token: string }
   | { type: 'done' }
   | { type: 'error'; message: string; agent?: AgentType };

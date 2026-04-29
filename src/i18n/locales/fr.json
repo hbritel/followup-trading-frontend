@@ -2568,7 +2568,8 @@
       "agentRunning": "En cours...",
       "agentDone": "Terminé",
       "agentError": "Erreur",
-      "useMultiAgentTooltip": "Route votre question vers les agents spécialisés (risque, psychologie, stratégie, données, apprentissage) puis synthétise leurs réponses. PRO+ uniquement."
+      "useMultiAgentTooltip": "Route votre question vers les agents spécialisés (risque, psychologie, stratégie, données, apprentissage) puis synthétise leurs réponses. PRO+ uniquement.",
+      "agentNoOutput": "Cet agent n'a pas retourné de raisonnement."
     },
     "briefingCard": {
       "viewDetails": "Voir le briefing complet"

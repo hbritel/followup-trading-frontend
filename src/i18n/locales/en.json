@@ -2566,7 +2566,8 @@
       "agentRunning": "Running...",
       "agentDone": "Done",
       "agentError": "Error",
-      "useMultiAgentTooltip": "Routes your question to specialised agents (risk, psychology, strategy, data, education) and synthesises their answers. PRO+ only."
+      "useMultiAgentTooltip": "Routes your question to specialised agents (risk, psychology, strategy, data, education) and synthesises their answers. PRO+ only.",
+      "agentNoOutput": "This agent did not return any reasoning."
     },
     "briefingCard": {
       "viewDetails": "View full briefing"
