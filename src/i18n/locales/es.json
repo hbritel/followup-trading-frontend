@@ -1934,7 +1934,7 @@
     "allDemoAccounts": "Todas las cuentas demo",
     "noAccountsConnected": "Sin cuentas conectadas",
     "suspendedAccounts": "Cuentas suspendidas",
-    "statusConnected": "Conectado",
+    "statusConnected": "activa",
     "statusDisconnectedShort": "Desconectado",
     "statusErrorShort": "Error",
     "statusPendingShort": "Pendiente",
@@ -1963,7 +1963,6 @@
     "confirmDisconnect": "¿Desconectar cuenta?",
     "confirmDisconnectDescription": "Esto eliminará permanentemente la conexión a {{broker}} y todos los trades importados. Esta acción no se puede deshacer.",
     "accountId": "ID de cuenta",
-    "statusConnected": "activa",
     "statusActive": "activa",
     "statusPending": "pendiente",
     "statusPaused": "en pausa",
@@ -4260,6 +4259,29 @@
       "acceptsNew": "accepts new",
       "verified": "verified",
       "tabTitle": "Alertas de búsqueda"
+    }
+  },
+  "aiCoach": {
+    "briefingCard": {
+      "viewDetails": "Ver briefing completo"
+    },
+    "tiltGauge": {
+      "tooltip": "Su tilt actual: {{score}}. Haga clic para ver detalles"
+    },
+    "nlq": {
+      "sectionTitle": "Ask the AI",
+      "sectionSubtitle": "Try a suggestion",
+      "prompt1": "My best month",
+      "prompt2": "My losses on Fridays",
+      "prompt3": "My top 3 symbols",
+      "prompt4": "My win rate by hour",
+      "prompt5": "My trades on Vantage this week"
+    },
+    "emotionPrompt": {
+      "title": "How did you feel about this trade?",
+      "subtitle": "A few seconds now — a sharper diagnosis later.",
+      "later": "Later",
+      "skipAll": "Don't ask again"
     }
   }
 }
