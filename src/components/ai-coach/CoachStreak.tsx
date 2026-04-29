@@ -56,7 +56,7 @@ const CoachStreak: React.FC = () => {
       <div className="flex items-center gap-2.5 mb-2">
         <Flame className={cn('h-5 w-5 flex-shrink-0', flameColor)} />
         <div>
-          <p className="text-base font-bold leading-none">
+          <p className="text-base font-bold tabular-nums leading-none">
             {streak > 0
               ? t('ai.streakDays', '{{count}} day streak', { count: streak })
               : '0'}

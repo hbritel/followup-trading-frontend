@@ -36,7 +36,7 @@ const PsychologyCorrelation: React.FC = () => {
   const hasEnoughData = entries.length >= 1;
 
   return (
-    <div className="glass-card rounded-2xl p-5">
+    <div className="space-y-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -95,7 +95,7 @@ const PsychologyCorrelation: React.FC = () => {
                   <span className="text-xs text-muted-foreground truncate block">
                     {label}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/50">
+                  <span className="text-[10px] text-muted-foreground/50 tabular-nums">
                     {entry.tradeCount} {entry.tradeCount === 1 ? 'trade' : 'trades'}
                   </span>
                 </div>
@@ -110,7 +110,7 @@ const PsychologyCorrelation: React.FC = () => {
                 </div>
                 <span
                   className={cn(
-                    'text-xs font-mono font-medium w-10 text-right flex-shrink-0',
+                    'text-xs font-mono font-medium tabular-nums w-10 text-right flex-shrink-0',
                     isPositive ? 'text-emerald-400' : 'text-red-400',
                   )}
                 >
@@ -118,7 +118,7 @@ const PsychologyCorrelation: React.FC = () => {
                 </span>
                 <span
                   className={cn(
-                    'text-xs font-mono w-14 text-right flex-shrink-0',
+                    'text-xs font-mono tabular-nums w-14 text-right flex-shrink-0',
                     entry.avgPnl >= 0 ? 'text-emerald-400' : 'text-red-400',
                   )}
                 >

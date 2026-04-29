@@ -19,7 +19,7 @@ const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId, 
   const getAccountLabel = useAccountLabel();
 
   return (
-    <div className="glass-card rounded-2xl p-4 space-y-3">
+    <div className="space-y-3">
       <div className="flex items-center gap-2">
         <BellRing className="h-4 w-4 text-primary" />
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -34,7 +34,7 @@ const BehavioralAlertsList: React.FC<BehavioralAlertsListProps> = ({ accountId, 
           </TooltipContent>
         </Tooltip>
         {alerts && alerts.length > 0 && (
-          <span className="ml-auto text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-medium">
+          <span className="ml-auto text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 font-medium tabular-nums">
             {alerts.length}
           </span>
         )}

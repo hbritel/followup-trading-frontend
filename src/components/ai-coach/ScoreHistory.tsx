@@ -155,7 +155,7 @@ const ScoreHistory: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="glass-card rounded-2xl p-4">
+      <div className="space-y-2">
         <Skeleton className="h-4 w-36 mb-3" />
         <Skeleton className="h-[60px] w-full mb-2 rounded" />
         <Skeleton className="h-3 w-20" />
@@ -164,7 +164,7 @@ const ScoreHistory: React.FC = () => {
   }
 
   return (
-    <div className="glass-card rounded-2xl p-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -196,7 +196,7 @@ const ScoreHistory: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">
                   {t('ai.scoreAvg', 'Avg')}
                 </span>
-                <span className="text-xs font-semibold">{avgScore.toFixed(1)}</span>
+                <span className="text-xs font-semibold tabular-nums">{avgScore.toFixed(1)}</span>
               </div>
             )}
             {lastScore != null && (
@@ -204,12 +204,12 @@ const ScoreHistory: React.FC = () => {
                 <span className="text-[10px] text-muted-foreground">
                   {t('ai.scoreLast', 'Last')}
                 </span>
-                <span className="text-xs font-semibold" style={{ color: lineColor }}>
+                <span className="text-xs font-semibold tabular-nums" style={{ color: lineColor }}>
                   {lastScore.toFixed(1)}
                 </span>
               </div>
             )}
-            <span className="text-[10px] text-muted-foreground ml-auto">
+            <span className="text-[10px] text-muted-foreground tabular-nums ml-auto">
               {scores.length} {t('common.sessions', 'sessions')}
             </span>
           </div>
