@@ -5,8 +5,10 @@ import { psychologyService } from '@/services/psychology.service';
 import { tradeService } from '@/services/trade.service';
 
 /**
- * LocalStorage key used by the user to opt out of post-trade emotion prompts
- * altogether. Stored as the literal string "true" when set.
+ * LocalStorage key kept as a session-local fast path so the queue stays empty
+ * across reloads even before the backend consent fetch resolves. The
+ * authoritative state lives server-side at `/ai/psychology/consent` and the
+ * hook syncs both directions automatically.
  */
 export const POST_TRADE_PROMPT_OPT_OUT_KEY = 'postTradeEmotionPrompt.optOut';
 
@@ -20,7 +22,7 @@ interface UsePostTradeEmotionPromptResult {
   activePrompt: ActiveEmotionPrompt | null;
   /** Closes the current prompt without persisting anything. */
   dismissCurrent: () => void;
-  /** Closes the current prompt and clears the entire pending queue. */
+  /** Closes the current prompt and clears the queue; persists opt-out backend-side. */
   skipAll: () => void;
 }
 
@@ -51,6 +53,20 @@ const hasOptedOut = (): boolean => {
   }
 };
 
+/** Persists the opt-out flag locally so reloads short-circuit before the consent fetch. */
+const persistLocalOptOut = (optedOut: boolean): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (optedOut) {
+      window.localStorage.setItem(POST_TRADE_PROMPT_OPT_OUT_KEY, 'true');
+    } else {
+      window.localStorage.removeItem(POST_TRADE_PROMPT_OPT_OUT_KEY);
+    }
+  } catch {
+    // Storage disabled — rely on in-memory state only.
+  }
+};
+
 /**
  * Subscribes to broker sync events and queues a post-trade emotion prompt for
  * each newly-closed trade that does not yet have a psychology entry.
@@ -75,6 +91,11 @@ export function usePostTradeEmotionPrompt(): UsePostTradeEmotionPromptResult {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingRef = useRef(false);
+  // Server-authoritative opt-out flag, hydrated on mount from
+  // GET /ai/psychology/consent. Defaults to localStorage value until the
+  // fetch resolves so reloads stay coherent. `true` means tracking is
+  // disabled — i.e. the queue should remain empty.
+  const optedOutRef = useRef<boolean>(hasOptedOut());
   // Mirror of `activePrompt` for use inside callbacks that must not depend on
   // it (and re-create on every transition). Reads via the ref are always the
   // latest value because we update it synchronously on every state change.
@@ -112,6 +133,14 @@ export function usePostTradeEmotionPrompt(): UsePostTradeEmotionPromptResult {
     }
     activePromptRef.current = null;
     setActivePrompt(null);
+    // Persist disable backend-side. Mirror in localStorage so reloads
+    // before the fetch resolves still skip the popup.
+    optedOutRef.current = true;
+    persistLocalOptOut(true);
+    void psychologyService.setConsent(false).catch(() => {
+      // If the backend rejects we keep the local flag — user-visible
+      // behaviour stays consistent until the next reload re-fetches.
+    });
   }, []);
 
   /**
@@ -121,7 +150,7 @@ export function usePostTradeEmotionPrompt(): UsePostTradeEmotionPromptResult {
    */
   const enqueueRecentlyClosedTrades = useCallback(async () => {
     if (processingRef.current) return;
-    if (hasOptedOut()) return;
+    if (optedOutRef.current) return;
     processingRef.current = true;
     try {
       const page = await tradeService.getTrades({ page: 0, size: 25, status: 'CLOSED' });
@@ -173,6 +202,28 @@ export function usePostTradeEmotionPrompt(): UsePostTradeEmotionPromptResult {
   useEffect(() => {
     enqueueRef.current = enqueueRecentlyClosedTrades;
   }, [enqueueRecentlyClosedTrades]);
+
+  // Hydrate the server-authoritative consent state on mount and on user
+  // change. The local cache stays as a fast path for the very first render.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    psychologyService.getConsent().then(
+      (response) => {
+        if (cancelled) return;
+        const enabled = response?.data?.enabled ?? false;
+        optedOutRef.current = !enabled;
+        persistLocalOptOut(!enabled);
+      },
+      () => {
+        // Network error — keep the local cache value. The next mount
+        // will retry; queued prompts remain blocked if the cache says so.
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!connected || !user?.id) return;

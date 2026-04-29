@@ -9,6 +9,8 @@ const { tradeServiceMock, psychologyServiceMock, wsMock } = vi.hoisted(() => {
   };
   const psychology = {
     getByTradeId: vi.fn(),
+    getConsent: vi.fn(),
+    setConsent: vi.fn(),
   };
   const ws = {
     triggerMessage: null as ((m: { body: string }) => void) | null,
@@ -73,6 +75,15 @@ beforeEach(() => {
   vi.useFakeTimers();
   tradeServiceMock.getTrades.mockReset();
   psychologyServiceMock.getByTradeId.mockReset();
+  psychologyServiceMock.getConsent.mockReset();
+  psychologyServiceMock.setConsent.mockReset();
+  // Default: consent enabled (queue allowed). Individual tests override.
+  psychologyServiceMock.getConsent.mockResolvedValue({
+    data: { enabled: true, consentAt: '2026-04-29T12:00:00Z' },
+  });
+  psychologyServiceMock.setConsent.mockResolvedValue({
+    data: { enabled: false, consentAt: null },
+  });
   wsMock.triggerMessage = null;
   try {
     window.localStorage.removeItem(POST_TRADE_PROMPT_OPT_OUT_KEY);
