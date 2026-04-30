@@ -2,12 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { AgentStreamHandlers } from '@/services/agentOrchestration.service';
 
-const { streamAgentAskMock } = vi.hoisted(() => ({
+const { streamAgentAskMock, getActiveOrchestrationMock, getOrchestrationByIdMock } = vi.hoisted(() => ({
   streamAgentAskMock: vi.fn(),
+  getActiveOrchestrationMock: vi.fn(),
+  getOrchestrationByIdMock: vi.fn(),
 }));
 
 vi.mock('@/services/agentOrchestration.service', () => ({
   streamAgentAsk: streamAgentAskMock,
+  getActiveOrchestration: getActiveOrchestrationMock,
+  getOrchestrationById: getOrchestrationByIdMock,
 }));
 
 import { useAgentOrchestration } from '../useAgentOrchestration';
@@ -30,7 +34,11 @@ const captureSession = (): CapturedSession => {
 describe('useAgentOrchestration', () => {
   beforeEach(() => {
     streamAgentAskMock.mockReset();
+    getActiveOrchestrationMock.mockReset();
+    getOrchestrationByIdMock.mockReset();
     streamAgentAskMock.mockImplementation((_req, _h) => new AbortController());
+    // Default: no persisted run on mount, so the hook starts idle.
+    getActiveOrchestrationMock.mockResolvedValue(null);
   });
 
   it('starts in an idle state', () => {
