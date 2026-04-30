@@ -1,14 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { streamAgentAsk } from '@/services/agentOrchestration.service';
-import type { AgentState, AgentType } from '@/types/agent';
+import {
+  getActiveOrchestration,
+  getOrchestrationById,
+  streamAgentAsk,
+} from '@/services/agentOrchestration.service';
+import type {
+  AgentInvocationView,
+  AgentOrchestrationRunView,
+  AgentState,
+  AgentType,
+} from '@/types/agent';
 
 interface AgentOrchestrationState {
+  orchestrationId: string | null;
+  question: string | null;
   selectedAgents: AgentType[];
   agentStates: Map<AgentType, AgentState>;
   synthesisContent: string;
   isStreaming: boolean;
   error: string | null;
 }
+
+/** Statuses that signal the run is still in flight server-side. */
+const ACTIVE_STATUSES = new Set(['PENDING', 'ROUTING', 'FAN_OUT', 'SYNTHESIS']);
+
+/** How often we poll an in-flight run while the user is on the page. */
+const POLL_INTERVAL_MS = 1500;
 
 interface AskOptions {
   forceAgents?: AgentType[];
@@ -17,12 +34,55 @@ interface AskOptions {
 }
 
 const INITIAL_STATE: AgentOrchestrationState = {
+  orchestrationId: null,
+  question: null,
   selectedAgents: [],
   agentStates: new Map(),
   synthesisContent: '',
   isStreaming: false,
   error: null,
 };
+
+/**
+ * Hydrates a {@link AgentOrchestrationState} from a persisted run snapshot.
+ * Used both on mount (resume after refresh) and during the polling loop while
+ * the run is in flight.
+ */
+function fromRunView(run: AgentOrchestrationRunView): AgentOrchestrationState {
+  const stillActive = ACTIVE_STATUSES.has(run.status);
+  const map = new Map<AgentType, AgentState>();
+  for (const agent of run.selectedAgents) {
+    map.set(agent, {
+      type: agent,
+      status: 'pending',
+      partialContent: '',
+      finalCitations: [],
+    });
+  }
+  for (const inv of run.invocations) {
+    map.set(inv.agent, {
+      type: inv.agent,
+      status: invocationStatus(inv),
+      partialContent: inv.content ?? '',
+      finalCitations: inv.citations ?? [],
+      error: inv.error ?? undefined,
+    });
+  }
+  return {
+    orchestrationId: run.orchestrationId,
+    question: run.question,
+    selectedAgents: [...run.selectedAgents],
+    agentStates: map,
+    synthesisContent: run.synthesisContent ?? '',
+    isStreaming: stillActive,
+    error: run.status === 'FAILED' ? run.error : null,
+  };
+}
+
+function invocationStatus(inv: AgentInvocationView): AgentState['status'] {
+  if (inv.error) return 'error';
+  return inv.status;
+}
 
 /**
  * React hook driving the multi-agent orchestration UI.
@@ -46,6 +106,8 @@ export function useAgentOrchestration() {
   }));
 
   const controllerRef = useRef<AbortController | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollOrchestrationIdRef = useRef<string | null>(null);
 
   const abortInFlight = useCallback(() => {
     if (controllerRef.current) {
@@ -54,23 +116,99 @@ export function useAgentOrchestration() {
     }
   }, []);
 
-  // Cancel any in-flight stream when the component unmounts.
-  useEffect(() => () => abortInFlight(), [abortInFlight]);
+  const stopPoll = useCallback(() => {
+    if (pollTimerRef.current !== null) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+    pollOrchestrationIdRef.current = null;
+  }, []);
 
-  /** Wipes view-state and aborts any pending stream. */
+  // Cancel any in-flight stream + polling when the component unmounts.
+  useEffect(() => {
+    return () => {
+      abortInFlight();
+      stopPoll();
+    };
+  }, [abortInFlight, stopPoll]);
+
+  /**
+   * Starts a polling loop that re-fetches the persisted run every
+   * {@link POLL_INTERVAL_MS} until the server marks it terminal. Used after
+   * a refresh: the SSE stream from the original POST is gone, but the run
+   * keeps progressing server-side and we mirror its state into the UI.
+   */
+  const startPoll = useCallback((id: string) => {
+    pollOrchestrationIdRef.current = id;
+    const tick = async () => {
+      if (pollOrchestrationIdRef.current !== id) {
+        return;
+      }
+      try {
+        const run = await getOrchestrationById(id);
+        if (pollOrchestrationIdRef.current !== id) {
+          return;
+        }
+        if (!run) {
+          stopPoll();
+          return;
+        }
+        setState(fromRunView(run));
+        if (ACTIVE_STATUSES.has(run.status)) {
+          pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
+        } else {
+          stopPoll();
+        }
+      } catch {
+        // Network blip — keep polling at the same cadence.
+        if (pollOrchestrationIdRef.current === id) {
+          pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
+        }
+      }
+    };
+    pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
+  }, [stopPoll]);
+
+  // Restore an in-flight or recently-completed run on mount so a refresh
+  // doesn't lose the user's question and the agent reasoning that's about
+  // to land.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const run = await getActiveOrchestration();
+        if (cancelled || !run) return;
+        setState(fromRunView(run));
+        if (ACTIVE_STATUSES.has(run.status)) {
+          startPoll(run.orchestrationId);
+        }
+      } catch {
+        // Silent: the panel just stays empty until the user runs a new one.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Intentionally run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Wipes view-state and aborts any pending stream / polling. */
   const reset = useCallback(() => {
     abortInFlight();
+    stopPoll();
     setState({
       ...INITIAL_STATE,
       agentStates: new Map(),
     });
-  }, [abortInFlight]);
+  }, [abortInFlight, stopPoll]);
 
-  /** Cancels the active stream but keeps already-rendered state visible. */
+  /** Cancels the active stream + polling but keeps already-rendered state visible. */
   const cancel = useCallback(() => {
     abortInFlight();
+    stopPoll();
     setState((prev) => (prev.isStreaming ? { ...prev, isStreaming: false } : prev));
-  }, [abortInFlight]);
+  }, [abortInFlight, stopPoll]);
 
   /**
    * Submits a new question. Cancels any in-flight run, clears state, and
@@ -83,7 +221,10 @@ export function useAgentOrchestration() {
 
       // Reset before kicking off — one active run at a time.
       abortInFlight();
+      stopPoll();
       setState({
+        orchestrationId: null,
+        question: trimmed,
         selectedAgents: [],
         agentStates: new Map(),
         synthesisContent: '',
@@ -99,6 +240,9 @@ export function useAgentOrchestration() {
           locale: options.locale,
         },
         {
+          onOrchestrationStarted: (orchestrationId) => {
+            setState((prev) => ({ ...prev, orchestrationId }));
+          },
           onRouting: (agents) => {
             setState((prev) => {
               const nextStates = new Map(prev.agentStates);
@@ -169,13 +313,15 @@ export function useAgentOrchestration() {
 
       controllerRef.current = controller;
     },
-    [abortInFlight],
+    [abortInFlight, stopPoll],
   );
 
   return {
     ask,
     cancel,
     reset,
+    orchestrationId: state.orchestrationId,
+    question: state.question,
     selectedAgents: state.selectedAgents,
     agentStates: state.agentStates,
     synthesisContent: state.synthesisContent,

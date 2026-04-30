@@ -1,6 +1,8 @@
 import { config } from '@/config';
+import apiClient from '@/services/apiClient';
 import type {
   AgentAskRequest,
+  AgentOrchestrationRunView,
   AgentSseEvent,
   AgentStreamHandlers,
   AgentType,
@@ -140,6 +142,11 @@ function dispatchSseFrame(raw: string, handlers: AgentStreamHandlers): void {
         handlers.onAgentDone(parsed.agent, parsed.citations ?? [], parsed.content ?? '');
       }
       break;
+    case 'orchestration_started':
+      if (parsed.type === 'orchestration_started') {
+        handlers.onOrchestrationStarted?.(parsed.orchestrationId);
+      }
+      break;
     case 'synthesis_token':
       if (parsed.type === 'synthesis_token') handlers.onSynthesisToken(parsed.token);
       break;
@@ -164,6 +171,47 @@ function parseEventPayload(data: string): AgentSseEvent | null {
     return obj as unknown as AgentSseEvent;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Fetches the most recent multi-agent orchestration run for the authenticated
+ * user. Used by the panel on mount to restore an in-flight or recently-completed
+ * run after a navigation or refresh. Returns {@code null} when the user has
+ * never run an orchestration (backend responds with 204 No Content).
+ */
+export async function getActiveOrchestration(): Promise<AgentOrchestrationRunView | null> {
+  try {
+    const res = await apiClient.get<AgentOrchestrationRunView | ''>('/ai/coach/ask/active');
+    if (res.status === 204 || !res.data) {
+      return null;
+    }
+    return res.data as AgentOrchestrationRunView;
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } } | null)?.response?.status;
+    if (status === 204 || status === 404) {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Fetches a specific orchestration run by id. Returns {@code null} on 404 / 403
+ * (the run does not exist or belongs to another user).
+ */
+export async function getOrchestrationById(
+  id: string,
+): Promise<AgentOrchestrationRunView | null> {
+  try {
+    const res = await apiClient.get<AgentOrchestrationRunView>(`/ai/coach/ask/${id}`);
+    return res.data;
+  } catch (err: unknown) {
+    const status = (err as { response?: { status?: number } } | null)?.response?.status;
+    if (status === 404 || status === 403) {
+      return null;
+    }
+    throw err;
   }
 }
 

@@ -45,6 +45,11 @@ export interface AgentState {
 
 /** Handlers fired by {@link streamAgentAsk} as SSE events arrive. */
 export interface AgentStreamHandlers {
+  /**
+   * Always the first event. Carries the persistent run id so the client can
+   * later restore the panel via GET /coach/ask/{id} after a refresh.
+   */
+  onOrchestrationStarted?: (orchestrationId: string) => void;
   onRouting: (agents: AgentType[]) => void;
   onAgentStart: (agent: AgentType) => void;
   onAgentToken: (agent: AgentType, token: string) => void;
@@ -56,6 +61,7 @@ export interface AgentStreamHandlers {
 
 /** Discriminated union of every payload shape emitted by the backend. */
 export type AgentSseEvent =
+  | { type: 'orchestration_started'; orchestrationId: string }
   | { type: 'routing'; agents: AgentType[] }
   | { type: 'agent_start'; agent: AgentType }
   | { type: 'agent_token'; agent: AgentType; token: string }
@@ -63,3 +69,38 @@ export type AgentSseEvent =
   | { type: 'synthesis_token'; token: string }
   | { type: 'done' }
   | { type: 'error'; message: string; agent?: AgentType };
+
+/** Lifecycle phases of a persisted run, mirrors backend AgentOrchestrationStatus. */
+export type AgentOrchestrationStatus =
+  | 'PENDING'
+  | 'ROUTING'
+  | 'FAN_OUT'
+  | 'SYNTHESIS'
+  | 'DONE'
+  | 'FAILED'
+  | 'CANCELLED';
+
+/** Per-agent invocation snapshot returned by the run-detail endpoint. */
+export interface AgentInvocationView {
+  id: string;
+  agent: AgentType;
+  content: string;
+  citations: string[];
+  status: 'pending' | 'running' | 'done' | 'error';
+  error: string | null;
+  createdAt: string;
+}
+
+/** Snapshot returned by GET /coach/ask/active and /coach/ask/{id}. */
+export interface AgentOrchestrationRunView {
+  orchestrationId: string;
+  status: AgentOrchestrationStatus;
+  question: string;
+  locale: string | null;
+  selectedAgents: AgentType[];
+  synthesisContent: string;
+  error: string | null;
+  invocations: AgentInvocationView[];
+  startedAt: string;
+  completedAt: string | null;
+}
