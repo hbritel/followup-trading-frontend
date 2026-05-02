@@ -3514,6 +3514,40 @@
     "dunningUrgent": "Action requise : votre abonnement sera annulé dans {{days}} jours.",
     "updatePayment": "Mettre à jour"
   },
+  "visionAnalysis": {
+    "analyze": "Analyser le chart",
+    "analyzing": "Analyse en cours…",
+    "analyzeAnother": "Analyser un autre chart",
+    "contextLabel": "Contexte de trade (optionnel)",
+    "contextPlaceholder": "NAS100 LONG, R:R 1.5, playbook ICT Silver Bullet…",
+    "scoreLabel": "Conformité",
+    "keyLevels": "Niveaux clés",
+    "stopAnalysis": "Stop",
+    "targetAnalysis": "Cible",
+    "playbookMatch": "Correspondance playbook",
+    "providerLine": "{{provider}} · {{tokens}} tokens",
+    "imageAlt": "Chart analysé",
+    "disclaimer": "Informationnel uniquement — observation sur votre playbook et le chart. Ne constitue pas un conseil d'investissement.",
+    "dropzone": {
+      "title": "Glissez une capture de chart ici",
+      "hint": "PNG / JPEG / WEBP / GIF — jusqu'à 5 Mo"
+    },
+    "locked": {
+      "title": "L'analyse de chart est disponible à partir du plan PRO.",
+      "body": "Importez un chart, l'IA évalue le setup contre votre playbook.",
+      "currentPlan": "Votre plan : {{plan}}"
+    },
+    "unavailable": {
+      "title": "L'analyse vision est temporairement indisponible.",
+      "body": "Aucun fournisseur multimodal n'est connecté. Réessayez plus tard ou contactez le support."
+    },
+    "errors": {
+      "fileRequired": "Veuillez sélectionner une capture de chart.",
+      "fileTooLarge": "Le fichier dépasse la limite de 5 Mo.",
+      "fileBadMime": "Format d'image non supporté.",
+      "generic": "Impossible d'analyser le chart. Réessayez."
+    }
+  },
   "tradePlan": {
     "planATrade": "Planifier un Trade",
     "scoreSetup": "Scorer mon setup",
