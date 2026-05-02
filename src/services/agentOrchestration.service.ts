@@ -215,5 +215,20 @@ export async function getOrchestrationById(
   }
 }
 
+/**
+ * Cancels an in-flight multi-agent run server-side. The backend marks the row
+ * CANCELLED so the polling loop sees a terminal status and stops; in-flight LLM
+ * calls keep running but their output is discarded by the client. Resolves to
+ * {@code true} on 204 No Content, {@code false} otherwise (404, 403, 409, network).
+ */
+export async function cancelOrchestration(id: string): Promise<boolean> {
+  try {
+    const res = await apiClient.post(`/ai/coach/ask/${id}/cancel`, {});
+    return res.status === 204 || res.status === 200;
+  } catch {
+    return false;
+  }
+}
+
 /** Re-exported for hook + tests so they don't reach into the type module twice. */
 export type { AgentAskRequest, AgentStreamHandlers, AgentType };

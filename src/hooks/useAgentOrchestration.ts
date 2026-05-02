@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  cancelOrchestration,
   getActiveOrchestration,
   getOrchestrationById,
   streamAgentAsk,
@@ -203,12 +204,21 @@ export function useAgentOrchestration() {
     });
   }, [abortInFlight, stopPoll]);
 
-  /** Cancels the active stream + polling but keeps already-rendered state visible. */
+  /**
+   * Cancels the active stream + polling locally and tells the backend to mark
+   * the run CANCELLED so it stops being returned by /ask/active. The visible
+   * state stays — user keeps the agents' partial reasoning visible after
+   * cancelling, which mirrors how the chat panel feels.
+   */
   const cancel = useCallback(() => {
     abortInFlight();
     stopPoll();
+    const idToCancel = state.orchestrationId;
     setState((prev) => (prev.isStreaming ? { ...prev, isStreaming: false } : prev));
-  }, [abortInFlight, stopPoll]);
+    if (idToCancel) {
+      void cancelOrchestration(idToCancel);
+    }
+  }, [abortInFlight, state.orchestrationId, stopPoll]);
 
   /**
    * Submits a new question. Cancels any in-flight run, clears state, and
