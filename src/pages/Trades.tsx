@@ -18,6 +18,7 @@ import TradeColumnFilter from '@/components/trades/TradeColumnFilter';
 import TradeImportExport from '@/components/trades/TradeImportExport';
 import ImportDialog from '@/components/trades/ImportDialog';
 import TradePlanDialog from '@/components/trades/TradePlanDialog';
+import TradePlanningModal from '@/components/trades/TradePlanningModal';
 import DashboardDateFilter, { computeDateRange } from '@/components/dashboard/DashboardDateFilter';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
@@ -245,6 +246,7 @@ const Trades = () => {
   const [showColumnFilter, setShowColumnFilter] = useState(false);
   const [showNewTradeDialog, setShowNewTradeDialog] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
+  const [planningScoreOpen, setPlanningScoreOpen] = useState(false);
   const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
 
   // --- Handlers ---
@@ -439,10 +441,16 @@ const Trades = () => {
             <p className="text-muted-foreground text-sm text-center max-w-md">
               Connect a broker account and sync your trades, or add a trade manually.
             </p>
-            <Button onClick={handleNewTrade} size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              {t('trades.newTrade')}
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button onClick={() => setPlanningScoreOpen(true)} size="sm" variant="outline">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {t('tradePlanning.cta', 'Score this setup')}
+              </Button>
+              <Button onClick={handleNewTrade} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                {t('trades.newTrade')}
+              </Button>
+            </div>
           </Card>
         )}
 
@@ -493,6 +501,14 @@ const Trades = () => {
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <NewTradeDialog open={showNewTradeDialog} onOpenChange={setShowNewTradeDialog} />
       <TradePlanDialog open={planOpen} onOpenChange={setPlanOpen} />
+      <TradePlanningModal
+        open={planningScoreOpen}
+        onClose={() => setPlanningScoreOpen(false)}
+        onAccept={() => {
+          setPlanningScoreOpen(false);
+          setShowNewTradeDialog(true);
+        }}
+      />
       <TradeDetailDialog
         trade={viewingTrade}
         open={!!viewingTrade}

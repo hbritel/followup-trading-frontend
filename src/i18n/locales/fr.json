@@ -5147,5 +5147,36 @@
       "aggressiveTitle": "0,7 × Kelly (agressif)",
       "fullKellyTitle": "Kelly complet (ne pas utiliser en pratique)"
     }
+  },
+  "tradePlanning": {
+    "modalTitle": "Planifier votre trade",
+    "modalDescription": "Notez ce setup contre vos patterns historiques avant d'ouvrir la position.",
+    "symbol": "Symbole",
+    "direction": "Direction",
+    "long": "Long",
+    "short": "Short",
+    "entry": "Entrée",
+    "stopLoss": "Stop",
+    "takeProfit": "Cible",
+    "positionSize": "Taille de position (optionnel)",
+    "setupReason": "Raison du setup (optionnel)",
+    "setupReasonPlaceholder": "Pullback EMA50 + divergence RSI...",
+    "score": "Calculer le score",
+    "scoring": "Calcul...",
+    "scoreLabel": "Score",
+    "edit": "Modifier les entrées",
+    "proceed": "Procéder au trade",
+    "cta": "Noter ce setup",
+    "error": "Impossible de calculer le score — vérifiez vos entrées.",
+    "strengths": "Points forts",
+    "warnings": "Avertissements",
+    "disclaimer": "Informationnel uniquement — basé sur vos données historiques. Ne constitue pas un conseil en investissement.",
+    "factors": {
+      "playbook": "Conformité playbook",
+      "tilt": "Tilt actuel",
+      "hour": "Heure favorable",
+      "symbol": "Historique symbole",
+      "rr": "Ratio risque/récompense"
+    }
   }
 }
