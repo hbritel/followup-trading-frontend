@@ -384,6 +384,8 @@
     "type": "Tipo",
     "direction": "Dirección",
     "quantity": "Cantidad",
+    "lotSize": "Tamaño del lote",
+    "time": "Hora prevista",
     "entryPrice": "Precio de entrada",
     "exitPrice": "Precio de salida",
     "stopLoss": "Stop Loss",

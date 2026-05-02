@@ -398,6 +398,8 @@
     "type": "Type",
     "direction": "Direction",
     "quantity": "Quantity",
+    "lotSize": "Lot Size",
+    "time": "Planned Time",
     "entryPrice": "Entry Price",
     "exitPrice": "Exit Price",
     "currentPrice": "Current Price",
@@ -3524,6 +3526,9 @@
     "draftSaved": "Draft saved",
     "draftRestored": "Draft restored",
     "limitReached": "Daily limit reached",
+    "lotsUnit": "lots",
+    "featureLocked": "Feature available from the STARTER plan",
+    "featureLockedDescription": "Pre-trade scoring is included in STARTER, PRO, and ELITE. Upgrade to unlock.",
     "days": {
       "MONDAY": "Win rate on Monday",
       "TUESDAY": "Win rate on Tuesday",

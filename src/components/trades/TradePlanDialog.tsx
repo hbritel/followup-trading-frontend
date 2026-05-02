@@ -251,9 +251,12 @@ const ScoreResult: React.FC<ScoreResultProps> = ({ result, onClose, onCreateTrad
               R:R {riskRewardRatio.toFixed(2)}
             </span>
           </div>
-          <div className="inline-flex items-center gap-1.5 text-sm font-medium rounded-md bg-primary/10 text-primary px-2.5 py-1 w-fit">
-            {t('tradePlan.suggestedSize')}: {suggestedSize} lots
-          </div>
+          {suggestedSize != null && Number(suggestedSize) > 0 && (
+            <div className="inline-flex items-center gap-1.5 text-sm font-medium rounded-md bg-primary/10 text-primary px-2.5 py-1 w-fit">
+              {t('tradePlan.suggestedSize')}: {suggestedSize}{' '}
+              {t('tradePlan.lotsUnit', 'lots')}
+            </div>
+          )}
         </div>
       </div>
 

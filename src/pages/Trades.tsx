@@ -570,6 +570,8 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
   onPlanTrade,
 }) => {
   const { t } = useTranslation();
+  const { hasPlan } = useFeatureFlags();
+  const canUseTradePlanning = hasPlan('STARTER');
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -592,10 +594,12 @@ const FiltersSection: React.FC<FiltersSectionProps> = ({
               accountFilter={accountFilter}
               totalElements={totalElements}
             />
-          <Button variant="outline" size="sm" onClick={onPlanTrade}>
-            <Sparkles className="h-4 w-4 mr-1.5" />
-            {t('tradePlan.planATrade', 'Plan a Trade')}
-          </Button>
+          {canUseTradePlanning && (
+            <Button variant="outline" size="sm" onClick={onPlanTrade}>
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              {t('tradePlan.planATrade', 'Plan a Trade')}
+            </Button>
+          )}
           <Button onClick={onNewTrade}>
             <Plus className="mr-2 h-4 w-4" />
             {t('trades.newTrade')}
