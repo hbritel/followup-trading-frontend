@@ -398,6 +398,8 @@
     "type": "Type",
     "direction": "Direction",
     "quantity": "Quantité",
+    "lotSize": "Taille du lot",
+    "time": "Heure prévue",
     "entryPrice": "Prix d'entrée",
     "exitPrice": "Prix de sortie",
     "currentPrice": "Prix actuel",
@@ -3538,6 +3540,9 @@
     "draftSaved": "Brouillon sauvegardé",
     "draftRestored": "Brouillon restauré",
     "limitReached": "Limite quotidienne atteinte",
+    "lotsUnit": "lots",
+    "featureLocked": "Fonctionnalité disponible à partir du plan STARTER",
+    "featureLockedDescription": "Le scoring pré-trade est inclus dans STARTER, PRO et ELITE. Mettez à niveau pour débloquer.",
     "days": {
       "MONDAY": "Taux de réussite le lundi",
       "TUESDAY": "Taux de réussite le mardi",
