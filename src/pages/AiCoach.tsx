@@ -10,6 +10,7 @@ import PsychologyCorrelation from '@/components/ai-coach/PsychologyCorrelation';
 import CoachStreak from '@/components/ai-coach/CoachStreak';
 import NlqQuickPrompts from '@/components/ai-coach/NlqQuickPrompts';
 import ActivityCard from '@/components/ai-coach/ActivityCard';
+import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 import {
   MessageSquare, LayoutDashboard, Sun, Moon,
   HelpCircle, Info, ChevronDown, Sparkles, Brain, Network,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -206,6 +208,19 @@ const AiCoach: React.FC = () => {
         >
           <div className="mt-2">
             <SessionDebriefCard accountId={accountId} />
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Block 2.b: Chart Analyzer — Sprint 4 vision (PRO+) */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4">
+        <CollapsibleSection
+          title={t('visionAnalysis.sectionTitle', 'Chart Analyzer')}
+          icon={<ImageIcon className="h-4 w-4 text-fuchsia-400" />}
+          defaultOpen={false}
+        >
+          <div className="mt-2">
+            <ChartAnalyzer />
           </div>
         </CollapsibleSection>
       </div>

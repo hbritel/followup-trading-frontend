@@ -3515,6 +3515,7 @@
     "updatePayment": "Mettre à jour"
   },
   "visionAnalysis": {
+    "sectionTitle": "Analyse de chart",
     "analyze": "Analyser le chart",
     "analyzing": "Analyse en cours…",
     "analyzeAnother": "Analyser un autre chart",

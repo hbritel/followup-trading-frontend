@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Pencil, Save, X, Loader2, Play, ChevronDown, ChevronUp, Brain, Rocket, Ban, Target } from 'lucide-react';
+import { Pencil, Save, X, Loader2, Play, ChevronDown, ChevronUp, Brain, Rocket, Ban, Target, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategies } from '@/hooks/useStrategies';
@@ -44,6 +44,7 @@ import type { CreateTradeRequest } from '@/services/trade.service';
 import type { Trade } from './TradesTableWrapper';
 import RuleComplianceChecklist from './RuleComplianceChecklist';
 import EmotionPicker from '@/components/ai-coach/EmotionPicker';
+import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
 
 interface TradeDetailDialogProps {
   trade: Trade | null;
@@ -51,6 +52,40 @@ interface TradeDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   initialEditMode?: boolean;
   onTradeUpdated?: (updated: Trade) => void;
+}
+
+/**
+ * Builds a compact trade-context string consumed by {@link ChartAnalyzer}.
+ *
+ * <p>Only the fields that meaningfully ground the AI's read are included
+ * (symbol, direction, planned vs realised entry/SL/TP, R:R if computable).
+ * Nullable fields are skipped silently so the resulting prompt stays clean.</p>
+ */
+function buildTradeContext(trade: Trade): string {
+  const parts: string[] = [];
+  if (trade.symbol) {
+    parts.push(`Symbol: ${trade.symbol}`);
+  }
+  if (trade.direction) {
+    parts.push(`Direction: ${trade.direction}`);
+  }
+  if (trade.entryPrice != null) {
+    parts.push(`Entry: ${trade.entryPrice}`);
+  }
+  if (trade.stopLoss != null) {
+    parts.push(`Stop: ${trade.stopLoss}`);
+  }
+  if (trade.takeProfit != null) {
+    parts.push(`Target: ${trade.takeProfit}`);
+  }
+  if (trade.entryPrice != null && trade.stopLoss != null && trade.takeProfit != null) {
+    const risk = Math.abs(Number(trade.entryPrice) - Number(trade.stopLoss));
+    const reward = Math.abs(Number(trade.takeProfit) - Number(trade.entryPrice));
+    if (risk > 0) {
+      parts.push(`R:R ≈ ${(reward / risk).toFixed(2)}`);
+    }
+  }
+  return parts.join(' · ');
 }
 
 const Field = ({ label, value, className }: { label: string; value: React.ReactNode; className?: string }) => (
@@ -154,6 +189,7 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
 
   const [editing, setEditing] = useState(false);
   const [psychologyOpen, setPsychologyOpen] = useState(false);
+  const [chartAnalyzerOpen, setChartAnalyzerOpen] = useState(false);
   const [executeFormOpen, setExecuteFormOpen] = useState(false);
   const [execEntry, setExecEntry] = useState('');
   const [execSl, setExecSl] = useState('');
@@ -698,6 +734,38 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
                 {psychologyOpen && (
                   <div className="mt-3">
                     <EmotionPicker tradeId={trade.id} />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Chart Analysis (Sprint 4 vision) — collapsible, only for existing trades */}
+          {trade.id && (
+            <>
+              <Separator />
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setChartAnalyzerOpen((prev) => !prev)}
+                  className="flex items-center gap-2 w-full text-left group"
+                >
+                  <ImageIcon className="h-4 w-4 text-fuchsia-400" />
+                  <h4 className="text-sm font-semibold flex-1">
+                    {t('visionAnalysis.sectionTitle', 'Chart Analyzer')}
+                  </h4>
+                  {chartAnalyzerOpen ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                {chartAnalyzerOpen && (
+                  <div className="mt-3">
+                    <ChartAnalyzer
+                      tradeId={trade.id}
+                      defaultContext={buildTradeContext(trade)}
+                    />
                   </div>
                 )}
               </div>
