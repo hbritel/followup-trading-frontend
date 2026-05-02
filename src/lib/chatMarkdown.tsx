@@ -6,6 +6,8 @@ import React from 'react';
  * <p>Covers exactly what an LLM reliably emits for short replies:</p>
  * <ul>
  *   <li>Paragraphs (blank line)</li>
+ *   <li>Headings (# h1, ## h2, ### h3, #### h4)</li>
+ *   <li>Fenced code blocks (```...```), language hint optional</li>
  *   <li>Bullet lists ("- item" or "* item")</li>
  *   <li>Numbered lists ("1. item", "2. item" …)</li>
  *   <li>Inline: {@code **bold**}, {@code *italic*}, {@code `code`}</li>
@@ -21,6 +23,7 @@ export function renderChatMarkdown(text: string): React.ReactNode {
   const lines = text.split('\n');
   const blocks: React.ReactNode[] = [];
   let listBuffer: { ordered: boolean; items: string[] } | null = null;
+  let codeBuffer: { lang: string; lines: string[] } | null = null;
 
   const flushList = () => {
     if (!listBuffer) return;
@@ -42,10 +45,65 @@ export function renderChatMarkdown(text: string): React.ReactNode {
     listBuffer = null;
   };
 
+  const flushCode = () => {
+    if (!codeBuffer) return;
+    blocks.push(
+      <pre
+        key={`code-${blocks.length}`}
+        className="my-2 overflow-x-auto rounded-md bg-muted-foreground/10 p-3 text-xs font-mono leading-relaxed"
+      >
+        <code>{codeBuffer.lines.join('\n')}</code>
+      </pre>,
+    );
+    codeBuffer = null;
+  };
+
   for (const rawLine of lines) {
     const line = rawLine.replace(/\s+$/, '');
+
+    // Fenced code block: opening ```lang or closing ```.
+    const fenceMatch = /^\s*```(.*)$/.exec(line);
+    if (fenceMatch) {
+      if (codeBuffer) {
+        // Closing fence — flush.
+        flushCode();
+      } else {
+        // Opening fence — flush any list first, then start a code block.
+        flushList();
+        codeBuffer = { lang: fenceMatch[1].trim(), lines: [] };
+      }
+      continue;
+    }
+
+    if (codeBuffer) {
+      codeBuffer.lines.push(rawLine);
+      continue;
+    }
+
+    const headingMatch = /^\s*(#{1,4})\s+(.*)$/.exec(line);
     const bulletMatch = /^\s*[-*]\s+(.*)$/.exec(line);
     const orderedMatch = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+
+    if (headingMatch) {
+      flushList();
+      const level = headingMatch[1].length;
+      const content = headingMatch[2];
+      const sizeClass =
+        level === 1
+          ? 'text-base font-bold mt-3 mb-1'
+          : level === 2
+            ? 'text-sm font-bold mt-2 mb-1'
+            : level === 3
+              ? 'text-sm font-semibold mt-2 mb-0.5'
+              : 'text-xs font-semibold mt-1 mb-0.5 uppercase tracking-wide';
+      const Tag = (`h${Math.min(level, 4)}` as 'h1' | 'h2' | 'h3' | 'h4');
+      blocks.push(
+        <Tag key={`h-${blocks.length}`} className={sizeClass}>
+          {renderInline(content)}
+        </Tag>,
+      );
+      continue;
+    }
 
     if (bulletMatch) {
       if (listBuffer && listBuffer.ordered) flushList();
@@ -73,6 +131,7 @@ export function renderChatMarkdown(text: string): React.ReactNode {
     }
   }
   flushList();
+  flushCode();
 
   return <>{blocks}</>;
 }

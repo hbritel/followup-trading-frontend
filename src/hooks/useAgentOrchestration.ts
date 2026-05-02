@@ -51,11 +51,17 @@ const INITIAL_STATE: AgentOrchestrationState = {
  */
 function fromRunView(run: AgentOrchestrationRunView): AgentOrchestrationState {
   const stillActive = ACTIVE_STATUSES.has(run.status);
+  // When the run has reached a terminal status, every selected agent must have
+  // finished server-side — even if the matching agent_invocations row is
+  // missing from the snapshot (race between persistence and the poll, or a
+  // silent save failure). Surface them as "done" instead of "pending" so the
+  // UI doesn't spin forever after a refresh.
+  const fallbackStatus: AgentState['status'] = stillActive ? 'pending' : 'done';
   const map = new Map<AgentType, AgentState>();
   for (const agent of run.selectedAgents) {
     map.set(agent, {
       type: agent,
-      status: 'pending',
+      status: fallbackStatus,
       partialContent: '',
       finalCitations: [],
     });
