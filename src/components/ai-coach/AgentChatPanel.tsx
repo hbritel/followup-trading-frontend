@@ -43,10 +43,15 @@ const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) =>
     synthesisContent,
     isStreaming,
     error,
+    question: persistedQuestion,
   } = useAgentOrchestration();
 
   const [input, setInput] = useState('');
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  // Show the persisted question after a refresh / navigation: if the hook
+  // hydrated state from GET /coach/ask/active before the user typed
+  // anything, fall back to that snapshot's question for the header.
+  const displayedQuestion = lastQuestion ?? persistedQuestion;
 
   const showUsageCounter =
     currentPlan === 'STARTER' || currentPlan === 'PRO' || currentPlan === 'ELITE' || currentPlan === 'TEAM';
@@ -89,11 +94,13 @@ const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) =>
   );
 
   const handleRetry = useCallback(() => {
-    if (!lastQuestion) return;
-    ask(lastQuestion, { locale: locale ?? i18n.language });
-  }, [ask, i18n.language, lastQuestion, locale]);
+    const q = lastQuestion ?? persistedQuestion;
+    if (!q) return;
+    ask(q, { locale: locale ?? i18n.language });
+  }, [ask, i18n.language, lastQuestion, locale, persistedQuestion]);
 
-  const hasRun = lastQuestion !== null || selectedAgents.length > 0;
+  const hasRun =
+    displayedQuestion !== null || selectedAgents.length > 0 || synthesisContent.length > 0;
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col gap-3', className)}>
@@ -116,7 +123,7 @@ const AgentChatPanel: React.FC<AgentChatPanelProps> = ({ className, locale }) =>
             synthesisContent={synthesisContent}
             isStreaming={isStreaming}
             error={error}
-            question={lastQuestion ?? undefined}
+            question={displayedQuestion ?? undefined}
             onCancel={cancel}
             onRetry={handleRetry}
             className="h-full"

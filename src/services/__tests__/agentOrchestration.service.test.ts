@@ -47,7 +47,7 @@ describe('streamAgentAsk', () => {
       'event: routing\ndata: {"type":"routing","agents":["risk","psychology"]}\n\n',
       'event: agent_start\ndata: {"type":"agent_start","agent":"risk"}\n\n',
       'event: agent_token\ndata: {"type":"agent_token","agent":"risk","token":"hello"}\n\n',
-      'event: agent_done\ndata: {"type":"agent_done","agent":"risk","citations":["trade:abc"]}\n\n',
+      'event: agent_done\ndata: {"type":"agent_done","agent":"risk","citations":["trade:abc"],"content":"Your drawdown was 12%"}\n\n',
       'event: synthesis_token\ndata: {"type":"synthesis_token","token":"final"}\n\n',
       'event: done\ndata: {"type":"done"}\n\n',
     ]);
@@ -63,7 +63,7 @@ describe('streamAgentAsk', () => {
     expect(handlers.onRouting).toHaveBeenCalledWith(['risk', 'psychology']);
     expect(handlers.onAgentStart).toHaveBeenCalledWith('risk');
     expect(handlers.onAgentToken).toHaveBeenCalledWith('risk', 'hello');
-    expect(handlers.onAgentDone).toHaveBeenCalledWith('risk', ['trade:abc']);
+    expect(handlers.onAgentDone).toHaveBeenCalledWith('risk', ['trade:abc'], 'Your drawdown was 12%');
     expect(handlers.onSynthesisToken).toHaveBeenCalledWith('final');
     expect(handlers.onDone).toHaveBeenCalledTimes(1);
     expect(controller).toBeInstanceOf(AbortController);
