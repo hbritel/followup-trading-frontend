@@ -3500,6 +3500,37 @@
     "dunningUrgent": "Action required: your subscription will be cancelled in {{days}} days.",
     "updatePayment": "Update payment"
   },
+  "autoPlaybook": {
+    "sectionTitle": "Auto-Playbook",
+    "generate": "Generate playbook",
+    "generating": "Generating playbook…",
+    "generateAnother": "Generate another playbook",
+    "lookbackLabel": "Look-back (days)",
+    "minTradesLabel": "Minimum winners",
+    "strategyLabel": "Filter by strategy (optional)",
+    "basis": "Based on {{count}} winners over {{days}} days",
+    "entryConditions": "Entry conditions",
+    "stopHeuristic": "Stop heuristic",
+    "targetHeuristic": "Target heuristic",
+    "marketContext": "Preferred context",
+    "timeOfDay": "Preferred time",
+    "rrTarget": "R:R target",
+    "fullMarkdown": "Full markdown",
+    "disclaimer": "Informational only — observation on your own winning trades. Not investment advice.",
+    "locked": {
+      "title": "Auto-playbook generation is available from the PRO plan.",
+      "body": "The AI clusters your winning trades into a personalised playbook.",
+      "currentPlan": "Your plan: {{plan}}"
+    },
+    "unavailable": {
+      "title": "Auto-playbook generation is currently unavailable.",
+      "body": "No AI provider is connected. Try again later or contact support."
+    },
+    "errors": {
+      "planLocked": "Upgrade to PRO to use this feature.",
+      "generic": "Could not generate the playbook. Please retry."
+    }
+  },
   "visionAnalysis": {
     "sectionTitle": "Chart Analyzer",
     "analyze": "Analyse chart",

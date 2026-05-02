@@ -3514,6 +3514,37 @@
     "dunningUrgent": "Action requise : votre abonnement sera annulé dans {{days}} jours.",
     "updatePayment": "Mettre à jour"
   },
+  "autoPlaybook": {
+    "sectionTitle": "Auto-Playbook",
+    "generate": "Générer un playbook",
+    "generating": "Génération en cours…",
+    "generateAnother": "Générer un autre playbook",
+    "lookbackLabel": "Période d'analyse (jours)",
+    "minTradesLabel": "Trades gagnants minimum",
+    "strategyLabel": "Filtrer par stratégie (optionnel)",
+    "basis": "Basé sur {{count}} trades gagnants sur {{days}} jours",
+    "entryConditions": "Conditions d'entrée",
+    "stopHeuristic": "Heuristique stop",
+    "targetHeuristic": "Heuristique cible",
+    "marketContext": "Contexte préféré",
+    "timeOfDay": "Heure préférée",
+    "rrTarget": "R:R cible",
+    "fullMarkdown": "Markdown complet",
+    "disclaimer": "Informationnel uniquement — observation sur vos propres trades gagnants. Ne constitue pas un conseil d'investissement.",
+    "locked": {
+      "title": "La génération auto-playbook est disponible à partir du plan PRO.",
+      "body": "L'IA regroupe vos trades gagnants en un playbook personnalisé.",
+      "currentPlan": "Votre plan : {{plan}}"
+    },
+    "unavailable": {
+      "title": "La génération auto-playbook est temporairement indisponible.",
+      "body": "Aucun fournisseur IA n'est connecté. Réessayez plus tard ou contactez le support."
+    },
+    "errors": {
+      "planLocked": "Passez au plan PRO pour utiliser cette fonctionnalité.",
+      "generic": "Impossible de générer le playbook. Réessayez."
+    }
+  },
   "visionAnalysis": {
     "sectionTitle": "Analyse de chart",
     "analyze": "Analyser le chart",

@@ -11,6 +11,7 @@ import CoachStreak from '@/components/ai-coach/CoachStreak';
 import NlqQuickPrompts from '@/components/ai-coach/NlqQuickPrompts';
 import ActivityCard from '@/components/ai-coach/ActivityCard';
 import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
+import AutoPlaybookGenerator from '@/components/ai-coach/AutoPlaybookGenerator';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
@@ -221,6 +222,19 @@ const AiCoach: React.FC = () => {
         >
           <div className="mt-2">
             <ChartAnalyzer />
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Block 2.c: Auto-Playbook Generator — Sprint 4 (PRO+) */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4">
+        <CollapsibleSection
+          title={t('autoPlaybook.sectionTitle', 'Auto-Playbook Generator')}
+          icon={<Sparkles className="h-4 w-4 text-emerald-400" />}
+          defaultOpen={false}
+        >
+          <div className="mt-2">
+            <AutoPlaybookGenerator />
           </div>
         </CollapsibleSection>
       </div>
