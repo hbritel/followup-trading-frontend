@@ -4317,5 +4317,36 @@
       "verified": "verified",
       "tabTitle": "Alertas de búsqueda"
     }
+  },
+  "tradePlanning": {
+    "modalTitle": "Planifica tu trade",
+    "modalDescription": "Puntúa este setup contra tus patrones históricos antes de abrir la posición.",
+    "symbol": "Símbolo",
+    "direction": "Dirección",
+    "long": "Long",
+    "short": "Short",
+    "entry": "Entrada",
+    "stopLoss": "Stop",
+    "takeProfit": "Objetivo",
+    "positionSize": "Tamaño de posición (opcional)",
+    "setupReason": "Razón del setup (opcional)",
+    "setupReasonPlaceholder": "Pullback EMA50 + divergencia RSI...",
+    "score": "Calcular puntuación",
+    "scoring": "Calculando...",
+    "scoreLabel": "Puntuación",
+    "edit": "Editar entradas",
+    "proceed": "Proceder al trade",
+    "cta": "Puntuar este setup",
+    "error": "No se pudo calcular la puntuación — verifica las entradas.",
+    "strengths": "Fortalezas",
+    "warnings": "Advertencias",
+    "disclaimer": "Solo informativo — basado en tu historial. No constituye asesoramiento financiero.",
+    "factors": {
+      "playbook": "Conformidad playbook",
+      "tilt": "Tilt actual",
+      "hour": "Hora favorable",
+      "symbol": "Historial símbolo",
+      "rr": "Ratio riesgo / recompensa"
+    }
   }
 }
