@@ -4380,6 +4380,16 @@
     "capturedPct": "Capturado %",
     "notComputable": "No calculable — falta entrada, cantidad o MFE.",
     "loading": "Calculando escenario…",
-    "upgradeNote": "El análisis contra-factual es una función PRO+."
+    "upgradeNote": "El análisis contra-factual es una función PRO+.",
+    "rulesSectionTitle": "Reglas — cumplimiento hipotético",
+    "rulesIntro": "Suma la ganancia potencial por regla en sus trades recientes. Sin consejos — solo observación de su cumplimiento del playbook.",
+    "rulesUpgradeNote": "El análisis contra-factual de reglas es una función PRO+.",
+    "rulesEmpty": "Aún no hay datos. Acumule historial de trading con reglas.",
+    "rulesNoBreaches": "Sin infracciones accionables en el periodo — bien hecho.",
+    "lookbackOption": "{{days}} días",
+    "totalActualPnl": "Real",
+    "hypotheticalPnl": "Si se siguen las reglas",
+    "totalGap": "Brecha",
+    "followedNotFollowed": "{{ok}} OK / {{ko}} rotas"
   }
 }
