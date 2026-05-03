@@ -1,4 +1,4 @@
-import React, { useId, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDisclaimer } from '@/hooks/useDisclaimer';
@@ -28,7 +28,7 @@ import {
   MessageSquare, LayoutDashboard, Sun, Moon,
   HelpCircle, Info, Sparkles, Brain, Network,
   Image as ImageIcon, Target, Trophy, Scale, Activity as ActivityIcon,
-  Wrench, X, MoreHorizontal,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -36,17 +36,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const PageSkeleton: React.FC = () => (
   <DashboardLayout pageTitle="AI Coach">
     <div className="flex flex-col gap-3 h-[calc(100vh-7rem)]">
       <Skeleton className="h-12 w-full rounded-xl" />
-      <Skeleton className="h-10 w-full rounded-xl" />
-      <Skeleton className="flex-1 rounded-2xl" />
+      <div className="flex gap-3 flex-1 min-h-0">
+        <Skeleton className="flex-1 rounded-2xl" />
+        <Skeleton className="w-[420px] rounded-2xl" />
+      </div>
     </div>
   </DashboardLayout>
 );
@@ -76,42 +74,69 @@ const NlqIntroSection: React.FC<{
 };
 
 // ──────────────────────────────────────────────────────────────────────
-// Chip — quick action button used above the chat
+// Tile colour palette — each colour scoped to one tool category so the
+// bento grid scans like a coloured legend at a glance.
 // ──────────────────────────────────────────────────────────────────────
-type ChipColor = 'amber' | 'blue' | 'sky' | 'fuchsia' | 'emerald' | 'violet' | 'rose';
+type TileColor = 'amber' | 'blue' | 'sky' | 'fuchsia' | 'emerald' | 'violet' | 'rose';
 
-const CHIP_TINTS: Record<ChipColor, string> = {
-  amber: 'border-amber-500/30 hover:bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  blue: 'border-blue-500/30 hover:bg-blue-500/10 text-blue-700 dark:text-blue-300',
-  sky: 'border-sky-500/30 hover:bg-sky-500/10 text-sky-700 dark:text-sky-300',
-  fuchsia: 'border-fuchsia-500/30 hover:bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300',
-  emerald: 'border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  violet: 'border-violet-500/30 hover:bg-violet-500/10 text-violet-700 dark:text-violet-300',
-  rose: 'border-rose-500/30 hover:bg-rose-500/10 text-rose-700 dark:text-rose-300',
+const TILE_TINTS: Record<TileColor, string> = {
+  amber: 'from-amber-500/15 to-amber-500/0 border-amber-500/30 hover:border-amber-500/60',
+  blue: 'from-blue-500/15 to-blue-500/0 border-blue-500/30 hover:border-blue-500/60',
+  sky: 'from-sky-500/15 to-sky-500/0 border-sky-500/30 hover:border-sky-500/60',
+  fuchsia: 'from-fuchsia-500/15 to-fuchsia-500/0 border-fuchsia-500/30 hover:border-fuchsia-500/60',
+  emerald: 'from-emerald-500/15 to-emerald-500/0 border-emerald-500/30 hover:border-emerald-500/60',
+  violet: 'from-violet-500/15 to-violet-500/0 border-violet-500/30 hover:border-violet-500/60',
+  rose: 'from-rose-500/15 to-rose-500/0 border-rose-500/30 hover:border-rose-500/60',
 };
 
-const Chip: React.FC<{
+const ICON_TINTS: Record<TileColor, string> = {
+  amber: 'text-amber-500',
+  blue: 'text-blue-500',
+  sky: 'text-sky-500',
+  fuchsia: 'text-fuchsia-500',
+  emerald: 'text-emerald-500',
+  violet: 'text-violet-500',
+  rose: 'text-rose-500',
+};
+
+// ──────────────────────────────────────────────────────────────────────
+// Tile — bento card. Square-ish, colour-tinted, hover/focus rings.
+// ──────────────────────────────────────────────────────────────────────
+interface TileProps {
   icon: React.ReactNode;
   label: string;
-  color: ChipColor;
+  hint: string;
+  color: TileColor;
   onClick: () => void;
   active?: boolean;
-}> = ({ icon, label, color, onClick, active }) => (
+}
+
+const Tile: React.FC<TileProps> = ({ icon, label, hint, color, onClick, active }) => (
   <button
     type="button"
     onClick={onClick}
     aria-pressed={active}
     className={cn(
-      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-card/40 backdrop-blur-sm',
-      'text-xs font-medium whitespace-nowrap transition-all duration-150',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-      'min-h-[36px]',
-      CHIP_TINTS[color],
-      active && 'ring-2 ring-primary/30 bg-primary/5',
+      'group relative flex flex-col items-start justify-between text-left',
+      'rounded-2xl border bg-gradient-to-br p-3 sm:p-4',
+      'min-h-[96px] sm:min-h-[112px]',
+      'transition-all duration-200 ease-out',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+      'hover:-translate-y-0.5 hover:shadow-lg',
+      TILE_TINTS[color],
+      active && 'ring-2 ring-primary/40 -translate-y-0.5 shadow-lg',
     )}
   >
-    {icon}
-    <span>{label}</span>
+    <div className={cn(
+      'inline-flex h-8 w-8 items-center justify-center rounded-lg bg-background/60 border border-border/40',
+      ICON_TINTS[color],
+    )}>
+      {icon}
+    </div>
+    <div className="mt-2 w-full min-w-0">
+      <div className="text-sm font-semibold text-foreground truncate">{label}</div>
+      <div className="text-[11px] text-muted-foreground truncate mt-0.5">{hint}</div>
+    </div>
   </button>
 );
 
@@ -147,6 +172,7 @@ const AiCoach: React.FC = () => {
   const { data: disclaimerStatus, isLoading: disclaimerLoading } = useDisclaimer();
   const [tourOpen, setTourOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>('chat');
   const { hasPlan } = useFeatureFlags();
   const multiAgentAllowed = hasPlan('PRO');
   const [useMultiAgent, setUseMultiAgent] = useState(false);
@@ -186,9 +212,8 @@ const AiCoach: React.FC = () => {
   const open = useCallback((key: PanelKey) => setOpenPanel(key), []);
   const close = useCallback(() => setOpenPanel(null), []);
 
-  // Panel metadata (titles + icons). The actual content is rendered inside
-  // the sheet body switch below so we do not pay the render cost when the
-  // sheet is closed.
+  // Panel metadata. Body rendering deferred to renderPanelBody so unopened
+  // panels do not pay the mount cost.
   const panelDefs: Record<PanelKey, PanelDef> = useMemo(() => ({
     tilt: {
       titleKey: 'ai.tiltScore',
@@ -221,7 +246,7 @@ const AiCoach: React.FC = () => {
     rules: {
       titleKey: 'counterfactual.rulesSectionTitle',
       defaultTitle: 'Rules — what-if compliance',
-      icon: <Scale className="h-4 w-4 text-amber-400" />,
+      icon: <Scale className="h-4 w-4 text-rose-400" />,
     },
     vision: {
       titleKey: 'visionAnalysis.sectionTitle',
@@ -245,7 +270,7 @@ const AiCoach: React.FC = () => {
     },
   }), []);
 
-  // The body of the active sheet — only rendered when openPanel matches.
+  // Lazy panel body — only rendered when its sheet is open.
   const renderPanelBody = useCallback((key: PanelKey): React.ReactNode => {
     switch (key) {
       case 'tilt':
@@ -287,48 +312,7 @@ const AiCoach: React.FC = () => {
 
   const activeDef = openPanel ? panelDefs[openPanel] : null;
 
-  // ── Quick action chips above the chat ────────────────────────────────
-  const quickChips = (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-thin">
-      <Chip
-        icon={<Sun className="h-3.5 w-3.5" />}
-        label={t('ai.morningBriefing', 'Briefing')}
-        color="amber"
-        onClick={() => open('briefing')}
-        active={openPanel === 'briefing'}
-      />
-      <Chip
-        icon={<Moon className="h-3.5 w-3.5" />}
-        label={t('ai.sessionDebrief', 'Debrief')}
-        color="blue"
-        onClick={() => open('debrief')}
-        active={openPanel === 'debrief'}
-      />
-      <Chip
-        icon={<Target className="h-3.5 w-3.5" />}
-        label={t('aiCoach.smartGoals.sectionTitle', 'Goals')}
-        color="sky"
-        onClick={() => open('goals')}
-        active={openPanel === 'goals'}
-      />
-      <Chip
-        icon={<Trophy className="h-3.5 w-3.5" />}
-        label={t('aiCoach.skillTree.sectionTitle', 'Skills')}
-        color="amber"
-        onClick={() => open('skills')}
-        active={openPanel === 'skills'}
-      />
-      <Chip
-        icon={<Scale className="h-3.5 w-3.5" />}
-        label={t('counterfactual.rulesShort', 'Rules')}
-        color="amber"
-        onClick={() => open('rules')}
-        active={openPanel === 'rules'}
-      />
-    </div>
-  );
-
-  // ── Tilt pill in header — compact at-a-glance score ──────────────────
+  // ── Tilt pill in header ─────────────────────────────────────────────
   const tiltPill = (
     <button
       type="button"
@@ -340,48 +324,89 @@ const AiCoach: React.FC = () => {
     </button>
   );
 
-  // ── Tools dropdown — secondary AI features ───────────────────────────
-  const toolsMenu = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground"
-          aria-label={t('aiCoach.tools', 'AI tools')}
-        >
-          <Wrench className="h-4 w-4" />
-          <span className="hidden sm:inline">{t('aiCoach.tools', 'Tools')}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {t('aiCoach.toolsLabel', 'AI Tools')}
-        </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => open('vision')}>
-          <ImageIcon className="mr-2 h-4 w-4 text-fuchsia-400" />
-          {t('visionAnalysis.sectionTitle', 'Chart Analyzer')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => open('autoPlaybook')}>
-          <Sparkles className="mr-2 h-4 w-4 text-emerald-400" />
-          {t('autoPlaybook.sectionTitle', 'Auto-Playbook')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {t('aiCoach.analyticsLabel', 'Analytics')}
-        </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => open('activity')}>
-          <ActivityIcon className="mr-2 h-4 w-4 text-blue-400" />
-          {t('ai.activity', 'Activity & alerts')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => open('psychology')}>
-          <Brain className="mr-2 h-4 w-4 text-violet-400" />
-          {t('ai.psychology', 'Psychology')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+  // ── Bento tile grid ─────────────────────────────────────────────────
+  const bento = (
+    <div className="grid grid-cols-2 auto-rows-fr gap-2 sm:gap-2.5">
+      <Tile
+        icon={<Sun className="h-4 w-4" />}
+        label={t('ai.morningBriefing', 'Briefing')}
+        hint={t('aiCoach.tile.briefing', "Today's market preparation")}
+        color="amber"
+        active={openPanel === 'briefing'}
+        onClick={() => open('briefing')}
+      />
+      <Tile
+        icon={<Moon className="h-4 w-4" />}
+        label={t('ai.sessionDebrief', 'Debrief')}
+        hint={t('aiCoach.tile.debrief', 'Session score & review')}
+        color="blue"
+        active={openPanel === 'debrief'}
+        onClick={() => open('debrief')}
+      />
+      <Tile
+        icon={<Target className="h-4 w-4" />}
+        label={t('aiCoach.smartGoals.sectionTitle', 'Smart Goals')}
+        hint={t('aiCoach.tile.goals', 'Weekly stretch targets')}
+        color="sky"
+        active={openPanel === 'goals'}
+        onClick={() => open('goals')}
+      />
+      <Tile
+        icon={<Trophy className="h-4 w-4" />}
+        label={t('aiCoach.skillTree.sectionTitle', 'Skill Tree')}
+        hint={t('aiCoach.tile.skills', 'Milestones unlocked')}
+        color="amber"
+        active={openPanel === 'skills'}
+        onClick={() => open('skills')}
+      />
+      <Tile
+        icon={<Scale className="h-4 w-4" />}
+        label={t('counterfactual.rulesShort', 'Rules')}
+        hint={t('aiCoach.tile.rules', 'What-if compliance gap')}
+        color="rose"
+        active={openPanel === 'rules'}
+        onClick={() => open('rules')}
+      />
+      <Tile
+        icon={<ImageIcon className="h-4 w-4" />}
+        label={t('visionAnalysis.sectionTitle', 'Chart Analyzer')}
+        hint={t('aiCoach.tile.vision', 'Analyse a screenshot')}
+        color="fuchsia"
+        active={openPanel === 'vision'}
+        onClick={() => open('vision')}
+      />
+      <Tile
+        icon={<Sparkles className="h-4 w-4" />}
+        label={t('autoPlaybook.sectionTitle', 'Auto-Playbook')}
+        hint={t('aiCoach.tile.autoPlaybook', 'Generate from your wins')}
+        color="emerald"
+        active={openPanel === 'autoPlaybook'}
+        onClick={() => open('autoPlaybook')}
+      />
+      <Tile
+        icon={<ActivityIcon className="h-4 w-4" />}
+        label={t('ai.activity', 'Activity')}
+        hint={t('aiCoach.tile.activity', 'Behavioural alerts')}
+        color="violet"
+        active={openPanel === 'activity'}
+        onClick={() => open('activity')}
+      />
+    </div>
   );
 
+  // Secondary access link for Psychology (less frequent than the 8 main tiles).
+  const psychologyLink = (
+    <button
+      type="button"
+      onClick={() => open('psychology')}
+      className="w-full mt-2 inline-flex items-center justify-center gap-1.5 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-lg border border-dashed border-border/60 hover:border-border transition-colors"
+    >
+      <Brain className="h-3.5 w-3.5 text-violet-400" />
+      <span>{t('ai.psychologyOpen', 'Open psychology insights')}</span>
+    </button>
+  );
+
+  // ──────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout pageTitle="AI Coach">
       <div className="flex flex-col h-[calc(100vh-7rem)] gap-3">
@@ -423,9 +448,6 @@ const AiCoach: React.FC = () => {
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <div className="hidden md:flex">{tiltPill}</div>
-            <div className="hidden lg:flex">
-              <CoachStreakCompact />
-            </div>
             {multiAgentAllowed && (
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
@@ -459,7 +481,6 @@ const AiCoach: React.FC = () => {
               onChange={setSelectedAccount}
               className="w-36 lg:w-44 hidden md:flex"
             />
-            {toolsMenu}
             <Button
               variant="ghost"
               size="icon"
@@ -473,7 +494,7 @@ const AiCoach: React.FC = () => {
           </div>
         </header>
 
-        {/* Mobile: account + tilt + multi-agent in a compact secondary row */}
+        {/* Mobile: compact secondary row + tab switcher */}
         <div className="md:hidden flex items-center gap-2 flex-shrink-0">
           {tiltPill}
           <AccountSelector
@@ -482,30 +503,80 @@ const AiCoach: React.FC = () => {
             className="flex-1"
           />
         </div>
+        <div className="md:hidden flex-shrink-0">
+          <div className="flex gap-1 p-1 rounded-lg bg-muted/30 border border-border/50">
+            <button
+              type="button"
+              onClick={() => setMobileTab('chat')}
+              className={cn(
+                'flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors',
+                mobileTab === 'chat'
+                  ? 'bg-card border-border/50 shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/30',
+              )}
+            >
+              <MessageSquare className="h-4 w-4" />
+              {t('ai.tabChat', 'Chat')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('tools')}
+              className={cn(
+                'flex-1 inline-flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-colors',
+                mobileTab === 'tools'
+                  ? 'bg-card border-border/50 shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/30',
+              )}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              {t('ai.tabTools', 'Tools')}
+            </button>
+          </div>
+        </div>
 
-        {/* Quick action chips */}
-        <div className="flex-shrink-0">{quickChips}</div>
-
-        {/* Chat — center stage, full width */}
-        <main className="flex-1 min-h-0 flex flex-col">
-          {!useMultiAgent && isChatEmpty && (
-            <NlqIntroSection
-              onSelect={handlePromptSelect}
-              disabled={introGenerating || pendingPrompt !== null}
-            />
-          )}
-          <div className="flex-1 min-h-0 mx-auto w-full max-w-5xl">
-            {useMultiAgent ? (
-              <AgentChatPanel className="h-full" />
-            ) : (
-              <CoachChat
-                className="h-full"
-                pendingPrompt={pendingPrompt}
-                onPromptConsumed={handlePromptConsumed}
+        {/* Body — desktop: chat ⇄ bento ; mobile: tabbed surface */}
+        <div className="flex-1 min-h-0 flex md:gap-3 lg:gap-4">
+          {/* Chat zone */}
+          <section
+            className={cn(
+              'flex-1 min-h-0 flex-col',
+              'md:flex',
+              mobileTab === 'chat' ? 'flex' : 'hidden md:flex',
+            )}
+            aria-label={t('aiCoach.chatZone', 'Chat with your coach')}
+          >
+            {!useMultiAgent && isChatEmpty && (
+              <NlqIntroSection
+                onSelect={handlePromptSelect}
+                disabled={introGenerating || pendingPrompt !== null}
               />
             )}
-          </div>
-        </main>
+            <div className="flex-1 min-h-0 mx-auto w-full max-w-3xl">
+              {useMultiAgent ? (
+                <AgentChatPanel className="h-full" />
+              ) : (
+                <CoachChat
+                  className="h-full"
+                  pendingPrompt={pendingPrompt}
+                  onPromptConsumed={handlePromptConsumed}
+                />
+              )}
+            </div>
+          </section>
+
+          {/* Bento zone — desktop right column, mobile = tools tab */}
+          <aside
+            className={cn(
+              'min-h-0 overflow-y-auto pr-1',
+              'md:flex md:flex-col md:w-[360px] lg:w-[420px] xl:w-[460px] flex-shrink-0',
+              mobileTab === 'tools' ? 'flex flex-col w-full' : 'hidden md:flex',
+            )}
+            aria-label={t('aiCoach.toolsZone', 'AI tools')}
+          >
+            {bento}
+            {psychologyLink}
+          </aside>
+        </div>
 
         {/* Side sheet — single, multiplexes all panels */}
         <Sheet open={openPanel !== null} onOpenChange={(v) => !v && close()}>
@@ -552,18 +623,5 @@ const AiCoach: React.FC = () => {
     </DashboardLayout>
   );
 };
-
-// ──────────────────────────────────────────────────────────────────────
-// CoachStreakCompact — header pill shape that mirrors CoachStreak data
-// without occupying a hero block. Falls back to a thin rendering of the
-// existing CoachStreak component, scoped for the header bar.
-// ──────────────────────────────────────────────────────────────────────
-const CoachStreakCompact: React.FC = () => (
-  <div className="hidden lg:flex items-center rounded-full border border-border/50 bg-card/40 px-2 py-0.5 max-w-[180px]">
-    <div className="text-[11px] leading-tight">
-      <CoachStreak />
-    </div>
-  </div>
-);
 
 export default AiCoach;
