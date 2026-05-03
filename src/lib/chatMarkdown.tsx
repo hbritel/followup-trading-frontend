@@ -1,4 +1,15 @@
 import React from 'react';
+import CitationLink from '@/components/ai/CitationLink';
+
+/**
+ * Sprint 5 PR D — matches citation markers the coach emits when grounded
+ * in long-term memory: {@code [trade:UUID]}, {@code [journal:UUID]},
+ * {@code [debrief:UUID]}, {@code [briefing:UUID]}. UUIDs are validated
+ * loosely (8-4-4-4-12 hex) so a typo in the LLM output renders as plain
+ * text instead of a broken link.
+ */
+const CITATION_PATTERN =
+  /^\[(trade|journal|debrief|briefing):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/i;
 
 /**
  * Minimal inline + block markdown renderer for chat messages.
@@ -199,6 +210,21 @@ function renderInline(text: string): React.ReactNode {
       }
       continue;
     }
+    // [trade:uuid] / [journal:uuid] / [debrief:uuid] / [briefing:uuid]
+    if (text[i] === '[') {
+      const slice = text.slice(i);
+      const m = CITATION_PATTERN.exec(slice);
+      if (m) {
+        const [, type, id] = m;
+        tokens.push(<CitationLink key={keyCounter++} type={type.toLowerCase()} id={id} />);
+        i += m[0].length;
+        continue;
+      }
+      // Not a citation — emit the bracket and move on.
+      tokens.push('[');
+      i += 1;
+      continue;
+    }
     // Plain char — coalesce up to the NEXT special marker. Crucially we
     // search from i+1 so progress is guaranteed even when text[i] itself
     // is a leftover character that no rule above matched.
@@ -213,7 +239,7 @@ function renderInline(text: string): React.ReactNode {
 function findNextSpecial(text: string, from: number): number {
   for (let i = from; i < text.length; i++) {
     const c = text[i];
-    if (c === '*' || c === '`') return i;
+    if (c === '*' || c === '`' || c === '[') return i;
   }
   return text.length;
 }
