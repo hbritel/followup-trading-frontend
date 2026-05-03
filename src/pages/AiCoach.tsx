@@ -580,7 +580,7 @@ const AiCoach: React.FC = () => {
         >
           <SheetContent
             side="right"
-            className="w-full sm:max-w-2xl p-0 flex flex-col"
+            className="w-full sm:max-w-4xl p-0 flex flex-col"
           >
             {activeToolDef && ActiveToolIcon && (
               <>
