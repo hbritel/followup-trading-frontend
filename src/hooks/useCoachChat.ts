@@ -119,6 +119,10 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
           patchMessage(messageId, { status: 'FAILED', errorMessage: reason });
           setState((prev) => ({ ...prev, error: reason }));
           finishGenerating();
+          // Backend refunds the daily quota slot when the LLM call fails,
+          // so re-fetch the subscription usage so the counter rolls back
+          // immediately instead of waiting for the next 60-second tick.
+          refreshSubscriptionUsage();
         },
         onCancelled: () => {
           patchMessage(messageId, { status: 'CANCELLED' });
@@ -127,7 +131,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       });
       activeStreamRef.current = { messageId, cancel };
     },
-    [closeActiveStream, finishGenerating, patchMessage],
+    [closeActiveStream, finishGenerating, patchMessage, refreshSubscriptionUsage],
   );
 
   /** Maps a wire DTO → the local view model. */
