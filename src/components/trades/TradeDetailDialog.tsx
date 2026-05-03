@@ -43,6 +43,7 @@ import { tradeService } from '@/services/trade.service';
 import type { CreateTradeRequest } from '@/services/trade.service';
 import type { Trade } from './TradesTableWrapper';
 import RuleComplianceChecklist from './RuleComplianceChecklist';
+import CounterfactualClosingCard from './CounterfactualClosingCard';
 import EmotionPicker from '@/components/ai-coach/EmotionPicker';
 import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
 
@@ -691,6 +692,14 @@ const TradeDetailDialog: React.FC<TradeDetailDialogProps> = ({ trade, open, onOp
               </>
             );
           })()}
+
+          {/* Sprint 7 — Counter-factual closing scenario (CLOSED trades only) */}
+          {trade.status?.toUpperCase() === 'CLOSED' ? (
+            <>
+              <Separator />
+              <CounterfactualClosingCard tradeId={trade.id} show={true} />
+            </>
+          ) : null}
 
           {/* Notes — editable */}
           <Separator />

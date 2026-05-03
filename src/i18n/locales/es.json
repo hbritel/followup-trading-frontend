@@ -2376,6 +2376,27 @@
     "tiltGauge": {
       "tooltip": "Su tilt actual: {{score}}. Haga clic para ver detalles"
     },
+    "smartGoals": {
+      "sectionTitle": "Objetivos inteligentes",
+      "intro": "Metas semanales derivadas de sus propias métricas. Sin consejos — solo observación.",
+      "generate": "Actualizar",
+      "delete": "Descartar objetivo",
+      "empty": "Aún no hay objetivos para esta semana — pulse Actualizar para generarlos.",
+      "metric": "{{measured}} / {{target}}",
+      "upgradeNote": "Los objetivos inteligentes son una función PRO+."
+    },
+    "skillTree": {
+      "sectionTitle": "Árbol de habilidades",
+      "intro": "Hitos basados en sus propias métricas. Sin consejos — solo lo que ya ha hecho o está logrando.",
+      "evaluate": "Re-evaluar",
+      "upgradeNote": "El árbol de habilidades es una función PRO+.",
+      "category": {
+        "DISCIPLINE": "Disciplina",
+        "PERFORMANCE": "Rendimiento",
+        "STRATEGY": "Estrategia",
+        "RISK": "Riesgo"
+      }
+    },
     "nlq": {
       "sectionTitle": "Ask the AI",
       "sectionSubtitle": "Try a suggestion",
@@ -4350,5 +4371,15 @@
       "symbol": "Historial símbolo",
       "rr": "Ratio riesgo / recompensa"
     }
+  },
+  "counterfactual": {
+    "closingTitle": "¿Y si hubiera salido en el MFE?",
+    "actualPnl": "P&L real",
+    "mfeBasedPnl": "P&L en MFE",
+    "missedGain": "Ganancia perdida",
+    "capturedPct": "Capturado %",
+    "notComputable": "No calculable — falta entrada, cantidad o MFE.",
+    "loading": "Calculando escenario…",
+    "upgradeNote": "El análisis contra-factual es una función PRO+."
   }
 }

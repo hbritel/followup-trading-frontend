@@ -2577,6 +2577,27 @@
     "tiltGauge": {
       "tooltip": "Your current tilt: {{score}}. Click to see details"
     },
+    "smartGoals": {
+      "sectionTitle": "Smart Goals",
+      "intro": "Weekly stretch targets derived from your own metrics. No advice — just observation.",
+      "generate": "Refresh goals",
+      "delete": "Dismiss goal",
+      "empty": "No goals for this week yet — click Refresh to generate.",
+      "metric": "{{measured}} / {{target}}",
+      "upgradeNote": "Smart goals are a PRO+ feature."
+    },
+    "skillTree": {
+      "sectionTitle": "Skill Tree",
+      "intro": "Milestones from your own metrics. No advice — just things you have already done or are working towards.",
+      "evaluate": "Re-evaluate",
+      "upgradeNote": "The skill tree is a PRO+ feature.",
+      "category": {
+        "DISCIPLINE": "Discipline",
+        "PERFORMANCE": "Performance",
+        "STRATEGY": "Strategy",
+        "RISK": "Risk"
+      }
+    },
     "nlq": {
       "sectionTitle": "Ask the AI",
       "sectionSubtitle": "Try a suggestion",
@@ -3499,6 +3520,16 @@
     "dunningWarning": "Your payment failed. Please update your payment method.",
     "dunningUrgent": "Action required: your subscription will be cancelled in {{days}} days.",
     "updatePayment": "Update payment"
+  },
+  "counterfactual": {
+    "closingTitle": "What if you had exited at the MFE?",
+    "actualPnl": "Actual P&L",
+    "mfeBasedPnl": "P&L at MFE",
+    "missedGain": "Missed gain",
+    "capturedPct": "Captured %",
+    "notComputable": "Not computable — this trade is missing entry, quantity, or MFE data.",
+    "loading": "Computing scenario…",
+    "upgradeNote": "Counter-factual analysis is a PRO+ feature."
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",
