@@ -2584,7 +2584,23 @@
       "delete": "Dismiss goal",
       "empty": "No goals for this week yet — click Refresh to generate.",
       "metric": "{{measured}} / {{target}}",
-      "upgradeNote": "Smart goals are a PRO+ feature."
+      "upgradeNote": "Smart goals are a PRO+ feature.",
+      "title": {
+        "WIN_RATE_PCT": "Hold a {{target}} win rate",
+        "AVG_R_MULTIPLE": "Average R-multiple of {{target}}",
+        "TRADES_JOURNALED": "Journal at least {{target}} trades this week",
+        "RULE_COMPLIANCE_PCT": "Respect your most-broken rule {{target}} of the time",
+        "MAX_DAILY_LOSS_USD": "Cap any losing day at {{target}}",
+        "TRADES_TAGGED_PCT": "Tag {{target}} of your trades"
+      },
+      "description": {
+        "WIN_RATE_PCT": "Frame win-rate as a target floor — tighten setups and skip the marginal trades that drag the rate down.",
+        "AVG_R_MULTIPLE": "Cut losing trades closer to your stop and let winners run — average R drives the equity curve.",
+        "TRADES_JOURNALED": "Write a short note on every trade — even one line on what went well or poorly compounds insight.",
+        "RULE_COMPLIANCE_PCT": "Lift compliance on the rule you break most often — small bumps compound across many trades.",
+        "MAX_DAILY_LOSS_USD": "Bring this week's worst day under the cap — the sequence of losses, not the size of one, is what compounds.",
+        "TRADES_TAGGED_PCT": "Tags slice your performance later — setup, session, asset class. Consistent tagging unlocks weekly reviews."
+      }
     },
     "skillTree": {
       "sectionTitle": "Skill Tree",
