@@ -12,7 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
-import { useAnalyzeChart } from '@/hooks/useChartAnalysis';
+import {
+  useAnalyzeChart,
+  useRecentChartAnalyses,
+} from '@/hooks/useChartAnalysis';
 import TradeChartUpload from '@/components/trades/TradeChartUpload';
 import type { ChartAnalysisResponse } from '@/types/visionAnalysis';
 
@@ -46,6 +49,16 @@ const ChartAnalyzer: React.FC<ChartAnalyzerProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [tradeContext, setTradeContext] = useState(defaultContext ?? '');
   const mutation = useAnalyzeChart();
+  // Pull the latest persisted analysis so a refresh / page nav rehydrates the
+  // result panel without re-spending an AI message slot. When mounted from
+  // the trade detail dialog, scope the lookup to that trade so the user sees
+  // the trade-specific analysis, not the most recent one platform-wide.
+  // When mounted from a trade dialog, fetch a wider window so we can find
+  // the trade-specific row. Standalone mounts only need the latest one.
+  const { data: recent } = useRecentChartAnalyses(tradeId ? 20 : 1, allowed);
+  // True once the user explicitly clicks "Analyse another chart" — cancels
+  // the restore-on-mount so the upload form is shown again.
+  const [resetForNewRun, setResetForNewRun] = useState(false);
 
   const lockedMessage = useMemo(
     () =>
@@ -74,6 +87,7 @@ const ChartAnalyzer: React.FC<ChartAnalyzerProps> = ({
   const handleReset = useCallback(() => {
     mutation.reset();
     setFile(null);
+    setResetForNewRun(true);
   }, [mutation]);
 
   if (!allowed) {
@@ -105,6 +119,18 @@ const ChartAnalyzer: React.FC<ChartAnalyzerProps> = ({
 
   if (mutation.isSuccess && mutation.data) {
     return <ResultPanel result={mutation.data} onReset={handleReset} />;
+  }
+
+  // No fresh mutation — restore the latest persisted analysis (scoped to the
+  // current trade when tradeId is present) so a refresh or navigation does
+  // not force the user to re-run the analysis.
+  if (!resetForNewRun && recent && recent.length > 0) {
+    const candidate = tradeId
+      ? recent.find((a) => a.tradeId === tradeId)
+      : recent[0];
+    if (candidate) {
+      return <ResultPanel result={candidate} onReset={handleReset} />;
+    }
   }
 
   return (

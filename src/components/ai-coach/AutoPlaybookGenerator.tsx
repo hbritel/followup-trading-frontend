@@ -19,7 +19,10 @@ import {
 } from '@/components/ui/select';
 import { useFeatureFlags } from '@/contexts/feature-flags-context';
 import { useStrategies } from '@/hooks/useStrategies';
-import { useGenerateAutoPlaybook } from '@/hooks/useAutoPlaybook';
+import {
+  useGenerateAutoPlaybook,
+  useRecentAutoPlaybooks,
+} from '@/hooks/useAutoPlaybook';
 import {
   PLAYBOOK_LOOKBACK_DEFAULT,
   PLAYBOOK_LOOKBACK_MAX,
@@ -48,10 +51,16 @@ const AutoPlaybookGenerator: React.FC = () => {
   const allowed = hasPlan('PRO');
   const { data: strategies } = useStrategies();
   const mutation = useGenerateAutoPlaybook();
+  // Pull the latest persisted playbook so a refresh / page nav rehydrates the
+  // result panel without re-spending an AI message slot.
+  const { data: recent } = useRecentAutoPlaybooks(1, allowed);
 
   const [lookbackDays, setLookbackDays] = useState<string>(String(PLAYBOOK_LOOKBACK_DEFAULT));
   const [minTrades, setMinTrades] = useState<string>(String(PLAYBOOK_MIN_TRADES_DEFAULT));
   const [strategyId, setStrategyId] = useState<string>(NONE_STRATEGY);
+  // True once the user explicitly clicks "Generate another" — cancels the
+  // restore-on-mount so the form is shown again.
+  const [resetForNewRun, setResetForNewRun] = useState(false);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -67,7 +76,10 @@ const AutoPlaybookGenerator: React.FC = () => {
     [lookbackDays, minTrades, strategyId, mutation],
   );
 
-  const handleReset = useCallback(() => mutation.reset(), [mutation]);
+  const handleReset = useCallback(() => {
+    mutation.reset();
+    setResetForNewRun(true);
+  }, [mutation]);
 
   if (!allowed) {
     return (
@@ -99,6 +111,12 @@ const AutoPlaybookGenerator: React.FC = () => {
 
   if (mutation.isSuccess && mutation.data) {
     return <ResultPanel result={mutation.data} onReset={handleReset} />;
+  }
+
+  // No fresh mutation yet — restore the latest persisted playbook so
+  // refresh / page nav doesn't make the user pay again for the same run.
+  if (!resetForNewRun && recent && recent.length > 0) {
+    return <ResultPanel result={recent[0]} onReset={handleReset} />;
   }
 
   return (
