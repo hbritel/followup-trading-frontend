@@ -10,6 +10,11 @@ export interface GeneratePlaybookRequest {
   lookbackDays?: number;
   minTrades?: number;
   filterStrategyId?: string | null;
+  /**
+   * BCP-47 language tag (e.g. {@code fr}, {@code en}). Drives the LLM response
+   * language so the generated playbook content matches the user's locale.
+   */
+  locale?: string;
 }
 
 export interface GeneratedPlaybookStructure {
