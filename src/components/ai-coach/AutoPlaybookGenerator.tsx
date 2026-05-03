@@ -46,7 +46,7 @@ const NONE_STRATEGY = '__none__';
  * (5-15 s) so the submit button shows a spinner while pending.</p>
  */
 const AutoPlaybookGenerator: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { hasPlan, currentPlan } = useFeatureFlags();
   const allowed = hasPlan('PRO');
   const { data: strategies } = useStrategies();
@@ -71,9 +71,10 @@ const AutoPlaybookGenerator: React.FC = () => {
         minTrades: clampInt(minTrades, PLAYBOOK_MIN_TRADES_FLOOR, PLAYBOOK_MIN_TRADES_CEILING,
           PLAYBOOK_MIN_TRADES_DEFAULT),
         filterStrategyId: strategyId === NONE_STRATEGY ? undefined : strategyId,
+        locale: i18n.resolvedLanguage ?? i18n.language,
       });
     },
-    [lookbackDays, minTrades, strategyId, mutation],
+    [lookbackDays, minTrades, strategyId, mutation, i18n],
   );
 
   const handleReset = useCallback(() => {
