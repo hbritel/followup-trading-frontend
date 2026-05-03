@@ -14,6 +14,7 @@ import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
 import AutoPlaybookGenerator from '@/components/ai-coach/AutoPlaybookGenerator';
 import SmartGoalsCard from '@/components/ai-coach/SmartGoalsCard';
 import SkillTreeCard from '@/components/ai-coach/SkillTreeCard';
+import CounterfactualRulesPanel from '@/components/ai-coach/CounterfactualRulesPanel';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
@@ -26,7 +27,7 @@ import { cn } from '@/lib/utils';
 import {
   MessageSquare, LayoutDashboard, Sun, Moon,
   HelpCircle, Info, ChevronDown, Sparkles, Brain, Network,
-  Image as ImageIcon, Target, Trophy,
+  Image as ImageIcon, Target, Trophy, Scale,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -263,6 +264,19 @@ const AiCoach: React.FC = () => {
         >
           <div className="mt-2">
             <SkillTreeCard />
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Block 2.f: Counter-factual rules — Sprint 7 (PRO+) */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4">
+        <CollapsibleSection
+          title={t('counterfactual.rulesSectionTitle', 'Rules — what-if compliance')}
+          icon={<Scale className="h-4 w-4 text-amber-400" />}
+          defaultOpen={false}
+        >
+          <div className="mt-2">
+            <CounterfactualRulesPanel />
           </div>
         </CollapsibleSection>
       </div>

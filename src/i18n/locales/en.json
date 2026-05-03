@@ -3529,7 +3529,17 @@
     "capturedPct": "Captured %",
     "notComputable": "Not computable — this trade is missing entry, quantity, or MFE data.",
     "loading": "Computing scenario…",
-    "upgradeNote": "Counter-factual analysis is a PRO+ feature."
+    "upgradeNote": "Counter-factual analysis is a PRO+ feature.",
+    "rulesSectionTitle": "Rules — what-if compliance",
+    "rulesIntro": "Sums per-rule potential gain across your recent trades. No advice — observation of your own playbook compliance.",
+    "rulesUpgradeNote": "Counter-factual rules analysis is a PRO+ feature.",
+    "rulesEmpty": "No data yet. Build up some trade history with playbook rules.",
+    "rulesNoBreaches": "No actionable rule breaches over the window — well played.",
+    "lookbackOption": "{{days}} days",
+    "totalActualPnl": "Actual",
+    "hypotheticalPnl": "If rules followed",
+    "totalGap": "Gap",
+    "followedNotFollowed": "{{ok}} OK / {{ko}} broken"
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",

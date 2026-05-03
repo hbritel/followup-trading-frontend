@@ -3543,7 +3543,17 @@
     "capturedPct": "Capturé %",
     "notComputable": "Non calculable — ce trade n'a pas d'entrée, de quantité ou de MFE.",
     "loading": "Calcul du scénario…",
-    "upgradeNote": "L'analyse contre-factuelle est une fonctionnalité PRO+."
+    "upgradeNote": "L'analyse contre-factuelle est une fonctionnalité PRO+.",
+    "rulesSectionTitle": "Règles — conformité hypothétique",
+    "rulesIntro": "Somme le gain potentiel par règle sur vos trades récents. Pas de conseils — uniquement l'observation de votre conformité au playbook.",
+    "rulesUpgradeNote": "L'analyse contre-factuelle des règles est une fonctionnalité PRO+.",
+    "rulesEmpty": "Pas encore de données. Construisez un historique avec des règles de playbook.",
+    "rulesNoBreaches": "Aucune entorse exploitable sur la période — bien joué.",
+    "lookbackOption": "{{days}} jours",
+    "totalActualPnl": "Réel",
+    "hypotheticalPnl": "Si règles suivies",
+    "totalGap": "Écart",
+    "followedNotFollowed": "{{ok}} OK / {{ko}} brisée(s)"
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",
