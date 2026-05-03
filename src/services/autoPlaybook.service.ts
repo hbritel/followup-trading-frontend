@@ -8,7 +8,7 @@ import type {
 /**
  * Auto-playbook generator service — Sprint 4 of the AI-first roadmap.
  *
- * <p>Calls {@code POST /api/v1/ai/playbook/generate} (synchronous, 5-15 s
+ * <p>Calls {@code POST /api/v1/ai/auto-playbook/generate} (synchronous, 5-15 s
  * round-trip). Returns {@code null} on 404 / 503 (feature flagged off
  * server-side or LLM provider unavailable) so callers can render an
  * "unavailable" state. Throws on 4xx with structured server bodies so
@@ -18,7 +18,7 @@ export const autoPlaybookService = {
   async generate(request: GeneratePlaybookRequest): Promise<GeneratedPlaybookResponse | null> {
     try {
       const res = await apiClient.post<GeneratedPlaybookResponse>(
-        '/ai/playbook/generate',
+        '/ai/auto-playbook/generate',
         request,
       );
       return res.data;
@@ -32,7 +32,7 @@ export const autoPlaybookService = {
   },
 
   async listRecent(limit = 20): Promise<GeneratedPlaybookResponse[]> {
-    const res = await apiClient.get<GeneratedPlaybookList>('/ai/playbook', {
+    const res = await apiClient.get<GeneratedPlaybookList>('/ai/auto-playbook', {
       params: { limit },
     });
     return res.data?.playbooks ?? [];
@@ -40,7 +40,7 @@ export const autoPlaybookService = {
 
   async getById(id: string): Promise<GeneratedPlaybookResponse | null> {
     try {
-      const res = await apiClient.get<GeneratedPlaybookResponse>(`/ai/playbook/${id}`);
+      const res = await apiClient.get<GeneratedPlaybookResponse>(`/ai/auto-playbook/${id}`);
       return res.data;
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } } | null)?.response?.status;

@@ -3,7 +3,7 @@
  *
  * <p>Mirror the Spring Boot {@code AutoPlaybookController.GenerateRequestDto}
  * and {@code GeneratedPlaybook} shapes returned by
- * {@code POST /api/v1/ai/playbook/generate}.</p>
+ * {@code POST /api/v1/ai/auto-playbook/generate}.</p>
  */
 
 export interface GeneratePlaybookRequest {
