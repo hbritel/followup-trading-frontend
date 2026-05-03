@@ -12,6 +12,8 @@ import NlqQuickPrompts from '@/components/ai-coach/NlqQuickPrompts';
 import ActivityCard from '@/components/ai-coach/ActivityCard';
 import ChartAnalyzer from '@/components/ai-coach/ChartAnalyzer';
 import AutoPlaybookGenerator from '@/components/ai-coach/AutoPlaybookGenerator';
+import SmartGoalsCard from '@/components/ai-coach/SmartGoalsCard';
+import SkillTreeCard from '@/components/ai-coach/SkillTreeCard';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import CoachChat from '@/components/ai/CoachChat';
@@ -24,7 +26,7 @@ import { cn } from '@/lib/utils';
 import {
   MessageSquare, LayoutDashboard, Sun, Moon,
   HelpCircle, Info, ChevronDown, Sparkles, Brain, Network,
-  Image as ImageIcon,
+  Image as ImageIcon, Target, Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -235,6 +237,32 @@ const AiCoach: React.FC = () => {
         >
           <div className="mt-2">
             <AutoPlaybookGenerator />
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Block 2.d: Smart Goals — Sprint 7 (PRO+) */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4">
+        <CollapsibleSection
+          title={t('aiCoach.smartGoals.sectionTitle', 'Smart Goals')}
+          icon={<Target className="h-4 w-4 text-sky-400" />}
+          defaultOpen={false}
+        >
+          <div className="mt-2">
+            <SmartGoalsCard />
+          </div>
+        </CollapsibleSection>
+      </div>
+
+      {/* Block 2.e: Skill Tree — Sprint 7 (PRO+) */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4">
+        <CollapsibleSection
+          title={t('aiCoach.skillTree.sectionTitle', 'Skill Tree')}
+          icon={<Trophy className="h-4 w-4 text-amber-400" />}
+          defaultOpen={false}
+        >
+          <div className="mt-2">
+            <SkillTreeCard />
           </div>
         </CollapsibleSection>
       </div>

@@ -2579,6 +2579,27 @@
     "tiltGauge": {
       "tooltip": "Votre tilt actuel : {{score}}. Cliquer pour voir détails"
     },
+    "smartGoals": {
+      "sectionTitle": "Objectifs intelligents",
+      "intro": "Objectifs hebdomadaires dérivés de vos propres métriques. Pas de conseils — juste de l'observation.",
+      "generate": "Actualiser",
+      "delete": "Retirer l'objectif",
+      "empty": "Aucun objectif pour cette semaine — cliquez sur Actualiser pour les générer.",
+      "metric": "{{measured}} / {{target}}",
+      "upgradeNote": "Les objectifs intelligents sont une fonctionnalité PRO+."
+    },
+    "skillTree": {
+      "sectionTitle": "Arbre des compétences",
+      "intro": "Jalons issus de vos propres métriques. Pas de conseils — uniquement ce que vous avez déjà fait ou êtes en train de réussir.",
+      "evaluate": "Ré-évaluer",
+      "upgradeNote": "L'arbre des compétences est une fonctionnalité PRO+.",
+      "category": {
+        "DISCIPLINE": "Discipline",
+        "PERFORMANCE": "Performance",
+        "STRATEGY": "Stratégie",
+        "RISK": "Risque"
+      }
+    },
     "nlq": {
       "sectionTitle": "Demandez à l'IA",
       "sectionSubtitle": "Suggestions pour démarrer",
@@ -3513,6 +3534,16 @@
     "dunningWarning": "Votre paiement a échoué. Veuillez mettre à jour votre moyen de paiement.",
     "dunningUrgent": "Action requise : votre abonnement sera annulé dans {{days}} jours.",
     "updatePayment": "Mettre à jour"
+  },
+  "counterfactual": {
+    "closingTitle": "Et si vous étiez sorti au MFE ?",
+    "actualPnl": "P&L réel",
+    "mfeBasedPnl": "P&L au MFE",
+    "missedGain": "Gain manqué",
+    "capturedPct": "Capturé %",
+    "notComputable": "Non calculable — ce trade n'a pas d'entrée, de quantité ou de MFE.",
+    "loading": "Calcul du scénario…",
+    "upgradeNote": "L'analyse contre-factuelle est une fonctionnalité PRO+."
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",
