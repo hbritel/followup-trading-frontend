@@ -2586,7 +2586,23 @@
       "delete": "Retirer l'objectif",
       "empty": "Aucun objectif pour cette semaine — cliquez sur Actualiser pour les générer.",
       "metric": "{{measured}} / {{target}}",
-      "upgradeNote": "Les objectifs intelligents sont une fonctionnalité PRO+."
+      "upgradeNote": "Les objectifs intelligents sont une fonctionnalité PRO+.",
+      "title": {
+        "WIN_RATE_PCT": "Maintenir un taux de réussite de {{target}}",
+        "AVG_R_MULTIPLE": "Atteindre un R moyen de {{target}}",
+        "TRADES_JOURNALED": "Journaliser au moins {{target}} trades cette semaine",
+        "RULE_COMPLIANCE_PCT": "Respecter votre règle la plus enfreinte à {{target}}",
+        "MAX_DAILY_LOSS_USD": "Limiter votre pire journée à {{target}}",
+        "TRADES_TAGGED_PCT": "Étiqueter {{target}} de vos trades"
+      },
+      "description": {
+        "WIN_RATE_PCT": "Cadrez le taux de réussite comme un plancher : resserrez les setups et évitez les trades marginaux qui tirent le taux vers le bas.",
+        "AVG_R_MULTIPLE": "Coupez les pertes près du stop et laissez courir les gagnants — le R moyen pilote la courbe d'équité.",
+        "TRADES_JOURNALED": "Écrivez une note courte sur chaque trade — une seule ligne sur ce qui a fonctionné ou non compose l'insight.",
+        "RULE_COMPLIANCE_PCT": "Augmentez la conformité sur la règle que vous enfreignez le plus — les petits gains se cumulent sur de nombreux trades.",
+        "MAX_DAILY_LOSS_USD": "Gardez la pire journée de la semaine sous le plafond — c'est la séquence de pertes qui compose, pas la taille d'une seule.",
+        "TRADES_TAGGED_PCT": "Les tags vous permettent de découper votre performance plus tard — setup, session, classe d'actif. Tagger systématiquement débloque les revues hebdomadaires."
+      }
     },
     "skillTree": {
       "sectionTitle": "Arbre des compétences",

@@ -136,9 +136,13 @@ const GoalRow: React.FC<GoalRowProps> = ({ goal, progress, onDelete, deleting })
             <Target className="h-4 w-4 text-sky-500 mt-0.5 shrink-0" />
           )}
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{goal.title}</p>
-            {goal.description ? (
-              <p className="text-xs text-muted-foreground line-clamp-2">{goal.description}</p>
+            <p className="text-sm font-medium truncate">
+              {localizedTitle(t, goal)}
+            </p>
+            {localizedDescription(t, goal) ? (
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {localizedDescription(t, goal)}
+              </p>
             ) : null}
           </div>
         </div>
@@ -188,5 +192,36 @@ const formatMetric = (metric: SmartGoalMetricType, raw: string | null | undefine
   }
   return v.toFixed(0);
 };
+
+/**
+ * Renders the goal title in the user's locale by mapping {@code metric_type}
+ * to a translation key. The backend persists English defaults at generation
+ * time; we override here so the user sees their language. The numeric target
+ * is interpolated so the rendered string reflects the actual goal value.
+ */
+function localizedTitle(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  goal: SmartGoal,
+): string {
+  const target = formatMetric(goal.metricType, goal.targetValue);
+  const key = `aiCoach.smartGoals.title.${goal.metricType}`;
+  const localized = t(key, { target, defaultValue: goal.title });
+  return localized || goal.title;
+}
+
+/**
+ * Description is translated the same way; when the i18n key is missing the
+ * persisted English description survives as a fallback.
+ */
+function localizedDescription(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  goal: SmartGoal,
+): string | null {
+  const target = formatMetric(goal.metricType, goal.targetValue);
+  const key = `aiCoach.smartGoals.description.${goal.metricType}`;
+  const localized = t(key, { target, defaultValue: '' });
+  if (localized) return localized;
+  return goal.description ?? null;
+}
 
 export default SmartGoalsCard;

@@ -2383,7 +2383,23 @@
       "delete": "Descartar objetivo",
       "empty": "Aún no hay objetivos para esta semana — pulse Actualizar para generarlos.",
       "metric": "{{measured}} / {{target}}",
-      "upgradeNote": "Los objetivos inteligentes son una función PRO+."
+      "upgradeNote": "Los objetivos inteligentes son una función PRO+.",
+      "title": {
+        "WIN_RATE_PCT": "Mantener una tasa de aciertos de {{target}}",
+        "AVG_R_MULTIPLE": "Alcanzar un R medio de {{target}}",
+        "TRADES_JOURNALED": "Anotar al menos {{target}} trades esta semana",
+        "RULE_COMPLIANCE_PCT": "Cumplir su regla más incumplida {{target}} de las veces",
+        "MAX_DAILY_LOSS_USD": "Limitar la peor jornada a {{target}}",
+        "TRADES_TAGGED_PCT": "Etiquetar el {{target}} de sus trades"
+      },
+      "description": {
+        "WIN_RATE_PCT": "Use la tasa de aciertos como suelo objetivo: ajuste los setups y evite los trades marginales que la arrastran hacia abajo.",
+        "AVG_R_MULTIPLE": "Corte las pérdidas cerca del stop y deje correr los ganadores — el R medio guía la curva de equity.",
+        "TRADES_JOURNALED": "Escriba una nota corta en cada trade — una sola línea sobre lo que funcionó o no acumula intuición.",
+        "RULE_COMPLIANCE_PCT": "Aumente el cumplimiento de la regla que más rompe — pequeñas mejoras se acumulan a través de muchos trades.",
+        "MAX_DAILY_LOSS_USD": "Mantenga la peor jornada de la semana bajo el tope — es la secuencia de pérdidas la que se acumula, no el tamaño de una sola.",
+        "TRADES_TAGGED_PCT": "Los tags le permiten segmentar el rendimiento luego — setup, sesión, clase de activo. Etiquetar consistentemente desbloquea las revisiones semanales."
+      }
     },
     "skillTree": {
       "sectionTitle": "Árbol de habilidades",
