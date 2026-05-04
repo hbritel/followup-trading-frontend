@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import { config } from '@/config';
+import type { CoachThread } from '@/types/coachThread';
 
 // ---- Shared message types (match backend CoachMessageDto / enums) --------
 
@@ -28,6 +29,19 @@ export interface PostCoachMessageResponse {
   assistant: CoachMessageDto;
 }
 
+// ---- Helpers --------------------------------------------------------------
+
+/**
+ * Appends `?threadId=<uuid>` (or merges it into an existing query string) when
+ * a thread is selected. Returns the path unchanged when {@code threadId} is
+ * null/undefined — the backend then routes to the user's "current" thread.
+ */
+function withThread(path: string, threadId?: string | null): string {
+  if (!threadId) return path;
+  const sep = path.includes('?') ? '&' : '?';
+  return `${path}${sep}threadId=${encodeURIComponent(threadId)}`;
+}
+
 // ---- REST surface (thin wrappers around apiClient) -----------------------
 
 export const coachChatService = {
@@ -39,15 +53,24 @@ export const coachChatService = {
    *                      compact profile (recent trades, accounts, 30-day
    *                      stats) to this turn's system prompt. Stateless:
    *                      the flag is per-request, never stored server-side.
+   * @param threadId      target thread; null/undefined → current thread.
    */
-  post: (text: string, shareUserData: boolean) =>
-    apiClient.post<PostCoachMessageResponse>('/coach/messages', { text, shareUserData }),
+  post: (text: string, shareUserData: boolean, threadId?: string | null) =>
+    apiClient.post<PostCoachMessageResponse>(
+      withThread('/coach/messages', threadId),
+      { text, shareUserData },
+    ),
 
   /** Paginated history, newest-first. */
-  history: (opts?: { before?: string; limit?: number }) => {
+  history: (opts?: {
+    before?: string;
+    limit?: number;
+    threadId?: string | null;
+  }) => {
     const params = new URLSearchParams();
     if (opts?.before) params.set('before', opts.before);
     if (opts?.limit) params.set('limit', String(opts.limit));
+    if (opts?.threadId) params.set('threadId', opts.threadId);
     const qs = params.toString();
     return apiClient.get<CoachMessageDto[]>(
       `/coach/thread/messages${qs ? `?${qs}` : ''}`,
@@ -60,9 +83,38 @@ export const coachChatService = {
   retry: (messageId: string) =>
     apiClient.post<CoachMessageDto>(`/coach/messages/${messageId}/retry`),
 
-  /** Deletes every message in the user's thread — fresh-start the conversation. */
-  clearThread: () =>
-    apiClient.delete<{ deleted: number }>('/coach/thread/messages'),
+  /**
+   * Deletes every message on the target thread — fresh-start the conversation.
+   * Does NOT archive the thread itself; use {@link archiveThread} for that.
+   */
+  clearThread: (threadId?: string | null) =>
+    apiClient.delete<{ deleted: number }>(
+      withThread('/coach/thread/messages', threadId),
+    ),
+
+  // ---- Thread CRUD ------------------------------------------------------
+
+  /** Lists every active (non-archived) thread for the user, newest-first. */
+  listThreads: () => apiClient.get<CoachThread[]>('/coach/threads'),
+
+  /**
+   * Creates a new empty thread. The optional title is what the sidebar
+   * displays before the first message — server may auto-generate one
+   * later from the message content.
+   */
+  createThread: (title?: string) =>
+    apiClient.post<CoachThread>('/coach/threads', title ? { title } : {}),
+
+  /** Renames a thread. Title is required — empty strings render as "(untitled)" client-side. */
+  renameThread: (id: string, title: string) =>
+    apiClient.patch<CoachThread>(`/coach/threads/${id}`, { title }),
+
+  /**
+   * Soft-archives a thread (returns 204). Messages remain on disk for GDPR
+   * exports but the thread vanishes from the active list.
+   */
+  archiveThread: (id: string) =>
+    apiClient.delete<void>(`/coach/threads/${id}`),
 };
 
 // ---- SSE streaming (fetch-based to carry the JWT header) -----------------

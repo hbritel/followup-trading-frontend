@@ -62,6 +62,17 @@ interface CoachChatProps {
    * can be re-clicked later without firing twice.
    */
   onPromptConsumed?: () => void;
+  /**
+   * Optional thread to scope this chat to. When {@code null} or omitted, the
+   * component operates on the user's "current" thread — the same legacy
+   * behaviour as the v1 mono-thread surface, so callers that haven't opted
+   * into multi-thread don't break.
+   *
+   * <p>Switching this prop reloads the message list and any in-flight SSE
+   * stream, so consumers can build a sidebar that flips between threads
+   * without unmounting the chat.</p>
+   */
+  threadId?: string | null;
 }
 
 /**
@@ -76,6 +87,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
   className,
   pendingPrompt,
   onPromptConsumed,
+  threadId = null,
 }) => {
   const { t, i18n } = useTranslation();
   const { currentPlan } = useFeatureFlags();
@@ -90,7 +102,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
     retry,
     loadHistory,
     clearHistory,
-  } = useCoachChat();
+  } = useCoachChat({ threadId });
 
   // Daily AI message usage — counter shown in header for paid plans
   const { data: subscription } = useQuery<SubscriptionDto>({
@@ -108,7 +120,9 @@ const CoachChat: React.FC<CoachChatProps> = ({
     subscription?.usage?.aiMessagesMax ?? AI_PLAN_CAPS[currentPlan] ?? 0;
 
   const [input, setInput] = useState('');
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  // historyLoaded is keyed by threadId so flipping threads reloads the list.
+  // Empty string represents the "current" (null) thread.
+  const [historyLoadedFor, setHistoryLoadedFor] = useState<string | null>(null);
   // Data-sharing consent: per-turn flag, persisted locally so the user doesn't
   // have to re-enable it every time. Never stored server-side — the POST body
   // carries it for exactly one message.
@@ -133,11 +147,20 @@ const CoachChat: React.FC<CoachChatProps> = ({
     });
   }, []);
 
-  // One-shot history load on mount.
+  // Load history whenever the active thread changes (or on first mount).
+  // The threadId in the dep list — keyed via `historyLoadedFor` — guarantees
+  // we re-fetch when the parent flips the thread, while keeping a single
+  // load per thread to avoid loops while the hook re-renders.
+  const threadKey = threadId ?? '';
   useEffect(() => {
-    if (historyLoaded) return;
-    loadHistory().finally(() => setHistoryLoaded(true));
-  }, [historyLoaded, loadHistory]);
+    if (historyLoadedFor === threadKey) return;
+    // Reset the fresh-message tracker so the new thread's existing history
+    // doesn't trigger entrance animations.
+    historyIdsRef.current = new Set();
+    loadHistory().finally(() => setHistoryLoadedFor(threadKey));
+  }, [historyLoadedFor, threadKey, loadHistory]);
+
+  const historyLoaded = historyLoadedFor === threadKey;
 
   // Snapshot the IDs present at history-load time so subsequent messages
   // can be detected as "fresh" and receive the entrance animation.

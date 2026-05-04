@@ -2654,6 +2654,35 @@
       "locked": {
         "requiresPlan": "Plan {{plan}} requis"
       }
+    },
+    "threads": {
+      "sidebar": {
+        "title": "Conversations",
+        "empty": "Aucune conversation pour l'instant. Démarrez-en une !",
+        "new": "Nouvelle conversation",
+        "untitled": "(sans titre)",
+        "noPreview": "Pas encore de messages"
+      },
+      "actions": {
+        "rename": "Renommer",
+        "archive": "Archiver",
+        "more": "Plus d'actions"
+      },
+      "archiveConfirm": {
+        "title": "Archiver cette conversation ?",
+        "description": "Les conversations archivées sont masquées de votre barre latérale mais pas supprimées.",
+        "confirm": "Archiver"
+      },
+      "rename": {
+        "title": "Renommer la conversation",
+        "placeholder": "Titre (max 120 caractères)"
+      },
+      "errors": {
+        "list": "Impossible de charger les conversations.",
+        "create": "Impossible de créer la conversation.",
+        "rename": "Impossible de renommer la conversation.",
+        "archive": "Impossible d'archiver la conversation."
+      }
     }
   },
   "ai": {

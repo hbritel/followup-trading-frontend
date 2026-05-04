@@ -16,6 +16,7 @@ import AutoPlaybookGenerator from '@/components/ai-coach/AutoPlaybookGenerator';
 import SmartGoalsCard from '@/components/ai-coach/SmartGoalsCard';
 import SkillTreeCard from '@/components/ai-coach/SkillTreeCard';
 import CounterfactualRulesPanel from '@/components/ai-coach/CounterfactualRulesPanel';
+import ThreadSidebar from '@/components/ai-coach/ThreadSidebar';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
 import { useTiltScore } from '@/hooks/useTiltScore';
@@ -30,6 +31,7 @@ import {
   HelpCircle, Info, Sparkles, Brain, Network, MessageSquare,
   LayoutDashboard, Image as ImageIcon, Target, Trophy, Scale,
   Sun, Moon, ArrowRight, Activity as ActivityIcon, Lock,
+  MessagesSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -146,6 +148,7 @@ const PageSkeleton: React.FC = () => (
     <div className="flex flex-col gap-4 h-[calc(100vh-7rem)]">
       <Skeleton className="h-12 w-full rounded-xl" />
       <div className="flex gap-4 flex-1 min-h-0">
+        <Skeleton className="hidden xl:block w-[260px] rounded-2xl" />
         <Skeleton className="flex-1 rounded-2xl" />
         <Skeleton className="hidden lg:block w-[360px] rounded-2xl" />
       </div>
@@ -371,9 +374,10 @@ const LightWidget: React.FC<{
 
 // ──────────────────────────────────────────────────────────────────────
 // Main page — Cockpit Layout
-// Left (~62%): chat (centerpiece, always-visible)
-// Right (~38%): persistent rail — tilt+streak hero, tool launchers, light
-// widgets stacked. Heavy tools open as right-side Sheet.
+// XL+ : 3-col → threads | chat | rail
+// LG  : 2-col → chat | rail   (threads behind a "Conversations" Sheet)
+// <LG : 1-col tabbed → chat / coach-rail (threads still behind a Sheet)
+// Heavy tools open in a right-side Sheet over everything.
 // ──────────────────────────────────────────────────────────────────────
 
 const AiCoach: React.FC = () => {
@@ -388,6 +392,22 @@ const AiCoach: React.FC = () => {
   const multiAgentAllowed = hasPlan('PRO');
   const [useMultiAgent, setUseMultiAgent] = useState(false);
 
+  // Multi-thread state — null = the user's "current" thread (legacy mono-thread
+  // mode the backend honours when the query param is absent). Local component
+  // state is the right home for this: it's UI-only, doesn't survive reloads,
+  // and changing it shouldn't ripple beyond the page.
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+
+  // Mobile-only Sheet state for the threads sidebar. On lg+ breakpoints the
+  // sheet stays closed and threads live inline; on <lg the Sheet replaces
+  // the inline rail.
+  const [threadsSheetOpen, setThreadsSheetOpen] = useState(false);
+  const handleSelectThread = useCallback((id: string | null) => {
+    setSelectedThreadId(id);
+    // Close the sheet on selection so users on mobile snap back to chat.
+    setThreadsSheetOpen(false);
+  }, []);
+
   useEffect(() => {
     if (!multiAgentAllowed && useMultiAgent) {
       setUseMultiAgent(false);
@@ -396,8 +416,12 @@ const AiCoach: React.FC = () => {
 
   const { accountId } = useAccountFilter(selectedAccount);
 
-  // Read-only view of the chat thread for empty-state detection.
-  const { messages: introMessages, isGenerating: introGenerating } = useCoachChat();
+  // Read-only view of the chat thread for empty-state detection. Scoped to
+  // the same threadId so "isChatEmpty" tracks the active conversation, not
+  // the user's default thread.
+  const { messages: introMessages, isGenerating: introGenerating } = useCoachChat({
+    threadId: selectedThreadId,
+  });
   const isChatEmpty = introMessages.length === 0;
 
   // NLQ pending prompt forwarding.
@@ -495,6 +519,21 @@ const AiCoach: React.FC = () => {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        {/* Conversations button — visible whenever the inline thread rail is
+            hidden (i.e. below xl). Opens the threads Sheet from the left. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setThreadsSheetOpen(true)}
+          className="xl:hidden h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+          aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
+          title={t('aiCoach.threads.sidebar.title', 'Conversations')}
+        >
+          <MessagesSquare className="h-4 w-4" />
+          <span className="hidden sm:inline text-xs">
+            {t('aiCoach.threads.sidebar.title', 'Conversations')}
+          </span>
+        </Button>
         {multiAgentAllowed && (
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
@@ -559,6 +598,7 @@ const AiCoach: React.FC = () => {
             className="h-full"
             pendingPrompt={pendingPrompt}
             onPromptConsumed={handlePromptConsumed}
+            threadId={selectedThreadId}
           />
         )}
       </div>
@@ -613,6 +653,17 @@ const AiCoach: React.FC = () => {
         <PsychologyCorrelation />
       </LightWidget>
     </div>
+  );
+
+  // ── Threads sidebar — shared between the desktop inline rail and the
+  // mobile/laptop Sheet. Surfaces the same component instance so state
+  // (rename dialog, archive confirm) is shared across breakpoints.
+  const threadsSidebar = (
+    <ThreadSidebar
+      selectedThreadId={selectedThreadId}
+      onSelectThread={handleSelectThread}
+      className="rounded-2xl border border-border/40 bg-card/40"
+    />
   );
 
   return (
@@ -671,8 +722,16 @@ const AiCoach: React.FC = () => {
           )}
         </div>
 
-        {/* Desktop body — 2-col cockpit. Left = chat (62%), right = rail (38%). */}
-        <div className="hidden lg:grid flex-1 min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+        {/* Desktop body — 2-col cockpit on lg, 3-col on xl (with threads inline).
+            On lg the threads live behind the "Conversations" Sheet because the
+            right rail already eats 360px and a third column would compress chat. */}
+        <div className="hidden lg:grid flex-1 min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[260px_minmax(0,1fr)_400px]">
+          <aside
+            aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
+            className="hidden xl:block min-h-0"
+          >
+            {threadsSidebar}
+          </aside>
           {chatColumn}
           <aside
             aria-label={t('aiCoach.cockpit.railLabel', 'Coach panel')}
@@ -681,6 +740,28 @@ const AiCoach: React.FC = () => {
             {railContent}
           </aside>
         </div>
+
+        {/* Threads sheet — used on every breakpoint below xl. Slides in from
+            the left so it doesn't collide with the heavy-tool Sheet on the
+            right. Sheet handles focus management and Esc-to-close. */}
+        <Sheet open={threadsSheetOpen} onOpenChange={setThreadsSheetOpen}>
+          <SheetContent
+            side="left"
+            className="w-full sm:max-w-sm p-0 flex flex-col"
+          >
+            <SheetHeader className="border-b border-border/40 px-4 py-3 flex-shrink-0">
+              <SheetTitle className="text-base">
+                {t('aiCoach.threads.sidebar.title', 'Conversations')}
+              </SheetTitle>
+              <SheetDescription className="sr-only">
+                {t('aiCoach.threads.sidebar.title', 'Conversations')}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {threadsSidebar}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Heavy-tool Sheet — opens from the right when a launcher is clicked.
             Chat stays mounted underneath, so SSE state survives. */}
