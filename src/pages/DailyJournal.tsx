@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format, parseISO, isValid, startOfMonth, isSameMonth } from 'date-fns';
 import { Plus, ChevronDown, ChevronUp, Sun, CloudSun, Moon, ClipboardList } from 'lucide-react';
@@ -55,6 +56,7 @@ const MOOD_AVG_COLORS: Record<number, string> = {
 const DailyJournal = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
   const [newEntryOpen, setNewEntryOpen] = useState(false);
@@ -63,6 +65,9 @@ const DailyJournal = () => {
   const [viewEntryId, setViewEntryId] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
+  // Citation deep-link from AI Coach (e.g. /daily-journal?focus=UUID).
+  const focusEntryId = searchParams.get('focus');
+
   const { data: entries, isLoading } = useJournalEntries();
   const { data: connections } = useBrokerConnections();
   const createEntry = useCreateJournalEntry();
@@ -70,6 +75,29 @@ const DailyJournal = () => {
   const deleteEntry = useDeleteJournalEntry();
 
   const journalEntries = entries ?? [];
+
+  // Consume citation deep-link: open the targeted journal entry once the
+  // entries list has loaded. Strips the `?focus=` param afterwards so a
+  // refresh / back-nav doesn't re-open the dialog.
+  useEffect(() => {
+    if (!focusEntryId) return;
+    if (journalEntries.length === 0) return;
+    const found = journalEntries.find((e) => e.id === focusEntryId);
+    if (found) {
+      setViewEntryId(focusEntryId);
+    } else {
+      toast({
+        title: t('journal.notFound', 'Journal entry not found'),
+        description: t('journal.notFoundDesc', 'Citation may be stale or out of scope.'),
+        variant: 'destructive',
+      });
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('focus');
+      return next;
+    }, { replace: true });
+  }, [focusEntryId, journalEntries, setSearchParams, toast, t]);
 
   // Entries for the selected month
   const monthEntries = useMemo(() => {

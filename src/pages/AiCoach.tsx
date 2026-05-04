@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDisclaimer } from '@/hooks/useDisclaimer';
@@ -317,6 +318,7 @@ const LightWidget: React.FC<{
 const AiCoach: React.FC = () => {
   const { t } = useTranslation();
   const { data: disclaimerStatus, isLoading: disclaimerLoading } = useDisclaimer();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tourOpen, setTourOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'coach'>('chat');
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
@@ -347,6 +349,24 @@ const AiCoach: React.FC = () => {
   const handlePromptConsumed = useCallback(() => {
     setPendingPrompt(null);
   }, []);
+
+  // Citation deep-link from coach chat: ?briefing=UUID or ?debrief=UUID opens
+  // the matching tool Sheet. Strips the param afterwards. v1 only opens the
+  // right Sheet — BriefingCard / SessionDebriefCard show the latest record.
+  // Targeting a specific historical record by id is a follow-up enhancement.
+  useEffect(() => {
+    const briefingId = searchParams.get('briefing');
+    const debriefId = searchParams.get('debrief');
+    if (!briefingId && !debriefId) return;
+    if (briefingId) setActiveTool('briefing');
+    else if (debriefId) setActiveTool('debrief');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('briefing');
+      next.delete('debrief');
+      return next;
+    }, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const seen = localStorage.getItem('ai-coach-tour-seen');

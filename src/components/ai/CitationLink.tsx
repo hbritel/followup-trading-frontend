@@ -44,7 +44,7 @@ const CitationLink: React.FC<CitationLinkProps> = ({ type, id }) => {
       case 'trade':
         return `/trades?focus=${id}`;
       case 'journal':
-        return `/journal?focus=${id}`;
+        return `/daily-journal?focus=${id}`;
       case 'debrief':
         return `/ai-coach?debrief=${id}`;
       case 'briefing':

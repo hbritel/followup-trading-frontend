@@ -91,6 +91,11 @@ const Trades = () => {
   // Strategy filter from URL (e.g. /trades?strategyId=xxx)
   const strategyIdParam = searchParams.get('strategyId');
 
+  // Citation deep-link from AI Coach (e.g. /trades?focus=UUID).
+  // Reads once; we strip the param after fetching so reload doesn't re-open
+  // the dialog.
+  const focusTradeId = searchParams.get('focus');
+
   // Highlight trade from navigation state (e.g. from StrategyDetail click)
   const highlightTradeId = (location.state as { highlightTradeId?: string } | null)?.highlightTradeId ?? null;
 
@@ -248,6 +253,38 @@ const Trades = () => {
   const [planOpen, setPlanOpen] = useState(false);
   const [planningScoreOpen, setPlanningScoreOpen] = useState(false);
   const [viewingTrade, setViewingTrade] = useState<Trade | null>(null);
+
+  // Consume citation deep-link: fetch the targeted trade by ID and open the
+  // detail dialog. Done as an effect (rather than in render) because the
+  // trade may not be on the currently-loaded page, so we hit the API
+  // directly instead of relying on `enrichedTrades.find`.
+  useEffect(() => {
+    if (!focusTradeId) return;
+    let cancelled = false;
+    tradeService.getTrade(focusTradeId)
+      .then((trade) => {
+        if (cancelled) return;
+        setViewingTrade(trade);
+      })
+      .catch((err) => {
+        console.error('Failed to load focused trade', err);
+        toast({
+          title: t('trades.notFound', 'Trade not found'),
+          description: t('trades.notFoundDesc', 'Citation may be stale or out of scope.'),
+          variant: 'destructive',
+        });
+      })
+      .finally(() => {
+        if (cancelled) return;
+        // Strip the param so refresh / back-nav doesn't re-open the dialog.
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('focus');
+          return next;
+        }, { replace: true });
+      });
+    return () => { cancelled = true; };
+  }, [focusTradeId, setSearchParams, toast, t]);
 
   // --- Handlers ---
   const handleNewTrade = () => {
