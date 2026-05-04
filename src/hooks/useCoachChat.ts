@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import i18n from '@/i18n/i18n';
 import {
   coachChatService,
   streamCoachMessage,
@@ -166,7 +167,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         subscribe(tail.id);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to load history.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.historyLoad', 'Failed to load history.');
       setState((prev) => ({ ...prev, isLoadingHistory: false, error: msg }));
     }
   }, [pageSize, subscribe]);
@@ -208,10 +209,10 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
           (e as { isPlanLimitExceeded?: boolean } | null)?.isPlanLimitExceeded,
         );
         const msg = planLimit
-          ? "You've hit your daily AI coach limit. Buy a pack or wait until tomorrow."
+          ? i18n.t('aiCoach.errors.planLimit', "You've hit your daily AI coach limit. Buy a pack or wait until tomorrow.")
           : e instanceof Error
             ? e.message
-            : 'Failed to send message.';
+            : i18n.t('aiCoach.errors.send', 'Failed to send message.');
         setState((prev) => ({ ...prev, error: msg, isPlanLimitExceeded: planLimit }));
       }
     },
@@ -226,7 +227,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       await coachChatService.cancel(active.messageId);
       // The backend will push a 'cancelled' SSE event; our handler cleans up.
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to cancel.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.cancel', 'Failed to cancel.');
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, []);
@@ -244,7 +245,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         isPlanLimitExceeded: false,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to clear history.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.clearHistory', 'Failed to clear history.');
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, [closeActiveStream]);
@@ -263,7 +264,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       setState((prev) => ({ ...prev, isGenerating: true, error: null }));
       subscribe(tail.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Retry failed.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.retry', 'Retry failed.');
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, [patchMessage, state.messages, subscribe]);

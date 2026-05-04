@@ -1202,6 +1202,16 @@
       "timeoutHelp": "Bump for slow local reasoning models (qwen3, deepseek-r1, etc.). Default is 300s. Leave blank to use the default.",
       "fieldActive": "Active",
       "create": "Create"
+    },
+    "coach": {
+      "bonus": {
+        "searchPlaceholder": "Search users by email or name…",
+        "searchEmpty": "No users found.",
+        "selected_one": "{{count}} user selected",
+        "selected_other": "{{count}} users selected",
+        "removeSelected": "Remove {{name}}",
+        "legacyPasteHint": "Need to paste UUIDs? Click here."
+      }
     }
   },
   "settings": {

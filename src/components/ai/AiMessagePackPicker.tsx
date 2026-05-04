@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Sparkles, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
   compact = false,
   className,
 }) => {
+  const { t } = useTranslation();
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
 
   const { data: packs, isLoading, error } = useQuery<AiMessagePackDto[]>({
@@ -63,7 +65,7 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
     return (
       <div className={cn('flex items-center gap-2 p-4 text-sm text-muted-foreground', className)}>
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading packs…
+        {t('aiCoach.chat.packs.loading', 'Loading packs…')}
       </div>
     );
   }
@@ -71,7 +73,7 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
   if (error) {
     return (
       <div className={cn('rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive', className)}>
-        Could not load message packs. Please retry later.
+        {t('aiCoach.chat.packs.loadError', 'Could not load message packs. Please retry later.')}
       </div>
     );
   }
@@ -93,7 +95,7 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
         <header className="space-y-1">
           <h3 id="pack-picker-heading" className="flex items-center gap-2 text-base font-semibold">
             <Sparkles className="h-4 w-4 text-amber-500" />
-            {heading ?? 'Top up your coach messages'}
+            {heading ?? t('aiCoach.chat.packs.heading', 'Top up your coach messages')}
           </h3>
           {subheading && (
             <p className="text-sm text-muted-foreground">{subheading}</p>
@@ -115,7 +117,7 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
             >
               {isBestValue && (
                 <div className="absolute -top-2 right-3 flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow">
-                  <Zap className="h-3 w-3" /> Best value
+                  <Zap className="h-3 w-3" /> {t('aiCoach.chat.packs.bestValue', 'Best value')}
                 </div>
               )}
 
@@ -129,9 +131,12 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
                   </span>
                 </div>
                 <p className="pt-0.5 text-xs text-muted-foreground">
-                  {pack.messageCount} messages{' '}
+                  {t('aiCoach.chat.packs.messageCount', {
+                    defaultValue: '{{count}} messages',
+                    count: pack.messageCount,
+                  })}{' '}
                   <span className="opacity-70">
-                    · {formatPerMessage(pack.priceCents, pack.messageCount, pack.currency)}
+                    · {formatPerMessage(pack.priceCents, pack.messageCount, pack.currency, t)}
                   </span>
                 </p>
               </CardHeader>
@@ -154,10 +159,10 @@ const AiMessagePackPicker: React.FC<AiMessagePackPickerProps> = ({
                   {isBusy ? (
                     <>
                       <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                      Redirecting…
+                      {t('aiCoach.chat.packs.redirecting', 'Redirecting…')}
                     </>
                   ) : (
-                    'Buy'
+                    t('aiCoach.chat.packs.buy', 'Buy')
                   )}
                 </Button>
               </CardFooter>
@@ -182,19 +187,30 @@ function formatPrice(cents: number, currency: string): string {
   }
 }
 
-function formatPerMessage(cents: number, count: number, currency: string): string {
+function formatPerMessage(
+  cents: number,
+  count: number,
+  currency: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
   if (!count) return '';
   const perCents = cents / count;
-  try {
-    return `${new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currency || 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(perCents / 100)}/msg`;
-  } catch {
-    return `$${(perCents / 100).toFixed(2)}/msg`;
-  }
+  const formatPrice = (n: number): string => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currency || 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n);
+    } catch {
+      return `$${n.toFixed(2)}`;
+    }
+  };
+  return t('aiCoach.chat.packs.perMessage', {
+    defaultValue: '{{price}}/msg',
+    price: formatPrice(perCents / 100),
+  });
 }
 
 export default AiMessagePackPicker;

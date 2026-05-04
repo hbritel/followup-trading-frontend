@@ -361,7 +361,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            {t('coach.chat.generating', 'Your coach is preparing a response')}
+            {t('aiCoach.chat.generating', 'Your coach is preparing a response')}
           </span>
           <Button
             variant="ghost"
@@ -370,7 +370,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             onClick={() => cancel()}
           >
             <X className="mr-1 h-3 w-3" />
-            {t('coach.chat.cancel', 'Cancel')}
+            {t('aiCoach.chat.cancel', 'Cancel')}
           </Button>
         </div>
       )}
@@ -379,7 +379,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
         <div className="flex items-center justify-between border-t border-border/50 bg-destructive/10 px-4 py-2 text-xs text-destructive">
           <span className="truncate pr-2">
             {tailMessage?.errorMessage ||
-              t('coach.chat.failed', 'Generation failed.')}
+              t('aiCoach.chat.failed', 'Generation failed.')}
           </span>
           <Button
             variant="ghost"
@@ -388,7 +388,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             onClick={() => retry()}
           >
             <RotateCw className="mr-1 h-3 w-3" />
-            {t('coach.chat.retry', 'Retry')}
+            {t('aiCoach.chat.retry', 'Retry')}
           </Button>
         </div>
       )}
@@ -403,7 +403,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
         <div className="border-t border-border/50 bg-amber-50/50 dark:bg-amber-500/5 px-4 py-3 space-y-3">
           <p className="text-xs text-amber-900 dark:text-amber-200">
             {t(
-              'coach.chat.outOfMessages',
+              'aiCoach.chat.outOfMessages',
               "You're out of messages today — pick a pack or wait until tomorrow.",
             )}
           </p>
@@ -419,7 +419,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={t('coach.chat.placeholder', 'Ask your coach anything…')}
+            placeholder={t('aiCoach.chat.placeholder', 'Ask your coach anything…')}
             rows={1}
             className="block w-full resize-none bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground/60 max-h-40 min-h-[44px]"
           />
@@ -430,7 +430,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               onClick={toggleShareUserData}
               aria-pressed={shareUserData}
               title={t(
-                'coach.chat.shareData.tooltip',
+                'aiCoach.chat.shareData.tooltip',
                 'When on, the coach gets a compact snapshot of your recent trades and stats for this message only. Nothing is stored server-side.',
               )}
               className={cn(
@@ -444,8 +444,8 @@ const CoachChat: React.FC<CoachChatProps> = ({
                 ? <Lock className="h-3 w-3" />
                 : <Database className="h-3 w-3" />}
               {shareUserData
-                ? t('coach.chat.shareData.on', 'Sharing my data')
-                : t('coach.chat.shareData.off', 'Share my data')}
+                ? t('aiCoach.chat.shareData.on', 'Sharing my data')
+                : t('aiCoach.chat.shareData.off', 'Share my data')}
             </button>
             {/* Send button */}
             <Button
@@ -453,7 +453,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               size="icon"
               className="h-8 w-8 rounded-full"
               disabled={!input.trim() || isGenerating}
-              aria-label={t('coach.chat.send', 'Send')}
+              aria-label={t('aiCoach.chat.send', 'Send')}
             >
               <Send className="h-3.5 w-3.5" />
             </Button>
@@ -461,8 +461,8 @@ const CoachChat: React.FC<CoachChatProps> = ({
         </div>
         <p className="mt-1.5 px-2 text-[10px] text-muted-foreground/70">
           {shareUserData
-            ? t('coach.chat.shareData.hintOn', 'Your last trades are attached to this message.')
-            : t('coach.chat.shareData.hintOff', 'The coach has no access to your trades.')}
+            ? t('aiCoach.chat.shareData.hintOn', 'Your last trades are attached to this message.')
+            : t('aiCoach.chat.shareData.hintOff', 'The coach has no access to your trades.')}
         </p>
       </form>
     </div>
@@ -527,9 +527,9 @@ function groupMessagesByDay(
   return Array.from(bucketMap.entries()).map(([k, msgs]) => {
     let label: string;
     if (k === todayKey) {
-      label = t('coach.chat.today', 'Aujourd\'hui');
+      label = t('aiCoach.chat.today', 'Today');
     } else if (k === yesterdayKey) {
-      label = t('coach.chat.yesterday', 'Hier');
+      label = t('aiCoach.chat.yesterday', 'Yesterday');
     } else {
       const d = new Date(msgs[0].createdAt);
       label = new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(d);
@@ -558,23 +558,23 @@ interface EmptyStateProps {
 const SUGGESTIONS = [
   {
     icon: TrendingUp,
-    labelKey: 'coach.chat.suggestion.bestDay',
-    labelFallback: 'Analyser mon meilleur jour de trading',
+    labelKey: 'aiCoach.chat.suggestion.bestDay',
+    labelFallback: 'Analyse my best trading day',
   },
   {
     icon: AlertTriangle,
-    labelKey: 'coach.chat.suggestion.negativePatterns',
-    labelFallback: 'Détecter mes patterns négatifs récurrents',
+    labelKey: 'aiCoach.chat.suggestion.negativePatterns',
+    labelFallback: 'Spot my recurring negative patterns',
   },
   {
     icon: Target,
-    labelKey: 'coach.chat.suggestion.morningRoutine',
-    labelFallback: 'Comment améliorer ma routine matinale ?',
+    labelKey: 'aiCoach.chat.suggestion.morningRoutine',
+    labelFallback: 'How can I improve my morning routine?',
   },
   {
     icon: Brain,
-    labelKey: 'coach.chat.suggestion.psychology',
-    labelFallback: 'Quelle psychologie travailler en priorité ?',
+    labelKey: 'aiCoach.chat.suggestion.psychology',
+    labelFallback: 'Which psychology topic should I work on first?',
   },
 ] as const;
 
@@ -583,12 +583,12 @@ const EmptyState: React.FC<EmptyStateProps> = ({ t, onSuggestionClick }) => (
     <div className="flex flex-col items-center gap-2 text-muted-foreground">
       <Sparkles className="h-6 w-6 text-primary" />
       <p className="text-sm font-medium text-foreground">
-        {t('coach.chat.empty.title', 'Discuter avec votre Coach IA')}
+        {t('aiCoach.chat.empty.title', 'Chat with your AI Coach')}
       </p>
       <p className="max-w-xs text-xs text-muted-foreground">
         {t(
-          'coach.chat.empty.body',
-          'Posez une question sur un trade, un pattern ou la discipline à travailler. Le coach retient le contexte entre les échanges.',
+          'aiCoach.chat.empty.body',
+          'Ask a question about a trade, a pattern, or the discipline you want to work on. The coach keeps context between messages.',
         )}
       </p>
     </div>
@@ -651,8 +651,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isFresh = false,
   })();
 
   const roleLabel = isUser
-    ? t('coach.chat.role.user', 'Vous')
-    : t('coach.chat.role.assistant', 'Coach IA');
+    ? t('aiCoach.chat.role.user', 'You')
+    : t('aiCoach.chat.role.assistant', 'AI Coach');
   const ariaLabel = `${roleLabel}${timestamp ? `, ${timestamp}` : ''}`;
 
   // aria-live on the streaming bubble only. aria-atomic="false" so the AT
@@ -691,7 +691,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isFresh = false,
       >
         {/* Typing indicator: 3 bouncing dots when streaming with no content yet */}
         {showCaret && contentIsEmpty ? (
-          <div className="flex items-center gap-1 py-1" aria-label={t('coach.chat.typing', 'Coach is typing')}>
+          <div className="flex items-center gap-1 py-1" aria-label={t('aiCoach.chat.typing', 'Coach is typing')}>
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:300ms]" />

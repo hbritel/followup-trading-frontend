@@ -1178,6 +1178,16 @@
       "timeoutHelp": "Augmentez pour les modèles locaux à raisonnement lent (qwen3, deepseek-r1, etc.). Défaut 300s. Laisser vide pour utiliser la valeur par défaut.",
       "fieldActive": "Actif",
       "create": "Créer"
+    },
+    "coach": {
+      "bonus": {
+        "searchPlaceholder": "Rechercher un utilisateur par email ou nom…",
+        "searchEmpty": "Aucun utilisateur trouvé.",
+        "selected_one": "{{count}} utilisateur sélectionné",
+        "selected_other": "{{count}} utilisateurs sélectionnés",
+        "removeSelected": "Retirer {{name}}",
+        "legacyPasteHint": "Coller des UUIDs ? Cliquer ici."
+      }
     }
   },
   "settings": {
