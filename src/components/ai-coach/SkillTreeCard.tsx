@@ -127,7 +127,7 @@ const CategoryColumn: React.FC<CategoryColumnProps> = ({ category, nodes }) => {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <Icon className={`h-3.5 w-3.5 shrink-0 ${tint}`} />
-          <span className="text-xs font-semibold uppercase tracking-wider truncate">
+          <span className="text-xs font-semibold uppercase tracking-wider break-words leading-tight">
             {t(`aiCoach.skillTree.category.${category}`, category)}
           </span>
         </div>
@@ -157,13 +157,13 @@ const SkillRow: React.FC<{ view: SkillNodeView }> = ({ view }) => {
       }`}
       title={node.description ?? undefined}
     >
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="flex items-start gap-1.5 mb-1">
         {unlocked ? (
-          <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
+          <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
         ) : (
-          <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+          <Lock className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
         )}
-        <span className="text-[11px] font-medium truncate">{node.name}</span>
+        <span className="text-[11px] font-medium leading-tight break-words">{node.name}</span>
       </div>
       {!unlocked && pct > 0 ? (
         <div className="h-0.5 bg-muted/40 rounded-full overflow-hidden">

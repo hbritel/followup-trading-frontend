@@ -1,9 +1,7 @@
 import React from 'react';
-import { TrendingUp, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePsychologyCorrelation } from '@/hooks/usePsychologyCorrelation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 const EMOTION_EMOJI_MAP: Record<string, string> = {
@@ -37,23 +35,6 @@ const PsychologyCorrelation: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            {t('ai.psychologyTitle', 'Emotion vs Performance')}
-          </h3>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="center" sideOffset={4} avoidCollisions className="max-w-[280px] text-xs leading-relaxed z-50">
-              {t('ai.psychologyInfo', 'Correlates the emotions you log before trades with their outcomes. Helps identify which mental states lead to better or worse trading decisions.')}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <TrendingUp className="h-4 w-4 text-emerald-400" />
-      </div>
-
       {isLoading && (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
