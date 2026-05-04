@@ -2421,6 +2421,56 @@
         "PERFORMANCE": "Rendimiento",
         "STRATEGY": "Estrategia",
         "RISK": "Riesgo"
+      },
+      "nodes": {
+        "FIRST_JOURNAL": {
+          "name": "Primera entrada de diario",
+          "description": "Anota un primer trade."
+        },
+        "JOURNALED_10": {
+          "name": "10 trades anotados",
+          "description": "Anota diez trades. El diario es donde aparecen los patrones."
+        },
+        "JOURNALED_50": {
+          "name": "50 trades anotados",
+          "description": "Cincuenta trades anotados: las retrospectivas empiezan a dar frutos."
+        },
+        "TAGS_USED_5": {
+          "name": "Caja de etiquetas",
+          "description": "Usa al menos cinco etiquetas distintas en tus trades."
+        },
+        "CLOSED_10": {
+          "name": "Primeros diez trades cerrados",
+          "description": "Cierra diez trades — el tamaño de muestra desbloquea el resto del árbol."
+        },
+        "CLOSED_50": {
+          "name": "Cincuenta trades en el contador",
+          "description": "Una muestra significativa para que el win-rate se estabilice."
+        },
+        "WIN_RATE_55_30D": {
+          "name": "55 % de win rate en 30 días",
+          "description": "Mantén un win rate del 55 % en los últimos 30 días (≥10 trades cerrados)."
+        },
+        "AVG_R_1_30D": {
+          "name": "R medio ≥ 1 en 30 días",
+          "description": "R medio de al menos 1,0 en los últimos 30 días."
+        },
+        "FIRST_STRATEGY": {
+          "name": "Primer playbook",
+          "description": "Define tu primera estrategia con al menos una regla."
+        },
+        "TWO_STRATEGIES": {
+          "name": "Dos estrategias, dos playbooks",
+          "description": "Ejecuta dos estrategias en paralelo."
+        },
+        "NO_LOSS_DAY_5": {
+          "name": "Cinco días limpios",
+          "description": "Cinco días de trading seguidos sin una jornada perdedora."
+        },
+        "COMPLIANCE_80": {
+          "name": "80 % de cumplimiento de reglas",
+          "description": "Mantén un 80 % de cumplimiento en tu estrategia más operada."
+        }
       }
     },
     "nlq": {
@@ -2452,12 +2502,48 @@
         "group": "Calificar esta respuesta",
         "good": "Útil",
         "bad": "No útil"
-      }
+      },
+      "empty": {
+        "title": "Habla con tu Coach IA",
+        "body": "Haz una pregunta sobre un trade, un patrón o la disciplina que quieres trabajar. El coach mantiene el contexto entre los mensajes."
+      },
+      "suggestion": {
+        "bestDay": "Analiza mi mejor día de trading",
+        "negativePatterns": "Detecta mis patrones negativos recurrentes",
+        "morningRoutine": "¿Cómo puedo mejorar mi rutina matutina?",
+        "psychology": "¿Qué tema de psicología debería trabajar primero?"
+      },
+      "shareData": {
+        "on": "Compartiendo mis datos",
+        "off": "Compartir mis datos",
+        "hintOn": "Tus últimos trades se adjuntan a este mensaje.",
+        "hintOff": "El coach no tiene acceso a tus trades."
+      },
+      "role": {
+        "user": "Tú",
+        "assistant": "Coach IA"
+      },
+      "placeholder": "Pregúntale lo que quieras a tu coach…",
+      "send": "Enviar",
+      "generating": "Tu coach está preparando una respuesta",
+      "cancel": "Cancelar",
+      "retry": "Reintentar",
+      "failed": "La generación falló.",
+      "outOfMessages": "Te has quedado sin mensajes por hoy — elige un pack o espera hasta mañana.",
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "typing": "El coach está escribiendo"
     },
     "cockpit": {
       "locked": {
         "requiresPlan": "Plan {{plan}}+ requerido"
-      }
+      },
+      "briefingDesc": "Plan del día",
+      "debriefDesc": "Balance de sesión",
+      "goalsDesc": "Objetivos SMART",
+      "skillsDesc": "Progreso",
+      "rulesDesc": "Cumplimiento what-if",
+      "visionDesc": "Análisis de imagen"
     },
     "threads": {
       "sidebar": {
@@ -2563,7 +2649,9 @@
     "debriefEmpty": "Sin debrief de sesion.",
     "briefingEmpty": "Sin briefing para hoy.",
     "regenerate": "Regenerar",
-    "generateBtn": "Generar"
+    "generateBtn": "Generar",
+    "morningBriefing": "Resumen matutino",
+    "sessionDebrief": "Resumen de sesión"
   },
   "import": {
     "title": "Importar trades",
@@ -4466,6 +4554,10 @@
     "totalActualPnl": "Real",
     "hypotheticalPnl": "Si se siguen las reglas",
     "totalGap": "Brecha",
-    "followedNotFollowed": "{{ok}} OK / {{ko}} rotas"
+    "followedNotFollowed": "{{ok}} OK / {{ko}} rotas",
+    "rulesShort": "Reglas"
+  },
+  "visionAnalysis": {
+    "sectionTitle": "Analizador de gráficos"
   }
 }
