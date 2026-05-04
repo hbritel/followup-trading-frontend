@@ -202,22 +202,9 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
         )}
 
         {!isLoading && !isError && threads && threads.length === 0 && (
-          <div className="px-3 py-8 text-center space-y-3">
-            <p className="text-xs text-muted-foreground">
-              {t('aiCoach.threads.sidebar.empty', 'No conversations yet. Start one!')}
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
-              className="gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {t('aiCoach.threads.sidebar.new', 'New conversation')}
-            </Button>
-          </div>
+          <p className="px-3 py-8 text-center text-xs text-muted-foreground">
+            {t('aiCoach.threads.sidebar.empty', 'No conversations yet. Start one!')}
+          </p>
         )}
 
         {!isLoading && !isError && threads?.map((thread) => (
