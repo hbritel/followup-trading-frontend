@@ -1247,7 +1247,12 @@
         },
         "forceButton": "Forzar reindexación",
         "forceTitle": "Elimina primero todas las filas de memoria existentes y luego reindexa. Úsalo cuando las filas anteriores muestren embeddings faltantes.",
-        "brokenHint": "Embeddings faltantes — usa Forzar"
+        "brokenHint": "Embeddings faltantes — usa Forzar",
+        "providerOff": {
+          "title": "Proveedor de embeddings no configurado",
+          "body": "No hay ningún proveedor de embeddings registrado en el servidor, así que la reindexación no tiene a qué llamar. Pídele a un administrador que active un proveedor (OpenAI / Gemini / Ollama) en la configuración del backend — hasta entonces, las citas RAG no aparecerán."
+        },
+        "providerOn": "Proveedor: {{name}} (dim {{dim}})"
       }
     }
   },

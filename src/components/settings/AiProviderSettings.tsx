@@ -437,6 +437,33 @@ const AiProviderSettings: React.FC = () => {
           </div>
         </div>
 
+        {indexStats && !indexStats.provider?.wired && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <div className="font-semibold">
+                {t('settings.ai.reindex.providerOff.title', 'Embedding provider not wired')}
+              </div>
+              <div className="mt-0.5 text-destructive/80">
+                {t(
+                  'settings.ai.reindex.providerOff.body',
+                  'No embedding provider is registered on the server, so re-indexing has nothing to call. Ask an admin to enable an embedding provider (OpenAI / Gemini / Ollama) in the backend config — until then, RAG citations will not appear.',
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {indexStats && indexStats.provider?.wired && (
+          <div className="text-[10px] text-muted-foreground">
+            {t('settings.ai.reindex.providerOn', {
+              defaultValue: 'Provider: {{name}} (dim {{dim}})',
+              name: indexStats.provider.name ?? '—',
+              dim: indexStats.provider.dimension,
+            })}
+          </div>
+        )}
+
         {indexStats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(['TRADE', 'JOURNAL', 'BRIEFING', 'DEBRIEF'] as const).map((src) => {

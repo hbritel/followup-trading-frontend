@@ -88,10 +88,17 @@ export interface IndexCount {
   withEmbedding: number;
 }
 
+export interface ProviderStatus {
+  name: string | null;
+  dimension: number;
+  wired: boolean;
+}
+
 export interface EmbeddingsStats {
   total: number;
   withEmbedding: number;
   bySource: Record<EmbeddingSourceType, IndexCount>;
+  provider: ProviderStatus;
 }
 
 /**

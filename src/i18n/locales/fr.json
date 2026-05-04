@@ -1342,7 +1342,12 @@
         },
         "forceButton": "Forcer la réindexation",
         "forceTitle": "Supprime d'abord toutes les entrées de mémoire existantes puis réindexe. À utiliser quand les compteurs ci-dessus montrent des embeddings manquants.",
-        "brokenHint": "Embeddings manquants — utilisez Forcer"
+        "brokenHint": "Embeddings manquants — utilisez Forcer",
+        "providerOff": {
+          "title": "Aucun fournisseur d'embeddings configuré",
+          "body": "Aucun fournisseur d'embeddings n'est enregistré sur le serveur, donc la réindexation n'a rien à appeler. Demandez à un administrateur d'activer un fournisseur (OpenAI / Gemini / Ollama) dans la config backend — d'ici là, les citations RAG n'apparaîtront pas."
+        },
+        "providerOn": "Fournisseur : {{name}} (dim {{dim}})"
       }
     }
   },

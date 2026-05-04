@@ -1366,7 +1366,12 @@
         },
         "forceButton": "Force re-index",
         "forceTitle": "Drops every existing memory row first, then re-indexes. Use this when the rows above show missing embeddings.",
-        "brokenHint": "Missing embeddings — use Force"
+        "brokenHint": "Missing embeddings — use Force",
+        "providerOff": {
+          "title": "Embedding provider not wired",
+          "body": "No embedding provider is registered on the server, so re-indexing has nothing to call. Ask an admin to enable an embedding provider (OpenAI / Gemini / Ollama) in the backend config — until then, RAG citations will not appear."
+        },
+        "providerOn": "Provider: {{name}} (dim {{dim}})"
       }
     }
   },
