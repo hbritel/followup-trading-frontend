@@ -69,6 +69,8 @@ interface UserPickerProps {
   excludeIds?: Set<string>;
   /** Optional placeholder. Defaults to a translated fallback. */
   placeholder?: string;
+  /** Optional label shown when search returned zero results. */
+  noResultsLabel?: string;
   /** Optional disabled flag. */
   disabled?: boolean;
 }
@@ -88,6 +90,7 @@ export default function UserPicker({
   onChange,
   excludeIds,
   placeholder,
+  noResultsLabel,
   disabled,
 }: UserPickerProps) {
   const { t } = useTranslation();
@@ -211,7 +214,7 @@ export default function UserPicker({
           )}
           {!isUuid && shouldSearch && !isLoading && results.length === 0 && (
             <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-              {t('admin.aiUsage.noUsersFound', 'No users found')}
+              {noResultsLabel ?? t('admin.aiUsage.noUsersFound', 'No users found')}
             </div>
           )}
           {!isUuid && !shouldSearch && !query && (
@@ -285,23 +288,31 @@ export default function UserPicker({
 
 // ── Selected user chip (helper for Grant section) ─────────────────────────────
 
-export function SelectedUserChip({ user, onRemove }: {
+export function SelectedUserChip({
+  user,
+  onRemove,
+  removeAriaLabel,
+}: {
   user: AdminUserDto;
   onRemove: () => void;
+  /** Optional aria-label override for the X button. Defaults to a generic label. */
+  removeAriaLabel?: string;
 }) {
+  const displayName = user.fullName || user.username || user.id.slice(0, 8);
   return (
     <div className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 py-0.5 pl-1 pr-2 text-xs">
       <Avatar className="h-5 w-5">
         {user.profilePictureUrl && <AvatarImage src={user.profilePictureUrl} alt="" />}
         <AvatarFallback className="text-[10px]">{initials(user)}</AvatarFallback>
       </Avatar>
-      <span className="max-w-[140px] truncate font-medium">{user.fullName || user.username || user.id.slice(0, 8)}</span>
+      <span className="max-w-[140px] truncate font-medium">{displayName}</span>
       <Button
         type="button"
         variant="ghost"
         size="icon"
         className="h-4 w-4 shrink-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
         onClick={onRemove}
+        aria-label={removeAriaLabel ?? `Remove ${displayName}`}
       >
         <X className="h-3 w-3" />
       </Button>
