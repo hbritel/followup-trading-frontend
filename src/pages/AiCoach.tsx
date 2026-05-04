@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,8 +16,10 @@ import AutoPlaybookGenerator from '@/components/ai-coach/AutoPlaybookGenerator';
 import SmartGoalsCard from '@/components/ai-coach/SmartGoalsCard';
 import SkillTreeCard from '@/components/ai-coach/SkillTreeCard';
 import CounterfactualRulesPanel from '@/components/ai-coach/CounterfactualRulesPanel';
+import ThreadSidebar from '@/components/ai-coach/ThreadSidebar';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
+import { useTiltScore } from '@/hooks/useTiltScore';
 import CoachChat from '@/components/ai/CoachChat';
 import AgentChatPanel from '@/components/ai-coach/AgentChatPanel';
 import CoachTour from '@/components/ai-coach/CoachTour';
@@ -28,7 +30,8 @@ import { cn } from '@/lib/utils';
 import {
   HelpCircle, Info, Sparkles, Brain, Network, MessageSquare,
   LayoutDashboard, Image as ImageIcon, Target, Trophy, Scale,
-  Sun, Moon, ArrowRight, Activity as ActivityIcon,
+  Sun, Moon, ArrowRight, Activity as ActivityIcon, Lock,
+  MessagesSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -45,9 +48,17 @@ import {
 // ──────────────────────────────────────────────────────────────────────
 
 type ToolKey = 'briefing' | 'debrief' | 'goals' | 'skills' | 'rules' | 'vision';
+type RequiredPlan = 'STARTER' | 'PRO' | 'ELITE';
 
 interface ToolDef {
   key: ToolKey;
+  /**
+   * Plan tier the underlying card actually enforces. Leave undefined when
+   * the card has no plan gate (currently briefing + debrief). The launcher
+   * only renders a Lock badge — clicks still open the Sheet because the
+   * inner card owns the upgrade UI.
+   */
+  requiredPlan?: RequiredPlan;
   icon: React.ComponentType<{ className?: string }>;
   iconClass: string;
   hoverBg: string;
@@ -80,6 +91,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'goals',
+    requiredPlan: 'PRO',
     icon: Target,
     iconClass: 'text-sky-400',
     hoverBg: 'group-hover:bg-sky-500/10',
@@ -90,6 +102,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'skills',
+    requiredPlan: 'PRO',
     icon: Trophy,
     iconClass: 'text-amber-400',
     hoverBg: 'group-hover:bg-amber-500/10',
@@ -100,6 +113,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'rules',
+    requiredPlan: 'PRO',
     icon: Scale,
     iconClass: 'text-rose-400',
     hoverBg: 'group-hover:bg-rose-500/10',
@@ -110,6 +124,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'vision',
+    requiredPlan: 'PRO',
     icon: ImageIcon,
     iconClass: 'text-fuchsia-400',
     hoverBg: 'group-hover:bg-fuchsia-500/10',
@@ -133,6 +148,7 @@ const PageSkeleton: React.FC = () => (
     <div className="flex flex-col gap-4 h-[calc(100vh-7rem)]">
       <Skeleton className="h-12 w-full rounded-xl" />
       <div className="flex gap-4 flex-1 min-h-0">
+        <Skeleton className="hidden xl:block w-[260px] rounded-2xl" />
         <Skeleton className="flex-1 rounded-2xl" />
         <Skeleton className="hidden lg:block w-[360px] rounded-2xl" />
       </div>
@@ -168,13 +184,36 @@ const NlqIntroSection: React.FC<{
 // ──────────────────────────────────────────────────────────────────────
 // Tilt + Streak hero — top of the right rail. Always visible. Largest
 // visual weight in the rail because it's the most-monitored signal.
+// The rightmost gradient stop derives from the live tilt score so the
+// surface tints toward warning/danger when the user is in a risky zone.
+// The gradient is purely decorative — the embedded <TiltGauge> remains
+// the source of truth for the actual reading and a11y.
 // ──────────────────────────────────────────────────────────────────────
 const TiltStreakHero: React.FC<{ accountId?: string | null }> = ({ accountId }) => {
   const { t } = useTranslation();
+  // Reuse the same hook the gauge uses — react-query dedupes the request.
+  // Realtime stays disabled here (the gauge already owns the subscription).
+  const { data: tilt } = useTiltScore(accountId ?? undefined, false);
+
+  // Map tilt zone to a gradient tint. Stay on emerald while undefined /
+  // loading to avoid a flash of red as the gauge spins up.
+  const gradientToneClass = useMemo(() => {
+    const score = tilt?.score;
+    if (typeof score !== 'number') return 'to-emerald-500/5';
+    if (score <= 30) return 'to-emerald-500/5';
+    if (score <= 60) return 'to-amber-500/5';
+    if (score <= 80) return 'to-orange-500/5';
+    return 'to-rose-500/5';
+  }, [tilt?.score]);
+
   return (
     <section
       aria-labelledby="tilt-hero-title"
-      className="relative overflow-hidden rounded-2xl border border-border/40 p-5 bg-gradient-to-br from-card via-card to-emerald-500/5 shadow-lg"
+      className={cn(
+        'relative overflow-hidden rounded-2xl border border-border/40 p-5 shadow-lg',
+        'bg-gradient-to-br from-card via-card transition-colors duration-500',
+        gradientToneClass,
+      )}
     >
       <header className="flex items-center justify-between mb-3">
         <h2
@@ -215,7 +254,10 @@ const TiltStreakHero: React.FC<{ accountId?: string | null }> = ({ accountId }) 
 
 // ──────────────────────────────────────────────────────────────────────
 // Tool launcher button — fits into a 2-col grid in the rail. Click opens
-// the matching tool in a right-side Sheet.
+// the matching tool in a right-side Sheet. When the underlying card is
+// plan-gated and the user lacks the required plan, render a Lock icon
+// in the top-right corner with a fade. Click is preserved — the inner
+// card owns the upgrade UI; we just want the user warned upfront.
 // ──────────────────────────────────────────────────────────────────────
 interface ToolLauncherProps {
   tool: ToolDef;
@@ -224,20 +266,32 @@ interface ToolLauncherProps {
 
 const ToolLauncher: React.FC<ToolLauncherProps> = ({ tool, onClick }) => {
   const { t } = useTranslation();
+  const { hasPlan } = useFeatureFlags();
   const Icon = tool.icon;
   const label = t(tool.labelKey, tool.defaultLabel);
   const desc = t(tool.descKey, tool.defaultDesc);
+
+  const isLocked = tool.requiredPlan ? !hasPlan(tool.requiredPlan) : false;
+  const lockedSuffix = isLocked && tool.requiredPlan
+    ? t('aiCoach.cockpit.locked.requiresPlan', {
+        defaultValue: '{{plan}}+ required',
+        plan: tool.requiredPlan,
+      })
+    : null;
+
   return (
     <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <button
           type="button"
           onClick={onClick}
-          aria-label={label}
+          aria-label={lockedSuffix ? `${label} — ${lockedSuffix}` : label}
+          aria-disabled={isLocked || undefined}
           className={cn(
             'group relative flex flex-col items-start gap-1.5 rounded-xl border border-border/40',
             'bg-card/40 hover:bg-card/70 hover:border-border/70 p-3 text-left transition-all',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+            isLocked && 'opacity-60 cursor-not-allowed',
           )}
         >
           <span
@@ -256,14 +310,24 @@ const ToolLauncher: React.FC<ToolLauncherProps> = ({ tool, onClick }) => {
               {desc}
             </div>
           </div>
-          <ArrowRight
-            aria-hidden="true"
-            className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
-          />
+          {isLocked ? (
+            <Lock
+              aria-hidden="true"
+              className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground"
+            />
+          ) : (
+            <ArrowRight
+              aria-hidden="true"
+              className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+            />
+          )}
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" align="start" className="max-w-[240px] text-xs leading-relaxed z-50">
         <span className="font-semibold">{label}</span> — {desc}
+        {lockedSuffix && (
+          <span className="block mt-1 text-muted-foreground">{lockedSuffix}</span>
+        )}
       </TooltipContent>
     </Tooltip>
   );
@@ -310,9 +374,10 @@ const LightWidget: React.FC<{
 
 // ──────────────────────────────────────────────────────────────────────
 // Main page — Cockpit Layout
-// Left (~62%): chat (centerpiece, always-visible)
-// Right (~38%): persistent rail — tilt+streak hero, tool launchers, light
-// widgets stacked. Heavy tools open as right-side Sheet.
+// XL+ : 3-col → threads | chat | rail
+// LG  : 2-col → chat | rail   (threads behind a "Conversations" Sheet)
+// <LG : 1-col tabbed → chat / coach-rail (threads still behind a Sheet)
+// Heavy tools open in a right-side Sheet over everything.
 // ──────────────────────────────────────────────────────────────────────
 
 const AiCoach: React.FC = () => {
@@ -327,6 +392,22 @@ const AiCoach: React.FC = () => {
   const multiAgentAllowed = hasPlan('PRO');
   const [useMultiAgent, setUseMultiAgent] = useState(false);
 
+  // Multi-thread state — null = the user's "current" thread (legacy mono-thread
+  // mode the backend honours when the query param is absent). Local component
+  // state is the right home for this: it's UI-only, doesn't survive reloads,
+  // and changing it shouldn't ripple beyond the page.
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+
+  // Mobile-only Sheet state for the threads sidebar. On lg+ breakpoints the
+  // sheet stays closed and threads live inline; on <lg the Sheet replaces
+  // the inline rail.
+  const [threadsSheetOpen, setThreadsSheetOpen] = useState(false);
+  const handleSelectThread = useCallback((id: string | null) => {
+    setSelectedThreadId(id);
+    // Close the sheet on selection so users on mobile snap back to chat.
+    setThreadsSheetOpen(false);
+  }, []);
+
   useEffect(() => {
     if (!multiAgentAllowed && useMultiAgent) {
       setUseMultiAgent(false);
@@ -335,8 +416,12 @@ const AiCoach: React.FC = () => {
 
   const { accountId } = useAccountFilter(selectedAccount);
 
-  // Read-only view of the chat thread for empty-state detection.
-  const { messages: introMessages, isGenerating: introGenerating } = useCoachChat();
+  // Read-only view of the chat thread for empty-state detection. Scoped to
+  // the same threadId so "isChatEmpty" tracks the active conversation, not
+  // the user's default thread.
+  const { messages: introMessages, isGenerating: introGenerating } = useCoachChat({
+    threadId: selectedThreadId,
+  });
   const isChatEmpty = introMessages.length === 0;
 
   // NLQ pending prompt forwarding.
@@ -434,6 +519,21 @@ const AiCoach: React.FC = () => {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        {/* Conversations button — visible whenever the inline thread rail is
+            hidden (i.e. below xl). Opens the threads Sheet from the left. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setThreadsSheetOpen(true)}
+          className="xl:hidden h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+          aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
+          title={t('aiCoach.threads.sidebar.title', 'Conversations')}
+        >
+          <MessagesSquare className="h-4 w-4" />
+          <span className="hidden sm:inline text-xs">
+            {t('aiCoach.threads.sidebar.title', 'Conversations')}
+          </span>
+        </Button>
         {multiAgentAllowed && (
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
@@ -498,6 +598,7 @@ const AiCoach: React.FC = () => {
             className="h-full"
             pendingPrompt={pendingPrompt}
             onPromptConsumed={handlePromptConsumed}
+            threadId={selectedThreadId}
           />
         )}
       </div>
@@ -552,6 +653,17 @@ const AiCoach: React.FC = () => {
         <PsychologyCorrelation />
       </LightWidget>
     </div>
+  );
+
+  // ── Threads sidebar — shared between the desktop inline rail and the
+  // mobile/laptop Sheet. Surfaces the same component instance so state
+  // (rename dialog, archive confirm) is shared across breakpoints.
+  const threadsSidebar = (
+    <ThreadSidebar
+      selectedThreadId={selectedThreadId}
+      onSelectThread={handleSelectThread}
+      className="rounded-2xl border border-border/40 bg-card/40"
+    />
   );
 
   return (
@@ -610,8 +722,16 @@ const AiCoach: React.FC = () => {
           )}
         </div>
 
-        {/* Desktop body — 2-col cockpit. Left = chat (62%), right = rail (38%). */}
-        <div className="hidden lg:grid flex-1 min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+        {/* Desktop body — 2-col cockpit on lg, 3-col on xl (with threads inline).
+            On lg the threads live behind the "Conversations" Sheet because the
+            right rail already eats 360px and a third column would compress chat. */}
+        <div className="hidden lg:grid flex-1 min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[260px_minmax(0,1fr)_400px]">
+          <aside
+            aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
+            className="hidden xl:block min-h-0"
+          >
+            {threadsSidebar}
+          </aside>
           {chatColumn}
           <aside
             aria-label={t('aiCoach.cockpit.railLabel', 'Coach panel')}
@@ -620,6 +740,28 @@ const AiCoach: React.FC = () => {
             {railContent}
           </aside>
         </div>
+
+        {/* Threads sheet — used on every breakpoint below xl. Slides in from
+            the left so it doesn't collide with the heavy-tool Sheet on the
+            right. Sheet handles focus management and Esc-to-close. */}
+        <Sheet open={threadsSheetOpen} onOpenChange={setThreadsSheetOpen}>
+          <SheetContent
+            side="left"
+            className="w-full sm:max-w-sm p-0 flex flex-col"
+          >
+            <SheetHeader className="border-b border-border/40 px-4 py-3 flex-shrink-0">
+              <SheetTitle className="text-base">
+                {t('aiCoach.threads.sidebar.title', 'Conversations')}
+              </SheetTitle>
+              <SheetDescription className="sr-only">
+                {t('aiCoach.threads.sidebar.title', 'Conversations')}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {threadsSidebar}
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Heavy-tool Sheet — opens from the right when a launcher is clicked.
             Chat stays mounted underneath, so SSE state survives. */}

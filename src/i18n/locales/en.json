@@ -1202,6 +1202,16 @@
       "timeoutHelp": "Bump for slow local reasoning models (qwen3, deepseek-r1, etc.). Default is 300s. Leave blank to use the default.",
       "fieldActive": "Active",
       "create": "Create"
+    },
+    "coach": {
+      "bonus": {
+        "searchPlaceholder": "Search users by email or name…",
+        "searchEmpty": "No users found.",
+        "selected_one": "{{count}} user selected",
+        "selected_other": "{{count}} users selected",
+        "removeSelected": "Remove {{name}}",
+        "legacyPasteHint": "Need to paste UUIDs? Click here."
+      }
     }
   },
   "settings": {
@@ -2628,6 +2638,56 @@
       "subtitle": "A few seconds now — a sharper diagnosis later.",
       "later": "Later",
       "skipAll": "Don't ask again"
+    },
+    "clearThread": {
+      "title": "Clear conversation?",
+      "description": "All messages will be permanently deleted. This action cannot be undone.",
+      "confirm": "Clear"
+    },
+    "chatStatus": {
+      "sending": "Sending message to your coach…",
+      "received": "Coach response received."
+    },
+    "chat": {
+      "feedback": {
+        "group": "Rate this answer",
+        "good": "Helpful",
+        "bad": "Not helpful"
+      }
+    },
+    "cockpit": {
+      "locked": {
+        "requiresPlan": "Requires {{plan}}+ plan"
+      }
+    },
+    "threads": {
+      "sidebar": {
+        "title": "Conversations",
+        "empty": "No conversations yet. Start one!",
+        "new": "New conversation",
+        "untitled": "(untitled)",
+        "noPreview": "No messages yet"
+      },
+      "actions": {
+        "rename": "Rename",
+        "archive": "Archive",
+        "more": "More actions"
+      },
+      "archiveConfirm": {
+        "title": "Archive this conversation?",
+        "description": "Archived conversations are hidden from your sidebar but not deleted.",
+        "confirm": "Archive"
+      },
+      "rename": {
+        "title": "Rename conversation",
+        "placeholder": "Title (max 120 characters)"
+      },
+      "errors": {
+        "list": "Failed to load conversations.",
+        "create": "Failed to create conversation.",
+        "rename": "Failed to rename conversation.",
+        "archive": "Failed to archive conversation."
+      }
     }
   },
   "ai": {

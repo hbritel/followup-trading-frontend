@@ -9,13 +9,14 @@ import {
   Send,
   Sparkles,
   Target,
-  Trash2,
+  ThumbsDown,
+  ThumbsUp,
   TrendingUp,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderChatMarkdown } from '@/lib/chatMarkdown';
 import { useCoachChat, type CoachViewMessage } from '@/hooks/useCoachChat';
@@ -63,6 +64,17 @@ interface CoachChatProps {
    * can be re-clicked later without firing twice.
    */
   onPromptConsumed?: () => void;
+  /**
+   * Optional thread to scope this chat to. When {@code null} or omitted, the
+   * component operates on the user's "current" thread — the same legacy
+   * behaviour as the v1 mono-thread surface, so callers that haven't opted
+   * into multi-thread don't break.
+   *
+   * <p>Switching this prop reloads the message list and any in-flight SSE
+   * stream, so consumers can build a sidebar that flips between threads
+   * without unmounting the chat.</p>
+   */
+  threadId?: string | null;
 }
 
 /**
@@ -77,6 +89,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
   className,
   pendingPrompt,
   onPromptConsumed,
+  threadId = null,
 }) => {
   const { t, i18n } = useTranslation();
   const { currentPlan } = useFeatureFlags();
@@ -91,7 +104,8 @@ const CoachChat: React.FC<CoachChatProps> = ({
     retry,
     loadHistory,
     clearHistory,
-  } = useCoachChat();
+    setFeedback,
+  } = useCoachChat({ threadId });
 
   // Daily AI message usage — counter shown in header for paid plans
   const { data: subscription } = useQuery<SubscriptionDto>({
@@ -109,7 +123,9 @@ const CoachChat: React.FC<CoachChatProps> = ({
     subscription?.usage?.aiMessagesMax ?? AI_PLAN_CAPS[currentPlan] ?? 0;
 
   const [input, setInput] = useState('');
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  // historyLoaded is keyed by threadId so flipping threads reloads the list.
+  // Empty string represents the "current" (null) thread.
+  const [historyLoadedFor, setHistoryLoadedFor] = useState<string | null>(null);
   // Data-sharing consent: per-turn flag, persisted locally so the user doesn't
   // have to re-enable it every time. Never stored server-side — the POST body
   // carries it for exactly one message.
@@ -134,11 +150,20 @@ const CoachChat: React.FC<CoachChatProps> = ({
     });
   }, []);
 
-  // One-shot history load on mount.
+  // Load history whenever the active thread changes (or on first mount).
+  // The threadId in the dep list — keyed via `historyLoadedFor` — guarantees
+  // we re-fetch when the parent flips the thread, while keeping a single
+  // load per thread to avoid loops while the hook re-renders.
+  const threadKey = threadId ?? '';
   useEffect(() => {
-    if (historyLoaded) return;
-    loadHistory().finally(() => setHistoryLoaded(true));
-  }, [historyLoaded, loadHistory]);
+    if (historyLoadedFor === threadKey) return;
+    // Reset the fresh-message tracker so the new thread's existing history
+    // doesn't trigger entrance animations.
+    historyIdsRef.current = new Set();
+    loadHistory().finally(() => setHistoryLoadedFor(threadKey));
+  }, [historyLoadedFor, threadKey, loadHistory]);
+
+  const historyLoaded = historyLoadedFor === threadKey;
 
   // Snapshot the IDs present at history-load time so subsequent messages
   // can be detected as "fresh" and receive the entrance animation.
@@ -150,6 +175,11 @@ const CoachChat: React.FC<CoachChatProps> = ({
 
   // Auto-scroll to the newest message as content grows — throttled via rAF
   // so a fast stream doesn't trigger layout thrash.
+  //
+  // Note: this scrolls the message list only. We never call .focus() on the
+  // textarea or any other element while a turn is in flight — focus stays
+  // exactly where the user left it (so a screen-reader user who tabbed to
+  // a different control isn't yanked back into the composer mid-stream).
   useEffect(() => {
     if (scrollRafRef.current !== null) return;
     scrollRafRef.current = requestAnimationFrame(() => {
@@ -206,6 +236,29 @@ const CoachChat: React.FC<CoachChatProps> = ({
   // Group messages into day buckets for day dividers
   const dayBuckets = groupMessagesByDay(messages, i18n.language, t);
 
+  // Identify the streaming tail so only THAT bubble carries aria-live. Static
+  // historical bubbles must NOT be live regions — otherwise every re-render
+  // would re-announce them.
+  const streamingTailId =
+    tailMessage?.role === 'ASSISTANT' &&
+    (tailMessage.status === 'PENDING' || tailMessage.status === 'STREAMING')
+      ? tailMessage.id
+      : null;
+
+  // SR-only status announcement: blind users hear "Sending…" the moment they
+  // submit, then "Response received." when the stream terminates. Driven by
+  // isGenerating + tail status so we don't need a separate piece of state.
+  const tailIsTerminal =
+    tailMessage?.role === 'ASSISTANT' &&
+    (tailMessage.status === 'DONE' ||
+      tailMessage.status === 'FAILED' ||
+      tailMessage.status === 'CANCELLED');
+  const srStatusMessage = isGenerating
+    ? t('aiCoach.chatStatus.sending', 'Sending message to your coach…')
+    : tailIsTerminal && tailMessage?.status === 'DONE'
+      ? t('aiCoach.chatStatus.received', 'Coach response received.')
+      : '';
+
   return (
     <div
       className={cn(
@@ -255,10 +308,13 @@ const CoachChat: React.FC<CoachChatProps> = ({
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {t('ai.clearConfirmTitle', 'Start a new conversation?')}
+                    {t('aiCoach.clearThread.title', 'Clear conversation?')}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('ai.clearConfirmBody', 'Your current chat history will be permanently deleted. The coach will no longer have access to previous messages as context.')}
+                    {t(
+                      'aiCoach.clearThread.description',
+                      'All messages will be permanently deleted. This action cannot be undone.',
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -267,10 +323,9 @@ const CoachChat: React.FC<CoachChatProps> = ({
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => void clearHistory()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className={cn(buttonVariants({ variant: 'destructive' }))}
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    {t('ai.clearAndStart', 'Clear & start fresh')}
+                    {t('aiCoach.clearThread.confirm', 'Clear')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -311,10 +366,18 @@ const CoachChat: React.FC<CoachChatProps> = ({
                 key={m.id}
                 message={m}
                 isFresh={historyLoaded && !historyIdsRef.current.has(m.id)}
+                isStreamingTail={m.id === streamingTailId}
+                onFeedback={setFeedback}
               />
             ))}
           </React.Fragment>
         ))}
+      </div>
+
+      {/* SR-only live status: announces send/receive without stealing focus.
+          aria-atomic="true" so the entire short status string is read each time. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {srStatusMessage}
       </div>
 
       {/* Status strip -------------------------------------------------- */}
@@ -325,7 +388,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            {t('coach.chat.generating', 'Your coach is preparing a response')}
+            {t('aiCoach.chat.generating', 'Your coach is preparing a response')}
           </span>
           <Button
             variant="ghost"
@@ -334,7 +397,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             onClick={() => cancel()}
           >
             <X className="mr-1 h-3 w-3" />
-            {t('coach.chat.cancel', 'Cancel')}
+            {t('aiCoach.chat.cancel', 'Cancel')}
           </Button>
         </div>
       )}
@@ -343,7 +406,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
         <div className="flex items-center justify-between border-t border-border/50 bg-destructive/10 px-4 py-2 text-xs text-destructive">
           <span className="truncate pr-2">
             {tailMessage?.errorMessage ||
-              t('coach.chat.failed', 'Generation failed.')}
+              t('aiCoach.chat.failed', 'Generation failed.')}
           </span>
           <Button
             variant="ghost"
@@ -352,7 +415,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             onClick={() => retry()}
           >
             <RotateCw className="mr-1 h-3 w-3" />
-            {t('coach.chat.retry', 'Retry')}
+            {t('aiCoach.chat.retry', 'Retry')}
           </Button>
         </div>
       )}
@@ -367,7 +430,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
         <div className="border-t border-border/50 bg-amber-50/50 dark:bg-amber-500/5 px-4 py-3 space-y-3">
           <p className="text-xs text-amber-900 dark:text-amber-200">
             {t(
-              'coach.chat.outOfMessages',
+              'aiCoach.chat.outOfMessages',
               "You're out of messages today — pick a pack or wait until tomorrow.",
             )}
           </p>
@@ -383,7 +446,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={t('coach.chat.placeholder', 'Ask your coach anything…')}
+            placeholder={t('aiCoach.chat.placeholder', 'Ask your coach anything…')}
             rows={1}
             className="block w-full resize-none bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground/60 max-h-40 min-h-[44px]"
           />
@@ -394,7 +457,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               onClick={toggleShareUserData}
               aria-pressed={shareUserData}
               title={t(
-                'coach.chat.shareData.tooltip',
+                'aiCoach.chat.shareData.tooltip',
                 'When on, the coach gets a compact snapshot of your recent trades and stats for this message only. Nothing is stored server-side.',
               )}
               className={cn(
@@ -408,8 +471,8 @@ const CoachChat: React.FC<CoachChatProps> = ({
                 ? <Lock className="h-3 w-3" />
                 : <Database className="h-3 w-3" />}
               {shareUserData
-                ? t('coach.chat.shareData.on', 'Sharing my data')
-                : t('coach.chat.shareData.off', 'Share my data')}
+                ? t('aiCoach.chat.shareData.on', 'Sharing my data')
+                : t('aiCoach.chat.shareData.off', 'Share my data')}
             </button>
             {/* Send button */}
             <Button
@@ -417,7 +480,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
               size="icon"
               className="h-8 w-8 rounded-full"
               disabled={!input.trim() || isGenerating}
-              aria-label={t('coach.chat.send', 'Send')}
+              aria-label={t('aiCoach.chat.send', 'Send')}
             >
               <Send className="h-3.5 w-3.5" />
             </Button>
@@ -425,8 +488,8 @@ const CoachChat: React.FC<CoachChatProps> = ({
         </div>
         <p className="mt-1.5 px-2 text-[10px] text-muted-foreground/70">
           {shareUserData
-            ? t('coach.chat.shareData.hintOn', 'Your last trades are attached to this message.')
-            : t('coach.chat.shareData.hintOff', 'The coach has no access to your trades.')}
+            ? t('aiCoach.chat.shareData.hintOn', 'Your last trades are attached to this message.')
+            : t('aiCoach.chat.shareData.hintOff', 'The coach has no access to your trades.')}
         </p>
       </form>
     </div>
@@ -491,9 +554,9 @@ function groupMessagesByDay(
   return Array.from(bucketMap.entries()).map(([k, msgs]) => {
     let label: string;
     if (k === todayKey) {
-      label = t('coach.chat.today', 'Aujourd\'hui');
+      label = t('aiCoach.chat.today', 'Today');
     } else if (k === yesterdayKey) {
-      label = t('coach.chat.yesterday', 'Hier');
+      label = t('aiCoach.chat.yesterday', 'Yesterday');
     } else {
       const d = new Date(msgs[0].createdAt);
       label = new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(d);
@@ -522,23 +585,23 @@ interface EmptyStateProps {
 const SUGGESTIONS = [
   {
     icon: TrendingUp,
-    labelKey: 'coach.chat.suggestion.bestDay',
-    labelFallback: 'Analyser mon meilleur jour de trading',
+    labelKey: 'aiCoach.chat.suggestion.bestDay',
+    labelFallback: 'Analyse my best trading day',
   },
   {
     icon: AlertTriangle,
-    labelKey: 'coach.chat.suggestion.negativePatterns',
-    labelFallback: 'Détecter mes patterns négatifs récurrents',
+    labelKey: 'aiCoach.chat.suggestion.negativePatterns',
+    labelFallback: 'Spot my recurring negative patterns',
   },
   {
     icon: Target,
-    labelKey: 'coach.chat.suggestion.morningRoutine',
-    labelFallback: 'Comment améliorer ma routine matinale ?',
+    labelKey: 'aiCoach.chat.suggestion.morningRoutine',
+    labelFallback: 'How can I improve my morning routine?',
   },
   {
     icon: Brain,
-    labelKey: 'coach.chat.suggestion.psychology',
-    labelFallback: 'Quelle psychologie travailler en priorité ?',
+    labelKey: 'aiCoach.chat.suggestion.psychology',
+    labelFallback: 'Which psychology topic should I work on first?',
   },
 ] as const;
 
@@ -547,12 +610,12 @@ const EmptyState: React.FC<EmptyStateProps> = ({ t, onSuggestionClick }) => (
     <div className="flex flex-col items-center gap-2 text-muted-foreground">
       <Sparkles className="h-6 w-6 text-primary" />
       <p className="text-sm font-medium text-foreground">
-        {t('coach.chat.empty.title', 'Discuter avec votre Coach IA')}
+        {t('aiCoach.chat.empty.title', 'Chat with your AI Coach')}
       </p>
       <p className="max-w-xs text-xs text-muted-foreground">
         {t(
-          'coach.chat.empty.body',
-          'Posez une question sur un trade, un pattern ou la discipline à travailler. Le coach retient le contexte entre les échanges.',
+          'aiCoach.chat.empty.body',
+          'Ask a question about a trade, a pattern, or the discipline you want to work on. The coach keeps context between messages.',
         )}
       </p>
     </div>
@@ -579,7 +642,29 @@ const EmptyState: React.FC<EmptyStateProps> = ({ t, onSuggestionClick }) => (
   </div>
 );
 
-const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> = ({ message, isFresh = false }) => {
+interface MessageBubbleProps {
+  message: CoachViewMessage;
+  isFresh?: boolean;
+  /**
+   * True for the single assistant message that is currently PENDING or
+   * STREAMING. Only that bubble carries aria-live so screen readers announce
+   * incoming tokens; static historical bubbles must NOT be live regions.
+   */
+  isStreamingTail?: boolean;
+  /**
+   * Optional handler that records the user's thumbs-up / thumbs-down on this
+   * message. Pass {@code null} as the second argument to retract a rating.
+   * When omitted, the feedback footer is not rendered.
+   */
+  onFeedback?: (messageId: string, feedback: 'GOOD' | 'BAD' | null) => void;
+}
+
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message,
+  isFresh = false,
+  isStreamingTail = false,
+  onFeedback,
+}) => {
   const { i18n, t } = useTranslation();
   const isUser = message.role === 'USER';
   const showCaret =
@@ -604,9 +689,20 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
   })();
 
   const roleLabel = isUser
-    ? t('coach.chat.role.user', 'Vous')
-    : t('coach.chat.role.assistant', 'Coach IA');
+    ? t('aiCoach.chat.role.user', 'You')
+    : t('aiCoach.chat.role.assistant', 'AI Coach');
   const ariaLabel = `${roleLabel}${timestamp ? `, ${timestamp}` : ''}`;
+
+  // aria-live on the streaming bubble only. aria-atomic="false" so the AT
+  // announces deltas as tokens land instead of replaying the whole message
+  // every render. aria-busy flips off once the turn terminates.
+  const liveProps = isStreamingTail
+    ? {
+        'aria-live': 'polite' as const,
+        'aria-atomic': 'false' as const,
+        'aria-busy': showCaret,
+      }
+    : {};
 
   return (
     <div
@@ -619,6 +715,7 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
       <div
         role="article"
         aria-label={ariaLabel}
+        {...liveProps}
         className={cn(
           // break-words + whitespace-pre-wrap handles unbroken tokens AND
           // preserves in-line whitespace the model emitted.
@@ -632,7 +729,7 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
       >
         {/* Typing indicator: 3 bouncing dots when streaming with no content yet */}
         {showCaret && contentIsEmpty ? (
-          <div className="flex items-center gap-1 py-1" aria-label={t('coach.chat.typing', 'Coach is typing')}>
+          <div className="flex items-center gap-1 py-1" aria-label={t('aiCoach.chat.typing', 'Coach is typing')}>
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
@@ -655,6 +752,40 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
         >
           {timestamp}
         </time>
+      )}
+      {!isUser && message.status === 'DONE' && onFeedback && (
+        <div className="mt-1 flex items-center gap-1 px-1" role="group" aria-label={t('aiCoach.chat.feedback.group', 'Rate this answer')}>
+          <button
+            type="button"
+            onClick={() => onFeedback(message.id, message.feedback === 'GOOD' ? null : 'GOOD')}
+            aria-label={t('aiCoach.chat.feedback.good', 'Helpful')}
+            aria-pressed={message.feedback === 'GOOD'}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              message.feedback === 'GOOD'
+                ? 'bg-emerald-500/15 text-emerald-500'
+                : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground',
+            )}
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onFeedback(message.id, message.feedback === 'BAD' ? null : 'BAD')}
+            aria-label={t('aiCoach.chat.feedback.bad', 'Not helpful')}
+            aria-pressed={message.feedback === 'BAD'}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              message.feedback === 'BAD'
+                ? 'bg-rose-500/15 text-rose-500'
+                : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground',
+            )}
+          >
+            <ThumbsDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

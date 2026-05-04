@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import i18n from '@/i18n/i18n';
 import {
   coachChatService,
   streamCoachMessage,
   type CoachMessageDto,
+  type CoachMessageFeedback,
   type CoachMessageStatus,
 } from '@/services/coachChat.service';
+import { COACH_THREADS_KEY } from '@/hooks/useCoachThreads';
 
 /**
  * Local view-model of a message. Mirrors {@link CoachMessageDto} but keeps
@@ -18,6 +21,7 @@ export interface CoachViewMessage {
   content: string;
   errorMessage: string | null;
   createdAt: string;
+  feedback: CoachMessageFeedback | null;
 }
 
 interface UseCoachChatState {
@@ -31,17 +35,32 @@ interface UseCoachChatState {
 }
 
 /**
- * React hook for the v2 AI coach chat — mono-thread, SSE-streamed, resumable.
+ * React hook for the v2 AI coach chat — SSE-streamed, resumable, multi-thread.
  *
- * On mount: loads the last N messages and, if the latest one is non-terminal,
- * automatically re-subscribes to its SSE stream so the user picks up the
- * in-flight generation.
+ * Pass a {@code threadId} to scope every operation to a specific thread; pass
+ * {@code null} or {@code undefined} (or call with no args) to operate on the
+ * user's "current" thread, the same legacy behaviour as the v1 mono-thread
+ * hook. The current-thread mode keeps existing callers working unchanged.
  *
- * On {@code send}: POSTs the text, appends the two returned messages to local
- * state, and subscribes to the assistant's stream.
+ * On mount or when {@code threadId} changes: loads the last N messages and,
+ * if the latest one is non-terminal, automatically re-subscribes to its SSE
+ * stream so the user picks up the in-flight generation.
+ *
+ * On {@code send}: POSTs the text (scoped to {@code threadId} if set), appends
+ * the two returned messages to local state, and subscribes to the assistant's
+ * stream.
  */
-export function useCoachChat(opts: { pageSize?: number } = {}) {
+export function useCoachChat(opts: {
+  pageSize?: number;
+  /**
+   * Optional thread id to scope the chat to a specific conversation. Pass
+   * {@code null} (or omit) for the user's current thread — backward-compat
+   * for callers that haven't opted into multi-thread yet.
+   */
+  threadId?: string | null;
+} = {}) {
   const pageSize = opts.pageSize ?? 50;
+  const threadId = opts.threadId ?? null;
   const queryClient = useQueryClient();
 
   const [state, setState] = useState<UseCoachChatState>({
@@ -59,6 +78,15 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
    */
   const refreshSubscriptionUsage = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['subscription', 'me'] });
+  }, [queryClient]);
+
+  /**
+   * Ask the threads list to refetch. Triggered after every send / clear /
+   * cancel because each of those bumps {@code lastMessagePreview} or
+   * {@code updatedAt} server-side, and the sidebar surfaces both.
+   */
+  const refreshThreadsList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: COACH_THREADS_KEY });
   }, [queryClient]);
 
   /** Active SSE stream — one at a time (we only stream the tail message). */
@@ -114,6 +142,9 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         onDone: () => {
           patchMessage(messageId, { status: 'DONE' });
           finishGenerating();
+          // Final preview lands once the assistant message is done — refresh
+          // the sidebar so the truncated preview reflects the new content.
+          refreshThreadsList();
         },
         onError: (reason) => {
           patchMessage(messageId, { status: 'FAILED', errorMessage: reason });
@@ -127,11 +158,12 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         onCancelled: () => {
           patchMessage(messageId, { status: 'CANCELLED' });
           finishGenerating();
+          refreshThreadsList();
         },
       });
       activeStreamRef.current = { messageId, cancel };
     },
-    [closeActiveStream, finishGenerating, patchMessage, refreshSubscriptionUsage],
+    [closeActiveStream, finishGenerating, patchMessage, refreshSubscriptionUsage, refreshThreadsList],
   );
 
   /** Maps a wire DTO → the local view model. */
@@ -142,16 +174,18 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     content: m.content,
     errorMessage: m.errorMessage,
     createdAt: m.createdAt,
+    feedback: m.feedback ?? null,
   });
 
   /**
-   * Loads (or reloads) the most recent messages. If the tail message is non-
-   * terminal, re-subscribes to its stream so the UI shows live tokens.
+   * Loads (or reloads) the most recent messages for the current thread. If
+   * the tail message is non-terminal, re-subscribes to its stream so the UI
+   * shows live tokens.
    */
   const loadHistory = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoadingHistory: true, error: null }));
     try {
-      const { data } = await coachChatService.history({ limit: pageSize });
+      const { data } = await coachChatService.history({ limit: pageSize, threadId });
       // Backend returns newest-first; flip to oldest-first for natural chat UI.
       const ordered = data.slice().reverse().map(toViewModel);
       setState((prev) => ({
@@ -166,10 +200,10 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         subscribe(tail.id);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to load history.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.historyLoad', 'Failed to load history.');
       setState((prev) => ({ ...prev, isLoadingHistory: false, error: msg }));
     }
-  }, [pageSize, subscribe]);
+  }, [pageSize, subscribe, threadId]);
 
   /**
    * Submits a user turn. Returns once the POST returns (fast).
@@ -189,6 +223,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         const { data } = await coachChatService.post(
           trimmed,
           Boolean(opts.shareUserData),
+          threadId,
         );
         setState((prev) => ({
           ...prev,
@@ -202,20 +237,23 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         // Bump the usage counter immediately — the user message just got
         // persisted server-side, so count-today is already +1.
         refreshSubscriptionUsage();
+        // Bump the threads list — the user's message just bumped this
+        // thread's updatedAt, and the preview will follow on stream done.
+        refreshThreadsList();
         subscribe(data.assistant.id);
       } catch (e) {
         const planLimit = Boolean(
           (e as { isPlanLimitExceeded?: boolean } | null)?.isPlanLimitExceeded,
         );
         const msg = planLimit
-          ? "You've hit your daily AI coach limit. Buy a pack or wait until tomorrow."
+          ? i18n.t('aiCoach.errors.planLimit', "You've hit your daily AI coach limit. Buy a pack or wait until tomorrow.")
           : e instanceof Error
             ? e.message
-            : 'Failed to send message.';
+            : i18n.t('aiCoach.errors.send', 'Failed to send message.');
         setState((prev) => ({ ...prev, error: msg, isPlanLimitExceeded: planLimit }));
       }
     },
-    [state.isGenerating, subscribe, refreshSubscriptionUsage],
+    [state.isGenerating, subscribe, refreshSubscriptionUsage, refreshThreadsList, threadId],
   );
 
   /** Cancels the currently-streaming assistant message, if any. */
@@ -226,16 +264,20 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       await coachChatService.cancel(active.messageId);
       // The backend will push a 'cancelled' SSE event; our handler cleans up.
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to cancel.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.cancel', 'Failed to cancel.');
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, []);
 
-  /** Deletes every message on the user's thread and resets local state. */
+  /**
+   * Deletes every message on the current thread (or the thread referenced by
+   * {@code threadId}) and resets local state. Does NOT archive the thread —
+   * that's a separate operation owned by the sidebar.
+   */
   const clearHistory = useCallback(async () => {
     closeActiveStream();
     try {
-      await coachChatService.clearThread();
+      await coachChatService.clearThread(threadId);
       setState({
         messages: [],
         isGenerating: false,
@@ -243,11 +285,39 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
         error: null,
         isPlanLimitExceeded: false,
       });
+      // Preview / updatedAt drop to null/now respectively — refresh sidebar.
+      refreshThreadsList();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to clear history.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.clearHistory', 'Failed to clear history.');
       setState((prev) => ({ ...prev, error: msg }));
     }
-  }, [closeActiveStream]);
+  }, [closeActiveStream, refreshThreadsList, threadId]);
+
+  /**
+   * Records (or retracts) the user's thumbs rating on an assistant message.
+   * Optimistic — flips the local view immediately; rolls back on failure.
+   * Pass {@code null} to clear an existing rating.
+   */
+  const setFeedback = useCallback(
+    async (messageId: string, feedback: CoachMessageFeedback | null) => {
+      const previous = (() => {
+        const m = state.messages.find((x) => x.id === messageId);
+        return m ? m.feedback : null;
+      })();
+      patchMessage(messageId, { feedback });
+      try {
+        await coachChatService.recordFeedback(messageId, feedback);
+      } catch (e) {
+        // Roll back the optimistic flip and surface the error.
+        patchMessage(messageId, { feedback: previous });
+        const msg = e instanceof Error
+          ? e.message
+          : i18n.t('aiCoach.errors.feedback', 'Failed to record feedback.');
+        setState((prev) => ({ ...prev, error: msg }));
+      }
+    },
+    [patchMessage, state.messages],
+  );
 
   /** Retries the tail message if it's FAILED. */
   const retry = useCallback(async () => {
@@ -263,7 +333,7 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
       setState((prev) => ({ ...prev, isGenerating: true, error: null }));
       subscribe(tail.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Retry failed.';
+      const msg = e instanceof Error ? e.message : i18n.t('aiCoach.errors.retry', 'Retry failed.');
       setState((prev) => ({ ...prev, error: msg }));
     }
   }, [patchMessage, state.messages, subscribe]);
@@ -279,5 +349,6 @@ export function useCoachChat(opts: { pageSize?: number } = {}) {
     retry,
     loadHistory,
     clearHistory,
+    setFeedback,
   };
 }

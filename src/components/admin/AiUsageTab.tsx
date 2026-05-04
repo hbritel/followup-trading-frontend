@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +29,9 @@ import {
   AlertCircle,
   Mail,
   Hash,
-  Type,
   Copy,
   Check,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -124,6 +124,9 @@ const initials = (u: AdminUserDto): string => {
     .map((s) => s[0]?.toUpperCase() ?? '')
     .join('') || '?';
 };
+
+const userDisplayName = (u: AdminUserDto): string =>
+  u.fullName || u.username || u.email || u.id.slice(0, 8);
 
 // ── Inspect sub-section ────────────────────────────────────────────────────────
 
@@ -246,7 +249,10 @@ function InspectSection() {
 
 function GrantSection() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<'picker' | 'paste'>('picker');
+  // The user-search picker is the default flow. The legacy paste-UUIDs textarea
+  // stays available behind an "Advanced" collapsible so an admin who already
+  // has a list of UUIDs in hand isn't blocked.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [pickedUsers, setPickedUsers] = useState<AdminUserDto[]>([]);
   const [uuidText, setUuidText] = useState('');
   const [amount, setAmount] = useState<string>('10');
@@ -255,7 +261,9 @@ function GrantSection() {
 
   const parsedPaste = useMemo(() => parseUuidList(uuidText), [uuidText]);
 
-  // Combine sources, dedupe by ID
+  // Combine sources (picker + advanced paste), dedupe by ID. The picker is the
+  // primary source — paste only contributes when the admin has explicitly opened
+  // the advanced expander and entered UUIDs.
   const combinedIds = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -299,6 +307,7 @@ function GrantSection() {
       setUuidText('');
       setPickedUsers([]);
       setReason('');
+      setAdvancedOpen(false);
     },
     onError: (err) => {
       toast.error(getApiErrorMessage(err));
@@ -333,44 +342,65 @@ function GrantSection() {
             </div>
           </div>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'picker' | 'paste')}>
-            <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
-              <TabsTrigger value="picker" className="gap-1.5">
-                <Type className="h-3.5 w-3.5" /> {t('admin.aiUsage.tabPicker', 'Search users')}
-              </TabsTrigger>
-              <TabsTrigger value="paste" className="gap-1.5">
-                <Hash className="h-3.5 w-3.5" /> {t('admin.aiUsage.tabPaste', 'Paste UUIDs')}
-              </TabsTrigger>
-            </TabsList>
+          {/* Primary flow: user-search multi-select. */}
+          <div className="space-y-3">
+            <UserPicker
+              mode="multi"
+              selected={pickedUsers}
+              onChange={setPickedUsers}
+              placeholder={t('admin.coach.bonus.searchPlaceholder', 'Search users by email or name…')}
+              noResultsLabel={t('admin.coach.bonus.searchEmpty', 'No users found.')}
+            />
 
-            <TabsContent value="picker" className="mt-3 space-y-3">
-              <UserPicker
-                mode="multi"
-                selected={pickedUsers}
-                onChange={setPickedUsers}
-                placeholder={t('admin.aiUsage.pickerPlaceholder', 'Username, email or UUID…')}
-              />
-              {pickedUsers.length > 0 && (
+            {pickedUsers.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-muted-foreground">
+                    {t('admin.coach.bonus.selected', { count: pickedUsers.length })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPickedUsers([])}
+                    className="text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    {t('admin.aiUsage.clearAll', 'Clear all')}
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-1.5 rounded-md border bg-muted/20 p-2">
                   {pickedUsers.map((u) => (
                     <SelectedUserChip
                       key={u.id}
                       user={u}
                       onRemove={() => setPickedUsers(pickedUsers.filter((p) => p.id !== u.id))}
+                      removeAriaLabel={t('admin.coach.bonus.removeSelected', {
+                        defaultValue: 'Remove {{name}}',
+                        name: userDisplayName(u),
+                      })}
                     />
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => setPickedUsers([])}
-                    className="ml-auto text-[11px] text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    {t('admin.aiUsage.clearAll', 'Clear all')}
-                  </button>
                 </div>
-              )}
-            </TabsContent>
+              </div>
+            )}
+          </div>
 
-            <TabsContent value="paste" className="mt-3 space-y-2">
+          {/* Legacy fallback: paste-UUIDs textarea, kept behind a small expander. */}
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+                aria-expanded={advancedOpen}
+              >
+                <ChevronDown
+                  className={cn(
+                    'h-3 w-3 transition-transform duration-200',
+                    advancedOpen && 'rotate-180',
+                  )}
+                />
+                {t('admin.coach.bonus.legacyPasteHint', 'Need to paste UUIDs? Click here.')}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-2">
               <Label htmlFor="ai-usage-uuids" className="text-xs">
                 {t('admin.aiUsage.userIdsLabel', 'User UUIDs')}
               </Label>
@@ -400,8 +430,8 @@ function GrantSection() {
                   </Badge>
                 )}
               </div>
-            </TabsContent>
-          </Tabs>
+            </CollapsibleContent>
+          </Collapsible>
 
           <Separator />
 

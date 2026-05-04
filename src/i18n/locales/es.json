@@ -1120,6 +1120,16 @@
       "timeoutHelp": "Aumente para modelos locales con razonamiento lento (qwen3, deepseek-r1, etc.). Por defecto 300s. Deje en blanco para usar el valor por defecto.",
       "fieldActive": "Activo",
       "create": "Crear"
+    },
+    "coach": {
+      "bonus": {
+        "searchPlaceholder": "Buscar usuario por correo o nombre…",
+        "searchEmpty": "No se encontraron usuarios.",
+        "selected_one": "{{count}} usuario seleccionado",
+        "selected_other": "{{count}} usuarios seleccionados",
+        "removeSelected": "Eliminar {{name}}",
+        "legacyPasteHint": "¿Pegar UUIDs? Haga clic aquí."
+      }
     }
   },
   "settings": {
@@ -2427,6 +2437,56 @@
       "subtitle": "A few seconds now — a sharper diagnosis later.",
       "later": "Later",
       "skipAll": "Don't ask again"
+    },
+    "clearThread": {
+      "title": "Borrar conversación",
+      "description": "Todos los mensajes se eliminarán permanentemente. Esta acción no se puede deshacer.",
+      "confirm": "Borrar"
+    },
+    "chatStatus": {
+      "sending": "Enviando mensaje al coach…",
+      "received": "Respuesta del coach recibida."
+    },
+    "chat": {
+      "feedback": {
+        "group": "Calificar esta respuesta",
+        "good": "Útil",
+        "bad": "No útil"
+      }
+    },
+    "cockpit": {
+      "locked": {
+        "requiresPlan": "Plan {{plan}}+ requerido"
+      }
+    },
+    "threads": {
+      "sidebar": {
+        "title": "Conversaciones",
+        "empty": "Aún no hay conversaciones. ¡Comienza una!",
+        "new": "Nueva conversación",
+        "untitled": "(sin título)",
+        "noPreview": "Sin mensajes aún"
+      },
+      "actions": {
+        "rename": "Renombrar",
+        "archive": "Archivar",
+        "more": "Más acciones"
+      },
+      "archiveConfirm": {
+        "title": "¿Archivar esta conversación?",
+        "description": "Las conversaciones archivadas se ocultan de tu barra lateral pero no se eliminan.",
+        "confirm": "Archivar"
+      },
+      "rename": {
+        "title": "Renombrar conversación",
+        "placeholder": "Título (máx. 120 caracteres)"
+      },
+      "errors": {
+        "list": "No se pudieron cargar las conversaciones.",
+        "create": "No se pudo crear la conversación.",
+        "rename": "No se pudo renombrar la conversación.",
+        "archive": "No se pudo archivar la conversación."
+      }
     }
   },
   "ai": {
