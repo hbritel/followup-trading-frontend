@@ -2628,6 +2628,20 @@
       "subtitle": "A few seconds now — a sharper diagnosis later.",
       "later": "Later",
       "skipAll": "Don't ask again"
+    },
+    "clearThread": {
+      "title": "Clear conversation?",
+      "description": "All messages will be permanently deleted. This action cannot be undone.",
+      "confirm": "Clear"
+    },
+    "chatStatus": {
+      "sending": "Sending message to your coach…",
+      "received": "Coach response received."
+    },
+    "cockpit": {
+      "locked": {
+        "requiresPlan": "Requires {{plan}}+ plan"
+      }
     }
   },
   "ai": {

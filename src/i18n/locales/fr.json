@@ -2630,6 +2630,20 @@
       "subtitle": "Quelques secondes maintenant — un meilleur diagnostic plus tard.",
       "later": "Plus tard",
       "skipAll": "Ne plus me demander"
+    },
+    "clearThread": {
+      "title": "Effacer la conversation ?",
+      "description": "Tous les messages seront supprimés définitivement. Cette action est irréversible.",
+      "confirm": "Effacer"
+    },
+    "chatStatus": {
+      "sending": "Envoi du message au coach…",
+      "received": "Réponse du coach reçue."
+    },
+    "cockpit": {
+      "locked": {
+        "requiresPlan": "Plan {{plan}} requis"
+      }
     }
   },
   "ai": {

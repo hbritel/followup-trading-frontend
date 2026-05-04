@@ -9,13 +9,12 @@ import {
   Send,
   Sparkles,
   Target,
-  Trash2,
   TrendingUp,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { renderChatMarkdown } from '@/lib/chatMarkdown';
 import { useCoachChat, type CoachViewMessage } from '@/hooks/useCoachChat';
@@ -150,6 +149,11 @@ const CoachChat: React.FC<CoachChatProps> = ({
 
   // Auto-scroll to the newest message as content grows — throttled via rAF
   // so a fast stream doesn't trigger layout thrash.
+  //
+  // Note: this scrolls the message list only. We never call .focus() on the
+  // textarea or any other element while a turn is in flight — focus stays
+  // exactly where the user left it (so a screen-reader user who tabbed to
+  // a different control isn't yanked back into the composer mid-stream).
   useEffect(() => {
     if (scrollRafRef.current !== null) return;
     scrollRafRef.current = requestAnimationFrame(() => {
@@ -206,6 +210,29 @@ const CoachChat: React.FC<CoachChatProps> = ({
   // Group messages into day buckets for day dividers
   const dayBuckets = groupMessagesByDay(messages, i18n.language, t);
 
+  // Identify the streaming tail so only THAT bubble carries aria-live. Static
+  // historical bubbles must NOT be live regions — otherwise every re-render
+  // would re-announce them.
+  const streamingTailId =
+    tailMessage?.role === 'ASSISTANT' &&
+    (tailMessage.status === 'PENDING' || tailMessage.status === 'STREAMING')
+      ? tailMessage.id
+      : null;
+
+  // SR-only status announcement: blind users hear "Sending…" the moment they
+  // submit, then "Response received." when the stream terminates. Driven by
+  // isGenerating + tail status so we don't need a separate piece of state.
+  const tailIsTerminal =
+    tailMessage?.role === 'ASSISTANT' &&
+    (tailMessage.status === 'DONE' ||
+      tailMessage.status === 'FAILED' ||
+      tailMessage.status === 'CANCELLED');
+  const srStatusMessage = isGenerating
+    ? t('aiCoach.chatStatus.sending', 'Sending message to your coach…')
+    : tailIsTerminal && tailMessage?.status === 'DONE'
+      ? t('aiCoach.chatStatus.received', 'Coach response received.')
+      : '';
+
   return (
     <div
       className={cn(
@@ -255,10 +282,13 @@ const CoachChat: React.FC<CoachChatProps> = ({
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {t('ai.clearConfirmTitle', 'Start a new conversation?')}
+                    {t('aiCoach.clearThread.title', 'Clear conversation?')}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('ai.clearConfirmBody', 'Your current chat history will be permanently deleted. The coach will no longer have access to previous messages as context.')}
+                    {t(
+                      'aiCoach.clearThread.description',
+                      'All messages will be permanently deleted. This action cannot be undone.',
+                    )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -267,10 +297,9 @@ const CoachChat: React.FC<CoachChatProps> = ({
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => void clearHistory()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className={cn(buttonVariants({ variant: 'destructive' }))}
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    {t('ai.clearAndStart', 'Clear & start fresh')}
+                    {t('aiCoach.clearThread.confirm', 'Clear')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -311,10 +340,17 @@ const CoachChat: React.FC<CoachChatProps> = ({
                 key={m.id}
                 message={m}
                 isFresh={historyLoaded && !historyIdsRef.current.has(m.id)}
+                isStreamingTail={m.id === streamingTailId}
               />
             ))}
           </React.Fragment>
         ))}
+      </div>
+
+      {/* SR-only live status: announces send/receive without stealing focus.
+          aria-atomic="true" so the entire short status string is read each time. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {srStatusMessage}
       </div>
 
       {/* Status strip -------------------------------------------------- */}
@@ -579,7 +615,18 @@ const EmptyState: React.FC<EmptyStateProps> = ({ t, onSuggestionClick }) => (
   </div>
 );
 
-const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> = ({ message, isFresh = false }) => {
+interface MessageBubbleProps {
+  message: CoachViewMessage;
+  isFresh?: boolean;
+  /**
+   * True for the single assistant message that is currently PENDING or
+   * STREAMING. Only that bubble carries aria-live so screen readers announce
+   * incoming tokens; static historical bubbles must NOT be live regions.
+   */
+  isStreamingTail?: boolean;
+}
+
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isFresh = false, isStreamingTail = false }) => {
   const { i18n, t } = useTranslation();
   const isUser = message.role === 'USER';
   const showCaret =
@@ -608,6 +655,17 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
     : t('coach.chat.role.assistant', 'Coach IA');
   const ariaLabel = `${roleLabel}${timestamp ? `, ${timestamp}` : ''}`;
 
+  // aria-live on the streaming bubble only. aria-atomic="false" so the AT
+  // announces deltas as tokens land instead of replaying the whole message
+  // every render. aria-busy flips off once the turn terminates.
+  const liveProps = isStreamingTail
+    ? {
+        'aria-live': 'polite' as const,
+        'aria-atomic': 'false' as const,
+        'aria-busy': showCaret,
+      }
+    : {};
+
   return (
     <div
       className={cn(
@@ -619,6 +677,7 @@ const MessageBubble: React.FC<{ message: CoachViewMessage; isFresh?: boolean }> 
       <div
         role="article"
         aria-label={ariaLabel}
+        {...liveProps}
         className={cn(
           // break-words + whitespace-pre-wrap handles unbroken tokens AND
           // preserves in-line whitespace the model emitted.

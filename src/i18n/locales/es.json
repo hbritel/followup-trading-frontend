@@ -2427,6 +2427,20 @@
       "subtitle": "A few seconds now — a sharper diagnosis later.",
       "later": "Later",
       "skipAll": "Don't ask again"
+    },
+    "clearThread": {
+      "title": "Borrar conversación",
+      "description": "Todos los mensajes se eliminarán permanentemente. Esta acción no se puede deshacer.",
+      "confirm": "Borrar"
+    },
+    "chatStatus": {
+      "sending": "Enviando mensaje al coach…",
+      "received": "Respuesta del coach recibida."
+    },
+    "cockpit": {
+      "locked": {
+        "requiresPlan": "Plan {{plan}}+ requerido"
+      }
     }
   },
   "ai": {
