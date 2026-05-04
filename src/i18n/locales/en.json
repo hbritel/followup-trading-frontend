@@ -1357,7 +1357,16 @@
         "description": "Adds your last 90 days of trades, journal entries, briefings and debriefs to the coach’s memory. Run this once if the coach answers \"I can’t see that journal entry\" — colored citation chips like [trade:#abc] / [journal:#123] will then appear in answers.",
         "button": "Re-index my data",
         "success": "Re-indexed {{trades}} trades, {{journals}} journal entries, {{briefings}} briefings, {{debriefs}} debriefs.",
-        "error": "Re-index failed. Try again later."
+        "error": "Re-index failed. Try again later.",
+        "source": {
+          "trade": "Trades",
+          "journal": "Journals",
+          "briefing": "Briefings",
+          "debrief": "Debriefs"
+        },
+        "forceButton": "Force re-index",
+        "forceTitle": "Drops every existing memory row first, then re-indexes. Use this when the rows above show missing embeddings.",
+        "brokenHint": "Missing embeddings — use Force"
       }
     }
   },

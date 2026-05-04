@@ -1238,7 +1238,16 @@
         "description": "Añade tus últimos 90 días de trades, entradas de diario, briefings y resúmenes a la memoria del coach. Ejìutalo una vez si el coach responde « no veo esa entrada de diario » — las píldoras de cita coloreadas como [trade:#abc] / [journal:#123] aparecerán en las respuestas.",
         "button": "Reindexar mis datos",
         "success": "Reindexado: {{trades}} trades, {{journals}} entradas de diario, {{briefings}} briefings, {{debriefs}} resúmenes.",
-        "error": "La reindexación falló. Inténtalo de nuevo más tarde."
+        "error": "La reindexación falló. Inténtalo de nuevo más tarde.",
+        "source": {
+          "trade": "Trades",
+          "journal": "Diarios",
+          "briefing": "Briefings",
+          "debrief": "Resúmenes"
+        },
+        "forceButton": "Forzar reindexación",
+        "forceTitle": "Elimina primero todas las filas de memoria existentes y luego reindexa. Úsalo cuando las filas anteriores muestren embeddings faltantes.",
+        "brokenHint": "Embeddings faltantes — usa Forzar"
       }
     }
   },

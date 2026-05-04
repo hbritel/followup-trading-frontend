@@ -1333,7 +1333,16 @@
         "description": "Ajoute vos 90 derniers jours de trades, entrées de journal, briefings et débriefs à la mémoire du coach. À lancer une fois si le coach répond « je ne vois pas cette entrée de journal » — les pastilles colorées de citation comme [trade:#abc] / [journal:#123] apparaîtront alors dans les réponses.",
         "button": "Réindexer mes données",
         "success": "Réindexé : {{trades}} trades, {{journals}} entrées de journal, {{briefings}} briefings, {{debriefs}} débriefs.",
-        "error": "Échec de la réindexation. Réessayez plus tard."
+        "error": "Échec de la réindexation. Réessayez plus tard.",
+        "source": {
+          "trade": "Trades",
+          "journal": "Journaux",
+          "briefing": "Briefings",
+          "debrief": "Débriefs"
+        },
+        "forceButton": "Forcer la réindexation",
+        "forceTitle": "Supprime d'abord toutes les entrées de mémoire existantes puis réindexe. À utiliser quand les compteurs ci-dessus montrent des embeddings manquants.",
+        "brokenHint": "Embeddings manquants — utilisez Forcer"
       }
     }
   },

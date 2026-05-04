@@ -77,6 +77,21 @@ export interface BackfillReport {
   journals: number;
   briefings: number;
   debriefs: number;
+  /** Rows wiped before re-indexing — only > 0 when {@code force=true}. */
+  deleted: number;
+}
+
+export type EmbeddingSourceType = 'TRADE' | 'JOURNAL' | 'BRIEFING' | 'DEBRIEF';
+
+export interface IndexCount {
+  total: number;
+  withEmbedding: number;
+}
+
+export interface EmbeddingsStats {
+  total: number;
+  withEmbedding: number;
+  bySource: Record<EmbeddingSourceType, IndexCount>;
 }
 
 /**
@@ -84,10 +99,24 @@ export interface BackfillReport {
  * / debriefs into the coach's RAG vector store. Useful when historical data
  * was created before the indexer was wired (or while the embedding provider
  * was off) and the coach answers "I can't see your journal entry…".
- * Idempotent — entries already in the index are skipped server-side.
+ *
+ * @param force when {@code true}, every existing memory row owned by the user
+ *              is deleted before re-indexing. Use this when previous rows
+ *              were inserted with NULL embeddings and the regular idempotent
+ *              backfill silently dedups them away.
  */
-const backfillMyEmbeddings = async (): Promise<BackfillReport> => {
-  const response = await apiClient.post<BackfillReport>('/me/embeddings/backfill');
+const backfillMyEmbeddings = async (force = false): Promise<BackfillReport> => {
+  const response = await apiClient.post<BackfillReport>(
+    '/me/embeddings/backfill',
+    null,
+    { params: force ? { force: true } : undefined },
+  );
+  return response.data;
+};
+
+/** Per-source-type breakdown of the user's RAG index — total vs with-embedding. */
+const getMyEmbeddingsStats = async (): Promise<EmbeddingsStats> => {
+  const response = await apiClient.get<EmbeddingsStats>('/me/embeddings/stats');
   return response.data;
 };
 
@@ -99,4 +128,5 @@ export const aiService = {
   generateWeeklyDigest,
   analyzeTradeById,
   backfillMyEmbeddings,
+  getMyEmbeddingsStats,
 };
