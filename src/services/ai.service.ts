@@ -72,6 +72,61 @@ const analyzeTradeById = async (tradeId: string): Promise<AiAnalysisResponse> =>
   return response.data;
 };
 
+export interface BackfillReport {
+  trades: number;
+  journals: number;
+  briefings: number;
+  debriefs: number;
+  /** Rows wiped before re-indexing — only > 0 when {@code force=true}. */
+  deleted: number;
+}
+
+export type EmbeddingSourceType = 'TRADE' | 'JOURNAL' | 'BRIEFING' | 'DEBRIEF';
+
+export interface IndexCount {
+  total: number;
+  withEmbedding: number;
+}
+
+export interface ProviderStatus {
+  name: string | null;
+  dimension: number;
+  wired: boolean;
+}
+
+export interface EmbeddingsStats {
+  total: number;
+  withEmbedding: number;
+  bySource: Record<EmbeddingSourceType, IndexCount>;
+  provider: ProviderStatus;
+}
+
+/**
+ * Re-indexes the current user's recent trades / journal entries / briefings
+ * / debriefs into the coach's RAG vector store. Useful when historical data
+ * was created before the indexer was wired (or while the embedding provider
+ * was off) and the coach answers "I can't see your journal entry…".
+ *
+ * @param force when {@code true}, every existing memory row owned by the user
+ *              is deleted before re-indexing. Use this when previous rows
+ *              were inserted with NULL embeddings and the regular idempotent
+ *              backfill silently dedups them away.
+ */
+const backfillMyEmbeddings = async (force = false): Promise<BackfillReport> => {
+  const response = await apiClient.post<BackfillReport>(
+    '/me/embeddings/backfill',
+    null,
+    { params: force ? { force: true } : undefined },
+  );
+  return response.data;
+};
+
+/** Per-source-type breakdown of the user's RAG index — total vs with-embedding. */
+const getMyEmbeddingsStats = async (): Promise<EmbeddingsStats> => {
+  const response = await apiClient.get<EmbeddingsStats>('/me/embeddings/stats');
+  return response.data;
+};
+
 export const aiService = {
   getLatestDigest,
   getDigestHistory,
@@ -79,4 +134,6 @@ export const aiService = {
   getDigestJobStatus,
   generateWeeklyDigest,
   analyzeTradeById,
+  backfillMyEmbeddings,
+  getMyEmbeddingsStats,
 };

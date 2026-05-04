@@ -161,24 +161,25 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
       aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
       className={cn('flex h-full min-h-0 flex-col', className)}
     >
-      {/* Header — title + new conversation button. The button is the page's
-          single most important action in this rail, so it's always visible. */}
-      <header className="flex items-center justify-between border-b border-border/40 px-3 py-2.5 flex-shrink-0">
+      {/* Header — title row, then a full-width "new conversation" button.
+          Two stacked rows keep both labels readable even at the narrowest
+          inline sidebar width (260px on xl) where an inline button used
+          to overflow the rail. */}
+      <header className="flex flex-col gap-2 border-b border-border/40 px-3 py-2.5 flex-shrink-0">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {t('aiCoach.threads.sidebar.title', 'Conversations')}
         </h2>
         <Button
           type="button"
           size="sm"
-          variant="ghost"
+          variant="outline"
           onClick={handleCreate}
           disabled={createMutation.isPending}
-          className="h-7 gap-1.5 text-xs"
+          className="h-8 w-full justify-start gap-2 text-xs"
           aria-label={t('aiCoach.threads.sidebar.new', 'New conversation')}
-          title={t('aiCoach.threads.sidebar.new', 'New conversation')}
         >
-          <Plus className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">
+          <Plus className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">
             {t('aiCoach.threads.sidebar.new', 'New conversation')}
           </span>
         </Button>
@@ -201,22 +202,9 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
         )}
 
         {!isLoading && !isError && threads && threads.length === 0 && (
-          <div className="px-3 py-8 text-center space-y-3">
-            <p className="text-xs text-muted-foreground">
-              {t('aiCoach.threads.sidebar.empty', 'No conversations yet. Start one!')}
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
-              className="gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {t('aiCoach.threads.sidebar.new', 'New conversation')}
-            </Button>
-          </div>
+          <p className="px-3 py-8 text-center text-xs text-muted-foreground">
+            {t('aiCoach.threads.sidebar.empty', 'No conversations yet. Start one!')}
+          </p>
         )}
 
         {!isLoading && !isError && threads?.map((thread) => (

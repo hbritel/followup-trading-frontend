@@ -92,10 +92,29 @@ interface BriefingCardProps {
 }
 
 const BriefingCard: React.FC<BriefingCardProps> = ({ accountId, variant = 'full' }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: briefing, isLoading } = useBriefing(accountId);
   const { mutate: generate, isPending: isGenerating } = useGenerateBriefing(accountId);
+
+  // Locale-aware "Apr 8, 14:23" — short month + 24h time so the user knows
+  // exactly when the displayed briefing was produced before deciding to
+  // spend a message credit on a regenerate.
+  const formatGeneratedAt = (iso: string): string => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const localeTag = i18n.language.startsWith('fr')
+      ? 'fr-FR'
+      : i18n.language.startsWith('es')
+        ? 'es-ES'
+        : 'en-US';
+    return new Intl.DateTimeFormat(localeTag, {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+  };
 
   // ---------------- Compact variant ----------------
   if (variant === 'compact') {
@@ -200,12 +219,19 @@ const BriefingCard: React.FC<BriefingCardProps> = ({ accountId, variant = 'full'
 
   return (
     <div className="space-y-3">
-      {/* Header — date + generate button */}
-      <div className="flex items-center justify-between">
+      {/* Header — generated-at timestamp + regenerate button */}
+      <div className="flex items-center justify-between gap-2">
         {briefing ? (
-          <span className="text-xs text-muted-foreground font-mono tabular-nums">
-            {new Date(briefing.briefingDate).toLocaleDateString()}
-          </span>
+          <div className="min-w-0">
+            <span
+              className="text-xs text-muted-foreground tabular-nums truncate"
+              title={new Date(briefing.generatedAt).toLocaleString()}
+            >
+              {t('ai.briefingGeneratedAt', 'Generated {{time}}', {
+                time: formatGeneratedAt(briefing.generatedAt),
+              })}
+            </span>
+          </div>
         ) : (
           <span />
         )}
@@ -214,7 +240,10 @@ const BriefingCard: React.FC<BriefingCardProps> = ({ accountId, variant = 'full'
           size="sm"
           onClick={() => generate()}
           disabled={isGenerating}
-          className="h-7 text-xs gap-1.5"
+          className="h-7 text-xs gap-1.5 shrink-0"
+          title={briefing
+            ? t('ai.regenerateConsumesCredit', 'Regenerating uses 1 AI message credit')
+            : undefined}
         >
           {isGenerating ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

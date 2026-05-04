@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain, Sparkles, Power } from 'lucide-react';
+import { Database, Loader2, RefreshCw, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain, Sparkles, Power } from 'lucide-react';
+import { aiService, type BackfillReport, type EmbeddingsStats } from '@/services/ai.service';
 import { aiSettingsService } from '@/services/ai-settings.service';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -55,9 +58,30 @@ const DEFAULT_MODELS: Record<string, string> = {
 };
 
 const AiProviderSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { data: config, isLoading } = useAiProviderConfig();
   const { mutate: save, isPending: isSaving } = useSaveAiConfig();
   const { mutate: remove, isPending: isRemoving } = useDeleteAiConfig();
+  const embeddingsQueryClient = useQueryClient();
+  const { data: indexStats, refetch: refetchStats } = useQuery<EmbeddingsStats>({
+    queryKey: ['embeddings', 'stats'],
+    queryFn: () => aiService.getMyEmbeddingsStats(),
+    staleTime: 30 * 1000,
+  });
+  const backfillMutation = useMutation<BackfillReport, Error, boolean>({
+    mutationFn: (force: boolean) => aiService.backfillMyEmbeddings(force),
+    onSuccess: (report) => {
+      toast.success(t('settings.ai.reindex.success', {
+        defaultValue: 'Re-indexed {{trades}} trades, {{journals}} journal entries, {{briefings}} briefings, {{debriefs}} debriefs.',
+        ...report,
+      }));
+      embeddingsQueryClient.invalidateQueries({ queryKey: ['embeddings', 'stats'] });
+      refetchStats();
+    },
+    onError: () => {
+      toast.error(t('settings.ai.reindex.error', 'Re-index failed. Try again later.'));
+    },
+  });
   const { mutate: test, isPending: isTesting } = useTestAiConfig();
 
   const queryClient = useQueryClient();
@@ -390,6 +414,124 @@ const AiProviderSettings: React.FC = () => {
         </div>
       </div>
       )}
+
+      {/* Re-index data — surfaces "I can't see your journal entry" gap.
+          Always available, independent of provider config so a user without
+          BYOK can still seed the system index for their historical artefacts.
+          The stats grid below the description shows what's actually indexed
+          per source type so the user can see at a glance whether journal
+          entries made it in (and have a usable embedding). */}
+      <div className="rounded-xl border border-border/40 bg-card/40 p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <Database className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold">
+              {t('settings.ai.reindex.title', 'Re-index my historical data')}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+              {t(
+                'settings.ai.reindex.description',
+                'Adds your last 90 days of trades, journal entries, briefings and debriefs to the coach’s memory. Run this once if the coach answers "I can’t see that journal entry" — colored citation chips like [trade:#abc] / [journal:#123] will then appear in answers.',
+              )}
+            </p>
+          </div>
+        </div>
+
+        {indexStats && !indexStats.provider?.wired && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <div className="font-semibold">
+                {t('settings.ai.reindex.providerOff.title', 'Embedding provider not wired')}
+              </div>
+              <div className="mt-0.5 text-destructive/80">
+                {t(
+                  'settings.ai.reindex.providerOff.body',
+                  'No embedding provider is registered on the server, so re-indexing has nothing to call. Ask an admin to enable an embedding provider (OpenAI / Gemini / Ollama) in the backend config — until then, RAG citations will not appear.',
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {indexStats && indexStats.provider?.wired && (
+          <div className="text-[10px] text-muted-foreground">
+            {t('settings.ai.reindex.providerOn', {
+              defaultValue: 'Provider: {{name}} (dim {{dim}})',
+              name: indexStats.provider.name ?? '—',
+              dim: indexStats.provider.dimension,
+            })}
+          </div>
+        )}
+
+        {indexStats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {(['TRADE', 'JOURNAL', 'BRIEFING', 'DEBRIEF'] as const).map((src) => {
+              const bucket = indexStats.bySource?.[src] ?? { total: 0, withEmbedding: 0 };
+              const broken = bucket.total > 0 && bucket.withEmbedding < bucket.total;
+              return (
+                <div
+                  key={src}
+                  className={cn(
+                    'rounded-lg border p-3',
+                    broken
+                      ? 'border-destructive/40 bg-destructive/5'
+                      : bucket.total === 0
+                        ? 'border-border/40 bg-muted/20'
+                        : 'border-emerald-500/30 bg-emerald-500/5',
+                  )}
+                >
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t(`settings.ai.reindex.source.${src.toLowerCase()}`, src)}
+                  </div>
+                  <div className="mt-1 text-lg font-mono tabular-nums">
+                    {bucket.withEmbedding}
+                    <span className="text-xs text-muted-foreground">/{bucket.total}</span>
+                  </div>
+                  {broken && (
+                    <div className="mt-1 text-[10px] text-destructive">
+                      {t('settings.ai.reindex.brokenHint', 'Missing embeddings — use Force')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => backfillMutation.mutate(false)}
+            disabled={backfillMutation.isPending}
+            className="gap-2"
+          >
+            {backfillMutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Database className="h-3.5 w-3.5" />
+            )}
+            {t('settings.ai.reindex.button', 'Re-index my data')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => backfillMutation.mutate(true)}
+            disabled={backfillMutation.isPending}
+            className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            title={t(
+              'settings.ai.reindex.forceTitle',
+              'Drops every existing memory row first, then re-indexes. Use this when the rows above show missing embeddings.',
+            )}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {t('settings.ai.reindex.forceButton', 'Force re-index')}
+          </Button>
+        </div>
+      </div>
 
       {/* Delete confirmation */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
