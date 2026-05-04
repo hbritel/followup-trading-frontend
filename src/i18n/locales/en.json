@@ -2648,6 +2648,13 @@
       "sending": "Sending message to your coach…",
       "received": "Coach response received."
     },
+    "chat": {
+      "feedback": {
+        "group": "Rate this answer",
+        "good": "Helpful",
+        "bad": "Not helpful"
+      }
+    },
     "cockpit": {
       "locked": {
         "requiresPlan": "Requires {{plan}}+ plan"

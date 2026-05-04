@@ -5,6 +5,7 @@ import {
   coachChatService,
   streamCoachMessage,
   type CoachMessageDto,
+  type CoachMessageFeedback,
   type CoachMessageStatus,
 } from '@/services/coachChat.service';
 import { COACH_THREADS_KEY } from '@/hooks/useCoachThreads';
@@ -20,6 +21,7 @@ export interface CoachViewMessage {
   content: string;
   errorMessage: string | null;
   createdAt: string;
+  feedback: CoachMessageFeedback | null;
 }
 
 interface UseCoachChatState {
@@ -172,6 +174,7 @@ export function useCoachChat(opts: {
     content: m.content,
     errorMessage: m.errorMessage,
     createdAt: m.createdAt,
+    feedback: m.feedback ?? null,
   });
 
   /**
@@ -290,6 +293,32 @@ export function useCoachChat(opts: {
     }
   }, [closeActiveStream, refreshThreadsList, threadId]);
 
+  /**
+   * Records (or retracts) the user's thumbs rating on an assistant message.
+   * Optimistic — flips the local view immediately; rolls back on failure.
+   * Pass {@code null} to clear an existing rating.
+   */
+  const setFeedback = useCallback(
+    async (messageId: string, feedback: CoachMessageFeedback | null) => {
+      const previous = (() => {
+        const m = state.messages.find((x) => x.id === messageId);
+        return m ? m.feedback : null;
+      })();
+      patchMessage(messageId, { feedback });
+      try {
+        await coachChatService.recordFeedback(messageId, feedback);
+      } catch (e) {
+        // Roll back the optimistic flip and surface the error.
+        patchMessage(messageId, { feedback: previous });
+        const msg = e instanceof Error
+          ? e.message
+          : i18n.t('aiCoach.errors.feedback', 'Failed to record feedback.');
+        setState((prev) => ({ ...prev, error: msg }));
+      }
+    },
+    [patchMessage, state.messages],
+  );
+
   /** Retries the tail message if it's FAILED. */
   const retry = useCallback(async () => {
     const tail = state.messages[state.messages.length - 1];
@@ -320,5 +349,6 @@ export function useCoachChat(opts: {
     retry,
     loadHistory,
     clearHistory,
+    setFeedback,
   };
 }

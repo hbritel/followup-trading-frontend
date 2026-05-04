@@ -9,6 +9,8 @@ import {
   Send,
   Sparkles,
   Target,
+  ThumbsDown,
+  ThumbsUp,
   TrendingUp,
   X,
 } from 'lucide-react';
@@ -102,6 +104,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
     retry,
     loadHistory,
     clearHistory,
+    setFeedback,
   } = useCoachChat({ threadId });
 
   // Daily AI message usage — counter shown in header for paid plans
@@ -364,6 +367,7 @@ const CoachChat: React.FC<CoachChatProps> = ({
                 message={m}
                 isFresh={historyLoaded && !historyIdsRef.current.has(m.id)}
                 isStreamingTail={m.id === streamingTailId}
+                onFeedback={setFeedback}
               />
             ))}
           </React.Fragment>
@@ -647,9 +651,20 @@ interface MessageBubbleProps {
    * incoming tokens; static historical bubbles must NOT be live regions.
    */
   isStreamingTail?: boolean;
+  /**
+   * Optional handler that records the user's thumbs-up / thumbs-down on this
+   * message. Pass {@code null} as the second argument to retract a rating.
+   * When omitted, the feedback footer is not rendered.
+   */
+  onFeedback?: (messageId: string, feedback: 'GOOD' | 'BAD' | null) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isFresh = false, isStreamingTail = false }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+  message,
+  isFresh = false,
+  isStreamingTail = false,
+  onFeedback,
+}) => {
   const { i18n, t } = useTranslation();
   const isUser = message.role === 'USER';
   const showCaret =
@@ -737,6 +752,40 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isFresh = false,
         >
           {timestamp}
         </time>
+      )}
+      {!isUser && message.status === 'DONE' && onFeedback && (
+        <div className="mt-1 flex items-center gap-1 px-1" role="group" aria-label={t('aiCoach.chat.feedback.group', 'Rate this answer')}>
+          <button
+            type="button"
+            onClick={() => onFeedback(message.id, message.feedback === 'GOOD' ? null : 'GOOD')}
+            aria-label={t('aiCoach.chat.feedback.good', 'Helpful')}
+            aria-pressed={message.feedback === 'GOOD'}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              message.feedback === 'GOOD'
+                ? 'bg-emerald-500/15 text-emerald-500'
+                : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground',
+            )}
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onFeedback(message.id, message.feedback === 'BAD' ? null : 'BAD')}
+            aria-label={t('aiCoach.chat.feedback.bad', 'Not helpful')}
+            aria-pressed={message.feedback === 'BAD'}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              message.feedback === 'BAD'
+                ? 'bg-rose-500/15 text-rose-500'
+                : 'text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground',
+            )}
+          >
+            <ThumbsDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

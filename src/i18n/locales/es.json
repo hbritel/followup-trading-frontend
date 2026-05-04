@@ -2447,6 +2447,13 @@
       "sending": "Enviando mensaje al coach…",
       "received": "Respuesta del coach recibida."
     },
+    "chat": {
+      "feedback": {
+        "group": "Calificar esta respuesta",
+        "good": "Útil",
+        "bad": "No útil"
+      }
+    },
     "cockpit": {
       "locked": {
         "requiresPlan": "Plan {{plan}}+ requerido"

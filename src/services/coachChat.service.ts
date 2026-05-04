@@ -13,6 +13,8 @@ export type CoachMessageStatus =
   | 'FAILED'
   | 'CANCELLED';
 
+export type CoachMessageFeedback = 'GOOD' | 'BAD';
+
 export interface CoachMessageDto {
   id: string;
   threadId: string;
@@ -22,6 +24,7 @@ export interface CoachMessageDto {
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  feedback: CoachMessageFeedback | null;
 }
 
 export interface PostCoachMessageResponse {
@@ -115,6 +118,15 @@ export const coachChatService = {
    */
   archiveThread: (id: string) =>
     apiClient.delete<void>(`/coach/threads/${id}`),
+
+  /**
+   * Records (or clears) the user's thumbs-up / thumbs-down rating on an
+   * assistant message. Pass {@code null} to retract a previous rating.
+   * Backend rejects USER messages and non-DONE statuses with 400; foreign
+   * messages with 403.
+   */
+  recordFeedback: (messageId: string, feedback: CoachMessageFeedback | null) =>
+    apiClient.post<void>(`/coach/messages/${messageId}/feedback`, { feedback }),
 };
 
 // ---- SSE streaming (fetch-based to carry the JWT header) -----------------

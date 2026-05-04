@@ -2650,6 +2650,13 @@
       "sending": "Envoi du message au coach…",
       "received": "Réponse du coach reçue."
     },
+    "chat": {
+      "feedback": {
+        "group": "Évaluer cette réponse",
+        "good": "Utile",
+        "bad": "Pas utile"
+      }
+    },
     "cockpit": {
       "locked": {
         "requiresPlan": "Plan {{plan}} requis"
