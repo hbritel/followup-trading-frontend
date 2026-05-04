@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,7 @@ import SkillTreeCard from '@/components/ai-coach/SkillTreeCard';
 import CounterfactualRulesPanel from '@/components/ai-coach/CounterfactualRulesPanel';
 import AccountSelector from '@/components/dashboard/AccountSelector';
 import { useAccountFilter } from '@/hooks/useAccountFilter';
+import { useTiltScore } from '@/hooks/useTiltScore';
 import CoachChat from '@/components/ai/CoachChat';
 import AgentChatPanel from '@/components/ai-coach/AgentChatPanel';
 import CoachTour from '@/components/ai-coach/CoachTour';
@@ -28,7 +29,7 @@ import { cn } from '@/lib/utils';
 import {
   HelpCircle, Info, Sparkles, Brain, Network, MessageSquare,
   LayoutDashboard, Image as ImageIcon, Target, Trophy, Scale,
-  Sun, Moon, ArrowRight, Activity as ActivityIcon,
+  Sun, Moon, ArrowRight, Activity as ActivityIcon, Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -45,9 +46,17 @@ import {
 // ──────────────────────────────────────────────────────────────────────
 
 type ToolKey = 'briefing' | 'debrief' | 'goals' | 'skills' | 'rules' | 'vision';
+type RequiredPlan = 'STARTER' | 'PRO' | 'ELITE';
 
 interface ToolDef {
   key: ToolKey;
+  /**
+   * Plan tier the underlying card actually enforces. Leave undefined when
+   * the card has no plan gate (currently briefing + debrief). The launcher
+   * only renders a Lock badge — clicks still open the Sheet because the
+   * inner card owns the upgrade UI.
+   */
+  requiredPlan?: RequiredPlan;
   icon: React.ComponentType<{ className?: string }>;
   iconClass: string;
   hoverBg: string;
@@ -80,6 +89,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'goals',
+    requiredPlan: 'PRO',
     icon: Target,
     iconClass: 'text-sky-400',
     hoverBg: 'group-hover:bg-sky-500/10',
@@ -90,6 +100,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'skills',
+    requiredPlan: 'PRO',
     icon: Trophy,
     iconClass: 'text-amber-400',
     hoverBg: 'group-hover:bg-amber-500/10',
@@ -100,6 +111,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'rules',
+    requiredPlan: 'PRO',
     icon: Scale,
     iconClass: 'text-rose-400',
     hoverBg: 'group-hover:bg-rose-500/10',
@@ -110,6 +122,7 @@ const TOOLS: ToolDef[] = [
   },
   {
     key: 'vision',
+    requiredPlan: 'PRO',
     icon: ImageIcon,
     iconClass: 'text-fuchsia-400',
     hoverBg: 'group-hover:bg-fuchsia-500/10',
@@ -168,13 +181,36 @@ const NlqIntroSection: React.FC<{
 // ──────────────────────────────────────────────────────────────────────
 // Tilt + Streak hero — top of the right rail. Always visible. Largest
 // visual weight in the rail because it's the most-monitored signal.
+// The rightmost gradient stop derives from the live tilt score so the
+// surface tints toward warning/danger when the user is in a risky zone.
+// The gradient is purely decorative — the embedded <TiltGauge> remains
+// the source of truth for the actual reading and a11y.
 // ──────────────────────────────────────────────────────────────────────
 const TiltStreakHero: React.FC<{ accountId?: string | null }> = ({ accountId }) => {
   const { t } = useTranslation();
+  // Reuse the same hook the gauge uses — react-query dedupes the request.
+  // Realtime stays disabled here (the gauge already owns the subscription).
+  const { data: tilt } = useTiltScore(accountId ?? undefined, false);
+
+  // Map tilt zone to a gradient tint. Stay on emerald while undefined /
+  // loading to avoid a flash of red as the gauge spins up.
+  const gradientToneClass = useMemo(() => {
+    const score = tilt?.score;
+    if (typeof score !== 'number') return 'to-emerald-500/5';
+    if (score <= 30) return 'to-emerald-500/5';
+    if (score <= 60) return 'to-amber-500/5';
+    if (score <= 80) return 'to-orange-500/5';
+    return 'to-rose-500/5';
+  }, [tilt?.score]);
+
   return (
     <section
       aria-labelledby="tilt-hero-title"
-      className="relative overflow-hidden rounded-2xl border border-border/40 p-5 bg-gradient-to-br from-card via-card to-emerald-500/5 shadow-lg"
+      className={cn(
+        'relative overflow-hidden rounded-2xl border border-border/40 p-5 shadow-lg',
+        'bg-gradient-to-br from-card via-card transition-colors duration-500',
+        gradientToneClass,
+      )}
     >
       <header className="flex items-center justify-between mb-3">
         <h2
@@ -215,7 +251,10 @@ const TiltStreakHero: React.FC<{ accountId?: string | null }> = ({ accountId }) 
 
 // ──────────────────────────────────────────────────────────────────────
 // Tool launcher button — fits into a 2-col grid in the rail. Click opens
-// the matching tool in a right-side Sheet.
+// the matching tool in a right-side Sheet. When the underlying card is
+// plan-gated and the user lacks the required plan, render a Lock icon
+// in the top-right corner with a fade. Click is preserved — the inner
+// card owns the upgrade UI; we just want the user warned upfront.
 // ──────────────────────────────────────────────────────────────────────
 interface ToolLauncherProps {
   tool: ToolDef;
@@ -224,20 +263,32 @@ interface ToolLauncherProps {
 
 const ToolLauncher: React.FC<ToolLauncherProps> = ({ tool, onClick }) => {
   const { t } = useTranslation();
+  const { hasPlan } = useFeatureFlags();
   const Icon = tool.icon;
   const label = t(tool.labelKey, tool.defaultLabel);
   const desc = t(tool.descKey, tool.defaultDesc);
+
+  const isLocked = tool.requiredPlan ? !hasPlan(tool.requiredPlan) : false;
+  const lockedSuffix = isLocked && tool.requiredPlan
+    ? t('aiCoach.cockpit.locked.requiresPlan', {
+        defaultValue: '{{plan}}+ required',
+        plan: tool.requiredPlan,
+      })
+    : null;
+
   return (
     <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <button
           type="button"
           onClick={onClick}
-          aria-label={label}
+          aria-label={lockedSuffix ? `${label} — ${lockedSuffix}` : label}
+          aria-disabled={isLocked || undefined}
           className={cn(
             'group relative flex flex-col items-start gap-1.5 rounded-xl border border-border/40',
             'bg-card/40 hover:bg-card/70 hover:border-border/70 p-3 text-left transition-all',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+            isLocked && 'opacity-60 cursor-not-allowed',
           )}
         >
           <span
@@ -256,14 +307,24 @@ const ToolLauncher: React.FC<ToolLauncherProps> = ({ tool, onClick }) => {
               {desc}
             </div>
           </div>
-          <ArrowRight
-            aria-hidden="true"
-            className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
-          />
+          {isLocked ? (
+            <Lock
+              aria-hidden="true"
+              className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground"
+            />
+          ) : (
+            <ArrowRight
+              aria-hidden="true"
+              className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+            />
+          )}
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" align="start" className="max-w-[240px] text-xs leading-relaxed z-50">
         <span className="font-semibold">{label}</span> — {desc}
+        {lockedSuffix && (
+          <span className="block mt-1 text-muted-foreground">{lockedSuffix}</span>
+        )}
       </TooltipContent>
     </Tooltip>
   );
