@@ -2759,12 +2759,25 @@
       "actions": {
         "rename": "Renommer",
         "archive": "Archiver",
+        "delete": "Supprimer définitivement",
+        "restore": "Restaurer",
         "more": "Plus d'actions"
       },
       "archiveConfirm": {
         "title": "Archiver cette conversation ?",
-        "description": "Les conversations archivées sont masquées de votre barre latérale mais pas supprimées.",
+        "description": "Les conversations archivées sont masquées de votre barre latérale mais conservées et peuvent être restaurées à tout moment.",
         "confirm": "Archiver"
+      },
+      "deleteConfirm": {
+        "title": "Supprimer définitivement cette conversation ?",
+        "description": "Tous les messages de cette conversation seront supprimés définitivement. Cette action est irréversible — préférez Archiver si vous pourriez vouloir la restaurer plus tard.",
+        "confirm": "Supprimer définitivement"
+      },
+      "archived": {
+        "open": "Voir les conversations archivées",
+        "title": "Conversations archivées",
+        "description": "Restaurez une conversation archivée pour la rendre active à nouveau, ou supprimez-la définitivement pour libérer de l'espace.",
+        "empty": "Vous n'avez aucune conversation archivée."
       },
       "rename": {
         "title": "Renommer la conversation",
@@ -2774,7 +2787,9 @@
         "list": "Impossible de charger les conversations.",
         "create": "Impossible de créer la conversation.",
         "rename": "Impossible de renommer la conversation.",
-        "archive": "Impossible d'archiver la conversation."
+        "archive": "Impossible d'archiver la conversation.",
+        "delete": "Impossible de supprimer la conversation.",
+        "restore": "Impossible de restaurer la conversation."
       }
     }
   },

@@ -2556,12 +2556,25 @@
       "actions": {
         "rename": "Renombrar",
         "archive": "Archivar",
+        "delete": "Eliminar permanentemente",
+        "restore": "Restaurar",
         "more": "Más acciones"
       },
       "archiveConfirm": {
         "title": "¿Archivar esta conversación?",
-        "description": "Las conversaciones archivadas se ocultan de tu barra lateral pero no se eliminan.",
+        "description": "Las conversaciones archivadas se ocultan de tu barra lateral pero se conservan y pueden restaurarse en cualquier momento.",
         "confirm": "Archivar"
+      },
+      "deleteConfirm": {
+        "title": "¿Eliminar permanentemente esta conversación?",
+        "description": "Todos los mensajes de esta conversación se eliminarán permanentemente. Esta acción no se puede deshacer — prefiere Archivar si podrías querer restaurarla más tarde.",
+        "confirm": "Eliminar permanentemente"
+      },
+      "archived": {
+        "open": "Ver conversaciones archivadas",
+        "title": "Conversaciones archivadas",
+        "description": "Restaura una conversación archivada para volver a activarla, o elimínala permanentemente para liberar espacio.",
+        "empty": "No tienes conversaciones archivadas."
       },
       "rename": {
         "title": "Renombrar conversación",
@@ -2571,7 +2584,9 @@
         "list": "No se pudieron cargar las conversaciones.",
         "create": "No se pudo crear la conversación.",
         "rename": "No se pudo renombrar la conversación.",
-        "archive": "No se pudo archivar la conversación."
+        "archive": "No se pudo archivar la conversación.",
+        "delete": "No se pudo eliminar la conversación.",
+        "restore": "No se pudo restaurar la conversación."
       }
     }
   },

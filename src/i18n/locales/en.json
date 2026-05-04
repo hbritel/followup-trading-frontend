@@ -2757,12 +2757,25 @@
       "actions": {
         "rename": "Rename",
         "archive": "Archive",
+        "delete": "Delete permanently",
+        "restore": "Restore",
         "more": "More actions"
       },
       "archiveConfirm": {
         "title": "Archive this conversation?",
-        "description": "Archived conversations are hidden from your sidebar but not deleted.",
+        "description": "Archived conversations are hidden from your sidebar but kept on disk and can be restored at any time.",
         "confirm": "Archive"
+      },
+      "deleteConfirm": {
+        "title": "Permanently delete this conversation?",
+        "description": "Every message in this conversation will be permanently removed. This action cannot be undone — prefer Archive if you might want to restore it later.",
+        "confirm": "Delete permanently"
+      },
+      "archived": {
+        "open": "View archived conversations",
+        "title": "Archived conversations",
+        "description": "Restore an archived conversation to make it active again, or delete it permanently to free space.",
+        "empty": "You have no archived conversations."
       },
       "rename": {
         "title": "Rename conversation",
@@ -2772,7 +2785,9 @@
         "list": "Failed to load conversations.",
         "create": "Failed to create conversation.",
         "rename": "Failed to rename conversation.",
-        "archive": "Failed to archive conversation."
+        "archive": "Failed to archive conversation.",
+        "delete": "Failed to delete conversation.",
+        "restore": "Failed to restore conversation."
       }
     }
   },

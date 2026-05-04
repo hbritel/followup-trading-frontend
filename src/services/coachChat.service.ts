@@ -100,6 +100,24 @@ export const coachChatService = {
   /** Lists every active (non-archived) thread for the user, newest-first. */
   listThreads: () => apiClient.get<CoachThread[]>('/coach/threads'),
 
+  /** Lists every archived thread for the user, most-recently-archived first. */
+  listArchivedThreads: () =>
+    apiClient.get<CoachThread[]>('/coach/threads', { params: { status: 'archived' } }),
+
+  /**
+   * Restores a previously archived thread. Returns the rehydrated thread DTO
+   * so the caller can splice it back into the active list optimistically.
+   */
+  restoreThread: (id: string) =>
+    apiClient.post<CoachThread>(`/coach/threads/${id}/restore`),
+
+  /**
+   * Permanently deletes a thread + all its messages (CASCADE). Irreversible —
+   * caller MUST gate with a confirmation step.
+   */
+  deleteThreadPermanently: (id: string) =>
+    apiClient.delete<void>(`/coach/threads/${id}/permanent`),
+
   /**
    * Creates a new empty thread. The optional title is what the sidebar
    * displays before the first message — server may auto-generate one
