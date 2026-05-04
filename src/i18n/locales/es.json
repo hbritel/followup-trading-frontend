@@ -1231,7 +1231,16 @@
     "connectionErrorDescription": "Se ha producido un problema con su conexión al broker. Verifique sus credenciales e inténtelo de nuevo.",
     "signedInAs": "Sesión iniciada como",
     "logoutConfirmTitle": "¿Cerrar sesión?",
-    "logoutConfirmDesc": "Se cerrará tu sesión en este dispositivo. Podrás iniciar sesión cuando quieras."
+    "logoutConfirmDesc": "Se cerrará tu sesión en este dispositivo. Podrás iniciar sesión cuando quieras.",
+    "ai": {
+      "reindex": {
+        "title": "Reindexar mis datos históricos",
+        "description": "Añade tus últimos 90 días de trades, entradas de diario, briefings y resúmenes a la memoria del coach. Ejìutalo una vez si el coach responde « no veo esa entrada de diario » — las píldoras de cita coloreadas como [trade:#abc] / [journal:#123] aparecerán en las respuestas.",
+        "button": "Reindexar mis datos",
+        "success": "Reindexado: {{trades}} trades, {{journals}} entradas de diario, {{briefings}} briefings, {{debriefs}} resúmenes.",
+        "error": "La reindexación falló. Inténtalo de nuevo más tarde."
+      }
+    }
   },
   "alerts": {
     "alertManagement": "Gestion de alertas",
@@ -2663,7 +2672,9 @@
     "debriefTomorrow": "Para Manana",
     "debriefEmpty": "Sin debrief de sesion.",
     "briefingEmpty": "Sin briefing para hoy.",
+    "briefingGeneratedAt": "Generado {{time}}",
     "regenerate": "Regenerar",
+    "regenerateConsumesCredit": "Regenerar consume 1 crédito de mensaje IA",
     "generateBtn": "Generar",
     "morningBriefing": "Resumen matutino",
     "sessionDebrief": "Resumen de sesión"

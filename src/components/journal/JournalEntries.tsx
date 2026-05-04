@@ -16,8 +16,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, parseISO, isValid, type Locale } from 'date-fns';
+import { enUS, fr, es } from 'date-fns/locale';
 import { useBrokerConnections } from '@/hooks/useBrokers';
+
+const resolveDateLocale = (lng: string): Locale => {
+  if (lng.startsWith('fr')) return fr;
+  if (lng.startsWith('es')) return es;
+  return enUS;
+};
 import type { JournalEntryResponseDto, JournalSessionLabel } from '@/types/dto';
 
 interface JournalEntriesProps {
@@ -70,13 +77,16 @@ interface GroupedEntries {
   entries: JournalEntryResponseDto[];
 }
 
-function groupByMonth(entries: JournalEntryResponseDto[]): GroupedEntries[] {
+function groupByMonth(
+  entries: JournalEntryResponseDto[],
+  locale: Locale,
+): GroupedEntries[] {
   const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
   const groups = new Map<string, JournalEntryResponseDto[]>();
 
   sorted.forEach((entry) => {
     const parsed = parseISO(entry.date);
-    const key = isValid(parsed) ? format(parsed, 'MMMM yyyy') : 'Unknown';
+    const key = isValid(parsed) ? format(parsed, 'MMMM yyyy', { locale }) : 'Unknown';
     const existing = groups.get(key) ?? [];
     existing.push(entry);
     groups.set(key, existing);
@@ -95,8 +105,9 @@ const JournalEntries: React.FC<JournalEntriesProps> = ({
   onDelete,
   onNewEntry,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: connections } = useBrokerConnections();
+  const dateLocale = React.useMemo(() => resolveDateLocale(i18n.language), [i18n.language]);
 
   if (entries.length === 0) {
     return (
@@ -118,7 +129,7 @@ const JournalEntries: React.FC<JournalEntriesProps> = ({
     );
   }
 
-  const groups = groupByMonth(entries);
+  const groups = groupByMonth(entries, dateLocale);
 
   return (
     <div className="space-y-8">
@@ -131,6 +142,7 @@ const JournalEntries: React.FC<JournalEntriesProps> = ({
                 key={entry.id}
                 entry={entry}
                 connections={connections ?? []}
+                dateLocale={dateLocale}
                 onView={onView}
                 onEdit={onEdit}
                 onDelete={onDelete}
@@ -146,19 +158,20 @@ const JournalEntries: React.FC<JournalEntriesProps> = ({
 interface EntryCardProps {
   entry: JournalEntryResponseDto;
   connections: import('@/services/broker.service').BrokerConnectionResponse[];
+  dateLocale: Locale;
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ entry, connections, onView, onEdit, onDelete }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ entry, connections, dateLocale, onView, onEdit, onDelete }) => {
   const { t } = useTranslation();
   const mood = MOOD_CONFIG[entry.mood] ?? MOOD_CONFIG[3];
   const moodLabelKey = MOOD_LABEL_KEYS[entry.mood] ?? 'journal.moodOkay';
 
   const parsed = parseISO(entry.date);
-  const dayNum = isValid(parsed) ? format(parsed, 'd') : '--';
-  const dayName = isValid(parsed) ? format(parsed, 'EEE') : '';
+  const dayNum = isValid(parsed) ? format(parsed, 'd', { locale: dateLocale }) : '--';
+  const dayName = isValid(parsed) ? format(parsed, 'EEE', { locale: dateLocale }) : '';
 
   const tagList = entry.tags
     ? entry.tags.split(',').map((tag) => tag.trim()).filter(Boolean)

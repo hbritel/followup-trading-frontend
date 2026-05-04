@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain, Sparkles, Power } from 'lucide-react';
+import { Database, Loader2, Trash2, Plug, CheckCircle, XCircle, AlertCircle, Brain, Sparkles, Power } from 'lucide-react';
+import { aiService, type BackfillReport } from '@/services/ai.service';
 import { aiSettingsService } from '@/services/ai-settings.service';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -55,9 +58,22 @@ const DEFAULT_MODELS: Record<string, string> = {
 };
 
 const AiProviderSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { data: config, isLoading } = useAiProviderConfig();
   const { mutate: save, isPending: isSaving } = useSaveAiConfig();
   const { mutate: remove, isPending: isRemoving } = useDeleteAiConfig();
+  const backfillMutation = useMutation<BackfillReport, Error, void>({
+    mutationFn: () => aiService.backfillMyEmbeddings(),
+    onSuccess: (report) => {
+      toast.success(t('settings.ai.reindex.success', {
+        defaultValue: 'Re-indexed {{trades}} trades, {{journals}} journal entries, {{briefings}} briefings, {{debriefs}} debriefs.',
+        ...report,
+      }));
+    },
+    onError: () => {
+      toast.error(t('settings.ai.reindex.error', 'Re-index failed. Try again later.'));
+    },
+  });
   const { mutate: test, isPending: isTesting } = useTestAiConfig();
 
   const queryClient = useQueryClient();
@@ -390,6 +406,41 @@ const AiProviderSettings: React.FC = () => {
         </div>
       </div>
       )}
+
+      {/* Re-index data — surfaces "I can't see your journal entry" gap.
+          Always available, independent of provider config so a user without
+          BYOK can still seed the system index for their historical artefacts. */}
+      <div className="rounded-xl border border-border/40 bg-card/40 p-5 space-y-3">
+        <div className="flex items-start gap-3">
+          <Database className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold">
+              {t('settings.ai.reindex.title', 'Re-index my historical data')}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+              {t(
+                'settings.ai.reindex.description',
+                'Adds your last 90 days of trades, journal entries, briefings and debriefs to the coach’s memory. Run this once if the coach answers "I can’t see that journal entry" — colored citation chips like [trade:#abc] / [journal:#123] will then appear in answers.',
+              )}
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => backfillMutation.mutate()}
+          disabled={backfillMutation.isPending}
+          className="gap-2"
+        >
+          {backfillMutation.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Database className="h-3.5 w-3.5" />
+          )}
+          {t('settings.ai.reindex.button', 'Re-index my data')}
+        </Button>
+      </div>
 
       {/* Delete confirmation */}
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

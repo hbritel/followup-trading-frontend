@@ -2,7 +2,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { format, parseISO, isValid, startOfMonth, isSameMonth } from 'date-fns';
+import { format, parseISO, isValid, startOfMonth, isSameMonth, type Locale } from 'date-fns';
+import { enUS, fr, es } from 'date-fns/locale';
 import { Plus, ChevronDown, ChevronUp, Sun, CloudSun, Moon, ClipboardList } from 'lucide-react';
 import type { JournalSessionLabel, JournalEntryRequestDto } from '@/types/dto';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -54,7 +55,12 @@ const MOOD_AVG_COLORS: Record<number, string> = {
 };
 
 const DailyJournal = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const dateLocale: Locale = useMemo(() => {
+    if (i18n.language.startsWith('fr')) return fr;
+    if (i18n.language.startsWith('es')) return es;
+    return enUS;
+  }, [i18n.language]);
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -257,8 +263,8 @@ const DailyJournal = () => {
             {/* Entry list header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  {format(selectedMonth, 'MMMM yyyy')}
+                <h2 className="text-base font-semibold text-foreground capitalize">
+                  {format(selectedMonth, 'MMMM yyyy', { locale: dateLocale })}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {monthEntries.length} {t('journal.entriesCount')}

@@ -72,6 +72,25 @@ const analyzeTradeById = async (tradeId: string): Promise<AiAnalysisResponse> =>
   return response.data;
 };
 
+export interface BackfillReport {
+  trades: number;
+  journals: number;
+  briefings: number;
+  debriefs: number;
+}
+
+/**
+ * Re-indexes the current user's recent trades / journal entries / briefings
+ * / debriefs into the coach's RAG vector store. Useful when historical data
+ * was created before the indexer was wired (or while the embedding provider
+ * was off) and the coach answers "I can't see your journal entry…".
+ * Idempotent — entries already in the index are skipped server-side.
+ */
+const backfillMyEmbeddings = async (): Promise<BackfillReport> => {
+  const response = await apiClient.post<BackfillReport>('/me/embeddings/backfill');
+  return response.data;
+};
+
 export const aiService = {
   getLatestDigest,
   getDigestHistory,
@@ -79,4 +98,5 @@ export const aiService = {
   getDigestJobStatus,
   generateWeeklyDigest,
   analyzeTradeById,
+  backfillMyEmbeddings,
 };

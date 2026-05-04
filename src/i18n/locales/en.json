@@ -1350,7 +1350,16 @@
     "myMentor": "My Mentor",
     "signedInAs": "Signed in as",
     "logoutConfirmTitle": "Sign out?",
-    "logoutConfirmDesc": "You will be signed out on this device. You can sign back in anytime."
+    "logoutConfirmDesc": "You will be signed out on this device. You can sign back in anytime.",
+    "ai": {
+      "reindex": {
+        "title": "Re-index my historical data",
+        "description": "Adds your last 90 days of trades, journal entries, briefings and debriefs to the coach’s memory. Run this once if the coach answers \"I can’t see that journal entry\" — colored citation chips like [trade:#abc] / [journal:#123] will then appear in answers.",
+        "button": "Re-index my data",
+        "success": "Re-indexed {{trades}} trades, {{journals}} journal entries, {{briefings}} briefings, {{debriefs}} debriefs.",
+        "error": "Re-index failed. Try again later."
+      }
+    }
   },
   "alerts": {
     "alertManagement": "Alert Management",
@@ -2891,7 +2900,9 @@
     "debriefTomorrow": "For Tomorrow",
     "debriefEmpty": "No session debrief yet.",
     "briefingEmpty": "No briefing for today yet.",
+    "briefingGeneratedAt": "Generated {{time}}",
     "regenerate": "Regenerate",
+    "regenerateConsumesCredit": "Regenerating uses 1 AI message credit",
     "generateBtn": "Generate"
   },
   "import": {
