@@ -9,6 +9,7 @@ import type { CoachThread } from '@/types/coachThread';
 // ---------------------------------------------------------------------------
 
 export const COACH_THREADS_KEY = ['coach', 'threads'] as const;
+export const COACH_THREADS_ARCHIVED_KEY = ['coach', 'threads', 'archived'] as const;
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -128,6 +129,109 @@ export const useArchiveCoachThread = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: COACH_THREADS_KEY });
+      // Also refresh the archived list so the soft-deleted thread shows up
+      // there immediately if the user opens the archived view next.
+      queryClient.invalidateQueries({ queryKey: COACH_THREADS_ARCHIVED_KEY });
+    },
+  });
+};
+
+/**
+ * Lists archived threads — populates the "Archived" view inside the sidebar.
+ * Lazily fetched (the consumer toggles `enabled` on demand) so we don't
+ * hit the API on every page load.
+ */
+export const useArchivedCoachThreads = (enabled: boolean) =>
+  useQuery<CoachThread[]>({
+    queryKey: COACH_THREADS_ARCHIVED_KEY,
+    queryFn: async () => {
+      const { data } = await coachChatService.listArchivedThreads();
+      return data;
+    },
+    enabled,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+/**
+ * Restores an archived thread back to the active list. Optimistic on the
+ * archived list (removes the row immediately), then invalidates the active
+ * list so the rehydrated thread appears at the top.
+ */
+export const useRestoreCoachThread = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CoachThread,
+    Error,
+    string,
+    { previous?: CoachThread[] }
+  >({
+    mutationFn: async (id) => {
+      const { data } = await coachChatService.restoreThread(id);
+      return data;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: COACH_THREADS_ARCHIVED_KEY });
+      const previous = queryClient.getQueryData<CoachThread[]>(COACH_THREADS_ARCHIVED_KEY);
+      queryClient.setQueryData<CoachThread[]>(COACH_THREADS_ARCHIVED_KEY, (prev) =>
+        prev?.filter((t) => t.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(COACH_THREADS_ARCHIVED_KEY, ctx.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: COACH_THREADS_KEY });
+      queryClient.invalidateQueries({ queryKey: COACH_THREADS_ARCHIVED_KEY });
+    },
+  });
+};
+
+/**
+ * Permanently deletes a thread (and its messages, via DB cascade). Caller
+ * MUST gate with a destructive confirmation step. Optimistic on whichever
+ * list the thread is in — both caches are invalidated on settle.
+ */
+export const useDeleteCoachThreadPermanently = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    void,
+    Error,
+    string,
+    { previousActive?: CoachThread[]; previousArchived?: CoachThread[] }
+  >({
+    mutationFn: async (id) => {
+      await coachChatService.deleteThreadPermanently(id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: COACH_THREADS_KEY });
+      await queryClient.cancelQueries({ queryKey: COACH_THREADS_ARCHIVED_KEY });
+      const previousActive = queryClient.getQueryData<CoachThread[]>(COACH_THREADS_KEY);
+      const previousArchived = queryClient.getQueryData<CoachThread[]>(COACH_THREADS_ARCHIVED_KEY);
+      queryClient.setQueryData<CoachThread[]>(COACH_THREADS_KEY, (prev) =>
+        prev?.filter((t) => t.id !== id),
+      );
+      queryClient.setQueryData<CoachThread[]>(COACH_THREADS_ARCHIVED_KEY, (prev) =>
+        prev?.filter((t) => t.id !== id),
+      );
+      return { previousActive, previousArchived };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previousActive) {
+        queryClient.setQueryData(COACH_THREADS_KEY, ctx.previousActive);
+      }
+      if (ctx?.previousArchived) {
+        queryClient.setQueryData(COACH_THREADS_ARCHIVED_KEY, ctx.previousArchived);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: COACH_THREADS_KEY });
+      queryClient.invalidateQueries({ queryKey: COACH_THREADS_ARCHIVED_KEY });
     },
   });
 };

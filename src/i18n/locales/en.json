@@ -2622,6 +2622,56 @@
         "PERFORMANCE": "Performance",
         "STRATEGY": "Strategy",
         "RISK": "Risk"
+      },
+      "nodes": {
+        "FIRST_JOURNAL": {
+          "name": "First journal entry",
+          "description": "Write a note on a single trade."
+        },
+        "JOURNALED_10": {
+          "name": "10 journaled trades",
+          "description": "Annotate ten trades. The journal is where the patterns surface."
+        },
+        "JOURNALED_50": {
+          "name": "50 journaled trades",
+          "description": "Fifty annotated trades is when retrospectives start paying off."
+        },
+        "TAGS_USED_5": {
+          "name": "Tag toolbox",
+          "description": "Use at least five distinct tags across your trades."
+        },
+        "CLOSED_10": {
+          "name": "First ten closed trades",
+          "description": "Close ten trades — sample size unlocks the rest of the tree."
+        },
+        "CLOSED_50": {
+          "name": "Fifty trades on the books",
+          "description": "A meaningful sample size for win-rate to stabilise."
+        },
+        "WIN_RATE_55_30D": {
+          "name": "55% win rate over 30 days",
+          "description": "Hold a 55% win rate over the last 30 days (≥10 closed trades)."
+        },
+        "AVG_R_1_30D": {
+          "name": "Average R ≥ 1 over 30 days",
+          "description": "Average R-multiple of at least 1.0 across the last 30 days."
+        },
+        "FIRST_STRATEGY": {
+          "name": "First playbook",
+          "description": "Define your first strategy with at least one rule."
+        },
+        "TWO_STRATEGIES": {
+          "name": "Two strategies, two playbooks",
+          "description": "Run two strategies in parallel."
+        },
+        "NO_LOSS_DAY_5": {
+          "name": "Five clean days",
+          "description": "Five consecutive trading days without a losing day."
+        },
+        "COMPLIANCE_80": {
+          "name": "80% rule compliance",
+          "description": "Hold 80% rule compliance on your most-traded strategy."
+        }
       }
     },
     "nlq": {
@@ -2653,12 +2703,48 @@
         "group": "Rate this answer",
         "good": "Helpful",
         "bad": "Not helpful"
-      }
+      },
+      "empty": {
+        "title": "Chat with your AI Coach",
+        "body": "Ask a question about a trade, a pattern, or the discipline you want to work on. The coach keeps context between messages."
+      },
+      "suggestion": {
+        "bestDay": "Analyse my best trading day",
+        "negativePatterns": "Spot my recurring negative patterns",
+        "morningRoutine": "How can I improve my morning routine?",
+        "psychology": "Which psychology topic should I work on first?"
+      },
+      "shareData": {
+        "on": "Sharing my data",
+        "off": "Share my data",
+        "hintOn": "Your last trades are attached to this message.",
+        "hintOff": "The coach has no access to your trades."
+      },
+      "role": {
+        "user": "You",
+        "assistant": "AI Coach"
+      },
+      "placeholder": "Ask your coach anything…",
+      "send": "Send",
+      "generating": "Your coach is preparing a response",
+      "cancel": "Cancel",
+      "retry": "Retry",
+      "failed": "Generation failed.",
+      "outOfMessages": "You're out of messages today — pick a pack or wait until tomorrow.",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "typing": "Coach is typing"
     },
     "cockpit": {
       "locked": {
         "requiresPlan": "Requires {{plan}}+ plan"
-      }
+      },
+      "briefingDesc": "Day plan",
+      "debriefDesc": "Session debrief",
+      "goalsDesc": "SMART goals",
+      "skillsDesc": "Progression",
+      "rulesDesc": "What-if compliance",
+      "visionDesc": "Image analysis"
     },
     "threads": {
       "sidebar": {
@@ -2671,12 +2757,25 @@
       "actions": {
         "rename": "Rename",
         "archive": "Archive",
+        "delete": "Delete permanently",
+        "restore": "Restore",
         "more": "More actions"
       },
       "archiveConfirm": {
         "title": "Archive this conversation?",
-        "description": "Archived conversations are hidden from your sidebar but not deleted.",
+        "description": "Archived conversations are hidden from your sidebar but kept on disk and can be restored at any time.",
         "confirm": "Archive"
+      },
+      "deleteConfirm": {
+        "title": "Permanently delete this conversation?",
+        "description": "Every message in this conversation will be permanently removed. This action cannot be undone — prefer Archive if you might want to restore it later.",
+        "confirm": "Delete permanently"
+      },
+      "archived": {
+        "open": "View archived conversations",
+        "title": "Archived conversations",
+        "description": "Restore an archived conversation to make it active again, or delete it permanently to free space.",
+        "empty": "You have no archived conversations."
       },
       "rename": {
         "title": "Rename conversation",
@@ -2686,7 +2785,9 @@
         "list": "Failed to load conversations.",
         "create": "Failed to create conversation.",
         "rename": "Failed to rename conversation.",
-        "archive": "Failed to archive conversation."
+        "archive": "Failed to archive conversation.",
+        "delete": "Failed to delete conversation.",
+        "restore": "Failed to restore conversation."
       }
     }
   },
@@ -3615,7 +3716,8 @@
     "totalActualPnl": "Actual",
     "hypotheticalPnl": "If rules followed",
     "totalGap": "Gap",
-    "followedNotFollowed": "{{ok}} OK / {{ko}} broken"
+    "followedNotFollowed": "{{ok}} OK / {{ko}} broken",
+    "rulesShort": "Rules"
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",

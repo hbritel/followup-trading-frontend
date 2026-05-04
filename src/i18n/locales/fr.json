@@ -2624,6 +2624,56 @@
         "PERFORMANCE": "Performance",
         "STRATEGY": "Stratégie",
         "RISK": "Risque"
+      },
+      "nodes": {
+        "FIRST_JOURNAL": {
+          "name": "Première entrée de journal",
+          "description": "Annotez un premier trade."
+        },
+        "JOURNALED_10": {
+          "name": "10 trades journalisés",
+          "description": "Annotez dix trades. C'est dans le journal que les schémas émergent."
+        },
+        "JOURNALED_50": {
+          "name": "50 trades journalisés",
+          "description": "Cinquante trades annotés : les rétrospectives commencent à payer."
+        },
+        "TAGS_USED_5": {
+          "name": "Boîte à tags",
+          "description": "Utilisez au moins cinq tags distincts sur vos trades."
+        },
+        "CLOSED_10": {
+          "name": "Dix premiers trades clôturés",
+          "description": "Clôturez dix trades — la taille d'échantillon débloque le reste de l'arbre."
+        },
+        "CLOSED_50": {
+          "name": "Cinquante trades au compteur",
+          "description": "Un échantillon significatif pour stabiliser le win-rate."
+        },
+        "WIN_RATE_55_30D": {
+          "name": "55 % de win rate sur 30 jours",
+          "description": "Maintenez un win rate de 55 % sur les 30 derniers jours (≥10 trades clôturés)."
+        },
+        "AVG_R_1_30D": {
+          "name": "R moyen ≥ 1 sur 30 jours",
+          "description": "Multiple R moyen d'au moins 1,0 sur les 30 derniers jours."
+        },
+        "FIRST_STRATEGY": {
+          "name": "Premier playbook",
+          "description": "Définissez votre première stratégie avec au moins une règle."
+        },
+        "TWO_STRATEGIES": {
+          "name": "Deux stratégies, deux playbooks",
+          "description": "Faites tourner deux stratégies en parallèle."
+        },
+        "NO_LOSS_DAY_5": {
+          "name": "Cinq journées propres",
+          "description": "Cinq jours de trading consécutifs sans journée perdante."
+        },
+        "COMPLIANCE_80": {
+          "name": "80 % de conformité aux règles",
+          "description": "Tenez 80 % de conformité sur votre stratégie la plus tradée."
+        }
       }
     },
     "nlq": {
@@ -2655,12 +2705,48 @@
         "group": "Évaluer cette réponse",
         "good": "Utile",
         "bad": "Pas utile"
-      }
+      },
+      "empty": {
+        "title": "Discutez avec votre Coach IA",
+        "body": "Posez une question sur un trade, un schéma récurrent ou la discipline que vous voulez travailler. Le coach garde le contexte entre les messages."
+      },
+      "suggestion": {
+        "bestDay": "Analyse ma meilleure journée de trading",
+        "negativePatterns": "Repère mes schémas négatifs récurrents",
+        "morningRoutine": "Comment puis-je améliorer ma routine du matin ?",
+        "psychology": "Quel sujet de psychologie travailler en premier ?"
+      },
+      "shareData": {
+        "on": "Partage de mes données activé",
+        "off": "Partager mes données",
+        "hintOn": "Vos derniers trades sont joints à ce message.",
+        "hintOff": "Le coach n'a pas accès à vos trades."
+      },
+      "role": {
+        "user": "Vous",
+        "assistant": "Coach IA"
+      },
+      "placeholder": "Posez n'importe quelle question à votre coach…",
+      "send": "Envoyer",
+      "generating": "Votre coach prépare une réponse",
+      "cancel": "Annuler",
+      "retry": "Réessayer",
+      "failed": "La génération a échoué.",
+      "outOfMessages": "Vous n'avez plus de messages aujourd'hui — prenez un pack ou attendez demain.",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "typing": "Le coach écrit"
     },
     "cockpit": {
       "locked": {
         "requiresPlan": "Plan {{plan}} requis"
-      }
+      },
+      "briefingDesc": "Plan du jour",
+      "debriefDesc": "Bilan session",
+      "goalsDesc": "Objectifs SMART",
+      "skillsDesc": "Progression",
+      "rulesDesc": "What-if compliance",
+      "visionDesc": "Analyse image"
     },
     "threads": {
       "sidebar": {
@@ -2673,12 +2759,25 @@
       "actions": {
         "rename": "Renommer",
         "archive": "Archiver",
+        "delete": "Supprimer définitivement",
+        "restore": "Restaurer",
         "more": "Plus d'actions"
       },
       "archiveConfirm": {
         "title": "Archiver cette conversation ?",
-        "description": "Les conversations archivées sont masquées de votre barre latérale mais pas supprimées.",
+        "description": "Les conversations archivées sont masquées de votre barre latérale mais conservées et peuvent être restaurées à tout moment.",
         "confirm": "Archiver"
+      },
+      "deleteConfirm": {
+        "title": "Supprimer définitivement cette conversation ?",
+        "description": "Tous les messages de cette conversation seront supprimés définitivement. Cette action est irréversible — préférez Archiver si vous pourriez vouloir la restaurer plus tard.",
+        "confirm": "Supprimer définitivement"
+      },
+      "archived": {
+        "open": "Voir les conversations archivées",
+        "title": "Conversations archivées",
+        "description": "Restaurez une conversation archivée pour la rendre active à nouveau, ou supprimez-la définitivement pour libérer de l'espace.",
+        "empty": "Vous n'avez aucune conversation archivée."
       },
       "rename": {
         "title": "Renommer la conversation",
@@ -2688,7 +2787,9 @@
         "list": "Impossible de charger les conversations.",
         "create": "Impossible de créer la conversation.",
         "rename": "Impossible de renommer la conversation.",
-        "archive": "Impossible d'archiver la conversation."
+        "archive": "Impossible d'archiver la conversation.",
+        "delete": "Impossible de supprimer la conversation.",
+        "restore": "Impossible de restaurer la conversation."
       }
     }
   },
@@ -3629,7 +3730,8 @@
     "totalActualPnl": "Réel",
     "hypotheticalPnl": "Si règles suivies",
     "totalGap": "Écart",
-    "followedNotFollowed": "{{ok}} OK / {{ko}} brisée(s)"
+    "followedNotFollowed": "{{ok}} OK / {{ko}} brisée(s)",
+    "rulesShort": "Règles"
   },
   "autoPlaybook": {
     "sectionTitle": "Auto-Playbook",

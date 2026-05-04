@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow, type Locale } from 'date-fns';
 import { enUS, fr, es } from 'date-fns/locale';
 import {
+  Archive as ArchiveIcon,
   Edit3,
-  MessageSquare,
   MoreHorizontal,
   Plus,
+  RotateCcw,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,9 +43,12 @@ import {
 
 import {
   useArchiveCoachThread,
+  useArchivedCoachThreads,
   useCoachThreads,
   useCreateCoachThread,
+  useDeleteCoachThreadPermanently,
   useRenameCoachThread,
+  useRestoreCoachThread,
 } from '@/hooks/useCoachThreads';
 import type { CoachThread } from '@/types/coachThread';
 
@@ -85,11 +89,16 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
   const createMutation = useCreateCoachThread();
   const renameMutation = useRenameCoachThread();
   const archiveMutation = useArchiveCoachThread();
+  const restoreMutation = useRestoreCoachThread();
+  const deleteMutation = useDeleteCoachThreadPermanently();
 
   // Per-thread interaction state — kept local to avoid lifting it into the
   // page (the parent doesn't care which row is being renamed).
   const [renameTarget, setRenameTarget] = useState<CoachThread | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<CoachThread | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CoachThread | null>(null);
+  const [archivedDialogOpen, setArchivedDialogOpen] = useState(false);
+  const archivedQuery = useArchivedCoachThreads(archivedDialogOpen);
 
   const dateLocale = useMemo<Locale>(() => {
     if (i18n.language.startsWith('fr')) return fr;
@@ -122,6 +131,31 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
     }
   }, [archiveMutation, archiveTarget, onSelectThread, selectedThreadId, t]);
 
+  const handleDeletePermanent = useCallback(async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    try {
+      await deleteMutation.mutateAsync(target.id);
+      if (selectedThreadId === target.id) {
+        onSelectThread(null);
+      }
+    } catch {
+      toast.error(t('aiCoach.threads.errors.delete', 'Failed to delete conversation.'));
+    }
+  }, [deleteMutation, deleteTarget, onSelectThread, selectedThreadId, t]);
+
+  const handleRestore = useCallback(
+    async (id: string) => {
+      try {
+        await restoreMutation.mutateAsync(id);
+      } catch {
+        toast.error(t('aiCoach.threads.errors.restore', 'Failed to restore conversation.'));
+      }
+    },
+    [restoreMutation, t],
+  );
+
   return (
     <aside
       aria-label={t('aiCoach.threads.sidebar.title', 'Conversations')}
@@ -153,9 +187,9 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
       {/* Body — list of threads or one of three states (loading / empty / error) */}
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-1">
         {isLoading && (
-          <div className="space-y-1.5" aria-busy="true">
+          <div className="space-y-1" aria-busy="true">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         )}
@@ -194,9 +228,25 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
             onSelect={() => onSelectThread(thread.id)}
             onRename={() => setRenameTarget(thread)}
             onArchive={() => setArchiveTarget(thread)}
+            onDelete={() => setDeleteTarget(thread)}
           />
         ))}
       </div>
+
+      {/* Footer — entry point to the archived list. Hidden when the user has
+          never archived anything to keep the sidebar tight. */}
+      <footer className="border-t border-border/40 px-3 py-2 flex-shrink-0">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setArchivedDialogOpen(true)}
+          className="h-7 w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArchiveIcon className="h-3.5 w-3.5" />
+          {t('aiCoach.threads.archived.open', 'View archived conversations')}
+        </Button>
+      </footer>
 
       {/* Rename dialog — kept centralised here (not per-row) so the input
           element gets re-mounted between targets, avoiding stale state. */}
@@ -214,9 +264,8 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
         isPending={renameMutation.isPending}
       />
 
-      {/* Archive confirmation — destructive variant per the design rules,
-          AlertDialog instead of Dialog because the action is non-reversible
-          from the user's point of view (archived threads are hidden but kept). */}
+      {/* Archive confirmation — soft hide. Reversible from the archived
+          dialog. AlertDialog used (not Dialog) so the action is intentional. */}
       <AlertDialog
         open={archiveTarget !== null}
         onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}
@@ -229,7 +278,36 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
             <AlertDialogDescription>
               {t(
                 'aiCoach.threads.archiveConfirm.description',
-                'Archived conversations are hidden from your sidebar but not deleted.',
+                'Archived conversations are hidden from your sidebar but kept on disk and can be restored at any time.',
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {t('common.cancel', 'Cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleArchive()}>
+              {t('aiCoach.threads.archiveConfirm.confirm', 'Archive')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Permanent delete — irreversible. Destructive button + extra-warning
+          copy because the cascade wipes every message in the thread. */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('aiCoach.threads.deleteConfirm.title', 'Permanently delete this conversation?')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                'aiCoach.threads.deleteConfirm.description',
+                'Every message in this conversation will be permanently removed. This action cannot be undone — prefer Archive if you might want to restore it later.',
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -238,15 +316,147 @@ const ThreadSidebar: React.FC<ThreadSidebarProps> = ({
               {t('common.cancel', 'Cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => void handleArchive()}
+              onClick={() => void handleDeletePermanent()}
               className={cn(buttonVariants({ variant: 'destructive' }))}
             >
-              {t('aiCoach.threads.archiveConfirm.confirm', 'Archive')}
+              {t('aiCoach.threads.deleteConfirm.confirm', 'Delete permanently')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Archived list dialog — opened from the sidebar footer. Lazy-fetches
+          on open. Each row offers Restore (re-shown in active list) and
+          Delete permanently (cascade). */}
+      <Dialog
+        open={archivedDialogOpen}
+        onOpenChange={setArchivedDialogOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {t('aiCoach.threads.archived.title', 'Archived conversations')}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                'aiCoach.threads.archived.description',
+                'Restore an archived conversation to make it active again, or delete it permanently to free space.',
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-1">
+            {archivedQuery.isLoading && (
+              <div className="space-y-1.5" aria-busy="true">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
+              </div>
+            )}
+            {!archivedQuery.isLoading && archivedQuery.isError && (
+              <div className="px-3 py-6 text-center text-xs text-destructive">
+                {t('aiCoach.threads.errors.list', 'Failed to load conversations.')}
+              </div>
+            )}
+            {!archivedQuery.isLoading
+              && !archivedQuery.isError
+              && (archivedQuery.data?.length ?? 0) === 0 && (
+              <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+                {t('aiCoach.threads.archived.empty', 'You have no archived conversations.')}
+              </p>
+            )}
+            {archivedQuery.data?.map((thread) => (
+              <ArchivedRow
+                key={thread.id}
+                thread={thread}
+                dateLocale={dateLocale}
+                onRestore={() => void handleRestore(thread.id)}
+                onDelete={() => setDeleteTarget(thread)}
+                isPending={
+                  (restoreMutation.isPending && restoreMutation.variables === thread.id)
+                  || (deleteMutation.isPending && deleteMutation.variables === thread.id)
+                }
+              />
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </aside>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Archived list row — slimmer than ThreadRow, two inline action buttons.
+// ---------------------------------------------------------------------------
+
+interface ArchivedRowProps {
+  thread: CoachThread;
+  dateLocale: Locale;
+  onRestore: () => void;
+  onDelete: () => void;
+  isPending: boolean;
+}
+
+const ArchivedRow: React.FC<ArchivedRowProps> = ({
+  thread,
+  dateLocale,
+  onRestore,
+  onDelete,
+  isPending,
+}) => {
+  const { t } = useTranslation();
+  const title = thread.title?.trim() || t('aiCoach.threads.sidebar.untitled', '(untitled)');
+  const relative = useMemo(() => {
+    try {
+      return formatDistanceToNow(new Date(thread.updatedAt), {
+        addSuffix: true,
+        locale: dateLocale,
+      });
+    } catch {
+      return '';
+    }
+  }, [thread.updatedAt, dateLocale]);
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/30 px-3 py-2">
+      <div className="flex-1 min-w-0">
+        <div
+          className={cn(
+            'truncate text-sm font-medium leading-tight',
+            !thread.title?.trim() && 'italic text-muted-foreground',
+          )}
+          title={title}
+        >
+          {title}
+        </div>
+        <div className="mt-0.5 truncate text-xs text-muted-foreground/70 tabular-nums">
+          {relative}
+        </div>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={onRestore}
+        disabled={isPending}
+        className="h-8 gap-1.5 text-xs"
+        aria-label={t('aiCoach.threads.actions.restore', 'Restore')}
+      >
+        <RotateCcw className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">
+          {t('aiCoach.threads.actions.restore', 'Restore')}
+        </span>
+      </Button>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        onClick={onDelete}
+        disabled={isPending}
+        className="h-8 w-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+        aria-label={t('aiCoach.threads.actions.delete', 'Delete permanently')}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
   );
 };
 
@@ -261,6 +471,7 @@ interface ThreadRowProps {
   onSelect: () => void;
   onRename: () => void;
   onArchive: () => void;
+  onDelete: () => void;
 }
 
 const ThreadRow: React.FC<ThreadRowProps> = ({
@@ -270,6 +481,7 @@ const ThreadRow: React.FC<ThreadRowProps> = ({
   onSelect,
   onRename,
   onArchive,
+  onDelete,
 }) => {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -291,60 +503,60 @@ const ThreadRow: React.FC<ThreadRowProps> = ({
   const preview = thread.lastMessagePreview?.trim() ||
     t('aiCoach.threads.sidebar.noPreview', 'No messages yet');
 
+  // Two-line dense row: title (line 1, single-line truncate), then a single
+  // metadata line (line 2) — preview if present, else relative time. Avoids
+  // the previous three-line stack that consumed ~78px per row.
+  const hasPreview = Boolean(thread.lastMessagePreview?.trim());
+  const metaLine = hasPreview ? preview : relative;
+
   return (
     <div
       className={cn(
-        'group relative flex items-start gap-2 rounded-lg px-2.5 py-2 transition-colors',
+        'group relative flex items-center gap-2 rounded-lg pl-3 pr-1 py-1.5 transition-colors',
         selected
-          ? 'bg-primary/10 ring-1 ring-primary/30'
+          ? 'bg-primary/10'
           : 'hover:bg-muted/40',
       )}
     >
+      {/* Left accent bar — only on the active row, mirrors the rail tool launchers */}
+      {selected && (
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary"
+        />
+      )}
       <button
         type="button"
         onClick={onSelect}
         aria-current={selected ? 'true' : undefined}
         className="flex-1 min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md"
       >
-        <div className="flex items-center gap-2">
-          <MessageSquare
-            className={cn(
-              'h-3.5 w-3.5 shrink-0',
-              selected ? 'text-primary' : 'text-muted-foreground',
-            )}
-            aria-hidden="true"
-          />
-          <span
-            className={cn(
-              'truncate text-xs font-semibold',
-              selected ? 'text-foreground' : 'text-foreground/90',
-            )}
-            title={title}
-          >
-            {title}
-          </span>
-        </div>
-        <p
+        <div
           className={cn(
-            'mt-0.5 truncate text-[11px]',
-            thread.lastMessagePreview
-              ? 'text-muted-foreground'
-              : 'italic text-muted-foreground/60',
+            'truncate text-sm font-medium leading-tight',
+            !thread.title?.trim() && 'italic text-muted-foreground',
+            selected ? 'text-foreground' : 'text-foreground/90',
           )}
-          title={thread.lastMessagePreview ?? undefined}
+          title={title}
         >
-          {preview}
-        </p>
-        {relative && (
-          <p className="mt-0.5 text-[10px] text-muted-foreground/70 tabular-nums">
-            {relative}
-          </p>
-        )}
+          {title}
+        </div>
+        <div
+          className={cn(
+            'mt-0.5 truncate text-xs leading-tight',
+            hasPreview
+              ? 'text-muted-foreground'
+              : 'text-muted-foreground/60 tabular-nums',
+          )}
+          title={hasPreview ? thread.lastMessagePreview ?? undefined : relative}
+        >
+          {metaLine}
+        </div>
       </button>
 
-      {/* Per-row menu — appears on hover (desktop) and on focus / always-on
-          (mobile). The button stays focusable so keyboard users can reach
-          rename/archive without depending on hover state. */}
+      {/* Per-row menu — `…` button is hidden until hover (desktop) or focus
+          (keyboard a11y). Always visible on the active row so users can
+          act on the current conversation without hunting for it. */}
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -352,9 +564,10 @@ const ThreadRow: React.FC<ThreadRowProps> = ({
             size="icon"
             variant="ghost"
             className={cn(
-              'h-6 w-6 shrink-0 text-muted-foreground/70 hover:text-foreground',
-              'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+              'h-7 w-7 shrink-0 text-muted-foreground/70 hover:text-foreground',
+              'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
               'data-[state=open]:opacity-100',
+              selected && 'opacity-100',
             )}
             aria-label={t('aiCoach.threads.actions.more', 'More actions')}
             onClick={(e) => e.stopPropagation()}
@@ -362,7 +575,7 @@ const ThreadRow: React.FC<ThreadRowProps> = ({
             <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem
             onClick={() => {
               setMenuOpen(false);
@@ -377,10 +590,19 @@ const ThreadRow: React.FC<ThreadRowProps> = ({
               setMenuOpen(false);
               onArchive();
             }}
+          >
+            <ArchiveIcon className="mr-2 h-3.5 w-3.5" />
+            {t('aiCoach.threads.actions.archive', 'Archive')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setMenuOpen(false);
+              onDelete();
+            }}
             className="text-destructive focus:text-destructive focus:bg-destructive/10"
           >
             <Trash2 className="mr-2 h-3.5 w-3.5" />
-            {t('aiCoach.threads.actions.archive', 'Archive')}
+            {t('aiCoach.threads.actions.delete', 'Delete permanently')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

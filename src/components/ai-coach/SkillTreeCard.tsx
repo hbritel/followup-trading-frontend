@@ -145,9 +145,14 @@ const CategoryColumn: React.FC<CategoryColumnProps> = ({ category, nodes }) => {
 };
 
 const SkillRow: React.FC<{ view: SkillNodeView }> = ({ view }) => {
+  const { t } = useTranslation();
   const { node, progressPct, unlockedAt } = view;
   const unlocked = unlockedAt != null;
   const pct = parseFloat(progressPct);
+  const localizedName = t(`aiCoach.skillTree.nodes.${node.code}.name`, node.name);
+  const localizedDescription = node.description
+    ? t(`aiCoach.skillTree.nodes.${node.code}.description`, node.description)
+    : undefined;
   return (
     <li
       className={`rounded-md p-1.5 border ${
@@ -155,7 +160,7 @@ const SkillRow: React.FC<{ view: SkillNodeView }> = ({ view }) => {
           ? 'border-emerald-500/30 bg-emerald-500/10'
           : 'border-border/30 bg-background/40'
       }`}
-      title={node.description ?? undefined}
+      title={localizedDescription}
     >
       <div className="flex items-start gap-1.5 mb-1">
         {unlocked ? (
@@ -163,7 +168,7 @@ const SkillRow: React.FC<{ view: SkillNodeView }> = ({ view }) => {
         ) : (
           <Lock className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
         )}
-        <span className="text-[11px] font-medium leading-tight break-words">{node.name}</span>
+        <span className="text-[11px] font-medium leading-tight break-words">{localizedName}</span>
       </div>
       {!unlocked && pct > 0 ? (
         <div className="h-0.5 bg-muted/40 rounded-full overflow-hidden">
