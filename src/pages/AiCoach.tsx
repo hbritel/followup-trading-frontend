@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import {
   HelpCircle, Info, Sparkles, Brain, Network, MessageSquare,
   LayoutDashboard, Image as ImageIcon, Target, Trophy, Scale,
-  Sun, Moon, ArrowRight,
+  Sun, Moon, ArrowRight, Activity as ActivityIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -224,57 +224,84 @@ interface ToolLauncherProps {
 const ToolLauncher: React.FC<ToolLauncherProps> = ({ tool, onClick }) => {
   const { t } = useTranslation();
   const Icon = tool.icon;
+  const label = t(tool.labelKey, tool.defaultLabel);
+  const desc = t(tool.descKey, tool.defaultDesc);
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={t(tool.labelKey, tool.defaultLabel)}
-      className={cn(
-        'group relative flex flex-col items-start gap-1.5 rounded-xl border border-border/40',
-        'bg-card/40 hover:bg-card/70 hover:border-border/70 p-3 text-left transition-all',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-      )}
-    >
-      <span
-        className={cn(
-          'inline-flex h-8 w-8 items-center justify-center rounded-lg bg-muted/30 transition-colors',
-          tool.hoverBg,
-        )}
-      >
-        <Icon className={cn('h-4 w-4', tool.iconClass)} />
-      </span>
-      <div className="min-w-0 w-full pr-4">
-        <div className="text-xs font-semibold text-foreground truncate">
-          {t(tool.labelKey, tool.defaultLabel)}
-        </div>
-        <div className="text-[10px] text-muted-foreground truncate">
-          {t(tool.descKey, tool.defaultDesc)}
-        </div>
-      </div>
-      <ArrowRight
-        aria-hidden="true"
-        className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
-      />
-    </button>
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          className={cn(
+            'group relative flex flex-col items-start gap-1.5 rounded-xl border border-border/40',
+            'bg-card/40 hover:bg-card/70 hover:border-border/70 p-3 text-left transition-all',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+          )}
+        >
+          <span
+            className={cn(
+              'inline-flex h-8 w-8 items-center justify-center rounded-lg bg-muted/30 transition-colors',
+              tool.hoverBg,
+            )}
+          >
+            <Icon className={cn('h-4 w-4', tool.iconClass)} />
+          </span>
+          <div className="min-w-0 w-full pr-4">
+            <div className="text-xs font-semibold text-foreground truncate">
+              {label}
+            </div>
+            <div className="text-xs text-muted-foreground truncate">
+              {desc}
+            </div>
+          </div>
+          <ArrowRight
+            aria-hidden="true"
+            className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+          />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="start" className="max-w-[240px] text-xs leading-relaxed z-50">
+        <span className="font-semibold">{label}</span> — {desc}
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
 // ──────────────────────────────────────────────────────────────────────
-// Light widget shell — keeps Auto-Playbook / Psychology visually aligned
-// with the rest of the rail without forcing them into the heavy-tool
-// Sheet treatment.
+// Light widget shell — keeps Activity / Auto-Playbook / Psychology
+// visually aligned with the rest of the rail without forcing them into
+// the heavy-tool Sheet treatment. Optional `info` slot surfaces an
+// inline tooltip next to the title.
 // ──────────────────────────────────────────────────────────────────────
 const LightWidget: React.FC<{
   title: string;
   icon: React.ReactNode;
+  info?: string;
   children: React.ReactNode;
-}> = ({ title, icon, children }) => (
+}> = ({ title, icon, info, children }) => (
   <section className="rounded-2xl border border-border/40 bg-card/40 p-4 space-y-3">
     <header className="flex items-center gap-2">
       {icon}
       <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {title}
       </h2>
+      {info && (
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex p-1 -m-1 rounded-md hover:bg-muted/50 transition-colors"
+              aria-label={info}
+            >
+              <Info className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start" sideOffset={4} className="max-w-[280px] text-xs leading-relaxed z-50">
+            {info}
+          </TooltipContent>
+        </Tooltip>
+      )}
     </header>
     <div>{children}</div>
   </section>
@@ -358,12 +385,8 @@ const AiCoach: React.FC = () => {
   const header = (
     <header className="flex items-center justify-between gap-2 mb-4 flex-shrink-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="relative h-11 w-11 rounded-2xl bg-gradient-to-br from-primary via-violet-500 to-amber-500 grid place-items-center shadow-lg shadow-primary/20 shrink-0">
-          <Sparkles className="h-5 w-5 text-white" />
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
-            <span className="motion-safe:absolute motion-safe:inline-flex motion-safe:h-full motion-safe:w-full motion-safe:animate-ping motion-safe:rounded-full motion-safe:bg-emerald-400 motion-safe:opacity-60" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-background" />
-          </span>
+        <div className="h-11 w-11 rounded-2xl bg-primary/10 ring-1 ring-primary/30 grid place-items-center shrink-0">
+          <Sparkles className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -487,7 +510,12 @@ const AiCoach: React.FC = () => {
         </div>
       </section>
 
-      <ActivityCard accountId={accountId} />
+      <LightWidget
+        title={t('ai.activity', 'Activité')}
+        icon={<ActivityIcon className="h-4 w-4 text-primary" />}
+      >
+        <ActivityCard accountId={accountId} />
+      </LightWidget>
 
       <LightWidget
         title={t('autoPlaybook.sectionTitle', 'Auto-Playbook')}
@@ -499,6 +527,7 @@ const AiCoach: React.FC = () => {
       <LightWidget
         title={t('ai.psychology', 'Psychologie')}
         icon={<Brain className="h-4 w-4 text-violet-400" />}
+        info={t('ai.psychologyInfo', 'Correlates the emotions you log before trades with their outcomes. Helps identify which mental states lead to better or worse trading decisions.')}
       >
         <PsychologyCorrelation />
       </LightWidget>
